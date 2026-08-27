@@ -6,17 +6,12 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 ## Phase checklist
 - [x] **Phase 0 — research and spikes** (gate: all spikes pass; no license blocker) — **GREEN**
       except one manual check that needs the operator (Tailscale operator rights, see below).
-- [~] **Phase 1 — foundation** — backend GREEN, web shell in progress.
-      Done: monorepo, lockfiles, CI (`.github/workflows/ci.yml`), Postgres schema + Alembic
-      migration (`workspace_id` on domain rows), local auth API (Argon2id password, TOTP with replay
-      protection, passkeys register/login, step-up, sessions, RBAC deny-by-default), ArtifactStore
-      (filesystem + S3 via moto tests, signed URLs), signed SkillRegistry (Ed25519), model catalog +
-      ExecutionPolicy presets + routing decisions, HardwareProbe + deterministic mocks, CLI
-      login/context/workspaces, bootstrap (owner + 2 demo workspaces), Temporal worker entry point.
-      Pending: `apps/web` + `packages/web-ui` (theme engine, command palette, PWA shell — subagent),
-      clean-checkout `./setup.sh` rehearsal (`scripts/gate-clean-checkout.sh`), theme sync check.
-      Gate: clean-checkout `./setup.sh` → running app; doctor green; theme switching persists and
-      syncs; two seeded workspaces isolated through the API (✔ `tests/api`).
+- [x] **Phase 1 — foundation** — **GREEN** (gate rehearsed 2026-08-27).
+      Monorepo, lockfiles, CI, Postgres schema + Alembic, local auth API (Argon2id, TOTP, passkeys,
+      step-up, sessions, deny-by-default RBAC), ArtifactStore (filesystem + S3), signed
+      SkillRegistry, model catalog + ExecutionPolicy presets + routing decisions, HardwareProbe +
+      mocks, CLI login/context/workspaces, bootstrap, Temporal worker entry, web shell
+      (`apps/web`) with theme engine + command palette + PWA (`packages/web-ui`).
 - [ ] Phase 2 — typed contracts + deterministic static/video rendering
 - [ ] Phase 3 — narration and audio
 - [ ] Phase 4 — research, evidence, claims
@@ -56,7 +51,12 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 | Bootstrap | `uv run content-factory bootstrap` | owner `operator` + `demo-editorial`, `demo-brand` |
 | Lint/type | `ruff check`, `pyright` | 0 findings |
 
-Unit suite: `uv run pytest -m "not integration"` → 41 passed. Node: 21 tests pass (pre-web).
+| Web shell | `pnpm -r test` / `pnpm -r typecheck` / `pnpm --filter @content-factory/web build` | 67 Node tests pass (web-ui 32, web 14, schema-ts 10, editor-core 8, renderer 3); 0 TS errors; `dist/` built |
+| Theme sync (live) | API + Vite dev proxy: login → `PUT /v1/prefs/theme` → `GET` | 200 / 204 / `{"value":{"preset":"midnight","scale":1.1}}` |
+| In-place `./setup.sh` | `CF_SKIP_BROWSER=1 ./setup.sh` then `just doctor` | idempotent; doctor "All checks passed" (comfyui/searxng optional warns) |
+| Clean-checkout gate | `scripts/gate-clean-checkout.sh` (git clone → ./setup.sh → doctor --json → tests) | "doctor fails: []", 41 passed, gate OK |
+
+Core suite: `uv run pytest -m "not integration and not gpu and not live"` → 41 passed; `pnpm -r test` → 67 passed.
 
 ## Decisions (see docs/adr/0001–0010)
 - MinIO archived upstream 2026-04-25 → optional S3 service is SeaweedFS 4.44 (Apache-2.0).

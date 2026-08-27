@@ -3,7 +3,7 @@
 Self-hosted, local-first, single-operator content production and distribution platform.
 Private project — no billing, no SaaS surfaces. See `STATUS.md` for the current phase.
 
-## What works now (phase 0 — spikes verified on this machine)
+## What works now (phases 0–1 verified on this machine)
 - Typed contracts: Pydantic → JSON Schema 2020-12 → TypeScript + Ajv, with drift check.
 - EditorCore: typed edit operations applied and undone to identical revision hashes.
 - Remotion renderer: 3 s 1080p clip with a pinned local font, verified by ffprobe.
@@ -17,10 +17,18 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
   layout frames.
 - Local auth primitives: Argon2id, TOTP with replay protection, passkey registration and
   authentication round trip.
-- `content-factory doctor`, typed configuration, docker compose (Postgres 18, Temporal dev server).
+- `./setup.sh` → running API + web shell; `content-factory doctor` green; docker compose
+  (Postgres 18, Temporal dev server); Alembic migrations.
+- Local auth: password (Argon2id), TOTP, passkeys, step-up, sessions; deny-by-default RBAC;
+  two workspaces provably isolated through the API.
+- Web shell (PWA): themes (9 presets, customizer, import/export, per-account sync), command
+  palette (⌘K), all areas as designed empty states, login with password/TOTP/passkey.
+- CLI: `login`, `whoami`, `workspaces list|use`, `bootstrap`, `serve`, `worker`, `doctor`.
+- ArtifactStore (filesystem + S3), signed skill registry, execution-policy routing with
+  explainable decisions, hardware probe.
 
 ## Not implemented yet
-Everything in phases 1–13 of the program: database schema, web app, production pipeline,
+Phases 2–13: content contracts and renderers beyond the smoke clip, production pipeline,
 research/claims, TTS, distribution, analytics, personas, engagement. Nothing publishes anywhere.
 
 ## Prerequisites

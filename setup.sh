@@ -24,7 +24,7 @@ ok "docker $(docker --version | awk '{print $3}' | tr -d ,), node $(node --versi
 
 say "2/7 Environment file"
 if [ ! -f .env ]; then cp .env.example .env; ok "created .env from .env.example (edit ports/secrets there; it is git-ignored)"; else ok ".env exists — left untouched"; fi
-if ! grep -q '^VAULT_MASTER_KEY=.\+' .env; then
+if ! grep -Eq '^VAULT_MASTER_KEY=[A-Za-z0-9+/=]{40,}$' .env; then
   key=$(python3 -c 'import base64,os;print(base64.b64encode(os.urandom(32)).decode())')
   sed -i "s|^VAULT_MASTER_KEY=.*|VAULT_MASTER_KEY=$key|" .env
   ok "generated VAULT_MASTER_KEY (token vault envelope key). Back it up: losing it means reconnecting every account."
