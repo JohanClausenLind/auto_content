@@ -1,0 +1,199 @@
+{
+  "$defs": {
+    "ExecutionLocation": {
+      "enum": [
+        "local_cpu",
+        "local_gpu",
+        "tailnet_worker",
+        "cloud"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    },
+    "ExecutionPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_cloud_fallback": {
+          "default": true,
+          "title": "Allow Cloud Fallback",
+          "type": "boolean"
+        },
+        "allowed_providers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed Providers",
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/PolicyKind"
+        },
+        "max_external_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max External Usd"
+        },
+        "max_wait_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Wait Seconds"
+        },
+        "pinned_alias": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pinned Alias"
+        }
+      },
+      "required": [
+        "allow_cloud_fallback",
+        "allowed_providers",
+        "kind",
+        "max_external_usd",
+        "max_wait_seconds",
+        "pinned_alias"
+      ],
+      "title": "ExecutionPolicy",
+      "type": "object"
+    },
+    "PolicyKind": {
+      "enum": [
+        "cloud_only",
+        "quality_auto",
+        "prefer_local",
+        "local_only",
+        "pinned"
+      ],
+      "title": "PolicyKind",
+      "type": "string"
+    },
+    "RejectedCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "alias": {
+          "title": "Alias",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "alias",
+        "reason"
+      ],
+      "title": "RejectedCandidate",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ExecutionDecision.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Why this executor/model/location was chosen, what was rejected, whether fallback occurred.",
+  "properties": {
+    "chosen_alias": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Chosen Alias"
+    },
+    "chosen_location": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionLocation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "estimated_usd": {
+      "minimum": 0,
+      "title": "Estimated Usd",
+      "type": "number"
+    },
+    "explanation": {
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    },
+    "fallback_used": {
+      "default": false,
+      "title": "Fallback Used",
+      "type": "boolean"
+    },
+    "outcome": {
+      "enum": [
+        "dispatch",
+        "pause_insufficient_quality",
+        "pause_budget",
+        "pause_no_candidate"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/ExecutionPolicy"
+    },
+    "rejected": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RejectedCandidate"
+      },
+      "title": "Rejected",
+      "type": "array"
+    },
+    "skill_id": {
+      "title": "Skill Id",
+      "type": "string"
+    },
+    "skill_version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Skill Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "chosen_alias",
+    "chosen_location",
+    "estimated_usd",
+    "explanation",
+    "fallback_used",
+    "outcome",
+    "policy",
+    "rejected",
+    "skill_id",
+    "skill_version"
+  ],
+  "title": "ExecutionDecision",
+  "type": "object"
+}

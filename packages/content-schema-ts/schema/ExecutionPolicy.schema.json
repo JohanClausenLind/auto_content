@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "PolicyKind": {
+      "enum": [
+        "cloud_only",
+        "quality_auto",
+        "prefer_local",
+        "local_only",
+        "pinned"
+      ],
+      "title": "PolicyKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ExecutionPolicy.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allow_cloud_fallback": {
+      "default": true,
+      "title": "Allow Cloud Fallback",
+      "type": "boolean"
+    },
+    "allowed_providers": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Providers",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/PolicyKind"
+    },
+    "max_external_usd": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max External Usd"
+    },
+    "max_wait_seconds": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Wait Seconds"
+    },
+    "pinned_alias": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pinned Alias"
+    }
+  },
+  "required": [
+    "allow_cloud_fallback",
+    "allowed_providers",
+    "kind",
+    "max_external_usd",
+    "max_wait_seconds",
+    "pinned_alias"
+  ],
+  "title": "ExecutionPolicy",
+  "type": "object"
+}

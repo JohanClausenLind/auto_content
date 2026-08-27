@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@content-factory/web-ui": "workspace:*",
     "@simplewebauthn/browser": "13.3.0",
     "@tanstack/react-query": "5.102.4",
     "@tanstack/react-router": "1.170.32",

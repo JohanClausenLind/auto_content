@@ -290,7 +290,7 @@ export function ThemeCustomizer({ onDone }: ThemeCustomizerProps) {
         )}
       </section>
 
-      <p role="status" aria-live="polite" className={["cf-customizer__status", message ? `cf-customizer__status--${message.tone}` : ""].join(" ").trim()}>
+      <p role="status" aria-label="Theme status" aria-live="polite" className={["cf-customizer__status", message ? `cf-customizer__status--${message.tone}` : ""].join(" ").trim()}>
         {message?.text ?? ""}
       </p>
       {theme.syncError && (

@@ -46,13 +46,13 @@ describe("ThemeCustomizer", () => {
     await user.type(screen.getByRole("textbox", { name: /Theme name/ }), "Pumpkin");
     await user.click(screen.getByRole("button", { name: "Save theme" }));
     expect(screen.getByTestId("probe")).toHaveTextContent(/custom:custom-/);
-    expect(screen.getByRole("status")).toHaveTextContent("Saved “Pumpkin”.");
+    expect(screen.getByRole("status", { name: "Theme status" })).toHaveTextContent("Saved “Pumpkin”.");
     expect(loadThemeState()?.customThemes[0]?.name).toBe("Pumpkin");
 
     await user.click(screen.getByRole("button", { name: "Paste JSON" }));
     await user.type(screen.getByRole("textbox", { name: "Theme JSON" }), "{{ broken");
     await user.click(screen.getByRole("button", { name: "Import" }));
-    expect(screen.getByRole("status")).toHaveTextContent("not valid JSON");
+    expect(screen.getByRole("status", { name: "Theme status" })).toHaveTextContent("not valid JSON");
   });
 
   it("survives a failing sync adapter", async () => {

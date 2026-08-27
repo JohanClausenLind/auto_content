@@ -8,6 +8,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./boot": "./src/theme/boot.ts",
     "./styles.css": "./src/styles/index.css"
   },
   "scripts": {

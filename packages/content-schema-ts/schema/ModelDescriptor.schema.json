@@ -1,0 +1,172 @@
+{
+  "$defs": {
+    "ExecutionLocation": {
+      "enum": [
+        "local_cpu",
+        "local_gpu",
+        "tailnet_worker",
+        "cloud"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ModelDescriptor.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "alias": {
+      "pattern": "^[a-z][a-z0-9_]{2,40}$",
+      "title": "Alias",
+      "type": "string"
+    },
+    "approved_for_skills": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Approved For Skills",
+      "type": "array"
+    },
+    "capabilities": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "commercial_use": {
+      "title": "Commercial Use",
+      "type": "boolean"
+    },
+    "context_tokens": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Context Tokens"
+    },
+    "fallback_aliases": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Fallback Aliases",
+      "type": "array"
+    },
+    "license": {
+      "minLength": 1,
+      "title": "License",
+      "type": "string"
+    },
+    "location": {
+      "$ref": "#/$defs/ExecutionLocation"
+    },
+    "model_id": {
+      "minLength": 1,
+      "title": "Model Id",
+      "type": "string"
+    },
+    "provider": {
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "quantization": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quantization"
+    },
+    "revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "usd_per_million_input_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Usd Per Million Input Tokens"
+    },
+    "usd_per_million_output_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Usd Per Million Output Tokens"
+    },
+    "vram_bytes_estimate": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Vram Bytes Estimate"
+    }
+  },
+  "required": [
+    "alias",
+    "approved_for_skills",
+    "capabilities",
+    "commercial_use",
+    "context_tokens",
+    "fallback_aliases",
+    "license",
+    "location",
+    "model_id",
+    "provider",
+    "quantization",
+    "revision",
+    "schema_version",
+    "usd_per_million_input_tokens",
+    "usd_per_million_output_tokens",
+    "vram_bytes_estimate"
+  ],
+  "title": "ModelDescriptor",
+  "type": "object"
+}

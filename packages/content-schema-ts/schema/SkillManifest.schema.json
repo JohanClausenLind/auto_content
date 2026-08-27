@@ -1,0 +1,321 @@
+{
+  "$defs": {
+    "CostEstimator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "fixed",
+            "per_token",
+            "per_second",
+            "per_image",
+            "per_character"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "local_gpu_seconds": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Local Gpu Seconds",
+          "type": "number"
+        },
+        "usd": {
+          "minimum": 0,
+          "title": "Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "local_gpu_seconds",
+        "usd"
+      ],
+      "title": "CostEstimator",
+      "type": "object"
+    },
+    "ExecutionLocation": {
+      "enum": [
+        "local_cpu",
+        "local_gpu",
+        "tailnet_worker",
+        "cloud"
+      ],
+      "title": "ExecutionLocation",
+      "type": "string"
+    },
+    "ExecutorType": {
+      "enum": [
+        "deterministic_code",
+        "model_role",
+        "comfyui_workflow",
+        "provider_api",
+        "composition"
+      ],
+      "title": "ExecutorType",
+      "type": "string"
+    },
+    "Lifecycle": {
+      "enum": [
+        "draft",
+        "canary",
+        "active",
+        "deprecated",
+        "quarantined",
+        "revoked"
+      ],
+      "title": "Lifecycle",
+      "type": "string"
+    },
+    "QualityFloor": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluation_pack": {
+          "minLength": 1,
+          "title": "Evaluation Pack",
+          "type": "string"
+        },
+        "higher_is_better": {
+          "default": true,
+          "title": "Higher Is Better",
+          "type": "boolean"
+        },
+        "metric": {
+          "minLength": 1,
+          "title": "Metric",
+          "type": "string"
+        },
+        "minimum": {
+          "title": "Minimum",
+          "type": "number"
+        }
+      },
+      "required": [
+        "evaluation_pack",
+        "higher_is_better",
+        "metric",
+        "minimum"
+      ],
+      "title": "QualityFloor",
+      "type": "object"
+    },
+    "SkillPermissions": {
+      "additionalProperties": false,
+      "properties": {
+        "egress_allowlist": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Egress Allowlist",
+          "type": "array"
+        },
+        "external_side_effects": {
+          "default": false,
+          "title": "External Side Effects",
+          "type": "boolean"
+        },
+        "filesystem_write_scopes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Filesystem Write Scopes",
+          "type": "array"
+        },
+        "gpu": {
+          "default": false,
+          "title": "Gpu",
+          "type": "boolean"
+        },
+        "network_egress": {
+          "default": false,
+          "title": "Network Egress",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "egress_allowlist",
+        "external_side_effects",
+        "filesystem_write_scopes",
+        "gpu",
+        "network_egress"
+      ],
+      "title": "SkillPermissions",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/SkillManifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cancellable": {
+      "default": true,
+      "title": "Cancellable",
+      "type": "boolean"
+    },
+    "cost": {
+      "$ref": "#/$defs/CostEstimator"
+    },
+    "executor": {
+      "$ref": "#/$defs/ExecutorType"
+    },
+    "fallbacks": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Fallbacks",
+      "type": "array"
+    },
+    "idempotent": {
+      "default": true,
+      "title": "Idempotent",
+      "type": "boolean"
+    },
+    "implementation_ref": {
+      "description": "Immutable reference (module:callable, package@version, workflow id@version)",
+      "minLength": 1,
+      "title": "Implementation Ref",
+      "type": "string"
+    },
+    "input_schema": {
+      "description": "Registered schema name for inputs",
+      "minLength": 1,
+      "title": "Input Schema",
+      "type": "string"
+    },
+    "license_evidence": {
+      "minLength": 1,
+      "title": "License Evidence",
+      "type": "string"
+    },
+    "max_retries": {
+      "maximum": 10,
+      "minimum": 0,
+      "title": "Max Retries",
+      "type": "integer"
+    },
+    "output_schema": {
+      "description": "Registered schema name for outputs",
+      "minLength": 1,
+      "title": "Output Schema",
+      "type": "string"
+    },
+    "permissions": {
+      "$ref": "#/$defs/SkillPermissions",
+      "default": {
+        "egress_allowlist": [],
+        "external_side_effects": false,
+        "filesystem_write_scopes": [],
+        "gpu": false,
+        "network_egress": false
+      }
+    },
+    "permitted_locations": {
+      "items": {
+        "$ref": "#/$defs/ExecutionLocation"
+      },
+      "minItems": 1,
+      "title": "Permitted Locations",
+      "type": "array"
+    },
+    "purpose": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Purpose",
+      "type": "string"
+    },
+    "quality_floor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/QualityFloor"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "required_models": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Models",
+      "type": "array"
+    },
+    "required_runtimes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Runtimes",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Signature"
+    },
+    "skill_id": {
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "title": "Skill Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/Lifecycle",
+      "default": "draft"
+    },
+    "timeout_seconds": {
+      "maximum": 86400,
+      "minimum": 1,
+      "title": "Timeout Seconds",
+      "type": "integer"
+    },
+    "version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "cancellable",
+    "cost",
+    "executor",
+    "fallbacks",
+    "idempotent",
+    "implementation_ref",
+    "input_schema",
+    "license_evidence",
+    "max_retries",
+    "output_schema",
+    "permissions",
+    "permitted_locations",
+    "purpose",
+    "quality_floor",
+    "required_models",
+    "required_runtimes",
+    "schema_version",
+    "signature",
+    "skill_id",
+    "status",
+    "timeout_seconds",
+    "version"
+  ],
+  "title": "SkillManifest",
+  "type": "object"
+}

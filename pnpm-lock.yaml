@@ -57,6 +57,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@content-factory/web-ui':
+        specifier: workspace:*
+        version: link:../../packages/web-ui
       '@simplewebauthn/browser':
         specifier: 13.3.0
         version: 13.3.0

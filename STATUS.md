@@ -6,11 +6,17 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 ## Phase checklist
 - [x] **Phase 0 — research and spikes** (gate: all spikes pass; no license blocker) — **GREEN**
       except one manual check that needs the operator (Tailscale operator rights, see below).
-- [ ] Phase 1 — foundation (monorepo ✔, lockfiles ✔, CI, Postgres schema/migrations, local auth +
-      sessions + step-up API, ArtifactStore, web shell + theme engine + command palette, CLI
-      login/context, setup.sh ✔/doctor ✔, skill-registry core, model catalog, execution-policy types,
-      hardware mocks). Gate: clean-checkout `./setup.sh` → running app; doctor green; theme
-      switching persists; two seeded workspaces isolated through the API.
+- [~] **Phase 1 — foundation** — backend GREEN, web shell in progress.
+      Done: monorepo, lockfiles, CI (`.github/workflows/ci.yml`), Postgres schema + Alembic
+      migration (`workspace_id` on domain rows), local auth API (Argon2id password, TOTP with replay
+      protection, passkeys register/login, step-up, sessions, RBAC deny-by-default), ArtifactStore
+      (filesystem + S3 via moto tests, signed URLs), signed SkillRegistry (Ed25519), model catalog +
+      ExecutionPolicy presets + routing decisions, HardwareProbe + deterministic mocks, CLI
+      login/context/workspaces, bootstrap (owner + 2 demo workspaces), Temporal worker entry point.
+      Pending: `apps/web` + `packages/web-ui` (theme engine, command palette, PWA shell — subagent),
+      clean-checkout `./setup.sh` rehearsal (`scripts/gate-clean-checkout.sh`), theme sync check.
+      Gate: clean-checkout `./setup.sh` → running app; doctor green; theme switching persists and
+      syncs; two seeded workspaces isolated through the API (✔ `tests/api`).
 - [ ] Phase 2 — typed contracts + deterministic static/video rendering
 - [ ] Phase 3 — narration and audio
 - [ ] Phase 4 — research, evidence, claims
@@ -38,7 +44,19 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 | Lint/type | `uv run ruff check . && uv run pyright python tests scripts` | 0 findings / 0 errors |
 | Tailscale serve | `tailscale serve --bg --https=8443 8000` | **BLOCKED (needs operator)**: "Use 'sudo tailscale serve …' or `sudo tailscale set --operator=$USER` once". Existing serve on 443 → 127.0.0.1:8002 (another app) was left untouched. API on loopback verified: `curl 127.0.0.1:8000/healthz` → ok |
 
-Unit suite total: `uv run pytest tests/unit -q` → 21 passed. Node: 18 tests pass.
+## Phase 1 results so far (commands actually run)
+| Item | Command | Result |
+|---|---|---|
+| Migrations | `uv run alembic revision --autogenerate` → `alembic upgrade head` (dev + test DB) → `alembic check` | applied; "No new upgrade operations detected" |
+| Auth + isolation API tests | `set -a; . ./.env; set +a; uv run pytest tests/api -m integration` | 6/6 pass: login/logout, two-workspace isolation (foreign id → 404, switch → 403), RBAC (viewer 403), prefs per account, TOTP MFA + replay refused + step-up, passkey register → passwordless login → replay refused |
+| ArtifactStore | `uv run pytest tests/unit/test_artifact_store.py` | 4 tests × 2 backends (filesystem, moto S3) pass |
+| Skills/routing | `uv run pytest tests/unit/test_skills_and_routing.py` | 7/7: unsigned/foreign/tampered manifests refused; lifecycle; local_only zero cloud + pause; weak-but-fitting model rejected by floor; prefer_local visible fallback; caps → pause_budget; pinned fails closed |
+| Config invariants | `uv run pytest tests/security` | funnel without MFA refused; bind 0.0.0.0 refused; unknown keys (e.g. billing) refused |
+| CLI | `content-factory serve` + `login/workspaces list/whoami/logout` | works; context file mode 0600 |
+| Bootstrap | `uv run content-factory bootstrap` | owner `operator` + `demo-editorial`, `demo-brand` |
+| Lint/type | `ruff check`, `pyright` | 0 findings |
+
+Unit suite: `uv run pytest -m "not integration"` → 41 passed. Node: 21 tests pass (pre-web).
 
 ## Decisions (see docs/adr/0001–0010)
 - MinIO archived upstream 2026-04-25 → optional S3 service is SeaweedFS 4.44 (Apache-2.0).
@@ -70,7 +88,8 @@ minimum, Buttondown API tier.
   is committed.
 
 ## Resume instruction (next smallest task)
-Phase 1: add SQLAlchemy models + Alembic (`workspaces`, `operator_accounts`, `sessions`,
-`passkeys`, `audit_events` with `workspace_id` everywhere), wire `/v1/session` login/logout +
-passkey/TOTP routes onto `content_factory.api.app`, then a two-workspace isolation test.
-Run: `set -a; . ./.env; set +a; just doctor && uv run pytest tests/unit -q`.
+Finish Phase 1: integrate `apps/web` + `packages/web-ui` (verify `pnpm -r test`, `pnpm -r
+typecheck`, `pnpm --filter @content-factory/web build`), run `scripts/gate-clean-checkout.sh`,
+confirm theme PUT/GET `/v1/prefs/theme` round-trips from the UI, update this file, commit.
+Then Phase 2 (typed contracts + deterministic static/video rendering).
+Run: `set -a; . ./.env; set +a; just doctor && just test`.
