@@ -176,6 +176,16 @@ def workspaces_use(workspace_id: str) -> None:
 
 
 @app.command()
+def worker(
+    queue: str = typer.Option("control", help="Task queue / resource class to serve."),
+) -> None:
+    """Run a Temporal worker for one task queue."""
+    from content_factory.workflows.worker import main as run
+
+    run(queue)
+
+
+@app.command()
 def config(
     show_defaults: bool = typer.Option(False, help="Print the effective configuration as YAML."),
 ) -> None:
