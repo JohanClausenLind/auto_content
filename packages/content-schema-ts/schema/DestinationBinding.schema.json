@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "Destination": {
+      "additionalProperties": false,
+      "description": "A connected destination reference plus its current capability profile revision.",
+      "properties": {
+        "capability_revision": {
+          "minLength": 1,
+          "title": "Capability Revision",
+          "type": "string"
+        },
+        "destination_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Destination Id",
+          "type": "string"
+        },
+        "platform": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Platform",
+          "type": "string"
+        }
+      },
+      "required": [
+        "capability_revision",
+        "destination_id",
+        "platform"
+      ],
+      "title": "Destination",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/DestinationBinding.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "destination": {
+      "$ref": "#/$defs/Destination"
+    },
+    "schedule_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Schedule At"
+    },
+    "timezone": {
+      "default": "UTC",
+      "title": "Timezone",
+      "type": "string"
+    },
+    "visibility": {
+      "default": "export_only",
+      "enum": [
+        "public",
+        "unlisted",
+        "private",
+        "draft",
+        "export_only"
+      ],
+      "title": "Visibility",
+      "type": "string"
+    }
+  },
+  "required": [
+    "destination",
+    "schedule_at",
+    "timezone",
+    "visibility"
+  ],
+  "title": "DestinationBinding",
+  "type": "object"
+}

@@ -1,0 +1,1876 @@
+{
+  "$defs": {
+    "BigNumberScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "big_number",
+          "default": "big_number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "unit": {
+          "default": "",
+          "maxLength": 32,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DataRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "context",
+        "emphasis",
+        "kind",
+        "label",
+        "scene_id",
+        "unit",
+        "value",
+        "variant"
+      ],
+      "title": "BigNumberScene",
+      "type": "object"
+    },
+    "BulletSequenceScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "bullets": {
+          "items": {
+            "$ref": "#/$defs/TextRef"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "title": "Bullets",
+          "type": "array"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "bullet_sequence",
+          "default": "bullet_sequence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "bullets",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "BulletSequenceScene",
+      "type": "object"
+    },
+    "CalloutScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "callout",
+          "default": "callout",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "text": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "tone": {
+          "default": "neutral",
+          "enum": [
+            "neutral",
+            "warning",
+            "positive"
+          ],
+          "title": "Tone",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "text",
+        "tone",
+        "variant"
+      ],
+      "title": "CalloutScene",
+      "type": "object"
+    },
+    "ChapterTransitionScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "chapter_transition",
+          "default": "chapter_transition",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "kind",
+        "label",
+        "scene_id",
+        "variant"
+      ],
+      "title": "ChapterTransitionScene",
+      "type": "object"
+    },
+    "ChartKind": {
+      "enum": [
+        "line",
+        "area",
+        "bar",
+        "stacked_bar",
+        "horizontal_bar",
+        "scatter",
+        "bubble",
+        "histogram",
+        "waterfall",
+        "donut"
+      ],
+      "title": "ChartKind",
+      "type": "string"
+    },
+    "ChartScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "caption": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "chart": {
+          "$ref": "#/$defs/ChartKind"
+        },
+        "data": {
+          "$ref": "#/$defs/DataRef"
+        },
+        "dual_axis": {
+          "default": false,
+          "title": "Dual Axis",
+          "type": "boolean"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "encoding": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Encoding",
+          "type": "object"
+        },
+        "kind": {
+          "const": "chart",
+          "default": "chart",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "truncation_disclosure": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Truncation Disclosure"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        },
+        "x": {
+          "title": "X",
+          "type": "string"
+        },
+        "y": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Y",
+          "type": "array"
+        },
+        "zero_baseline": {
+          "default": true,
+          "title": "Zero Baseline",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "beat_id",
+        "caption",
+        "chart",
+        "data",
+        "dual_axis",
+        "emphasis",
+        "encoding",
+        "kind",
+        "scene_id",
+        "title",
+        "truncation_disclosure",
+        "variant",
+        "x",
+        "y",
+        "zero_baseline"
+      ],
+      "title": "ChartScene",
+      "type": "object"
+    },
+    "ComparisonScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "comparison",
+          "default": "comparison",
+          "title": "Kind",
+          "type": "string"
+        },
+        "left": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "left_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DataRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "right": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "right_value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DataRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "kind",
+        "left",
+        "left_value",
+        "right",
+        "right_value",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "ComparisonScene",
+      "type": "object"
+    },
+    "DataRef": {
+      "additionalProperties": false,
+      "description": "Every on-screen figure resolves through a dataset (and optionally a claim) to evidence.",
+      "properties": {
+        "claim_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Column"
+        },
+        "dataset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "row_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row Key"
+        }
+      },
+      "required": [
+        "claim_id",
+        "column",
+        "dataset_id",
+        "row_key"
+      ],
+      "title": "DataRef",
+      "type": "object"
+    },
+    "DataTableScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "title": "Columns",
+          "type": "array"
+        },
+        "data": {
+          "$ref": "#/$defs/DataRef"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "data_table",
+          "default": "data_table",
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_rows": {
+          "default": 6,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Rows",
+          "type": "integer"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "columns",
+        "data",
+        "emphasis",
+        "kind",
+        "max_rows",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "DataTableScene",
+      "type": "object"
+    },
+    "DefinitionScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "definition": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "definition",
+          "default": "definition",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "term": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "definition",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "term",
+        "variant"
+      ],
+      "title": "DefinitionScene",
+      "type": "object"
+    },
+    "DiagramEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "from_id": {
+          "title": "From Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "to_id": {
+          "title": "To Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_id",
+        "label",
+        "to_id"
+      ],
+      "title": "DiagramEdge",
+      "type": "object"
+    },
+    "DiagramNode": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "node_id": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "node_id"
+      ],
+      "title": "DiagramNode",
+      "type": "object"
+    },
+    "FlowDiagramScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "edges": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DiagramEdge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "flow_diagram",
+          "default": "flow_diagram",
+          "title": "Kind",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/DiagramNode"
+          },
+          "maxItems": 12,
+          "minItems": 2,
+          "title": "Nodes",
+          "type": "array"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "edges",
+        "emphasis",
+        "kind",
+        "nodes",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "FlowDiagramScene",
+      "type": "object"
+    },
+    "ImageScene": {
+      "additionalProperties": false,
+      "properties": {
+        "alt_text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Alt Text",
+          "type": "string"
+        },
+        "asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "caption": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "image",
+          "default": "image",
+          "title": "Kind",
+          "type": "string"
+        },
+        "motion": {
+          "default": "none",
+          "enum": [
+            "none",
+            "slow_push",
+            "slow_pull"
+          ],
+          "title": "Motion",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "alt_text",
+        "asset_id",
+        "beat_id",
+        "caption",
+        "emphasis",
+        "kind",
+        "motion",
+        "scene_id",
+        "variant"
+      ],
+      "title": "ImageScene",
+      "type": "object"
+    },
+    "ManimAssetScene": {
+      "additionalProperties": false,
+      "properties": {
+        "alt_text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Alt Text",
+          "type": "string"
+        },
+        "asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "manim_asset",
+          "default": "manim_asset",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "alt_text",
+        "asset_id",
+        "beat_id",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "variant"
+      ],
+      "title": "ManimAssetScene",
+      "type": "object"
+    },
+    "MapScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "data": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DataRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "map",
+          "default": "map",
+          "title": "Kind",
+          "type": "string"
+        },
+        "projection": {
+          "default": "equalEarth",
+          "enum": [
+            "equalEarth",
+            "mercator",
+            "albersUsa",
+            "naturalEarth1"
+          ],
+          "title": "Projection",
+          "type": "string"
+        },
+        "region": {
+          "minLength": 1,
+          "title": "Region",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "data",
+        "emphasis",
+        "kind",
+        "projection",
+        "region",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "MapScene",
+      "type": "object"
+    },
+    "OutroScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "cta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "outro",
+          "default": "outro",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "text": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "cta",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "text",
+        "variant"
+      ],
+      "title": "OutroScene",
+      "type": "object"
+    },
+    "QuoteScene": {
+      "additionalProperties": false,
+      "properties": {
+        "attribution": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "quote",
+          "default": "quote",
+          "title": "Kind",
+          "type": "string"
+        },
+        "quote": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "source_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attribution",
+        "beat_id",
+        "emphasis",
+        "kind",
+        "quote",
+        "scene_id",
+        "source_id",
+        "variant"
+      ],
+      "title": "QuoteScene",
+      "type": "object"
+    },
+    "RankingScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/DataRef"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "ranking",
+          "default": "ranking",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label_column": {
+          "title": "Label Column",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "top_n": {
+          "default": 5,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Top N",
+          "type": "integer"
+        },
+        "value_column": {
+          "title": "Value Column",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "data",
+        "emphasis",
+        "kind",
+        "label_column",
+        "scene_id",
+        "title",
+        "top_n",
+        "value_column",
+        "variant"
+      ],
+      "title": "RankingScene",
+      "type": "object"
+    },
+    "RelationshipDiagramScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "edges": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DiagramEdge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "relationship_diagram",
+          "default": "relationship_diagram",
+          "title": "Kind",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/DiagramNode"
+          },
+          "maxItems": 12,
+          "minItems": 2,
+          "title": "Nodes",
+          "type": "array"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "edges",
+        "emphasis",
+        "kind",
+        "nodes",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "RelationshipDiagramScene",
+      "type": "object"
+    },
+    "ScreenshotScene": {
+      "additionalProperties": false,
+      "properties": {
+        "alt_text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Alt Text",
+          "type": "string"
+        },
+        "asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "highlight_region": {
+          "anyOf": [
+            {
+              "maxItems": 4,
+              "minItems": 4,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Highlight Region"
+        },
+        "kind": {
+          "const": "screenshot",
+          "default": "screenshot",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "source_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "alt_text",
+        "asset_id",
+        "beat_id",
+        "emphasis",
+        "highlight_region",
+        "kind",
+        "scene_id",
+        "source_id",
+        "variant"
+      ],
+      "title": "ScreenshotScene",
+      "type": "object"
+    },
+    "SectionIntroScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "heading": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "kind": {
+          "const": "section_intro",
+          "default": "section_intro",
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "heading",
+        "kind",
+        "label",
+        "scene_id",
+        "variant"
+      ],
+      "title": "SectionIntroScene",
+      "type": "object"
+    },
+    "SourceCardScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "source_card",
+          "default": "source_card",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "maxItems": 12,
+          "minItems": 1,
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "source_ids",
+        "variant"
+      ],
+      "title": "SourceCardScene",
+      "type": "object"
+    },
+    "TextRef": {
+      "additionalProperties": false,
+      "description": "Display text; if it carries a factual statement it must link to claims.",
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "text"
+      ],
+      "title": "TextRef",
+      "type": "object"
+    },
+    "TimelineEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "date_label": {
+          "maxLength": 40,
+          "title": "Date Label",
+          "type": "string"
+        },
+        "text": {
+          "$ref": "#/$defs/TextRef"
+        }
+      },
+      "required": [
+        "date_label",
+        "text"
+      ],
+      "title": "TimelineEvent",
+      "type": "object"
+    },
+    "TimelineScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/TimelineEvent"
+          },
+          "maxItems": 8,
+          "minItems": 2,
+          "title": "Events",
+          "type": "array"
+        },
+        "kind": {
+          "const": "timeline",
+          "default": "timeline",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "events",
+        "kind",
+        "scene_id",
+        "title",
+        "variant"
+      ],
+      "title": "TimelineScene",
+      "type": "object"
+    },
+    "TitleScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "emphasis": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Emphasis",
+          "type": "array"
+        },
+        "kind": {
+          "const": "title",
+          "default": "title",
+          "title": "Kind",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "subtitle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "title": {
+          "$ref": "#/$defs/TextRef"
+        },
+        "variant": {
+          "default": "default",
+          "maxLength": 64,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "emphasis",
+        "kind",
+        "scene_id",
+        "subtitle",
+        "title",
+        "variant"
+      ],
+      "title": "TitleScene",
+      "type": "object"
+    },
+    "VisualBeat": {
+      "additionalProperties": false,
+      "description": "An editorial beat: 1–3 sentences of narration and the scene that visualizes it.",
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "display_text": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Display Text",
+          "type": "string"
+        },
+        "measured_end_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measured End Ms"
+        },
+        "measured_start_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measured Start Ms"
+        },
+        "order": {
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "planned_duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 200,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Planned Duration Ms"
+        },
+        "spoken_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spoken Text"
+        },
+        "words": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/WordTiming"
+          },
+          "title": "Words",
+          "type": "array"
+        }
+      },
+      "required": [
+        "beat_id",
+        "claim_ids",
+        "display_text",
+        "measured_end_ms",
+        "measured_start_ms",
+        "order",
+        "planned_duration_ms",
+        "spoken_text",
+        "words"
+      ],
+      "title": "VisualBeat",
+      "type": "object"
+    },
+    "WordTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "end_ms": {
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "start_ms": {
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "word": {
+          "title": "Word",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end_ms",
+        "start_ms",
+        "word"
+      ],
+      "title": "WordTiming",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/StoryPlan.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "beats": {
+      "items": {
+        "$ref": "#/$defs/VisualBeat"
+      },
+      "minItems": 1,
+      "title": "Beats",
+      "type": "array"
+    },
+    "deliverable_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Deliverable Id",
+      "type": "string"
+    },
+    "fps": {
+      "enum": [
+        24,
+        25,
+        30,
+        60
+      ],
+      "title": "Fps",
+      "type": "integer"
+    },
+    "handle_ms": {
+      "default": 250,
+      "maximum": 2000,
+      "minimum": 0,
+      "title": "Handle Ms",
+      "type": "integer"
+    },
+    "height": {
+      "minimum": 16,
+      "title": "Height",
+      "type": "integer"
+    },
+    "min_scene_ms": {
+      "default": 1200,
+      "minimum": 200,
+      "title": "Min Scene Ms",
+      "type": "integer"
+    },
+    "plan_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "scenes": {
+      "items": {
+        "discriminator": {
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/TitleScene"
+          },
+          {
+            "$ref": "#/$defs/SectionIntroScene"
+          },
+          {
+            "$ref": "#/$defs/BigNumberScene"
+          },
+          {
+            "$ref": "#/$defs/ChartScene"
+          },
+          {
+            "$ref": "#/$defs/RankingScene"
+          },
+          {
+            "$ref": "#/$defs/ComparisonScene"
+          },
+          {
+            "$ref": "#/$defs/DataTableScene"
+          },
+          {
+            "$ref": "#/$defs/TimelineScene"
+          },
+          {
+            "$ref": "#/$defs/MapScene"
+          },
+          {
+            "$ref": "#/$defs/FlowDiagramScene"
+          },
+          {
+            "$ref": "#/$defs/RelationshipDiagramScene"
+          },
+          {
+            "$ref": "#/$defs/ImageScene"
+          },
+          {
+            "$ref": "#/$defs/ScreenshotScene"
+          },
+          {
+            "$ref": "#/$defs/QuoteScene"
+          },
+          {
+            "$ref": "#/$defs/DefinitionScene"
+          },
+          {
+            "$ref": "#/$defs/BulletSequenceScene"
+          },
+          {
+            "$ref": "#/$defs/CalloutScene"
+          },
+          {
+            "$ref": "#/$defs/SourceCardScene"
+          },
+          {
+            "$ref": "#/$defs/ChapterTransitionScene"
+          },
+          {
+            "$ref": "#/$defs/ManimAssetScene"
+          },
+          {
+            "$ref": "#/$defs/OutroScene"
+          }
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Scenes",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "width": {
+      "minimum": 16,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "beats",
+    "deliverable_id",
+    "fps",
+    "handle_ms",
+    "height",
+    "min_scene_ms",
+    "plan_id",
+    "scenes",
+    "schema_version",
+    "width"
+  ],
+  "title": "StoryPlan",
+  "type": "object"
+}

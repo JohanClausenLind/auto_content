@@ -1,0 +1,2228 @@
+{
+  "$defs": {
+    "ArticleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "canonical_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonical Url"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "inline_citations": {
+          "default": true,
+          "title": "Inline Citations",
+          "type": "boolean"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "seo_keywords": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Seo Keywords",
+          "type": "array"
+        },
+        "target_words": {
+          "default": [
+            800,
+            2000
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Target Words",
+          "type": "array"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "article",
+          "default": "article",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "brand_kit_id",
+        "canonical_url",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "inline_citations",
+        "intent",
+        "quality_gates",
+        "seo_keywords",
+        "target_words",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "ArticleSpec",
+      "type": "object"
+    },
+    "AspectRatio": {
+      "enum": [
+        "16:9",
+        "9:16",
+        "1:1",
+        "4:5"
+      ],
+      "title": "AspectRatio",
+      "type": "string"
+    },
+    "AudioClipSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "target_duration_s": {
+          "default": [
+            30,
+            180
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Target Duration S",
+          "type": "array"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "audio_clip",
+          "default": "audio_clip",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "quality_gates",
+        "target_duration_s",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "AudioClipSpec",
+      "type": "object"
+    },
+    "AudiogramSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "1:1"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "fps": {
+          "default": 30,
+          "enum": [
+            24,
+            25,
+            30,
+            60
+          ],
+          "title": "Fps",
+          "type": "integer"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "target_duration_s": {
+          "default": [
+            15,
+            60
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Target Duration S",
+          "type": "array"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "audiogram",
+          "default": "audiogram",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "fps",
+        "intent",
+        "quality_gates",
+        "target_duration_s",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "AudiogramSpec",
+      "type": "object"
+    },
+    "CarouselSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "4:5"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "card_count": {
+          "default": 6,
+          "maximum": 20,
+          "minimum": 2,
+          "title": "Card Count",
+          "type": "integer"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "carousel",
+          "default": "carousel",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "card_count",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "CarouselSpec",
+      "type": "object"
+    },
+    "CoverSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "16:9"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "candidates": {
+          "default": 3,
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Candidates",
+          "type": "integer"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "cover",
+          "default": "cover",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "candidates",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "CoverSpec",
+      "type": "object"
+    },
+    "DeliverableRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "from_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "From Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "adaptation_of",
+            "companion_to",
+            "cover_for",
+            "excerpt_of"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "to_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "To Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_id",
+        "kind",
+        "to_id"
+      ],
+      "title": "DeliverableRelationship",
+      "type": "object"
+    },
+    "Destination": {
+      "additionalProperties": false,
+      "description": "A connected destination reference plus its current capability profile revision.",
+      "properties": {
+        "capability_revision": {
+          "minLength": 1,
+          "title": "Capability Revision",
+          "type": "string"
+        },
+        "destination_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Destination Id",
+          "type": "string"
+        },
+        "platform": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Platform",
+          "type": "string"
+        }
+      },
+      "required": [
+        "capability_revision",
+        "destination_id",
+        "platform"
+      ],
+      "title": "Destination",
+      "type": "object"
+    },
+    "DestinationBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "destination": {
+          "$ref": "#/$defs/Destination"
+        },
+        "schedule_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schedule At"
+        },
+        "timezone": {
+          "default": "UTC",
+          "title": "Timezone",
+          "type": "string"
+        },
+        "visibility": {
+          "default": "export_only",
+          "enum": [
+            "public",
+            "unlisted",
+            "private",
+            "draft",
+            "export_only"
+          ],
+          "title": "Visibility",
+          "type": "string"
+        }
+      },
+      "required": [
+        "destination",
+        "schedule_at",
+        "timezone",
+        "visibility"
+      ],
+      "title": "DestinationBinding",
+      "type": "object"
+    },
+    "ImageSequenceSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "frame_count": {
+          "default": 8,
+          "maximum": 600,
+          "minimum": 2,
+          "title": "Frame Count",
+          "type": "integer"
+        },
+        "in_between": {
+          "default": "none",
+          "enum": [
+            "none",
+            "interpolate",
+            "controlled_edits"
+          ],
+          "title": "In Between",
+          "type": "string"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "packaging": {
+          "default": [
+            "frames",
+            "contact_sheet"
+          ],
+          "items": {
+            "enum": [
+              "frames",
+              "contact_sheet",
+              "animated_preview",
+              "flipbook_pdf"
+            ],
+            "type": "string"
+          },
+          "title": "Packaging",
+          "type": "array"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "image_sequence",
+          "default": "image_sequence",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "frame_count",
+        "in_between",
+        "intent",
+        "packaging",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "ImageSequenceSpec",
+      "type": "object"
+    },
+    "InfographicSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "4:5"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "infographic",
+          "default": "infographic",
+          "title": "Type",
+          "type": "string"
+        },
+        "variant": {
+          "default": "chart_card",
+          "enum": [
+            "infographic",
+            "chart_card",
+            "quote_card",
+            "data_card"
+          ],
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type",
+        "variant"
+      ],
+      "title": "InfographicSpec",
+      "type": "object"
+    },
+    "InputMode": {
+      "enum": [
+        "brief_first",
+        "owned_media_repurpose",
+        "approved_copy_transform",
+        "structured_data_campaign",
+        "project_revision"
+      ],
+      "title": "InputMode",
+      "type": "string"
+    },
+    "Language": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+          "title": "Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "Language",
+      "type": "object"
+    },
+    "LongVideoSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "16:9"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "captions": {
+          "default": "sidecar",
+          "enum": [
+            "sidecar",
+            "burned_in",
+            "both",
+            "none"
+          ],
+          "title": "Captions",
+          "type": "string"
+        },
+        "chapters": {
+          "default": true,
+          "title": "Chapters",
+          "type": "boolean"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "fps": {
+          "default": 30,
+          "enum": [
+            24,
+            25,
+            30,
+            60
+          ],
+          "title": "Fps",
+          "type": "integer"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "music": {
+          "default": false,
+          "title": "Music",
+          "type": "boolean"
+        },
+        "narration": {
+          "default": true,
+          "title": "Narration",
+          "type": "boolean"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "target_duration_s": {
+          "default": [
+            300,
+            900
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Target Duration S",
+          "type": "array"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "long_video",
+          "default": "long_video",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "captions",
+        "chapters",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "fps",
+        "intent",
+        "music",
+        "narration",
+        "quality_gates",
+        "target_duration_s",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "LongVideoSpec",
+      "type": "object"
+    },
+    "NewsletterSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "provider": {
+          "default": "export",
+          "enum": [
+            "listmonk",
+            "buttondown",
+            "mailchimp",
+            "export"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "subject_candidates": {
+          "default": 3,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Subject Candidates",
+          "type": "integer"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "newsletter",
+          "default": "newsletter",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "provider",
+        "quality_gates",
+        "subject_candidates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "NewsletterSpec",
+      "type": "object"
+    },
+    "ProjectBrief": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Audience",
+          "type": "string"
+        },
+        "brief_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Brief Id",
+          "type": "string"
+        },
+        "input_mode": {
+          "$ref": "#/$defs/InputMode"
+        },
+        "language": {
+          "$ref": "#/$defs/Language",
+          "default": {
+            "code": "en"
+          }
+        },
+        "objective": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "operator_assertions": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Operator Assertions",
+          "type": "array"
+        },
+        "pasted_copy": {
+          "anyOf": [
+            {
+              "maxLength": 50000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pasted Copy"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_urls": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Urls",
+          "type": "array"
+        },
+        "topic": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Topic",
+          "type": "string"
+        },
+        "uploaded_source_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Uploaded Source Ids",
+          "type": "array"
+        },
+        "workspace_id": {
+          "pattern": "^ws_[A-Za-z0-9_-]{8,32}$",
+          "title": "Workspace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "audience",
+        "brief_id",
+        "input_mode",
+        "language",
+        "objective",
+        "operator_assertions",
+        "pasted_copy",
+        "schema_version",
+        "source_urls",
+        "topic",
+        "uploaded_source_ids",
+        "workspace_id"
+      ],
+      "title": "ProjectBrief",
+      "type": "object"
+    },
+    "QualityGateSet": {
+      "additionalProperties": false,
+      "properties": {
+        "contrast_min": {
+          "default": 4.5,
+          "minimum": 1,
+          "title": "Contrast Min",
+          "type": "number"
+        },
+        "max_lines_per_text_block": {
+          "default": 6,
+          "minimum": 1,
+          "title": "Max Lines Per Text Block",
+          "type": "integer"
+        },
+        "min_font_px_1080": {
+          "default": 28,
+          "minimum": 8,
+          "title": "Min Font Px 1080",
+          "type": "integer"
+        },
+        "min_visible_ms": {
+          "default": 1200,
+          "minimum": 0,
+          "title": "Min Visible Ms",
+          "type": "integer"
+        },
+        "require_alt_text": {
+          "default": true,
+          "title": "Require Alt Text",
+          "type": "boolean"
+        },
+        "require_citations": {
+          "default": true,
+          "title": "Require Citations",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "contrast_min",
+        "max_lines_per_text_block",
+        "min_font_px_1080",
+        "min_visible_ms",
+        "require_alt_text",
+        "require_citations"
+      ],
+      "title": "QualityGateSet",
+      "type": "object"
+    },
+    "ShortVideoSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "9:16"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "captions": {
+          "default": "burned_in",
+          "enum": [
+            "sidecar",
+            "burned_in",
+            "both",
+            "none"
+          ],
+          "title": "Captions",
+          "type": "string"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "fps": {
+          "default": 30,
+          "enum": [
+            24,
+            25,
+            30,
+            60
+          ],
+          "title": "Fps",
+          "type": "integer"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "music": {
+          "default": false,
+          "title": "Music",
+          "type": "boolean"
+        },
+        "narration": {
+          "default": true,
+          "title": "Narration",
+          "type": "boolean"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "target_duration_s": {
+          "default": [
+            15,
+            60
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Target Duration S",
+          "type": "array"
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "short_video",
+          "default": "short_video",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "captions",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "fps",
+        "intent",
+        "music",
+        "narration",
+        "quality_gates",
+        "target_duration_s",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "ShortVideoSpec",
+      "type": "object"
+    },
+    "SingleImagePostSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect": {
+          "$ref": "#/$defs/AspectRatio",
+          "default": "1:1"
+        },
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "caption_max_chars": {
+          "default": 300,
+          "minimum": 1,
+          "title": "Caption Max Chars",
+          "type": "integer"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "layout": {
+          "default": "headline",
+          "enum": [
+            "number_led",
+            "chart_led",
+            "headline",
+            "quote",
+            "comparison"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "single_image_post",
+          "default": "single_image_post",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aspect",
+        "brand_kit_id",
+        "caption_max_chars",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "layout",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "SingleImagePostSpec",
+      "type": "object"
+    },
+    "TextPostSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "max_chars": {
+          "default": 300,
+          "minimum": 1,
+          "title": "Max Chars",
+          "type": "integer"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "text_post",
+          "default": "text_post",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "max_chars",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "TextPostSpec",
+      "type": "object"
+    },
+    "ThreadSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "brand_kit_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Brand Kit Id"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "destinations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DestinationBinding"
+          },
+          "title": "Destinations",
+          "type": "array"
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family Id"
+        },
+        "intent": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Intent",
+          "type": "string"
+        },
+        "max_chars_per_post": {
+          "default": 300,
+          "minimum": 1,
+          "title": "Max Chars Per Post",
+          "type": "integer"
+        },
+        "max_posts": {
+          "default": 8,
+          "maximum": 25,
+          "minimum": 2,
+          "title": "Max Posts",
+          "type": "integer"
+        },
+        "quality_gates": {
+          "$ref": "#/$defs/QualityGateSet",
+          "default": {
+            "contrast_min": 4.5,
+            "max_lines_per_text_block": 6,
+            "min_font_px_1080": 28,
+            "min_visible_ms": 1200,
+            "require_alt_text": true,
+            "require_citations": true
+          }
+        },
+        "template_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Id"
+        },
+        "template_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Template Version"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "const": "thread",
+          "default": "thread",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "brand_kit_id",
+        "deliverable_id",
+        "destinations",
+        "family_id",
+        "intent",
+        "max_chars_per_post",
+        "max_posts",
+        "quality_gates",
+        "template_id",
+        "template_version",
+        "title",
+        "type"
+      ],
+      "title": "ThreadSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ContentCampaign.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "brief": {
+      "$ref": "#/$defs/ProjectBrief"
+    },
+    "campaign_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "channel_brain_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Channel Brain Revision"
+    },
+    "deliverables": {
+      "items": {
+        "discriminator": {
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/LongVideoSpec"
+          },
+          {
+            "$ref": "#/$defs/ShortVideoSpec"
+          },
+          {
+            "$ref": "#/$defs/SingleImagePostSpec"
+          },
+          {
+            "$ref": "#/$defs/CarouselSpec"
+          },
+          {
+            "$ref": "#/$defs/InfographicSpec"
+          },
+          {
+            "$ref": "#/$defs/TextPostSpec"
+          },
+          {
+            "$ref": "#/$defs/ThreadSpec"
+          },
+          {
+            "$ref": "#/$defs/ArticleSpec"
+          },
+          {
+            "$ref": "#/$defs/NewsletterSpec"
+          },
+          {
+            "$ref": "#/$defs/AudioClipSpec"
+          },
+          {
+            "$ref": "#/$defs/AudiogramSpec"
+          },
+          {
+            "$ref": "#/$defs/CoverSpec"
+          },
+          {
+            "$ref": "#/$defs/ImageSequenceSpec"
+          }
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Deliverables",
+      "type": "array"
+    },
+    "execution_preset": {
+      "default": "balanced",
+      "title": "Execution Preset",
+      "type": "string"
+    },
+    "relationships": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DeliverableRelationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "workspace_id": {
+      "pattern": "^ws_[A-Za-z0-9_-]{8,32}$",
+      "title": "Workspace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "brief",
+    "campaign_id",
+    "channel_brain_revision",
+    "deliverables",
+    "execution_preset",
+    "relationships",
+    "schema_version",
+    "workspace_id"
+  ],
+  "title": "ContentCampaign",
+  "type": "object"
+}

@@ -1,0 +1,532 @@
+{
+  "$defs": {
+    "ChartLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "$ref": "#/$defs/Rect"
+        },
+        "kind": {
+          "const": "chart",
+          "default": "chart",
+          "title": "Kind",
+          "type": "string"
+        },
+        "layer_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Layer Id",
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "reading_order": {
+          "minimum": 0,
+          "title": "Reading Order",
+          "type": "integer"
+        },
+        "scene_ref": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame",
+        "kind",
+        "layer_id",
+        "locked",
+        "reading_order",
+        "scene_ref"
+      ],
+      "title": "ChartLayer",
+      "type": "object"
+    },
+    "DataRef": {
+      "additionalProperties": false,
+      "description": "Every on-screen figure resolves through a dataset (and optionally a claim) to evidence.",
+      "properties": {
+        "claim_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Column"
+        },
+        "dataset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "row_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row Key"
+        }
+      },
+      "required": [
+        "claim_id",
+        "column",
+        "dataset_id",
+        "row_key"
+      ],
+      "title": "DataRef",
+      "type": "object"
+    },
+    "ImageLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "alt_text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Alt Text",
+          "type": "string"
+        },
+        "asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "crop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Rect"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fit": {
+          "default": "cover",
+          "enum": [
+            "cover",
+            "contain"
+          ],
+          "title": "Fit",
+          "type": "string"
+        },
+        "frame": {
+          "$ref": "#/$defs/Rect"
+        },
+        "kind": {
+          "const": "image",
+          "default": "image",
+          "title": "Kind",
+          "type": "string"
+        },
+        "layer_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Layer Id",
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "reading_order": {
+          "minimum": 0,
+          "title": "Reading Order",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "alt_text",
+        "asset_id",
+        "crop",
+        "fit",
+        "frame",
+        "kind",
+        "layer_id",
+        "locked",
+        "reading_order"
+      ],
+      "title": "ImageLayer",
+      "type": "object"
+    },
+    "NumberLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "integer",
+            "percent",
+            "compact",
+            "currency"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "frame": {
+          "$ref": "#/$defs/Rect"
+        },
+        "kind": {
+          "const": "number",
+          "default": "number",
+          "title": "Kind",
+          "type": "string"
+        },
+        "layer_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Layer Id",
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "reading_order": {
+          "minimum": 0,
+          "title": "Reading Order",
+          "type": "integer"
+        },
+        "unit": {
+          "default": "",
+          "maxLength": 32,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/DataRef"
+        }
+      },
+      "required": [
+        "format",
+        "frame",
+        "kind",
+        "layer_id",
+        "locked",
+        "reading_order",
+        "unit",
+        "value"
+      ],
+      "title": "NumberLayer",
+      "type": "object"
+    },
+    "Rect": {
+      "additionalProperties": false,
+      "description": "Normalized [0,1] rectangle inside the artboard.",
+      "properties": {
+        "h": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "H",
+          "type": "number"
+        },
+        "w": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "W",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "h",
+        "w",
+        "x",
+        "y"
+      ],
+      "title": "Rect",
+      "type": "object"
+    },
+    "ShapeLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "color_role": {
+          "default": "accent",
+          "enum": [
+            "surface",
+            "accent",
+            "muted",
+            "series-1",
+            "series-2",
+            "series-3"
+          ],
+          "title": "Color Role",
+          "type": "string"
+        },
+        "frame": {
+          "$ref": "#/$defs/Rect"
+        },
+        "kind": {
+          "const": "shape",
+          "default": "shape",
+          "title": "Kind",
+          "type": "string"
+        },
+        "layer_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Layer Id",
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "radius_token": {
+          "default": "none",
+          "enum": [
+            "none",
+            "sm",
+            "md",
+            "lg",
+            "full"
+          ],
+          "title": "Radius Token",
+          "type": "string"
+        },
+        "reading_order": {
+          "minimum": 0,
+          "title": "Reading Order",
+          "type": "integer"
+        },
+        "shape": {
+          "default": "rect",
+          "enum": [
+            "rect",
+            "rule",
+            "pill"
+          ],
+          "title": "Shape",
+          "type": "string"
+        }
+      },
+      "required": [
+        "color_role",
+        "frame",
+        "kind",
+        "layer_id",
+        "locked",
+        "radius_token",
+        "reading_order",
+        "shape"
+      ],
+      "title": "ShapeLayer",
+      "type": "object"
+    },
+    "SourceLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "$ref": "#/$defs/Rect"
+        },
+        "kind": {
+          "const": "source",
+          "default": "source",
+          "title": "Kind",
+          "type": "string"
+        },
+        "layer_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Layer Id",
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "reading_order": {
+          "minimum": 0,
+          "title": "Reading Order",
+          "type": "integer"
+        },
+        "source_ids": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "title": "Source Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "frame",
+        "kind",
+        "layer_id",
+        "locked",
+        "reading_order",
+        "source_ids"
+      ],
+      "title": "SourceLayer",
+      "type": "object"
+    },
+    "TextLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "align": {
+          "default": "start",
+          "enum": [
+            "start",
+            "center",
+            "end"
+          ],
+          "title": "Align",
+          "type": "string"
+        },
+        "frame": {
+          "$ref": "#/$defs/Rect"
+        },
+        "kind": {
+          "const": "text",
+          "default": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "layer_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Layer Id",
+          "type": "string"
+        },
+        "locked": {
+          "default": false,
+          "title": "Locked",
+          "type": "boolean"
+        },
+        "max_lines": {
+          "default": 4,
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Max Lines",
+          "type": "integer"
+        },
+        "reading_order": {
+          "minimum": 0,
+          "title": "Reading Order",
+          "type": "integer"
+        },
+        "role": {
+          "default": "body",
+          "enum": [
+            "headline",
+            "subhead",
+            "body",
+            "caption",
+            "label",
+            "number",
+            "source"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "text": {
+          "$ref": "#/$defs/TextRef"
+        }
+      },
+      "required": [
+        "align",
+        "frame",
+        "kind",
+        "layer_id",
+        "locked",
+        "max_lines",
+        "reading_order",
+        "role",
+        "text"
+      ],
+      "title": "TextLayer",
+      "type": "object"
+    },
+    "TextRef": {
+      "additionalProperties": false,
+      "description": "Display text; if it carries a factual statement it must link to claims.",
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "text": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "text"
+      ],
+      "title": "TextRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/LayerSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "propertyName": "kind"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/TextLayer"
+    },
+    {
+      "$ref": "#/$defs/NumberLayer"
+    },
+    {
+      "$ref": "#/$defs/ImageLayer"
+    },
+    {
+      "$ref": "#/$defs/ShapeLayer"
+    },
+    {
+      "$ref": "#/$defs/ChartLayer"
+    },
+    {
+      "$ref": "#/$defs/SourceLayer"
+    }
+  ],
+  "title": "LayerSpec",
+  "type": "object"
+}

@@ -9,7 +9,17 @@ from typing import Any
 from pydantic import BaseModel, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema
 
-from content_factory.schemas import comfyui, editing, hardware, sequences, skills
+from content_factory.schemas import (
+    artboards,
+    comfyui,
+    content,
+    dag,
+    editing,
+    hardware,
+    scenes,
+    sequences,
+    skills,
+)
 from content_factory.schemas.base import canonical_dumps
 
 SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
@@ -30,6 +40,18 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "ModelDescriptor": skills.ModelDescriptor,
     "ExecutionPolicy": skills.ExecutionPolicy,
     "ExecutionDecision": skills.ExecutionDecision,
+    "ProjectBrief": content.ProjectBrief,
+    "ContentCampaign": content.ContentCampaign,
+    "ContentDeliverable": content.ContentDeliverable,
+    "DestinationBinding": content.DestinationBinding,
+    "SceneSpec": scenes.SceneSpec,
+    "StoryPlan": scenes.StoryPlan,
+    "CompiledTimeline": scenes.CompiledTimeline,
+    "ArtboardSpec": artboards.ArtboardSpec,
+    "LayerSpec": artboards.LayerSpec,
+    "DeliverableDAG": dag.DeliverableDAG,
+    "RenderBundle": render.RenderBundle,
+    "DatasetTable": render.DatasetTable,
 }
 
 SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"

@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "Executor": {
+      "enum": [
+        "ai",
+        "deterministic",
+        "human",
+        "hybrid"
+      ],
+      "title": "Executor",
+      "type": "string"
+    },
+    "NotRequired": {
+      "additionalProperties": false,
+      "description": "Typed evidence that a stage was pruned by policy rather than run for symmetry.",
+      "properties": {
+        "deliverable_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deliverable Id"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        }
+      },
+      "required": [
+        "deliverable_id",
+        "reason",
+        "stage"
+      ],
+      "title": "NotRequired",
+      "type": "object"
+    },
+    "Stage": {
+      "enum": [
+        "ingest",
+        "research",
+        "verify_claims",
+        "plan_story",
+        "compile_datasets",
+        "originality_topic",
+        "preflight",
+        "write_copy",
+        "compile_text_package",
+        "compile_artboards",
+        "render_static",
+        "compile_cards",
+        "render_cards",
+        "draft_article",
+        "link_check",
+        "compile_seo",
+        "export_article",
+        "compose_email",
+        "compile_email",
+        "email_preview_qc",
+        "generate_anchor",
+        "lock_generation",
+        "compile_controls",
+        "generate_keyframes",
+        "drift_qc",
+        "interpolate",
+        "package_sequence",
+        "lock_script",
+        "synthesize_narration",
+        "align_words",
+        "compile_captions",
+        "mix_audio",
+        "compile_timeline",
+        "render_scenes",
+        "compose_video",
+        "qc_deliverable",
+        "originality_gate",
+        "compile_destination_packages",
+        "package_qc"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "StageNode": {
+      "additionalProperties": false,
+      "properties": {
+        "deliverable_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deliverable Id"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        },
+        "executor": {
+          "$ref": "#/$defs/Executor",
+          "default": "deterministic"
+        },
+        "node_id": {
+          "pattern": "^[a-z_]+(:[A-Za-z0-9_-]+)?$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "optional": {
+          "default": false,
+          "title": "Optional",
+          "type": "boolean"
+        },
+        "resource_class": {
+          "default": "control",
+          "enum": [
+            "control",
+            "research",
+            "render-cpu",
+            "render-gpu",
+            "inference-llm",
+            "inference-image",
+            "inference-audio",
+            "publish"
+          ],
+          "title": "Resource Class",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/$defs/Stage"
+        }
+      },
+      "required": [
+        "deliverable_id",
+        "depends_on",
+        "executor",
+        "node_id",
+        "optional",
+        "resource_class",
+        "stage"
+      ],
+      "title": "StageNode",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/DeliverableDAG.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaign_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "compiler_version": {
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/StageNode"
+      },
+      "minItems": 1,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "pruned": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NotRequired"
+      },
+      "title": "Pruned",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "campaign_id",
+    "compiler_version",
+    "nodes",
+    "pruned",
+    "schema_version"
+  ],
+  "title": "DeliverableDAG",
+  "type": "object"
+}

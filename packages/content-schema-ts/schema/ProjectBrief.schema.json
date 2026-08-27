@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "InputMode": {
+      "enum": [
+        "brief_first",
+        "owned_media_repurpose",
+        "approved_copy_transform",
+        "structured_data_campaign",
+        "project_revision"
+      ],
+      "title": "InputMode",
+      "type": "string"
+    },
+    "Language": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+          "title": "Code",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "title": "Language",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ProjectBrief.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "audience": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Audience",
+      "type": "string"
+    },
+    "brief_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Brief Id",
+      "type": "string"
+    },
+    "input_mode": {
+      "$ref": "#/$defs/InputMode"
+    },
+    "language": {
+      "$ref": "#/$defs/Language",
+      "default": {
+        "code": "en"
+      }
+    },
+    "objective": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Objective",
+      "type": "string"
+    },
+    "operator_assertions": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Operator Assertions",
+      "type": "array"
+    },
+    "pasted_copy": {
+      "anyOf": [
+        {
+          "maxLength": 50000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pasted Copy"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_urls": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Urls",
+      "type": "array"
+    },
+    "topic": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Topic",
+      "type": "string"
+    },
+    "uploaded_source_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+        "type": "string"
+      },
+      "title": "Uploaded Source Ids",
+      "type": "array"
+    },
+    "workspace_id": {
+      "pattern": "^ws_[A-Za-z0-9_-]{8,32}$",
+      "title": "Workspace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "audience",
+    "brief_id",
+    "input_mode",
+    "language",
+    "objective",
+    "operator_assertions",
+    "pasted_copy",
+    "schema_version",
+    "source_urls",
+    "topic",
+    "uploaded_source_ids",
+    "workspace_id"
+  ],
+  "title": "ProjectBrief",
+  "type": "object"
+}
