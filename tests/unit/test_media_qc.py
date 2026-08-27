@@ -29,7 +29,7 @@ def test_still_qc_flags_blank_and_wrong_size(tmp_path: Path) -> None:
 
 def test_video_qc_on_synthetic_clip(tmp_path: Path) -> None:
     clip = tmp_path / "clip.mp4"
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         [
             "ffmpeg",
             "-v",
@@ -45,7 +45,7 @@ def test_video_qc_on_synthetic_clip(tmp_path: Path) -> None:
             "-movflags",
             "+faststart",
             str(clip),
-        ],  # noqa: S607
+        ],
         check=True,
     )
     r = check_video(clip, width=320, height=240, fps=30, frames=30)
@@ -54,7 +54,7 @@ def test_video_qc_on_synthetic_clip(tmp_path: Path) -> None:
     bad = check_video(clip, width=1920, height=1080, fps=25, frames=30)
     assert {f.check for f in bad.findings} >= {"dimensions", "fps"}
     black = tmp_path / "black.mp4"
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         [
             "ffmpeg",
             "-v",
@@ -68,7 +68,7 @@ def test_video_qc_on_synthetic_clip(tmp_path: Path) -> None:
             "-pix_fmt",
             "yuv420p",
             str(black),
-        ],  # noqa: S607
+        ],
         check=True,
     )
     rb = check_video(black, width=320, height=240, fps=30, frames=30)
