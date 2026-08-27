@@ -32,14 +32,21 @@ def test_measured_timings_drive_cuts_and_word_cues() -> None:
     ends = [4100, 8000, 14000, 16900]
     beats = []
     for b, s, e in zip(plan.beats, starts, ends, strict=True):
-        words = tuple(WordTiming(word=w, start_ms=s + k * 300, end_ms=s + k * 300 + 250) for k, w in enumerate(b.display_text.split()[:4]))
-        beats.append(b.model_copy(update={"measured_start_ms": s, "measured_end_ms": e, "words": words}))
+        words = tuple(
+            WordTiming(word=w, start_ms=s + k * 300, end_ms=s + k * 300 + 250)
+            for k, w in enumerate(b.display_text.split()[:4])
+        )
+        beats.append(
+            b.model_copy(update={"measured_start_ms": s, "measured_end_ms": e, "words": words})
+        )
     plan = plan.model_copy(update={"beats": tuple(beats)})
     tl = compile_timeline(plan, timeline_id="tl_test00000003", narrated=True)
     # Cuts land on the next beat's speech start: 4300 ms → 129 frames, 3900 → 117, 6200 → 186, last 2500+250 → 83.
     assert [s.duration_frames for s in tl.scenes] == [129, 117, 186, 83]
     assert [a.start_frame for a in tl.audio] == [s.start_frame for s in tl.scenes]
-    assert tl.scenes[1].word_cues[0] == (0, "That") and tl.scenes[1].word_cues[1][0] == 9  # 300 ms → 9 frames
+    assert (
+        tl.scenes[1].word_cues[0] == (0, "That") and tl.scenes[1].word_cues[1][0] == 9
+    )  # 300 ms → 9 frames
 
 
 @given(ms=st.integers(min_value=0, max_value=10_000_000), fps=st.sampled_from([24, 25, 30, 60]))

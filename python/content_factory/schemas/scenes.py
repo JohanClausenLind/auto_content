@@ -272,7 +272,7 @@ class WordTiming(SchemaModel):
 
 
 class VisualBeat(SchemaModel):
-    """An editorial beat: 1–3 sentences of narration and the scene that visualizes it."""
+    """An editorial beat: 1-3 sentences of narration and the scene that visualizes it."""
 
     beat_id: OpaqueId
     order: int = Field(ge=0)
@@ -348,7 +348,7 @@ class CompiledTimeline(VersionedModel):
         cursor = 0
         for s in self.scenes:
             if s.start_frame != cursor:
-                msg = f"scene {s.scene_id} starts at {s.start_frame}, expected {cursor} (no gaps/overlaps)"
+                msg = f"scene {s.scene_id} starts at {s.start_frame}, expected {cursor} (no gaps/overlaps)"  # noqa: E501
                 raise ValueError(msg)
             cursor += s.duration_frames
         if cursor != self.total_frames:

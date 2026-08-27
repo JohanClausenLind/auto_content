@@ -60,7 +60,7 @@ class ShapeLayer(LayerBase):
     kind: Literal["shape"] = "shape"
     shape: Literal["rect", "rule", "pill"] = "rect"
     color_role: Literal["surface", "accent", "muted", "series-1", "series-2", "series-3"] = "accent"
-    radius_token: Literal["none", "sm", "md", "lg", "full"] = "none"
+    radius_token: Literal["none", "sm", "md", "lg", "full"] = "none"  # noqa: S105
 
 
 class ChartLayer(LayerBase):

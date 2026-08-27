@@ -69,22 +69,25 @@ class Executor(StrEnum):
     hybrid = "hybrid"
 
 
+ResourceClass = Literal[
+    "control",
+    "research",
+    "render-cpu",
+    "render-gpu",
+    "inference-llm",
+    "inference-image",
+    "inference-audio",
+    "publish",
+]
+
+
 class StageNode(SchemaModel):
     node_id: str = Field(pattern=r"^[a-z_]+(:[A-Za-z0-9_-]+)?$")  # "stage" or "stage:deliverable"
     stage: Stage
     deliverable_id: OpaqueId | None = None  # None = shared
     depends_on: tuple[str, ...] = ()
     executor: Executor = Executor.deterministic
-    resource_class: Literal[
-        "control",
-        "research",
-        "render-cpu",
-        "render-gpu",
-        "inference-llm",
-        "inference-image",
-        "inference-audio",
-        "publish",
-    ] = "control"
+    resource_class: ResourceClass = "control"
     optional: bool = False
 
 

@@ -7,7 +7,13 @@ durations are never frozen before narration exists when narration is requested.
 from __future__ import annotations
 
 from content_factory.schemas.base import OpaqueId
-from content_factory.schemas.scenes import AudioCue, CompiledScene, CompiledTimeline, StoryPlan, VisualBeat
+from content_factory.schemas.scenes import (
+    AudioCue,
+    CompiledScene,
+    CompiledTimeline,
+    StoryPlan,
+    VisualBeat,
+)
 
 COMPILER_VERSION = "0.1.0"
 
@@ -30,7 +36,9 @@ def _beat_span_ms(beat: VisualBeat, *, require_measured: bool) -> tuple[int, int
             raise TimelineError(f"beat {beat.beat_id}: measured end before start")
         return beat.measured_start_ms, beat.measured_end_ms
     if require_measured:
-        raise TimelineError(f"beat {beat.beat_id}: narration requested but no measured timing yet — generate narration first")
+        raise TimelineError(
+            f"beat {beat.beat_id}: narration requested but no measured timing yet — generate narration first"  # noqa: E501
+        )
     if beat.planned_duration_ms is None:
         raise TimelineError(f"beat {beat.beat_id}: no measured or planned duration")
     return -1, beat.planned_duration_ms  # start resolved sequentially
@@ -59,7 +67,11 @@ def compile_timeline(plan: StoryPlan, *, timeline_id: OpaqueId, narrated: bool) 
             else:
                 span_ms = (end_ms - start_ms) + plan.handle_ms
             speech_frames = ms_to_frames(end_ms - start_ms, fps, round_up=True)
-            audio.append(AudioCue(beat_id=beat.beat_id, start_frame=cursor, duration_frames=max(1, speech_frames)))
+            audio.append(
+                AudioCue(
+                    beat_id=beat.beat_id, start_frame=cursor, duration_frames=max(1, speech_frames)
+                )
+            )
         else:
             span_ms = end_ms
         duration = max(min_f, ms_to_frames(span_ms, fps, round_up=True))
@@ -76,7 +88,15 @@ def compile_timeline(plan: StoryPlan, *, timeline_id: OpaqueId, narrated: bool) 
             if narrated and len(scene_list) == 1:
                 for w in beat.words:
                     cues.append((ms_to_frames(w.start_ms - start_ms, fps), w.word))
-            compiled.append(CompiledScene(scene_id=scene.scene_id, beat_id=beat.beat_id, start_frame=cursor, duration_frames=d, word_cues=tuple(cues)))
+            compiled.append(
+                CompiledScene(
+                    scene_id=scene.scene_id,
+                    beat_id=beat.beat_id,
+                    start_frame=cursor,
+                    duration_frames=d,
+                    word_cues=tuple(cues),
+                )
+            )
             cursor += d
     return CompiledTimeline(
         timeline_id=timeline_id,

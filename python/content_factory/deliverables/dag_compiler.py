@@ -6,12 +6,19 @@ everything else is recorded as a typed ``NotRequired`` with its policy reason.
 
 from __future__ import annotations
 
-from content_factory.schemas.content import AUDIO_TYPES, ContentCampaign, TEMPORAL_TYPES
-from content_factory.schemas.dag import DeliverableDAG, Executor, NotRequired, Stage, StageNode
+from content_factory.schemas.content import ContentCampaign
+from content_factory.schemas.dag import (
+    DeliverableDAG,
+    Executor,
+    NotRequired,
+    ResourceClass,
+    Stage,
+    StageNode,
+)
 
 COMPILER_VERSION = "0.1.0"
 
-_SHARED_CHAIN: tuple[tuple[Stage, str], ...] = (
+_SHARED_CHAIN: tuple[tuple[Stage, ResourceClass], ...] = (
     (Stage.ingest, "control"),
     (Stage.research, "research"),
     (Stage.verify_claims, "inference-llm"),
@@ -21,7 +28,7 @@ _SHARED_CHAIN: tuple[tuple[Stage, str], ...] = (
     (Stage.preflight, "control"),
 )
 
-_BRANCHES: dict[str, tuple[tuple[Stage, str, Executor], ...]] = {
+_BRANCHES: dict[str, tuple[tuple[Stage, ResourceClass, Executor], ...]] = {
     "text": (
         (Stage.write_copy, "inference-llm", Executor.ai),
         (Stage.compile_text_package, "control", Executor.deterministic),
@@ -87,7 +94,7 @@ _TYPE_BRANCHES: dict[str, tuple[str, ...]] = {
     "long_video": ("audio", "video"),
 }
 
-_TAIL: tuple[tuple[Stage, str], ...] = (
+_TAIL: tuple[tuple[Stage, ResourceClass], ...] = (
     (Stage.qc_deliverable, "render-cpu"),
     (Stage.originality_gate, "control"),
     (Stage.compile_destination_packages, "control"),
@@ -95,24 +102,45 @@ _TAIL: tuple[tuple[Stage, str], ...] = (
 )
 
 
-def compile_dag(campaign: ContentCampaign, *, human_stages: dict[str, set[Stage]] | None = None) -> DeliverableDAG:
+def compile_dag(
+    campaign: ContentCampaign, *, human_stages: dict[str, set[Stage]] | None = None
+) -> DeliverableDAG:
     """``human_stages`` maps deliverable_id → stages executed by a human (ChannelArchetype)."""
     human_stages = human_stages or {}
     nodes: list[StageNode] = []
     pruned: list[NotRequired] = []
 
     needs_research = any(d.type not in {"image_sequence"} for d in campaign.deliverables) and (
-        bool(campaign.brief.source_urls) or bool(campaign.brief.uploaded_source_ids) or campaign.brief.input_mode != "approved_copy_transform"
+        bool(campaign.brief.source_urls)
+        or bool(campaign.brief.uploaded_source_ids)
+        or campaign.brief.input_mode != "approved_copy_transform"
     )
     prev: str | None = None
     for stage, rc in _SHARED_CHAIN:
         if stage in {Stage.research, Stage.verify_claims} and not needs_research:
-            pruned.append(NotRequired(stage=stage, deliverable_id=None, reason="approved copy transform: operator-approved text needs no new research"))
+            pruned.append(
+                NotRequired(
+                    stage=stage,
+                    deliverable_id=None,
+                    reason="approved copy transform: operator-approved text needs no new research",
+                )
+            )
             continue
-        if stage == Stage.ingest and not (campaign.brief.uploaded_source_ids or campaign.brief.source_urls):
-            pruned.append(NotRequired(stage=stage, deliverable_id=None, reason="no uploads or URLs to ingest"))
+        if stage == Stage.ingest and not (
+            campaign.brief.uploaded_source_ids or campaign.brief.source_urls
+        ):
+            pruned.append(
+                NotRequired(stage=stage, deliverable_id=None, reason="no uploads or URLs to ingest")
+            )
             continue
-        nodes.append(StageNode(node_id=stage.value, stage=stage, depends_on=(prev,) if prev else (), resource_class=rc))  # type: ignore[arg-type]
+        nodes.append(
+            StageNode(
+                node_id=stage.value,
+                stage=stage,
+                depends_on=(prev,) if prev else (),
+                resource_class=rc,
+            )
+        )
         prev = stage.value
     shared_tail = prev or "preflight"
 
@@ -126,28 +154,83 @@ def compile_dag(campaign: ContentCampaign, *, human_stages: dict[str, set[Stage]
                     last = seen[stage]
                     continue
                 if stage == Stage.synthesize_narration and getattr(d, "narration", True) is False:
-                    pruned.append(NotRequired(stage=stage, deliverable_id=d.deliverable_id, reason="deliverable configured without narration"))
+                    pruned.append(
+                        NotRequired(
+                            stage=stage,
+                            deliverable_id=d.deliverable_id,
+                            reason="deliverable configured without narration",
+                        )
+                    )
                     continue
-                if stage == Stage.mix_audio and getattr(d, "music", None) is False and getattr(d, "narration", True) is False:
-                    pruned.append(NotRequired(stage=stage, deliverable_id=d.deliverable_id, reason="no narration and no music"))
+                if (
+                    stage == Stage.mix_audio
+                    and getattr(d, "music", None) is False
+                    and getattr(d, "narration", True) is False
+                ):
+                    pruned.append(
+                        NotRequired(
+                            stage=stage,
+                            deliverable_id=d.deliverable_id,
+                            reason="no narration and no music",
+                        )
+                    )
                     continue
                 if stage == Stage.interpolate and getattr(d, "in_between", "none") == "none":
-                    pruned.append(NotRequired(stage=stage, deliverable_id=d.deliverable_id, reason="sequence requests keyframes only"))
+                    pruned.append(
+                        NotRequired(
+                            stage=stage,
+                            deliverable_id=d.deliverable_id,
+                            reason="sequence requests keyframes only",
+                        )
+                    )
                     continue
                 node_id = f"{stage.value}:{d.deliverable_id}"
-                ex = Executor.human if stage in human_stages.get(d.deliverable_id, set()) else executor
-                nodes.append(StageNode(node_id=node_id, stage=stage, deliverable_id=d.deliverable_id, depends_on=(last,), executor=ex, resource_class=rc))  # type: ignore[arg-type]
+                ex = (
+                    Executor.human
+                    if stage in human_stages.get(d.deliverable_id, set())
+                    else executor
+                )
+                nodes.append(
+                    StageNode(
+                        node_id=node_id,
+                        stage=stage,
+                        deliverable_id=d.deliverable_id,
+                        depends_on=(last,),
+                        executor=ex,
+                        resource_class=rc,
+                    )
+                )
                 seen[stage] = node_id
                 last = node_id
         for stage, rc in _TAIL:
             node_id = f"{stage.value}:{d.deliverable_id}"
             if stage == Stage.compile_destination_packages and not d.destinations:
-                pruned.append(NotRequired(stage=stage, deliverable_id=d.deliverable_id, reason="no destinations selected (create-only)"))
+                pruned.append(
+                    NotRequired(
+                        stage=stage,
+                        deliverable_id=d.deliverable_id,
+                        reason="no destinations selected (create-only)",
+                    )
+                )
                 continue
             if stage == Stage.package_qc and not d.destinations:
-                pruned.append(NotRequired(stage=stage, deliverable_id=d.deliverable_id, reason="no destination packages to check"))
+                pruned.append(
+                    NotRequired(
+                        stage=stage,
+                        deliverable_id=d.deliverable_id,
+                        reason="no destination packages to check",
+                    )
+                )
                 continue
-            nodes.append(StageNode(node_id=node_id, stage=stage, deliverable_id=d.deliverable_id, depends_on=(last,), resource_class=rc))  # type: ignore[arg-type]
+            nodes.append(
+                StageNode(
+                    node_id=node_id,
+                    stage=stage,
+                    deliverable_id=d.deliverable_id,
+                    depends_on=(last,),
+                    resource_class=rc,
+                )
+            )
             last = node_id
 
     # Record explicit non-requirements for the branches no deliverable asked for.
@@ -156,6 +239,17 @@ def compile_dag(campaign: ContentCampaign, *, human_stages: dict[str, set[Stage]
         if branch not in wanted:
             for stage, _, _ in stages:
                 if all(p.stage != stage for p in pruned) and all(n.stage != stage for n in nodes):
-                    pruned.append(NotRequired(stage=stage, deliverable_id=None, reason=f"no selected deliverable needs the {branch} branch"))
+                    pruned.append(
+                        NotRequired(
+                            stage=stage,
+                            deliverable_id=None,
+                            reason=f"no selected deliverable needs the {branch} branch",
+                        )
+                    )
 
-    return DeliverableDAG(campaign_id=campaign.campaign_id, nodes=tuple(nodes), pruned=tuple(pruned), compiler_version=COMPILER_VERSION)
+    return DeliverableDAG(
+        campaign_id=campaign.campaign_id,
+        nodes=tuple(nodes),
+        pruned=tuple(pruned),
+        compiler_version=COMPILER_VERSION,
+    )

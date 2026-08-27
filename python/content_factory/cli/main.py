@@ -186,6 +186,25 @@ def worker(
 
 
 @app.command()
+def demo(quality: str = typer.Option("smoke", help="smoke (one scene) | demo (full clip)")) -> None:
+    """Offline demo: fixture campaign → DAG → single-image PNG + short MP4 → QC → run report."""
+    from content_factory.runners.demo import run_demo
+
+    if quality not in {"smoke", "demo"}:
+        raise typer.BadParameter("quality must be smoke or demo")
+    report = run_demo(quality=quality)
+    for did, d in report["deliverables"].items():
+        status = "[green]PASS[/]" if d["qc_passed"] else "[red]FAIL[/]"
+        console.print(f"{status} {d['type']:<18} {did}  {d['artifact']['key']}")
+        for f in d["qc"]:
+            console.print(f"     - {f['severity']}: {f['check']}: {f['message']}")
+    console.print(
+        f"run report: projects/{report['project_id']}/final/run-report.json ({report['elapsed_s']} s)"  # noqa: E501
+    )
+    raise typer.Exit(code=0 if report["passed"] else 1)
+
+
+@app.command()
 def config(
     show_defaults: bool = typer.Option(False, help="Print the effective configuration as YAML."),
 ) -> None:

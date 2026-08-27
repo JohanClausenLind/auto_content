@@ -62,6 +62,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "T20"]
+"python/content_factory/qc/media.py" = ["S607"]  # ffmpeg/ffprobe resolved from PATH by design
 "scripts/**" = ["T20"]
 
 [tool.pyright]
