@@ -21,11 +21,11 @@ def test_defaults_are_inert() -> None:
 
 
 def test_funnel_refuses_without_mfa() -> None:
-    with pytest.raises(ValueError, match="funnel requires MFA"):
+    with pytest.raises(ValueError, match=r"funnel requires MFA"):
         _settings(
             tailscale={"mode": "funnel"}, auth={"totp_enabled": False, "passkeys_enabled": False}
         )
-    with pytest.raises(ValueError, match="auth.mode=local"):
+    with pytest.raises(ValueError, match=r"auth\.mode=local"):
         _settings(tailscale={"mode": "funnel"}, auth={"mode": "oidc"})
     assert _settings(tailscale={"mode": "funnel"}).tailscale.mode == "funnel"
 

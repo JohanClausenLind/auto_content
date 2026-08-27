@@ -41,7 +41,7 @@ def test_measured_timings_drive_cuts_and_word_cues() -> None:
         )
     plan = plan.model_copy(update={"beats": tuple(beats)})
     tl = compile_timeline(plan, timeline_id="tl_test00000003", narrated=True)
-    # Cuts land on the next beat's speech start: 4300 ms → 129 frames, 3900 → 117, 6200 → 186, last 2500+250 → 83.
+    # Cuts land on the next beat's speech start: 4300 ms → 129 frames, 3900 → 117, 6200 → 186, last 2500+250 → 83.  # noqa: E501
     assert [s.duration_frames for s in tl.scenes] == [129, 117, 186, 83]
     assert [a.start_frame for a in tl.audio] == [s.start_frame for s in tl.scenes]
     assert (
