@@ -10,6 +10,7 @@ dependencies = [
     "alembic==1.19.1",
     "argon2-cffi==25.1.0",
     "authlib==1.7.2",
+    "boto3==1.43.81",
     "cryptography==50.0.1",
     "duckdb==1.5.5",
     "fastapi==0.141.1",
@@ -56,6 +57,9 @@ src = ["python", "tests", "apps"]
 select = ["E", "F", "I", "B", "UP", "N", "S", "ASYNC", "T20", "RUF"]
 ignore = ["S101", "RUF012"]
 
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "typer.Option", "typer.Argument"]
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "T20"]
 "scripts/**" = ["T20"]
@@ -69,6 +73,7 @@ venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "python"]
+pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
@@ -82,6 +87,7 @@ filterwarnings = ["error::DeprecationWarning:content_factory.*"]
 dev = [
     "cbor2==6.1.4",
     "hypothesis==6.165.10",
+    "moto[s3]==5.2.3",
     "pyright==1.1.411",
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",

@@ -1,0 +1,81 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    # No internet-dependent tests, API keys, GPU, or live accounts. Registries only for installs.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: content_factory
+          POSTGRES_PASSWORD: content_factory_dev
+          POSTGRES_DB: content_factory
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U content_factory -d content_factory"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://content_factory:content_factory_dev@127.0.0.1:5432/content_factory
+      DATABASE_URL_TEST: postgresql+psycopg://content_factory:content_factory_dev@127.0.0.1:5432/content_factory
+      CF_SKIP_BROWSER: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg libmagic1
+      - run: uv sync --frozen
+      - run: pnpm install --frozen-lockfile
+      - name: format
+        run: uv run ruff format --check .
+      - name: lint
+        run: uv run ruff check .
+      - name: type checks
+        run: |
+          uv run pyright python tests scripts
+          pnpm -r --if-present run typecheck
+      - name: schema drift
+        run: |
+          uv run python scripts/export_schemas.py --check
+          pnpm --filter @content-factory/content-schema-ts run generate
+          git diff --exit-code -- packages/content-schema-ts/generated fixtures/schema
+      - name: migrations apply cleanly
+        run: uv run alembic upgrade head && uv run alembic check
+      - name: unit
+        run: uv run pytest -q -m "not integration and not gpu and not live"
+      - name: node tests
+        run: pnpm -r --if-present run test
+      - name: integration (postgres)
+        run: uv run pytest -q -m "integration and not temporal"
+
+  smoke-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - name: offline smoke render + ffprobe assertions
+        run: pnpm --filter @content-factory/renderer run render:spike
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smoke-title
+          path: apps/renderer/out/smoke-title.mp4

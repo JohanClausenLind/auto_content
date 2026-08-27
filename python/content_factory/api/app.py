@@ -9,6 +9,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from content_factory import __version__
+from content_factory.api.routes import session as session_routes
+from content_factory.api.routes import workspaces as workspace_routes
 from content_factory.config import Settings, get_settings
 from content_factory.logging import configure_logging, get_logger
 
@@ -34,6 +36,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/v1/openapi.json",
         lifespan=lifespan,
     )
+
+    app.include_router(session_routes.router)
+    app.include_router(workspace_routes.router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> JSONResponse:

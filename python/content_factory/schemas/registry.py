@@ -9,7 +9,7 @@ from typing import Any
 from pydantic import BaseModel, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema
 
-from content_factory.schemas import comfyui, editing, hardware, sequences
+from content_factory.schemas import comfyui, editing, hardware, sequences, skills
 from content_factory.schemas.base import canonical_dumps
 
 SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
@@ -26,6 +26,10 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "ComfyWorkflowPackage": comfyui.ComfyWorkflowPackage,
     "ComfyProvenance": comfyui.ComfyProvenance,
     "HardwareInventory": hardware.HardwareInventory,
+    "SkillManifest": skills.SkillManifest,
+    "ModelDescriptor": skills.ModelDescriptor,
+    "ExecutionPolicy": skills.ExecutionPolicy,
+    "ExecutionDecision": skills.ExecutionDecision,
 }
 
 SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"

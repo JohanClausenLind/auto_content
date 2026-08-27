@@ -45,7 +45,10 @@ docker compose "${profiles[@]}" up -d --wait >/dev/null && ok "postgres 127.0.0.
 
 say "5/7 Contracts and database"
 uv run python scripts/export_schemas.py >/dev/null && pnpm --filter @content-factory/content-schema-ts run generate >/dev/null && ok "schemas exported and TypeScript types generated"
-if [ -f alembic.ini ]; then uv run alembic upgrade head && ok "migrations applied"; else warn "no migrations yet (phase 1)"; fi
+uv run alembic upgrade head >/dev/null && ok "migrations applied (development database)"
+if [ -n "${DATABASE_URL_TEST:-}" ]; then ALEMBIC_DATABASE_URL="$DATABASE_URL_TEST" uv run alembic upgrade head >/dev/null && ok "migrations applied (test database)"; fi
+uv run content-factory bootstrap --owner "${CF_OWNER_USERNAME:-operator}" ${CF_OWNER_PASSWORD:+--password "$CF_OWNER_PASSWORD"} | sed 's/^/  /'
+
 
 say "6/7 Renderer"
 if [ "${CF_SKIP_BROWSER:-0}" != "1" ]; then

@@ -50,7 +50,7 @@ test:
 
 # Integration tests against compose services
 test-integration:
-    uv run pytest -q -m integration
+    set -a; . ./.env; set +a; uv run pytest -q -m integration
 
 # Offline smoke render (Remotion clip + ffprobe assertions)
 render-smoke:
@@ -60,5 +60,22 @@ render-smoke:
 demo quality="smoke":
     uv run content-factory demo --quality {{quality}}
 
+# Run API (127.0.0.1:8000) and web dev server (127.0.0.1:3000) together
 dev:
-    @echo "Phase 1 wires the API + web dev servers here."
+    set -a; . ./.env; set +a; \
+    (uv run content-factory serve --reload & pnpm --filter @content-factory/web run dev & wait)
+
+dev-api:
+    set -a; . ./.env; set +a; uv run content-factory serve --reload
+
+dev-web:
+    pnpm --filter @content-factory/web run dev
+
+# Apply database migrations (dev + test databases)
+migrate:
+    set -a; . ./.env; set +a; uv run alembic upgrade head; \
+    if [ -n "${DATABASE_URL_TEST:-}" ]; then ALEMBIC_DATABASE_URL="$DATABASE_URL_TEST" uv run alembic upgrade head; fi
+
+# Create owner account + demo workspaces (idempotent)
+bootstrap:
+    set -a; . ./.env; set +a; uv run content-factory bootstrap

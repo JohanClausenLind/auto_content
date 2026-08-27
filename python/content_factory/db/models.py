@@ -1,0 +1,192 @@
+"""Phase-1 identity, workspace, preference, and audit tables."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from content_factory.db.base import Base, TimestampMixin, WorkspaceScoped
+
+
+class Role(StrEnum):
+    owner = "owner"
+    editor = "editor"
+    reviewer = "reviewer"
+    viewer = "viewer"
+
+
+class Workspace(TimestampMixin, Base):
+    __tablename__ = "workspaces"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    settings: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+    memberships: Mapped[list[WorkspaceMembership]] = relationship(back_populates="workspace")
+
+
+class Account(TimestampMixin, Base):
+    """Operator or collaborator. ``is_owner`` grants the Owner role everywhere."""
+
+    __tablename__ = "accounts"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_secret: Mapped[str | None] = mapped_column(Text, nullable=True)  # envelope-encrypted
+    totp_last_counter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_owner: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    disabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    memberships: Mapped[list[WorkspaceMembership]] = relationship(back_populates="account")
+    passkeys: Mapped[list[Passkey]] = relationship(back_populates="account")
+
+
+class WorkspaceMembership(TimestampMixin, Base):
+    __tablename__ = "workspace_memberships"
+    __table_args__ = (UniqueConstraint("workspace_id", "account_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    account_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role: Mapped[Role] = mapped_column(Enum(Role, name="role"), nullable=False)
+
+    workspace: Mapped[Workspace] = relationship(back_populates="memberships")
+    account: Mapped[Account] = relationship(back_populates="memberships")
+
+
+class Session(Base):
+    """Opaque bearer stored hashed; the cookie carries the raw token."""
+
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    current_workspace_id: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    step_up_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    mfa_pending: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(400), nullable=True)
+
+
+class Passkey(Base):
+    __tablename__ = "passkeys"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    credential_id: Mapped[bytes] = mapped_column(LargeBinary, unique=True, nullable=False)
+    public_key: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    sign_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    transports: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    label: Mapped[str] = mapped_column(String(100), nullable=False, default="passkey")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    account: Mapped[Account] = relationship(back_populates="passkeys")
+
+
+class RecoveryCode(Base):
+    __tablename__ = "recovery_codes"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AuthChallenge(Base):
+    """Single-use WebAuthn challenges (registration or authentication), server-side only."""
+
+    __tablename__ = "auth_challenges"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    account_id: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=True
+    )
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)  # register | authenticate
+    challenge: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AccountPreference(TimestampMixin, Base):
+    """Per-account key/value preferences (theme, UI state). Not workspace data."""
+
+    __tablename__ = "account_preferences"
+    __table_args__ = (UniqueConstraint("account_id", "key"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    key: Mapped[str] = mapped_column(String(64), nullable=False)
+    value: Mapped[Any] = mapped_column(JSON, nullable=True)
+
+
+class AuditEvent(Base):
+    """Append-only. Never updated or deleted by application code."""
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    workspace_id: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    actor_account_id: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    action: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    target_type: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    target_id: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    detail: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+
+
+class BrandKit(WorkspaceScoped, TimestampMixin, Base):
+    """Minimal brand kit row (phase 1: name + token overrides). Grows in phase 2."""
+
+    __tablename__ = "brand_kits"
+    __table_args__ = (UniqueConstraint("workspace_id", "slug"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    tokens: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)

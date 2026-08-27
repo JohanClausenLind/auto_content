@@ -69,6 +69,113 @@ def serve(
 
 
 @app.command()
+def bootstrap(
+    owner: str = typer.Option("operator", help="Owner account username."),
+    password: str | None = typer.Option(None, help="Owner password (generated if omitted)."),
+    demo: bool = typer.Option(True, help="Seed two demo workspaces."),
+) -> None:
+    """Create the owner account and demo workspaces (idempotent). Prints a generated password once."""  # noqa: E501
+    import asyncio
+
+    from content_factory.db.session import session_scope
+    from content_factory.services.bootstrap import bootstrap as _bootstrap
+
+    async def _run() -> None:
+        async with session_scope() as db:
+            res = await _bootstrap(db, owner_username=owner, password=password, demo=demo)
+        console.print(f"owner account: [bold]{res.owner_username}[/]")
+        if res.generated_password:
+            console.print(f"generated password (shown once): [bold red]{res.generated_password}[/]")
+        console.print(f"workspaces created: {list(res.workspaces) or 'none (already present)'}")
+
+    asyncio.run(_run())
+
+
+@app.command()
+def login(
+    username: str = typer.Option(..., prompt=True),
+    password: str = typer.Option(..., prompt=True, hide_input=True),
+    api_url: str | None = typer.Option(None, help="API base URL (default from context)."),
+) -> None:
+    """Sign in to the API and store the session in ~/.config/content-factory/context.json."""
+    from content_factory.cli.client import ApiClient, ApiError
+    from content_factory.cli.context import CliContext
+
+    ctx = CliContext.load()
+    if api_url:
+        ctx.api_url = api_url
+    client = ApiClient(ctx)
+    try:
+        view = client.login(username, password)
+        if view.get("mfa_required"):
+            code = typer.prompt("One-time code")
+            view = client.totp(code)
+    except ApiError as exc:
+        console.print(f"[red]login failed:[/] {exc.detail}")
+        raise typer.Exit(code=1) from exc
+    ctx.workspace_id = view.get("current_workspace_id")
+    ctx.save()
+    console.print(
+        f"signed in as [bold]{view['account']['username']}[/]; workspaces: {[w['slug'] for w in view['workspaces']]}"  # noqa: E501
+    )
+
+
+@app.command()
+def whoami() -> None:
+    """Show the current session and workspace."""
+    from content_factory.cli.client import ApiClient, ApiError
+    from content_factory.cli.context import CliContext
+
+    ctx = CliContext.load()
+    try:
+        view = ApiClient(ctx).session()
+    except ApiError as exc:
+        console.print(f"[yellow]not signed in[/] ({exc.status}); run `content-factory login`")
+        raise typer.Exit(code=1) from exc
+    console.print_json(json.dumps(view))
+
+
+@app.command()
+def logout() -> None:
+    """Revoke the CLI session."""
+    from content_factory.cli.client import ApiClient, ApiError
+    from content_factory.cli.context import CliContext
+
+    ctx = CliContext.load()
+    try:
+        ApiClient(ctx).logout()
+    except ApiError:
+        pass
+    ctx.save()
+    console.print("signed out")
+
+
+workspaces_app = typer.Typer(help="Workspaces")
+app.add_typer(workspaces_app, name="workspaces")
+
+
+@workspaces_app.command("list")
+def workspaces_list() -> None:
+    from content_factory.cli.client import ApiClient
+    from content_factory.cli.context import CliContext
+
+    for w in ApiClient(CliContext.load()).workspaces():
+        console.print(f"{w['id']}  {w['slug']:<20} {w['name']:<30} {w['role']}")
+
+
+@workspaces_app.command("use")
+def workspaces_use(workspace_id: str) -> None:
+    from content_factory.cli.client import ApiClient
+    from content_factory.cli.context import CliContext
+
+    ctx = CliContext.load()
+    view = ApiClient(ctx).switch_workspace(workspace_id)
+    ctx.workspace_id = view["current_workspace_id"]
+    ctx.save()
+    console.print(f"using workspace {ctx.workspace_id}")
+
+
+@app.command()
 def config(
     show_defaults: bool = typer.Option(False, help="Print the effective configuration as YAML."),
 ) -> None:
