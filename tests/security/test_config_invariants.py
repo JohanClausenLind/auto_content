@@ -31,7 +31,7 @@ def test_funnel_refuses_without_mfa() -> None:
 
 
 def test_binding_all_interfaces_is_refused() -> None:
-    with pytest.raises(ValueError, match="0.0.0.0"):
+    with pytest.raises(ValueError, match=r"0\.0\.0\.0"):
         _settings(bind="0.0.0.0")
 
 
