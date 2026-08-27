@@ -1,0 +1,610 @@
+{
+  "$defs": {
+    "ChangeSceneVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "change_scene_variant",
+          "default": "change_scene_variant",
+          "title": "Op",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "variant": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "scene_id",
+        "variant"
+      ],
+      "title": "ChangeSceneVariant",
+      "type": "object"
+    },
+    "ClarifyingQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_unit_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Candidate Unit Ids",
+          "type": "array"
+        },
+        "kind": {
+          "const": "clarifying_question",
+          "default": "clarifying_question",
+          "title": "Kind",
+          "type": "string"
+        },
+        "question": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_unit_ids",
+        "kind",
+        "question"
+      ],
+      "title": "ClarifyingQuestion",
+      "type": "object"
+    },
+    "CritiqueCategory": {
+      "enum": [
+        "legibility",
+        "layout",
+        "pacing",
+        "tone",
+        "consistency",
+        "chart_semantics",
+        "factual",
+        "rights",
+        "policy",
+        "unclear"
+      ],
+      "title": "CritiqueCategory",
+      "type": "string"
+    },
+    "CritiqueFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/CritiqueCategory"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "summary": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "target_unit_ids": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Target Unit Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "category",
+        "evidence",
+        "severity",
+        "summary",
+        "target_unit_ids"
+      ],
+      "title": "CritiqueFinding",
+      "type": "object"
+    },
+    "DependencyImpact": {
+      "additionalProperties": false,
+      "properties": {
+        "affected_unit_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Affected Unit Ids",
+          "type": "array"
+        },
+        "invalidates": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/InvalidationScope"
+          },
+          "title": "Invalidates",
+          "type": "array"
+        },
+        "reopens_evidence_validation": {
+          "default": false,
+          "title": "Reopens Evidence Validation",
+          "type": "boolean"
+        },
+        "reopens_preflight_gate": {
+          "default": false,
+          "title": "Reopens Preflight Gate",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "affected_unit_ids",
+        "invalidates",
+        "reopens_evidence_validation",
+        "reopens_preflight_gate"
+      ],
+      "title": "DependencyImpact",
+      "type": "object"
+    },
+    "FixPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "estimated_cost_usd": {
+          "minimum": 0,
+          "title": "Estimated Cost Usd",
+          "type": "number"
+        },
+        "estimated_seconds": {
+          "minimum": 0,
+          "title": "Estimated Seconds",
+          "type": "integer"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/CritiqueFinding"
+          },
+          "minItems": 1,
+          "title": "Findings",
+          "type": "array"
+        },
+        "impact": {
+          "$ref": "#/$defs/DependencyImpact"
+        },
+        "kind": {
+          "const": "fix_plan",
+          "default": "fix_plan",
+          "title": "Kind",
+          "type": "string"
+        },
+        "operations": {
+          "items": {
+            "discriminator": {
+              "propertyName": "op"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ReplaceTextRange"
+              },
+              {
+                "$ref": "#/$defs/ReorderCarouselCard"
+              },
+              {
+                "$ref": "#/$defs/ChangeSceneVariant"
+              },
+              {
+                "$ref": "#/$defs/RetimeBeat"
+              },
+              {
+                "$ref": "#/$defs/UpdateChartEncoding"
+              },
+              {
+                "$ref": "#/$defs/SuppressDeliverable"
+              }
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "Operations",
+          "type": "array"
+        },
+        "plain_language": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Plain Language",
+          "type": "string"
+        }
+      },
+      "required": [
+        "estimated_cost_usd",
+        "estimated_seconds",
+        "findings",
+        "impact",
+        "kind",
+        "operations",
+        "plain_language"
+      ],
+      "title": "FixPlan",
+      "type": "object"
+    },
+    "GateRequired": {
+      "additionalProperties": false,
+      "description": "The request would change facts, rights, disclosures, or publish scope: surface the gate.",
+      "properties": {
+        "gate": {
+          "enum": [
+            "evidence",
+            "rights",
+            "disclosure",
+            "publish_scope",
+            "budget",
+            "policy"
+          ],
+          "title": "Gate",
+          "type": "string"
+        },
+        "kind": {
+          "const": "gate_required",
+          "default": "gate_required",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "gate",
+        "kind",
+        "reason"
+      ],
+      "title": "GateRequired",
+      "type": "object"
+    },
+    "InvalidationScope": {
+      "description": "What an operation may invalidate downstream (dependency impact).",
+      "enum": [
+        "layout",
+        "timing",
+        "render",
+        "evidence",
+        "originality",
+        "packaging"
+      ],
+      "title": "InvalidationScope",
+      "type": "string"
+    },
+    "Refusal": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "refusal",
+          "default": "refusal",
+          "title": "Kind",
+          "type": "string"
+        },
+        "policy": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Policy",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "policy",
+        "reason"
+      ],
+      "title": "Refusal",
+      "type": "object"
+    },
+    "ReorderCarouselCard": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "reorder_carousel_card",
+          "default": "reorder_carousel_card",
+          "title": "Op",
+          "type": "string"
+        },
+        "to_index": {
+          "minimum": 0,
+          "title": "To Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "card_id",
+        "deliverable_id",
+        "op",
+        "to_index"
+      ],
+      "title": "ReorderCarouselCard",
+      "type": "object"
+    },
+    "ReplaceTextRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "minimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "expected_before": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Before"
+        },
+        "op": {
+          "const": "replace_text_range",
+          "default": "replace_text_range",
+          "title": "Op",
+          "type": "string"
+        },
+        "replacement": {
+          "title": "Replacement",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "unit_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Unit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end",
+        "expected_before",
+        "op",
+        "replacement",
+        "start",
+        "unit_id"
+      ],
+      "title": "ReplaceTextRange",
+      "type": "object"
+    },
+    "RetimeBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_frames": {
+          "minimum": 1,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "op": {
+          "const": "retime_beat",
+          "default": "retime_beat",
+          "title": "Op",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "duration_frames",
+        "op",
+        "scene_id"
+      ],
+      "title": "RetimeBeat",
+      "type": "object"
+    },
+    "Severity": {
+      "enum": [
+        "blocker",
+        "critical",
+        "major",
+        "minor",
+        "advisory"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "SuppressDeliverable": {
+      "additionalProperties": false,
+      "properties": {
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "suppress_deliverable",
+          "default": "suppress_deliverable",
+          "title": "Op",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "deliverable_id",
+        "op",
+        "reason"
+      ],
+      "title": "SuppressDeliverable",
+      "type": "object"
+    },
+    "UpdateChartEncoding": {
+      "additionalProperties": false,
+      "properties": {
+        "encoding_patch": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Encoding Patch",
+          "type": "object"
+        },
+        "op": {
+          "const": "update_chart_encoding",
+          "default": "update_chart_encoding",
+          "title": "Op",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "encoding_patch",
+        "op",
+        "scene_id"
+      ],
+      "title": "UpdateChartEncoding",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/RevisionRequest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One turn of the Revision Box thread, bound to the exact artifact revision it critiques.",
+  "properties": {
+    "artifact_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "artifact_revision_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Artifact Revision Hash",
+      "type": "string"
+    },
+    "feedback": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Feedback",
+      "type": "string"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "discriminator": {
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/FixPlan"
+            },
+            {
+              "$ref": "#/$defs/ClarifyingQuestion"
+            },
+            {
+              "$ref": "#/$defs/GateRequired"
+            },
+            {
+              "$ref": "#/$defs/Refusal"
+            }
+          ],
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Outcome"
+    },
+    "project_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "request_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "thread_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Thread Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "artifact_revision_hash",
+    "feedback",
+    "outcome",
+    "project_id",
+    "request_id",
+    "schema_version",
+    "thread_id"
+  ],
+  "title": "RevisionRequest",
+  "type": "object"
+}

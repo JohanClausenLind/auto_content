@@ -1,0 +1,27 @@
+{
+  "name": "@content-factory/renderer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic Remotion-based video renderer (RenderBackend: local_process)",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "render:spike": "node ./scripts/render-spike.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.3.0",
+    "@remotion/bundler": "4.0.518",
+    "@remotion/cli": "4.0.518",
+    "@remotion/fonts": "4.0.518",
+    "@remotion/renderer": "4.0.518",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.518",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@content-factory/editor-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Typed, reversible edit operations with deterministic revision hashing",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@content-factory/content-schema-ts": "workspace:*",
+    "@noble/hashes": "2.3.0"
+  }
+}

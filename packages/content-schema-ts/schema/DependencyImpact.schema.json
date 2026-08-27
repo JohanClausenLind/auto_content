@@ -1,0 +1,57 @@
+{
+  "$defs": {
+    "InvalidationScope": {
+      "description": "What an operation may invalidate downstream (dependency impact).",
+      "enum": [
+        "layout",
+        "timing",
+        "render",
+        "evidence",
+        "originality",
+        "packaging"
+      ],
+      "title": "InvalidationScope",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/DependencyImpact.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "affected_unit_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+        "type": "string"
+      },
+      "title": "Affected Unit Ids",
+      "type": "array"
+    },
+    "invalidates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/InvalidationScope"
+      },
+      "title": "Invalidates",
+      "type": "array"
+    },
+    "reopens_evidence_validation": {
+      "default": false,
+      "title": "Reopens Evidence Validation",
+      "type": "boolean"
+    },
+    "reopens_preflight_gate": {
+      "default": false,
+      "title": "Reopens Preflight Gate",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "affected_unit_ids",
+    "invalidates",
+    "reopens_evidence_validation",
+    "reopens_preflight_gate"
+  ],
+  "title": "DependencyImpact",
+  "type": "object"
+}

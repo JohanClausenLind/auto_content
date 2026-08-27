@@ -1,0 +1,380 @@
+{
+  "$defs": {
+    "CapabilityFlag": {
+      "enum": [
+        "text_to_image",
+        "reference_image_edit",
+        "control_pose",
+        "control_layout",
+        "control_depth",
+        "control_edge",
+        "mask_inpaint",
+        "upscale",
+        "deterministic_seed"
+      ],
+      "title": "CapabilityFlag",
+      "type": "string"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "draft",
+        "canary",
+        "active",
+        "deprecated",
+        "quarantined",
+        "revoked"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    },
+    "ParameterBinding": {
+      "additionalProperties": false,
+      "description": "A typed public parameter bound to exactly one node widget. Only these may be injected.",
+      "properties": {
+        "description": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Description",
+          "type": "string"
+        },
+        "input_name": {
+          "minLength": 1,
+          "title": "Input Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "int",
+            "float",
+            "string",
+            "seed",
+            "image_ref"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "node_id": {
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "input_name",
+        "kind",
+        "maximum",
+        "minimum",
+        "name",
+        "node_id"
+      ],
+      "title": "ParameterBinding",
+      "type": "object"
+    },
+    "PinnedNode": {
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commit"
+        },
+        "license": {
+          "minLength": 1,
+          "title": "License",
+          "type": "string"
+        },
+        "registry_name": {
+          "minLength": 1,
+          "title": "Registry Name",
+          "type": "string"
+        },
+        "security_review": {
+          "default": "pending",
+          "enum": [
+            "approved",
+            "pending",
+            "rejected"
+          ],
+          "title": "Security Review",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "commit",
+        "license",
+        "registry_name",
+        "security_review",
+        "version"
+      ],
+      "title": "PinnedNode",
+      "type": "object"
+    },
+    "RequiredModel": {
+      "additionalProperties": false,
+      "properties": {
+        "filename": {
+          "minLength": 1,
+          "title": "Filename",
+          "type": "string"
+        },
+        "license": {
+          "minLength": 1,
+          "title": "License",
+          "type": "string"
+        },
+        "relative_path": {
+          "pattern": "^models/[a-z_]+$",
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "size_bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size Bytes"
+        },
+        "source_url": {
+          "minLength": 1,
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "filename",
+        "license",
+        "relative_path",
+        "sha256",
+        "size_bytes",
+        "source_url"
+      ],
+      "title": "RequiredModel",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ComfyWorkflowPackage.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "api_workflow": {
+      "additionalProperties": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Api Workflow",
+      "type": "object"
+    },
+    "capabilities": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CapabilityFlag"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "comfyui_max_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Comfyui Max Version"
+    },
+    "comfyui_min_version": {
+      "minLength": 1,
+      "title": "Comfyui Min Version",
+      "type": "string"
+    },
+    "custom_nodes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PinnedNode"
+      },
+      "title": "Custom Nodes",
+      "type": "array"
+    },
+    "expected_outputs": {
+      "default": [],
+      "description": "Output node ids",
+      "items": {
+        "type": "string"
+      },
+      "title": "Expected Outputs",
+      "type": "array"
+    },
+    "max_resolution": {
+      "anyOf": [
+        {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Resolution"
+    },
+    "package_id": {
+      "pattern": "^[a-z][a-z0-9.-]{2,63}$",
+      "title": "Package Id",
+      "type": "string"
+    },
+    "parameters": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ParameterBinding"
+      },
+      "title": "Parameters",
+      "type": "array"
+    },
+    "purpose": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Purpose",
+      "type": "string"
+    },
+    "required_models": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RequiredModel"
+      },
+      "title": "Required Models",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "signature": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Signature"
+    },
+    "snapshot_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Snapshot Sha256"
+    },
+    "status": {
+      "$ref": "#/$defs/LifecycleStatus",
+      "default": "draft"
+    },
+    "version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "api_workflow",
+    "capabilities",
+    "comfyui_max_version",
+    "comfyui_min_version",
+    "custom_nodes",
+    "expected_outputs",
+    "max_resolution",
+    "package_id",
+    "parameters",
+    "purpose",
+    "required_models",
+    "schema_version",
+    "signature",
+    "snapshot_sha256",
+    "status",
+    "version"
+  ],
+  "title": "ComfyWorkflowPackage",
+  "type": "object"
+}

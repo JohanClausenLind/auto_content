@@ -1,0 +1,113 @@
+{
+  "$id": "https://content-factory.local/schema/ComfyProvenance.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "backend": {
+      "const": "comfyui",
+      "default": "comfyui",
+      "title": "Backend",
+      "type": "string"
+    },
+    "client_id": {
+      "title": "Client Id",
+      "type": "string"
+    },
+    "comfyui_version": {
+      "title": "Comfyui Version",
+      "type": "string"
+    },
+    "endpoint": {
+      "title": "Endpoint",
+      "type": "string"
+    },
+    "finished_at": {
+      "title": "Finished At",
+      "type": "string"
+    },
+    "injected_workflow_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Injected Workflow Sha256",
+      "type": "string"
+    },
+    "output_files": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Output Files",
+      "type": "array"
+    },
+    "output_sha256": {
+      "items": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "title": "Output Sha256",
+      "type": "array"
+    },
+    "package_id": {
+      "title": "Package Id",
+      "type": "string"
+    },
+    "package_version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Package Version",
+      "type": "string"
+    },
+    "parameters": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "title": "Parameters",
+      "type": "object"
+    },
+    "prompt_id": {
+      "title": "Prompt Id",
+      "type": "string"
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seed"
+    },
+    "started_at": {
+      "title": "Started At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "backend",
+    "client_id",
+    "comfyui_version",
+    "endpoint",
+    "finished_at",
+    "injected_workflow_sha256",
+    "output_files",
+    "output_sha256",
+    "package_id",
+    "package_version",
+    "parameters",
+    "prompt_id",
+    "seed",
+    "started_at"
+  ],
+  "title": "ComfyProvenance",
+  "type": "object"
+}

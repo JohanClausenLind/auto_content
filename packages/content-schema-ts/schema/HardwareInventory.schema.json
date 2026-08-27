@@ -1,0 +1,185 @@
+{
+  "$defs": {
+    "GPUInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "compute_capability": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compute Capability"
+        },
+        "driver_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Driver Version"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "vendor": {
+          "enum": [
+            "nvidia",
+            "amd",
+            "apple",
+            "intel",
+            "unknown"
+          ],
+          "title": "Vendor",
+          "type": "string"
+        },
+        "vram_bytes": {
+          "minimum": 0,
+          "title": "Vram Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "compute_capability",
+        "driver_version",
+        "model",
+        "vendor",
+        "vram_bytes"
+      ],
+      "title": "GPUInfo",
+      "type": "object"
+    },
+    "RuntimeInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "version"
+      ],
+      "title": "RuntimeInfo",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/HardwareInventory.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arch": {
+      "title": "Arch",
+      "type": "string"
+    },
+    "benchmark_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Benchmark Revision"
+    },
+    "cpu_model": {
+      "title": "Cpu Model",
+      "type": "string"
+    },
+    "cpu_threads": {
+      "minimum": 1,
+      "title": "Cpu Threads",
+      "type": "integer"
+    },
+    "disk_free_bytes": {
+      "minimum": 0,
+      "title": "Disk Free Bytes",
+      "type": "integer"
+    },
+    "gpus": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/GPUInfo"
+      },
+      "title": "Gpus",
+      "type": "array"
+    },
+    "os": {
+      "title": "Os",
+      "type": "string"
+    },
+    "os_version": {
+      "title": "Os Version",
+      "type": "string"
+    },
+    "probed_at": {
+      "title": "Probed At",
+      "type": "string"
+    },
+    "ram_bytes": {
+      "minimum": 0,
+      "title": "Ram Bytes",
+      "type": "integer"
+    },
+    "runtimes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RuntimeInfo"
+      },
+      "title": "Runtimes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "arch",
+    "benchmark_revision",
+    "cpu_model",
+    "cpu_threads",
+    "disk_free_bytes",
+    "gpus",
+    "os",
+    "os_version",
+    "probed_at",
+    "ram_bytes",
+    "runtimes"
+  ],
+  "title": "HardwareInventory",
+  "type": "object"
+}

@@ -1,0 +1,321 @@
+{
+  "ComfyWorkflowPackage": [
+    {
+      "api_workflow": {
+        "1": {
+          "class_type": "EmptyImage",
+          "inputs": {
+            "batch_size": 1,
+            "color": 0,
+            "height": 64,
+            "width": 64
+          }
+        },
+        "2": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "cf_fixture",
+            "images": [
+              "1",
+              0
+            ]
+          }
+        }
+      },
+      "capabilities": [
+        "deterministic_seed"
+      ],
+      "comfyui_max_version": null,
+      "comfyui_min_version": "0.3.0",
+      "custom_nodes": [],
+      "expected_outputs": [
+        "2"
+      ],
+      "max_resolution": null,
+      "package_id": "fixture.empty-image",
+      "parameters": [
+        {
+          "description": "",
+          "input_name": "width",
+          "kind": "int",
+          "maximum": 512.0,
+          "minimum": 8.0,
+          "name": "width",
+          "node_id": "1"
+        },
+        {
+          "description": "",
+          "input_name": "height",
+          "kind": "int",
+          "maximum": 512.0,
+          "minimum": 8.0,
+          "name": "height",
+          "node_id": "1"
+        },
+        {
+          "description": "",
+          "input_name": "color",
+          "kind": "int",
+          "maximum": 16777215.0,
+          "minimum": 0.0,
+          "name": "color",
+          "node_id": "1"
+        }
+      ],
+      "purpose": "Core-node-only smoke workflow: EmptyImage -> SaveImage (no models required).",
+      "required_models": [],
+      "schema_version": 1,
+      "signature": null,
+      "snapshot_sha256": null,
+      "status": "canary",
+      "version": "0.1.0"
+    }
+  ],
+  "EditBatch": [
+    {
+      "base_revision_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "batch_id": "eb_fixture000001",
+      "note": null,
+      "operations": [
+        {
+          "end": 5,
+          "expected_before": null,
+          "op": "replace_text_range",
+          "replacement": "Today",
+          "start": 0,
+          "unit_id": "txt_hook0000001"
+        },
+        {
+          "card_id": "card_000000003",
+          "deliverable_id": "dlv_carousel0001",
+          "op": "reorder_carousel_card",
+          "to_index": 0
+        },
+        {
+          "duration_frames": 72,
+          "op": "retime_beat",
+          "scene_id": "scn_intro000001"
+        }
+      ],
+      "project_id": "prj_fixture00001",
+      "provenance": "operator",
+      "schema_version": 1
+    }
+  ],
+  "FixPlan": [
+    {
+      "estimated_cost_usd": 0.0,
+      "estimated_seconds": 20,
+      "findings": [
+        {
+          "category": "legibility",
+          "evidence": null,
+          "severity": "major",
+          "summary": "Chart labels fall below the mobile minimum font size.",
+          "target_unit_ids": [
+            "scn_chart000001"
+          ]
+        }
+      ],
+      "impact": {
+        "affected_unit_ids": [
+          "scn_chart000001"
+        ],
+        "invalidates": [
+          "layout",
+          "render"
+        ],
+        "reopens_evidence_validation": false,
+        "reopens_preflight_gate": false
+      },
+      "kind": "fix_plan",
+      "operations": [
+        {
+          "encoding_patch": {
+            "label_size": "large"
+          },
+          "op": "update_chart_encoding",
+          "scene_id": "scn_chart000001"
+        }
+      ],
+      "plain_language": "Enlarge the chart labels on the chart scene; nothing else changes."
+    }
+  ],
+  "HardwareInventory": [
+    {
+      "arch": "x86_64",
+      "benchmark_revision": null,
+      "cpu_model": "12th Gen Intel(R) Core(TM) i9-12900K",
+      "cpu_threads": 24,
+      "disk_free_bytes": 429496729600,
+      "gpus": [
+        {
+          "compute_capability": null,
+          "driver_version": "595.84",
+          "model": "NVIDIA GeForce RTX 3090",
+          "vendor": "nvidia",
+          "vram_bytes": 25769803776
+        }
+      ],
+      "os": "Linux",
+      "os_version": "7.0.0-29-generic",
+      "probed_at": "2026-08-27T00:00:00Z",
+      "ram_bytes": 33480216576,
+      "runtimes": [
+        {
+          "name": "ffmpeg",
+          "path": null,
+          "version": "6.1.1"
+        }
+      ]
+    }
+  ],
+  "MotionPlan": [
+    {
+      "canvas_height": 576,
+      "canvas_width": 1024,
+      "description": "the hands slide toward each other over 8 frames until they hold",
+      "frame_count": 8,
+      "plan_id": "mp_fixture00001",
+      "schema_version": 1,
+      "sequence_id": "seq_fixture0001",
+      "subjects": [
+        {
+          "keyframes": [
+            {
+              "easing_to_next": "ease_in_out",
+              "frame_index": 0,
+              "layout": {
+                "h": 0.3,
+                "w": 0.5,
+                "x": 0.25,
+                "y": 0.4
+              },
+              "pose": {
+                "bones": [
+                  [
+                    "l_wrist",
+                    "l_index"
+                  ],
+                  [
+                    "r_wrist",
+                    "r_index"
+                  ]
+                ],
+                "joints": {
+                  "l_index": {
+                    "x": 0.33,
+                    "y": 0.5
+                  },
+                  "l_wrist": {
+                    "x": 0.3,
+                    "y": 0.6
+                  },
+                  "r_index": {
+                    "x": 0.67,
+                    "y": 0.5
+                  },
+                  "r_wrist": {
+                    "x": 0.7,
+                    "y": 0.6
+                  }
+                }
+              }
+            },
+            {
+              "easing_to_next": "ease_in_out",
+              "frame_index": 7,
+              "layout": {
+                "h": 0.3,
+                "w": 0.2,
+                "x": 0.4,
+                "y": 0.4
+              },
+              "pose": {
+                "bones": [
+                  [
+                    "l_wrist",
+                    "l_index"
+                  ],
+                  [
+                    "r_wrist",
+                    "r_index"
+                  ]
+                ],
+                "joints": {
+                  "l_index": {
+                    "x": 0.49,
+                    "y": 0.5
+                  },
+                  "l_wrist": {
+                    "x": 0.46,
+                    "y": 0.6
+                  },
+                  "r_index": {
+                    "x": 0.51,
+                    "y": 0.5
+                  },
+                  "r_wrist": {
+                    "x": 0.54,
+                    "y": 0.6
+                  }
+                }
+              }
+            }
+          ],
+          "label": "hands",
+          "subject_id": "subj_hands0001"
+        }
+      ]
+    }
+  ],
+  "RevisionOutcome": [
+    {
+      "estimated_cost_usd": 0.0,
+      "estimated_seconds": 20,
+      "findings": [
+        {
+          "category": "legibility",
+          "evidence": null,
+          "severity": "major",
+          "summary": "Chart labels fall below the mobile minimum font size.",
+          "target_unit_ids": [
+            "scn_chart000001"
+          ]
+        }
+      ],
+      "impact": {
+        "affected_unit_ids": [
+          "scn_chart000001"
+        ],
+        "invalidates": [
+          "layout",
+          "render"
+        ],
+        "reopens_evidence_validation": false,
+        "reopens_preflight_gate": false
+      },
+      "kind": "fix_plan",
+      "operations": [
+        {
+          "encoding_patch": {
+            "label_size": "large"
+          },
+          "op": "update_chart_encoding",
+          "scene_id": "scn_chart000001"
+        }
+      ],
+      "plain_language": "Enlarge the chart labels on the chart scene; nothing else changes."
+    },
+    {
+      "candidate_unit_ids": [],
+      "kind": "clarifying_question",
+      "question": "Which card do you mean — the first or the third?"
+    },
+    {
+      "kind": "refusal",
+      "policy": "citations_required",
+      "reason": "Source citations are required by the research policy and cannot be removed."
+    }
+  ]
+}

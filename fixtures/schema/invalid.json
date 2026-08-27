@@ -1,0 +1,238 @@
+{
+  "FixPlan": [
+    {
+      "estimated_cost_usd": 0.0,
+      "estimated_seconds": 20,
+      "findings": [
+        {
+          "category": "legibility",
+          "evidence": null,
+          "severity": "major",
+          "summary": "Chart labels fall below the mobile minimum font size.",
+          "target_unit_ids": [
+            "scn_chart000001"
+          ]
+        }
+      ],
+      "impact": {
+        "affected_unit_ids": [
+          "scn_chart000001"
+        ],
+        "invalidates": [
+          "layout",
+          "render"
+        ],
+        "reopens_evidence_validation": false,
+        "reopens_preflight_gate": false
+      },
+      "kind": "fix_plan",
+      "operations": [
+        {
+          "encoding_patch": {
+            "label_size": "large"
+          },
+          "op": "delete_everything",
+          "scene_id": "scn_chart000001"
+        }
+      ],
+      "plain_language": "Enlarge the chart labels on the chart scene; nothing else changes."
+    }
+  ],
+  "MotionPlan": [
+    {
+      "canvas_height": 576,
+      "canvas_width": 1024,
+      "description": "the hands slide toward each other over 8 frames until they hold",
+      "frame_count": 8,
+      "plan_id": "mp_fixture00001",
+      "schema_version": 1,
+      "sequence_id": "seq_fixture0001",
+      "subjects": [
+        {
+          "keyframes": [
+            {
+              "easing_to_next": "ease_in_out",
+              "frame_index": 0,
+              "layout": {
+                "h": 0.3,
+                "w": 0.5,
+                "x": 0.25,
+                "y": 0.4
+              },
+              "pose": {
+                "bones": [
+                  [
+                    "l_wrist",
+                    "l_index"
+                  ],
+                  [
+                    "r_wrist",
+                    "r_index"
+                  ]
+                ],
+                "joints": {
+                  "l_index": {
+                    "x": 0.33,
+                    "y": 0.5
+                  },
+                  "l_wrist": {
+                    "x": 0.3,
+                    "y": 0.6
+                  },
+                  "r_index": {
+                    "x": 0.67,
+                    "y": 0.5
+                  },
+                  "r_wrist": {
+                    "x": 0.7,
+                    "y": 0.6
+                  }
+                }
+              }
+            },
+            {
+              "easing_to_next": "ease_in_out",
+              "frame_index": 7,
+              "layout": {
+                "h": 0.3,
+                "w": 0.2,
+                "x": 0.4,
+                "y": 0.4
+              },
+              "pose": {
+                "bones": [
+                  [
+                    "l_wrist",
+                    "l_index"
+                  ],
+                  [
+                    "r_wrist",
+                    "r_index"
+                  ]
+                ],
+                "joints": {
+                  "l_index": {
+                    "x": 0.49,
+                    "y": 0.5
+                  },
+                  "l_wrist": {
+                    "x": 0.46,
+                    "y": 0.6
+                  },
+                  "r_index": {
+                    "x": 0.51,
+                    "y": 0.5
+                  },
+                  "r_wrist": {
+                    "x": 0.54,
+                    "y": 0.6
+                  }
+                }
+              }
+            }
+          ],
+          "label": "hands",
+          "subject_id": "subj_hands0001"
+        }
+      ],
+      "unexpected": 1
+    },
+    {
+      "canvas_height": 576,
+      "canvas_width": 1024,
+      "description": "the hands slide toward each other over 8 frames until they hold",
+      "frame_count": 8,
+      "plan_id": "not an id",
+      "schema_version": 1,
+      "sequence_id": "seq_fixture0001",
+      "subjects": [
+        {
+          "keyframes": [
+            {
+              "easing_to_next": "ease_in_out",
+              "frame_index": 0,
+              "layout": {
+                "h": 0.3,
+                "w": 0.5,
+                "x": 0.25,
+                "y": 0.4
+              },
+              "pose": {
+                "bones": [
+                  [
+                    "l_wrist",
+                    "l_index"
+                  ],
+                  [
+                    "r_wrist",
+                    "r_index"
+                  ]
+                ],
+                "joints": {
+                  "l_index": {
+                    "x": 0.33,
+                    "y": 0.5
+                  },
+                  "l_wrist": {
+                    "x": 0.3,
+                    "y": 0.6
+                  },
+                  "r_index": {
+                    "x": 0.67,
+                    "y": 0.5
+                  },
+                  "r_wrist": {
+                    "x": 0.7,
+                    "y": 0.6
+                  }
+                }
+              }
+            },
+            {
+              "easing_to_next": "ease_in_out",
+              "frame_index": 7,
+              "layout": {
+                "h": 0.3,
+                "w": 0.2,
+                "x": 0.4,
+                "y": 0.4
+              },
+              "pose": {
+                "bones": [
+                  [
+                    "l_wrist",
+                    "l_index"
+                  ],
+                  [
+                    "r_wrist",
+                    "r_index"
+                  ]
+                ],
+                "joints": {
+                  "l_index": {
+                    "x": 0.49,
+                    "y": 0.5
+                  },
+                  "l_wrist": {
+                    "x": 0.46,
+                    "y": 0.6
+                  },
+                  "r_index": {
+                    "x": 0.51,
+                    "y": 0.5
+                  },
+                  "r_wrist": {
+                    "x": 0.54,
+                    "y": 0.6
+                  }
+                }
+              }
+            }
+          ],
+          "label": "hands",
+          "subject_id": "subj_hands0001"
+        }
+      ]
+    }
+  ]
+}

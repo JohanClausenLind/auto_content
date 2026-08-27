@@ -1,0 +1,93 @@
+{
+  "$id": "https://content-factory.local/schema/GenerationLock.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Everything held constant across frames of a sequence; one declared delta per frame.",
+  "properties": {
+    "background_prompt": {
+      "title": "Background Prompt",
+      "type": "string"
+    },
+    "camera_prompt": {
+      "title": "Camera Prompt",
+      "type": "string"
+    },
+    "guidance": {
+      "minimum": 0,
+      "title": "Guidance",
+      "type": "number"
+    },
+    "height": {
+      "minimum": 64,
+      "title": "Height",
+      "type": "integer"
+    },
+    "lighting_prompt": {
+      "title": "Lighting Prompt",
+      "type": "string"
+    },
+    "model_revision": {
+      "minLength": 1,
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "reference_asset_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Reference Asset Sha256",
+      "type": "string"
+    },
+    "sampler": {
+      "minLength": 1,
+      "title": "Sampler",
+      "type": "string"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "steps": {
+      "maximum": 200,
+      "minimum": 1,
+      "title": "Steps",
+      "type": "integer"
+    },
+    "style_prompt": {
+      "title": "Style Prompt",
+      "type": "string"
+    },
+    "width": {
+      "minimum": 64,
+      "title": "Width",
+      "type": "integer"
+    },
+    "workflow_package_id": {
+      "minLength": 1,
+      "title": "Workflow Package Id",
+      "type": "string"
+    },
+    "workflow_package_version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Workflow Package Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "background_prompt",
+    "camera_prompt",
+    "guidance",
+    "height",
+    "lighting_prompt",
+    "model_revision",
+    "reference_asset_sha256",
+    "sampler",
+    "seed",
+    "steps",
+    "style_prompt",
+    "width",
+    "workflow_package_id",
+    "workflow_package_version"
+  ],
+  "title": "GenerationLock",
+  "type": "object"
+}

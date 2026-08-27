@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+.vite/
+storybook-static/
+playwright-report/
+test-results/
+
+# Local runtime state (never commit)
+.env
+.env.*
+!.env.example
+/data/
+/projects/
+/.comfy/
+/.temporal/
+*.log
+.coverage
+coverage/
+htmlcov/
+
+# Generated at build time
+apps/renderer/out/
+apps/renderer/.remotion/
+packages/content-schema-ts/generated/
+packages/sdk-ts/generated/
+
+# Secrets / keys
+*.pem
+*.key
+vault-master.key
+
+# Editors
+.idea/
+.vscode/
+*.swp
+.DS_Store
+apps/renderer/public/fonts/

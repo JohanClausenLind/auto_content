@@ -1,0 +1,11 @@
+# Minimal SearXNG settings: JSON output enabled for the SearchProvider adapter.
+use_default_settings: true
+server:
+  secret_key: "change-me-in-production-this-is-only-for-local-loopback"
+  limiter: false
+  image_proxy: false
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json

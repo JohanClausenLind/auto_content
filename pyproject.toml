@@ -1,0 +1,91 @@
+[project]
+name = "content-factory"
+version = "0.1.0"
+description = "Content Factory — self-hosted, local-first, single-operator content production and distribution platform (control plane)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+authors = [{ name = "Johan Clausen Lind" }]
+dependencies = [
+    "alembic==1.19.1",
+    "argon2-cffi==25.1.0",
+    "authlib==1.7.2",
+    "cryptography==50.0.1",
+    "duckdb==1.5.5",
+    "fastapi==0.141.1",
+    "httpx==0.28.1",
+    "numpy==2.5.2",
+    "pillow==12.3.0",
+    "pint==0.25.3",
+    "polars==1.44.1",
+    "psycopg[binary,pool]==3.3.4",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.15.0",
+    "pyotp==2.10.0",
+    "python-magic==0.4.27",
+    "python-multipart==0.0.32",
+    "pyyaml==6.0.3",
+    "rich==15.0.0",
+    "sqlalchemy[asyncio]==2.0.52",
+    "structlog==26.1.0",
+    "temporalio==1.32.0",
+    "typer==0.27.1",
+    "uvicorn[standard]==0.52.4",
+    "webauthn==3.0.0",
+]
+
+[project.scripts]
+content-factory = "content_factory.cli.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["python/content_factory"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["python", "tests", "apps"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "S", "ASYNC", "T20", "RUF"]
+ignore = ["S101", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "T20"]
+"scripts/**" = ["T20"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+include = ["python", "apps", "tests"]
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "python"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "integration: needs compose services (postgres, temporal)",
+  "gpu: needs a local GPU",
+  "live: needs live provider credentials (never in core CI)",
+]
+filterwarnings = ["error::DeprecationWarning:content_factory.*"]
+
+[dependency-groups]
+dev = [
+    "cbor2==6.1.4",
+    "hypothesis==6.165.10",
+    "pyright==1.1.411",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "respx==0.23.1",
+    "ruff==0.16.5",
+]

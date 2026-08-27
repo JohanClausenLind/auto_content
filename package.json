@@ -1,0 +1,22 @@
+{
+  "name": "content-factory",
+  "private": true,
+  "description": "Content Factory — self-hosted, local-first, single-operator content production and distribution platform (workspace root)",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22 <25",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "test": "pnpm -r --if-present run test",
+    "lint": "pnpm -r --if-present run lint",
+    "typecheck": "pnpm -r --if-present run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

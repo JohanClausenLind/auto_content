@@ -1,0 +1,244 @@
+{
+  "$defs": {
+    "ControlAsset": {
+      "additionalProperties": false,
+      "description": "One compiled per-frame control image plus provenance (deterministic: same plan, same bytes).",
+      "properties": {
+        "compiler_version": {
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+          "title": "Compiler Version",
+          "type": "string"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/ControlKind"
+        },
+        "motion_plan_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Motion Plan Hash",
+          "type": "string"
+        },
+        "png_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Png Sha256",
+          "type": "string"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "compiler_version",
+        "frame_index",
+        "height",
+        "kind",
+        "motion_plan_hash",
+        "png_sha256",
+        "width"
+      ],
+      "title": "ControlAsset",
+      "type": "object"
+    },
+    "ControlKind": {
+      "enum": [
+        "pose_skeleton",
+        "layout_boxes"
+      ],
+      "title": "ControlKind",
+      "type": "string"
+    },
+    "FrameDelta": {
+      "additionalProperties": false,
+      "description": "The single allowed change for a frame, expressed for the edit-instruction compiler.",
+      "properties": {
+        "instruction": {
+          "maxLength": 400,
+          "minLength": 1,
+          "title": "Instruction",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "move_subject",
+            "pose_change",
+            "expression_change",
+            "none"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "subject_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Label"
+        }
+      },
+      "required": [
+        "instruction",
+        "kind",
+        "subject_label"
+      ],
+      "title": "FrameDelta",
+      "type": "object"
+    },
+    "GenerationLock": {
+      "additionalProperties": false,
+      "description": "Everything held constant across frames of a sequence; one declared delta per frame.",
+      "properties": {
+        "background_prompt": {
+          "title": "Background Prompt",
+          "type": "string"
+        },
+        "camera_prompt": {
+          "title": "Camera Prompt",
+          "type": "string"
+        },
+        "guidance": {
+          "minimum": 0,
+          "title": "Guidance",
+          "type": "number"
+        },
+        "height": {
+          "minimum": 64,
+          "title": "Height",
+          "type": "integer"
+        },
+        "lighting_prompt": {
+          "title": "Lighting Prompt",
+          "type": "string"
+        },
+        "model_revision": {
+          "minLength": 1,
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "reference_asset_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Reference Asset Sha256",
+          "type": "string"
+        },
+        "sampler": {
+          "minLength": 1,
+          "title": "Sampler",
+          "type": "string"
+        },
+        "seed": {
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "steps": {
+          "maximum": 200,
+          "minimum": 1,
+          "title": "Steps",
+          "type": "integer"
+        },
+        "style_prompt": {
+          "title": "Style Prompt",
+          "type": "string"
+        },
+        "width": {
+          "minimum": 64,
+          "title": "Width",
+          "type": "integer"
+        },
+        "workflow_package_id": {
+          "minLength": 1,
+          "title": "Workflow Package Id",
+          "type": "string"
+        },
+        "workflow_package_version": {
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+          "title": "Workflow Package Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "background_prompt",
+        "camera_prompt",
+        "guidance",
+        "height",
+        "lighting_prompt",
+        "model_revision",
+        "reference_asset_sha256",
+        "sampler",
+        "seed",
+        "steps",
+        "style_prompt",
+        "width",
+        "workflow_package_id",
+        "workflow_package_version"
+      ],
+      "title": "GenerationLock",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/FrameSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "control": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControlAsset"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "delta": {
+      "$ref": "#/$defs/FrameDelta"
+    },
+    "frame_index": {
+      "minimum": 0,
+      "title": "Frame Index",
+      "type": "integer"
+    },
+    "lock": {
+      "$ref": "#/$defs/GenerationLock"
+    },
+    "reference": {
+      "anyOf": [
+        {
+          "const": "anchor",
+          "type": "string"
+        },
+        {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "type": "string"
+        }
+      ],
+      "default": "anchor",
+      "title": "Reference"
+    }
+  },
+  "required": [
+    "control",
+    "delta",
+    "frame_index",
+    "lock",
+    "reference"
+  ],
+  "title": "FrameSpec",
+  "type": "object"
+}

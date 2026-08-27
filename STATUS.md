@@ -1,0 +1,76 @@
+# STATUS
+
+Last updated: 2026-08-27 (session 1). Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
+RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 24.19.0).
+
+## Phase checklist
+- [x] **Phase 0 — research and spikes** (gate: all spikes pass; no license blocker) — **GREEN**
+      except one manual check that needs the operator (Tailscale operator rights, see below).
+- [ ] Phase 1 — foundation (monorepo ✔, lockfiles ✔, CI, Postgres schema/migrations, local auth +
+      sessions + step-up API, ArtifactStore, web shell + theme engine + command palette, CLI
+      login/context, setup.sh ✔/doctor ✔, skill-registry core, model catalog, execution-policy types,
+      hardware mocks). Gate: clean-checkout `./setup.sh` → running app; doctor green; theme
+      switching persists; two seeded workspaces isolated through the API.
+- [ ] Phase 2 — typed contracts + deterministic static/video rendering
+- [ ] Phase 3 — narration and audio
+- [ ] Phase 4 — research, evidence, claims
+- [ ] Phase 5 — skills, models, routing, ComfyUI
+- [ ] Phase 6 — durable pipeline
+- [ ] Phase 7 — editor, QC, Revision Box, image sequences
+- [ ] Phase 8 — product UX, PWA, assistant, Tailscale
+- [ ] Phase 9 — scheduler and first live publishing
+- [ ] Phase 10 — Tier 2/3 adapters and analytics
+- [ ] Phase 11 — personas, human tasks, engagement, style exploration
+- [ ] Phase 12 — feature wave
+- [ ] Phase 13 — hardening
+
+## Phase 0 results (commands actually run)
+| Spike | Command | Result |
+|---|---|---|
+| Schema → TS → Ajv roundtrip | `uv run python scripts/export_schemas.py && pnpm --filter @content-factory/content-schema-ts run generate && (cd packages/content-schema-ts && pnpm exec vitest run)` | 13 schemas, 41 defs; 10/10 tests pass (Python-emitted valid fixtures accepted, invalid rejected) |
+| EditorCore apply/undo/replay | `cd packages/editor-core && pnpm exec tsc --noEmit && pnpm exec vitest run` | 8/8 pass; undo restores exact prior hash; redo reproduces hash; claim-linked edit reopens evidence |
+| Remotion local-font clip + ffprobe | `cd apps/renderer && node scripts/render-spike.mjs` | `out/smoke-title.mp4`: h264 1920×1080 30 fps yuv420p 90 frames 3.000 s, moov before mdat |
+| Temporal workflow + replay | `uv run pytest tests/integration/test_temporal_spike.py -m integration` then `uv run pytest tests/unit/test_temporal_replay_offline.py` | parks at WAITING_FOR_APPROVAL, signal completes it; history saved to `fixtures/temporal/`; offline replay passes; drifted code rejected |
+| ComfyUI pinned workflow: validate/execute/cancel/import | `uv run pytest tests/unit/test_comfyui_client.py` | 5/5 pass against the fixture server (object_info validation, allowlist, provenance hashes, mid-run cancel, server rejection) |
+| Revision Box complaint → FixPlan | `uv run pytest tests/unit/test_critique_mapping.py` | 7/7 pass (single-unit FixPlan, clarifying question, citation refusal, evidence gate, publish-scope gate) |
+| Deterministic control compiler | `uv run pytest tests/unit/test_control_compile.py` | 3/3 pass; 8 pose + 8 layout frames byte-identical on rerun |
+| Local auth + passkey | `uv run pytest tests/unit/test_auth_primitives.py` | 4/4 pass (Argon2id, TOTP replay refused, passkey register+auth, stale challenge/wrong origin rejected) |
+| Lint/type | `uv run ruff check . && uv run pyright python tests scripts` | 0 findings / 0 errors |
+| Tailscale serve | `tailscale serve --bg --https=8443 8000` | **BLOCKED (needs operator)**: "Use 'sudo tailscale serve …' or `sudo tailscale set --operator=$USER` once". Existing serve on 443 → 127.0.0.1:8002 (another app) was left untouched. API on loopback verified: `curl 127.0.0.1:8000/healthz` → ok |
+
+Unit suite total: `uv run pytest tests/unit -q` → 21 passed. Node: 18 tests pass.
+
+## Decisions (see docs/adr/0001–0010)
+- MinIO archived upstream 2026-04-25 → optional S3 service is SeaweedFS 4.44 (Apache-2.0).
+- HiDream-O1-Image (MIT) confirmed real with native ComfyUI nodes; pose/layout control via
+  Qwen-Image-Edit-2509 until a HiDream-O1 control node exists.
+- Local TTS default Kokoro-82M (token timestamps); Chatterbox documented alternative; audio skills
+  run in isolated envs (torch pin conflicts).
+- comfy-mcp is AGPL → optional separate process, Workflow Lab only.
+- Compose ports avoid 8080/8082/8091 (used by other stacks here): SearXNG 8083, ntfy 8092, S3 8333.
+- Existing comfy-cli workspace `~/git/ComfyUI` (0.33.0, 69 GB models) can be pointed to via
+  `comfyui.workspace`; no second install performed.
+- Repo license: Apache-2.0 (operator can change; nothing depends on it).
+- TypeScript 7.0.2 (native compiler) is what pnpm resolved as current; all packages typecheck.
+
+## Verified-vs-assumed dependency ledger
+Verified from registries/official docs on 2026-08-27 (see docs/research/*.md for URLs): every
+pin in `pyproject.toml`, `package.json`s, `docker-compose.yml` image tags (postgres:18-alpine,
+temporalio/temporal:1.8.2, searxng/searxng:2026.8.22-9fea41204, chrislusf/seaweedfs:4.44,
+binwiederhier/ntfy:v2.27.0). Assumed (to verify when first used): Kokoro CPU/GPU speed, Chatterbox
+VRAM, HiDream-O1 peak VRAM, Bluesky video caps, Telegram channel-admin requirement, MJML Node
+minimum, Buttondown API tier.
+
+## Known limitations / follow-ups
+- Starlette warns that `httpx` TestClient support is deprecated in favour of `httpx2`; evaluate
+  in phase 1 before wiring API tests.
+- Remotion first render downloaded Chrome Headless Shell into `node_modules/.remotion` (needs
+  internet once; setup.sh does it explicitly).
+- `tests/unit/test_temporal_replay_offline.py` skips if the history fixture is absent; the fixture
+  is committed.
+
+## Resume instruction (next smallest task)
+Phase 1: add SQLAlchemy models + Alembic (`workspaces`, `operator_accounts`, `sessions`,
+`passkeys`, `audit_events` with `workspace_id` everywhere), wire `/v1/session` login/logout +
+passkey/TOTP routes onto `content_factory.api.app`, then a two-workspace isolation test.
+Run: `set -a; . ./.env; set +a; just doctor && uv run pytest tests/unit -q`.

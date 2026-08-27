@@ -1,0 +1,86 @@
+# Content Factory local services. Every port binds to loopback only (section 3.3 / 25).
+# Optional services are behind compose profiles: `docker compose --profile search up -d`.
+name: content-factory
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: content_factory
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-content_factory_dev}
+      POSTGRES_DB: content_factory
+    ports:
+      - "127.0.0.1:${CF_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U content_factory -d content_factory"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  temporal:
+    # Temporal CLI image (MIT) running the dev server with a persisted SQLite file and bundled UI.
+    image: temporalio/temporal:1.8.2
+    restart: unless-stopped
+    command:
+      - server
+      - start-dev
+      - --ip=0.0.0.0
+      - --port=7233
+      - --ui-port=8233
+      - --db-filename=/home/temporal/temporal-dev.db
+      - --namespace=content-factory-dev
+    ports:
+      - "127.0.0.1:${CF_TEMPORAL_PORT:-7233}:7233"
+      - "127.0.0.1:${CF_TEMPORAL_UI_PORT:-8233}:8233"
+    volumes:
+      - temporal-data:/home/temporal
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  searxng:
+    profiles: ["search"]
+    image: searxng/searxng:2026.8.22-9fea41204
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://127.0.0.1:${CF_SEARXNG_PORT:-8083}/
+    ports:
+      - "127.0.0.1:${CF_SEARXNG_PORT:-8083}:8080"
+    volumes:
+      - ./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-data:/var/cache/searxng
+
+  seaweedfs:
+    # Optional S3-compatible object store (Apache-2.0). MinIO was archived upstream in 2026-04,
+    # so it is not used. The ArtifactStore interface is the only thing that talks to it.
+    profiles: ["s3"]
+    image: chrislusf/seaweedfs:4.44
+    restart: unless-stopped
+    command: server -s3 -s3.port=8333 -dir=/data -ip=0.0.0.0 -master.port=9333 -volume.port=8080 -filer=true
+    ports:
+      - "127.0.0.1:${CF_S3_PORT:-8333}:8333"
+    volumes:
+      - seaweedfs-data:/data
+
+  ntfy:
+    profiles: ["notify"]
+    image: binwiederhier/ntfy:v2.27.0
+    restart: unless-stopped
+    command: serve --base-url http://127.0.0.1:${CF_NTFY_PORT:-8092} --cache-file /var/cache/ntfy/cache.db
+    ports:
+      - "127.0.0.1:${CF_NTFY_PORT:-8092}:80"
+    volumes:
+      - ntfy-data:/var/cache/ntfy
+
+volumes:
+  postgres-data:
+  temporal-data:
+  searxng-data:
+  seaweedfs-data:
+  ntfy-data:

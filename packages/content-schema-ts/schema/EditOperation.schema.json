@@ -1,0 +1,246 @@
+{
+  "$defs": {
+    "ChangeSceneVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "change_scene_variant",
+          "default": "change_scene_variant",
+          "title": "Op",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "variant": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "scene_id",
+        "variant"
+      ],
+      "title": "ChangeSceneVariant",
+      "type": "object"
+    },
+    "ReorderCarouselCard": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "reorder_carousel_card",
+          "default": "reorder_carousel_card",
+          "title": "Op",
+          "type": "string"
+        },
+        "to_index": {
+          "minimum": 0,
+          "title": "To Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "card_id",
+        "deliverable_id",
+        "op",
+        "to_index"
+      ],
+      "title": "ReorderCarouselCard",
+      "type": "object"
+    },
+    "ReplaceTextRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "minimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "expected_before": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Before"
+        },
+        "op": {
+          "const": "replace_text_range",
+          "default": "replace_text_range",
+          "title": "Op",
+          "type": "string"
+        },
+        "replacement": {
+          "title": "Replacement",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "unit_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Unit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end",
+        "expected_before",
+        "op",
+        "replacement",
+        "start",
+        "unit_id"
+      ],
+      "title": "ReplaceTextRange",
+      "type": "object"
+    },
+    "RetimeBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_frames": {
+          "minimum": 1,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "op": {
+          "const": "retime_beat",
+          "default": "retime_beat",
+          "title": "Op",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "duration_frames",
+        "op",
+        "scene_id"
+      ],
+      "title": "RetimeBeat",
+      "type": "object"
+    },
+    "SuppressDeliverable": {
+      "additionalProperties": false,
+      "properties": {
+        "deliverable_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Deliverable Id",
+          "type": "string"
+        },
+        "op": {
+          "const": "suppress_deliverable",
+          "default": "suppress_deliverable",
+          "title": "Op",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "deliverable_id",
+        "op",
+        "reason"
+      ],
+      "title": "SuppressDeliverable",
+      "type": "object"
+    },
+    "UpdateChartEncoding": {
+      "additionalProperties": false,
+      "properties": {
+        "encoding_patch": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Encoding Patch",
+          "type": "object"
+        },
+        "op": {
+          "const": "update_chart_encoding",
+          "default": "update_chart_encoding",
+          "title": "Op",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "encoding_patch",
+        "op",
+        "scene_id"
+      ],
+      "title": "UpdateChartEncoding",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/EditOperation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "discriminator": {
+    "propertyName": "op"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ReplaceTextRange"
+    },
+    {
+      "$ref": "#/$defs/ReorderCarouselCard"
+    },
+    {
+      "$ref": "#/$defs/ChangeSceneVariant"
+    },
+    {
+      "$ref": "#/$defs/RetimeBeat"
+    },
+    {
+      "$ref": "#/$defs/UpdateChartEncoding"
+    },
+    {
+      "$ref": "#/$defs/SuppressDeliverable"
+    }
+  ],
+  "title": "EditOperation",
+  "type": "object"
+}

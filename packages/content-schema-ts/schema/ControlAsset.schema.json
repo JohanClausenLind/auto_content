@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "ControlKind": {
+      "enum": [
+        "pose_skeleton",
+        "layout_boxes"
+      ],
+      "title": "ControlKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ControlAsset.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One compiled per-frame control image plus provenance (deterministic: same plan, same bytes).",
+  "properties": {
+    "compiler_version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "frame_index": {
+      "minimum": 0,
+      "title": "Frame Index",
+      "type": "integer"
+    },
+    "height": {
+      "minimum": 1,
+      "title": "Height",
+      "type": "integer"
+    },
+    "kind": {
+      "$ref": "#/$defs/ControlKind"
+    },
+    "motion_plan_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Motion Plan Hash",
+      "type": "string"
+    },
+    "png_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Png Sha256",
+      "type": "string"
+    },
+    "width": {
+      "minimum": 1,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "compiler_version",
+    "frame_index",
+    "height",
+    "kind",
+    "motion_plan_hash",
+    "png_sha256",
+    "width"
+  ],
+  "title": "ControlAsset",
+  "type": "object"
+}

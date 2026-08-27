@@ -1,0 +1,6 @@
+packages:
+  - "apps/web"
+  - "apps/renderer"
+  - "packages/*"
+allowBuilds:
+  esbuild: true
