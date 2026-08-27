@@ -1,0 +1,2 @@
+# Webpack bundle cache keyed by a hash of the sources + lockfile (rebuilt on demand)
+.remotion-bundle/

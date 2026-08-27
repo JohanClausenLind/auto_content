@@ -20,6 +20,15 @@ importers:
 
   apps/renderer:
     dependencies:
+      '@content-factory/content-schema-ts':
+        specifier: workspace:*
+        version: link:../../packages/content-schema-ts
+      '@content-factory/content-ui':
+        specifier: workspace:*
+        version: link:../../packages/content-ui
+      '@content-factory/video-ui':
+        specifier: workspace:*
+        version: link:../../packages/video-ui
       '@fontsource/inter':
         specifier: 5.3.0
         version: 5.3.0
@@ -35,6 +44,12 @@ importers:
       '@remotion/renderer':
         specifier: 4.0.518
         version: 4.0.518(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
+      ajv-formats:
+        specifier: 3.0.1
+        version: 3.0.1(ajv@8.20.0)
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -135,6 +150,28 @@ importers:
         specifier: 15.0.4
         version: 15.0.4
 
+  packages/content-ui:
+    dependencies:
+      '@content-factory/content-schema-ts':
+        specifier: workspace:*
+        version: link:../content-schema-ts
+      '@fontsource/inter':
+        specifier: 5.3.0
+        version: 5.3.0
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: 19.2.5
+        version: 19.2.5(@types/react@19.2.18)
+
   packages/editor-core:
     dependencies:
       '@content-factory/content-schema-ts':
@@ -143,6 +180,31 @@ importers:
       '@noble/hashes':
         specifier: 2.3.0
         version: 2.3.0
+
+  packages/video-ui:
+    dependencies:
+      '@content-factory/content-schema-ts':
+        specifier: workspace:*
+        version: link:../content-schema-ts
+      '@content-factory/content-ui':
+        specifier: workspace:*
+        version: link:../content-ui
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+      remotion:
+        specifier: 4.0.518
+        version: 4.0.518(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: 19.2.5
+        version: 19.2.5(@types/react@19.2.18)
 
   packages/web-ui:
     dependencies:
