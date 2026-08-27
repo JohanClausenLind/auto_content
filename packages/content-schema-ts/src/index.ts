@@ -11,6 +11,7 @@ import CompiledTimeline from "../schema/CompiledTimeline.schema.json";
 import ContentCampaign from "../schema/ContentCampaign.schema.json";
 import ContentDeliverable from "../schema/ContentDeliverable.schema.json";
 import ControlAsset from "../schema/ControlAsset.schema.json";
+import DatasetTable from "../schema/DatasetTable.schema.json";
 import DeliverableDAG from "../schema/DeliverableDAG.schema.json";
 import DependencyImpact from "../schema/DependencyImpact.schema.json";
 import DestinationBinding from "../schema/DestinationBinding.schema.json";
@@ -26,6 +27,7 @@ import LayerSpec from "../schema/LayerSpec.schema.json";
 import ModelDescriptor from "../schema/ModelDescriptor.schema.json";
 import MotionPlan from "../schema/MotionPlan.schema.json";
 import ProjectBrief from "../schema/ProjectBrief.schema.json";
+import RenderBundle from "../schema/RenderBundle.schema.json";
 import RevisionOutcome from "../schema/RevisionOutcome.schema.json";
 import RevisionRequest from "../schema/RevisionRequest.schema.json";
 import SceneSpec from "../schema/SceneSpec.schema.json";
@@ -43,6 +45,7 @@ const SCHEMAS: Record<SchemaName, object> = {
   ContentCampaign,
   ContentDeliverable,
   ControlAsset,
+  DatasetTable,
   DeliverableDAG,
   DependencyImpact,
   DestinationBinding,
@@ -58,6 +61,7 @@ const SCHEMAS: Record<SchemaName, object> = {
   ModelDescriptor,
   MotionPlan,
   ProjectBrief,
+  RenderBundle,
   RevisionOutcome,
   RevisionRequest,
   SceneSpec,

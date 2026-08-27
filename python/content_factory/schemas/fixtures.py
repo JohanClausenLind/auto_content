@@ -13,6 +13,7 @@ from content_factory.schemas import (
     dag,
     editing,
     hardware,
+    render,
     scenes,
     sequences,
 )

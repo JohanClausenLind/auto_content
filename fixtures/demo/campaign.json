@@ -1,0 +1,106 @@
+{
+ "brief": {
+  "audience": "Curious general public",
+  "brief_id": "brf_demo00000001",
+  "input_mode": "brief_first",
+  "language": {
+   "code": "en"
+  },
+  "objective": "Explain the share and the trend in plain language.",
+  "operator_assertions": [
+   "We are not selling anything."
+  ],
+  "pasted_copy": null,
+  "schema_version": 1,
+  "source_urls": [],
+  "topic": "How much of Sweden's electricity came from wind in 2025?",
+  "uploaded_source_ids": [],
+  "workspace_id": "ws_demo00000001"
+ },
+ "campaign_id": "cmp_demo00000001",
+ "channel_brain_revision": null,
+ "deliverables": [
+  {
+   "aspect": "1:1",
+   "brand_kit_id": null,
+   "caption_max_chars": 300,
+   "deliverable_id": "dlv_image0000001",
+   "destinations": [
+    {
+     "destination": {
+      "capability_revision": "2026-08-27",
+      "destination_id": "dst_export000001",
+      "platform": "export"
+     },
+     "schedule_at": null,
+     "timezone": "UTC",
+     "visibility": "export_only"
+    }
+   ],
+   "family_id": null,
+   "intent": "",
+   "layout": "number_led",
+   "quality_gates": {
+    "contrast_min": 4.5,
+    "max_lines_per_text_block": 6,
+    "min_font_px_1080": 28,
+    "min_visible_ms": 1200,
+    "require_alt_text": true,
+    "require_citations": true
+   },
+   "template_id": null,
+   "template_version": null,
+   "title": "Wind share card",
+   "type": "single_image_post"
+  },
+  {
+   "aspect": "9:16",
+   "brand_kit_id": null,
+   "captions": "burned_in",
+   "deliverable_id": "dlv_short0000001",
+   "destinations": [
+    {
+     "destination": {
+      "capability_revision": "2026-08-27",
+      "destination_id": "dst_export000001",
+      "platform": "export"
+     },
+     "schedule_at": null,
+     "timezone": "UTC",
+     "visibility": "export_only"
+    }
+   ],
+   "family_id": null,
+   "fps": 30,
+   "intent": "",
+   "music": false,
+   "narration": true,
+   "quality_gates": {
+    "contrast_min": 4.5,
+    "max_lines_per_text_block": 6,
+    "min_font_px_1080": 28,
+    "min_visible_ms": 1200,
+    "require_alt_text": true,
+    "require_citations": true
+   },
+   "target_duration_s": [
+    15,
+    30
+   ],
+   "template_id": null,
+   "template_version": null,
+   "title": "Wind share in 20 seconds",
+   "type": "short_video"
+  }
+ ],
+ "execution_preset": "balanced",
+ "relationships": [
+  {
+   "from_id": "dlv_short0000001",
+   "kind": "companion_to",
+   "to_id": "dlv_image0000001"
+  }
+ ],
+ "schema_version": 1,
+ "workspace_id": "ws_demo00000001"
+}

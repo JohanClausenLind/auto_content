@@ -275,6 +275,35 @@
       "workspace_id": "ws_demo00000001"
     }
   ],
+  "DatasetTable": [
+    {
+      "classification": "SOURCE_DATA",
+      "columns": [
+        "year",
+        "share_pct"
+      ],
+      "dataset_id": "ds_wind00000001",
+      "label": "Wind share of Swedish electricity generation",
+      "rows": [
+        {
+          "share_pct": 11,
+          "year": "2018"
+        },
+        {
+          "share_pct": 17,
+          "year": "2021"
+        },
+        {
+          "share_pct": 21,
+          "year": "2025"
+        }
+      ],
+      "source_ids": [
+        "src_energimynd01"
+      ],
+      "unit": "%"
+    }
+  ],
   "EditBatch": [
     {
       "base_revision_hash": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -471,6 +500,403 @@
           "subject_id": "subj_hands0001"
         }
       ]
+    }
+  ],
+  "RenderBundle": [
+    {
+      "artboard": {
+        "alt_text": "Data card: about a fifth of Sweden's electricity came from wind in 2025.",
+        "artboard_id": "art_demo00000001",
+        "background_role": "paper",
+        "brand_kit_id": null,
+        "deliverable_id": "dlv_image0000001",
+        "height": 1080,
+        "layers": [
+          {
+            "align": "start",
+            "frame": {
+              "h": 0.08,
+              "w": 0.84,
+              "x": 0.08,
+              "y": 0.1
+            },
+            "kind": "text",
+            "layer_id": "lay_label0000001",
+            "locked": false,
+            "max_lines": 4,
+            "reading_order": 0,
+            "role": "label",
+            "text": {
+              "claim_ids": [],
+              "text": "SWEDEN · ELECTRICITY · 2025"
+            }
+          },
+          {
+            "format": "integer",
+            "frame": {
+              "h": 0.3,
+              "w": 0.84,
+              "x": 0.08,
+              "y": 0.26
+            },
+            "kind": "number",
+            "layer_id": "lay_number000001",
+            "locked": false,
+            "reading_order": 1,
+            "unit": "%",
+            "value": {
+              "claim_id": "clm_wind0000001",
+              "column": "share_pct",
+              "dataset_id": "ds_wind00000001",
+              "row_key": "2025"
+            }
+          },
+          {
+            "align": "start",
+            "frame": {
+              "h": 0.2,
+              "w": 0.84,
+              "x": 0.08,
+              "y": 0.58
+            },
+            "kind": "text",
+            "layer_id": "lay_headline0001",
+            "locked": false,
+            "max_lines": 2,
+            "reading_order": 2,
+            "role": "headline",
+            "text": {
+              "claim_ids": [
+                "clm_wind0000001"
+              ],
+              "text": "of electricity came from wind"
+            }
+          },
+          {
+            "frame": {
+              "h": 0.06,
+              "w": 0.84,
+              "x": 0.08,
+              "y": 0.86
+            },
+            "kind": "source",
+            "layer_id": "lay_source000001",
+            "locked": false,
+            "reading_order": 3,
+            "source_ids": [
+              "src_energimynd01"
+            ]
+          }
+        ],
+        "safe_area": {
+          "h": 0.88,
+          "w": 0.88,
+          "x": 0.06,
+          "y": 0.06
+        },
+        "schema_version": 1,
+        "theme": "editorial",
+        "width": 1080
+      },
+      "assets": {},
+      "brand": {
+        "accent": null,
+        "font_family": "Inter",
+        "ink": null,
+        "logo_asset_id": null,
+        "paper": null
+      },
+      "bundle_id": "bnd_art000000001",
+      "datasets": {
+        "ds_wind00000001": {
+          "classification": "SOURCE_DATA",
+          "columns": [
+            "year",
+            "share_pct"
+          ],
+          "dataset_id": "ds_wind00000001",
+          "label": "Wind share of Swedish electricity generation",
+          "rows": [
+            {
+              "share_pct": 11,
+              "year": "2018"
+            },
+            {
+              "share_pct": 17,
+              "year": "2021"
+            },
+            {
+              "share_pct": 21,
+              "year": "2025"
+            }
+          ],
+          "source_ids": [
+            "src_energimynd01"
+          ],
+          "unit": "%"
+        }
+      },
+      "kind": "artboard",
+      "plan": null,
+      "schema_version": 1,
+      "seed": "content-factory",
+      "sources": {
+        "src_energimynd01": {
+          "accessed": "2026-08-27",
+          "publisher": "Energimyndigheten",
+          "source_id": "src_energimynd01",
+          "title": "Energy in Sweden 2026 (fixture)",
+          "url": "https://www.energimyndigheten.se/"
+        },
+        "src_svk00000001": {
+          "accessed": "2026-08-27",
+          "publisher": "Svenska kraftnät",
+          "source_id": "src_svk00000001",
+          "title": "Grid statistics (fixture)",
+          "url": "https://www.svk.se/"
+        }
+      },
+      "timeline": null
+    },
+    {
+      "artboard": null,
+      "assets": {},
+      "brand": {
+        "accent": null,
+        "font_family": "Inter",
+        "ink": null,
+        "logo_asset_id": null,
+        "paper": null
+      },
+      "bundle_id": "bnd_tl0000000001",
+      "datasets": {
+        "ds_wind00000001": {
+          "classification": "SOURCE_DATA",
+          "columns": [
+            "year",
+            "share_pct"
+          ],
+          "dataset_id": "ds_wind00000001",
+          "label": "Wind share of Swedish electricity generation",
+          "rows": [
+            {
+              "share_pct": 11,
+              "year": "2018"
+            },
+            {
+              "share_pct": 17,
+              "year": "2021"
+            },
+            {
+              "share_pct": 21,
+              "year": "2025"
+            }
+          ],
+          "source_ids": [
+            "src_energimynd01"
+          ],
+          "unit": "%"
+        }
+      },
+      "kind": "timeline",
+      "plan": {
+        "beats": [
+          {
+            "beat_id": "beat_000000001",
+            "claim_ids": [
+              "clm_wind0000001"
+            ],
+            "display_text": "In 2025, wind supplied about a fifth of Sweden's electricity.",
+            "measured_end_ms": null,
+            "measured_start_ms": null,
+            "order": 0,
+            "planned_duration_ms": 4200,
+            "spoken_text": null,
+            "words": []
+          },
+          {
+            "beat_id": "beat_000000002",
+            "claim_ids": [
+              "clm_wind0000002"
+            ],
+            "display_text": "That share has roughly doubled since 2018.",
+            "measured_end_ms": null,
+            "measured_start_ms": null,
+            "order": 1,
+            "planned_duration_ms": 3800,
+            "spoken_text": null,
+            "words": []
+          },
+          {
+            "beat_id": "beat_000000003",
+            "claim_ids": [],
+            "display_text": "Three things drove it: new turbines, better siting, and cheaper finance.",
+            "measured_end_ms": null,
+            "measured_start_ms": null,
+            "order": 2,
+            "planned_duration_ms": 6000,
+            "spoken_text": null,
+            "words": []
+          },
+          {
+            "beat_id": "beat_000000004",
+            "claim_ids": [],
+            "display_text": "Sources: Energimyndigheten, Svenska kraftnät.",
+            "measured_end_ms": null,
+            "measured_start_ms": null,
+            "order": 3,
+            "planned_duration_ms": 3000,
+            "spoken_text": null,
+            "words": []
+          }
+        ],
+        "deliverable_id": "dlv_short0000001",
+        "fps": 30,
+        "handle_ms": 250,
+        "height": 1920,
+        "min_scene_ms": 1200,
+        "plan_id": "plan_demo0000001",
+        "scenes": [
+          {
+            "beat_id": "beat_000000001",
+            "emphasis": [],
+            "kind": "title",
+            "scene_id": "scn_title000001",
+            "subtitle": {
+              "claim_ids": [],
+              "text": "Electricity generation"
+            },
+            "title": {
+              "claim_ids": [],
+              "text": "Sweden's wind share, 2025"
+            },
+            "variant": "default"
+          },
+          {
+            "beat_id": "beat_000000002",
+            "context": null,
+            "emphasis": [],
+            "kind": "big_number",
+            "label": {
+              "claim_ids": [
+                "clm_wind0000001"
+              ],
+              "text": "of electricity from wind"
+            },
+            "scene_id": "scn_number00001",
+            "unit": "%",
+            "value": {
+              "claim_id": "clm_wind0000001",
+              "column": "share_pct",
+              "dataset_id": "ds_wind00000001",
+              "row_key": "2025"
+            },
+            "variant": "default"
+          },
+          {
+            "beat_id": "beat_000000003",
+            "bullets": [
+              {
+                "claim_ids": [],
+                "text": "New turbines"
+              },
+              {
+                "claim_ids": [],
+                "text": "Better siting"
+              },
+              {
+                "claim_ids": [],
+                "text": "Cheaper finance"
+              }
+            ],
+            "emphasis": [],
+            "kind": "bullet_sequence",
+            "scene_id": "scn_bullets0001",
+            "title": {
+              "claim_ids": [],
+              "text": "What drove it"
+            },
+            "variant": "default"
+          },
+          {
+            "beat_id": "beat_000000004",
+            "emphasis": [],
+            "kind": "source_card",
+            "scene_id": "scn_sources0001",
+            "source_ids": [
+              "src_energimynd01",
+              "src_svk00000001"
+            ],
+            "variant": "default"
+          }
+        ],
+        "schema_version": 1,
+        "width": 1080
+      },
+      "schema_version": 1,
+      "seed": "content-factory",
+      "sources": {
+        "src_energimynd01": {
+          "accessed": "2026-08-27",
+          "publisher": "Energimyndigheten",
+          "source_id": "src_energimynd01",
+          "title": "Energy in Sweden 2026 (fixture)",
+          "url": "https://www.energimyndigheten.se/"
+        },
+        "src_svk00000001": {
+          "accessed": "2026-08-27",
+          "publisher": "Svenska kraftnät",
+          "source_id": "src_svk00000001",
+          "title": "Grid statistics (fixture)",
+          "url": "https://www.svk.se/"
+        }
+      },
+      "timeline": {
+        "audio": [],
+        "compiler_version": "0.1.0",
+        "fps": 30,
+        "height": 1920,
+        "plan_hash": "52ea1cb2d959c4c61e5ca54a38d0c87c4cb3dd089f501aad2ba727606c61c9b5",
+        "plan_id": "plan_demo0000001",
+        "scenes": [
+          {
+            "beat_id": "beat_000000001",
+            "duration_frames": 126,
+            "scene_id": "scn_title000001",
+            "start_frame": 0,
+            "transition_in_frames": 0,
+            "word_cues": []
+          },
+          {
+            "beat_id": "beat_000000002",
+            "duration_frames": 114,
+            "scene_id": "scn_number00001",
+            "start_frame": 126,
+            "transition_in_frames": 0,
+            "word_cues": []
+          },
+          {
+            "beat_id": "beat_000000003",
+            "duration_frames": 180,
+            "scene_id": "scn_bullets0001",
+            "start_frame": 240,
+            "transition_in_frames": 0,
+            "word_cues": []
+          },
+          {
+            "beat_id": "beat_000000004",
+            "duration_frames": 98,
+            "scene_id": "scn_sources0001",
+            "start_frame": 420,
+            "transition_in_frames": 0,
+            "word_cues": []
+          }
+        ],
+        "schema_version": 1,
+        "timeline_id": "tl_demo000000001",
+        "total_frames": 518,
+        "width": 1080
+      }
     }
   ],
   "RevisionOutcome": [

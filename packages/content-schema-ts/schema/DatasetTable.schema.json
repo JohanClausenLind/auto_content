@@ -1,0 +1,85 @@
+{
+  "$id": "https://content-factory.local/schema/DatasetTable.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "classification": {
+      "enum": [
+        "SOURCE_DATA",
+        "DERIVED_DATA",
+        "ESTIMATE",
+        "ILLUSTRATIVE"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "columns": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Columns",
+      "type": "array"
+    },
+    "dataset_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "label": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Label",
+      "type": "string"
+    },
+    "rows": {
+      "items": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Rows",
+      "type": "array"
+    },
+    "source_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+        "type": "string"
+      },
+      "title": "Source Ids",
+      "type": "array"
+    },
+    "unit": {
+      "default": "",
+      "title": "Unit",
+      "type": "string"
+    }
+  },
+  "required": [
+    "classification",
+    "columns",
+    "dataset_id",
+    "label",
+    "rows",
+    "source_ids",
+    "unit"
+  ],
+  "title": "DatasetTable",
+  "type": "object"
+}

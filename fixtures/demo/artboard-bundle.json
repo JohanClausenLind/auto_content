@@ -1,0 +1,155 @@
+{
+ "artboard": {
+  "alt_text": "Data card: about a fifth of Sweden's electricity came from wind in 2025.",
+  "artboard_id": "art_demo00000001",
+  "background_role": "paper",
+  "brand_kit_id": null,
+  "deliverable_id": "dlv_image0000001",
+  "height": 1080,
+  "layers": [
+   {
+    "align": "start",
+    "frame": {
+     "h": 0.08,
+     "w": 0.84,
+     "x": 0.08,
+     "y": 0.1
+    },
+    "kind": "text",
+    "layer_id": "lay_label0000001",
+    "locked": false,
+    "max_lines": 4,
+    "reading_order": 0,
+    "role": "label",
+    "text": {
+     "claim_ids": [],
+     "text": "SWEDEN \u00b7 ELECTRICITY \u00b7 2025"
+    }
+   },
+   {
+    "format": "integer",
+    "frame": {
+     "h": 0.3,
+     "w": 0.84,
+     "x": 0.08,
+     "y": 0.26
+    },
+    "kind": "number",
+    "layer_id": "lay_number000001",
+    "locked": false,
+    "reading_order": 1,
+    "unit": "%",
+    "value": {
+     "claim_id": "clm_wind0000001",
+     "column": "share_pct",
+     "dataset_id": "ds_wind00000001",
+     "row_key": "2025"
+    }
+   },
+   {
+    "align": "start",
+    "frame": {
+     "h": 0.2,
+     "w": 0.84,
+     "x": 0.08,
+     "y": 0.58
+    },
+    "kind": "text",
+    "layer_id": "lay_headline0001",
+    "locked": false,
+    "max_lines": 2,
+    "reading_order": 2,
+    "role": "headline",
+    "text": {
+     "claim_ids": [
+      "clm_wind0000001"
+     ],
+     "text": "of electricity came from wind"
+    }
+   },
+   {
+    "frame": {
+     "h": 0.06,
+     "w": 0.84,
+     "x": 0.08,
+     "y": 0.86
+    },
+    "kind": "source",
+    "layer_id": "lay_source000001",
+    "locked": false,
+    "reading_order": 3,
+    "source_ids": [
+     "src_energimynd01"
+    ]
+   }
+  ],
+  "safe_area": {
+   "h": 0.88,
+   "w": 0.88,
+   "x": 0.06,
+   "y": 0.06
+  },
+  "schema_version": 1,
+  "theme": "editorial",
+  "width": 1080
+ },
+ "assets": {},
+ "brand": {
+  "accent": null,
+  "font_family": "Inter",
+  "ink": null,
+  "logo_asset_id": null,
+  "paper": null
+ },
+ "bundle_id": "bnd_art000000001",
+ "datasets": {
+  "ds_wind00000001": {
+   "classification": "SOURCE_DATA",
+   "columns": [
+    "year",
+    "share_pct"
+   ],
+   "dataset_id": "ds_wind00000001",
+   "label": "Wind share of Swedish electricity generation",
+   "rows": [
+    {
+     "share_pct": 11,
+     "year": "2018"
+    },
+    {
+     "share_pct": 17,
+     "year": "2021"
+    },
+    {
+     "share_pct": 21,
+     "year": "2025"
+    }
+   ],
+   "source_ids": [
+    "src_energimynd01"
+   ],
+   "unit": "%"
+  }
+ },
+ "kind": "artboard",
+ "plan": null,
+ "schema_version": 1,
+ "seed": "content-factory",
+ "sources": {
+  "src_energimynd01": {
+   "accessed": "2026-08-27",
+   "publisher": "Energimyndigheten",
+   "source_id": "src_energimynd01",
+   "title": "Energy in Sweden 2026 (fixture)",
+   "url": "https://www.energimyndigheten.se/"
+  },
+  "src_svk00000001": {
+   "accessed": "2026-08-27",
+   "publisher": "Svenska kraftn\u00e4t",
+   "source_id": "src_svk00000001",
+   "title": "Grid statistics (fixture)",
+   "url": "https://www.svk.se/"
+  }
+ },
+ "timeline": null
+}
