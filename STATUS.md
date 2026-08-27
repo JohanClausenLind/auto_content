@@ -12,7 +12,11 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       SkillRegistry, model catalog + ExecutionPolicy presets + routing decisions, HardwareProbe +
       mocks, CLI login/context/workspaces, bootstrap, Temporal worker entry, web shell
       (`apps/web`) with theme engine + command palette + PWA (`packages/web-ui`).
-- [ ] Phase 2 — typed contracts + deterministic static/video rendering
+- [x] **Phase 2 — typed contracts + deterministic static/video rendering** — **GREEN** (2026-08-27).
+      29 registered contracts (campaign/deliverable union, full SceneSpec grammar, artboards/layers,
+      DeliverableDAG, StoryPlan/CompiledTimeline, RenderBundle), DAG compiler with typed pruning,
+      timeline compiler (ms → integer frames), content-ui design system + Artboard, video-ui scenes
+      + TimelineComposition, renderer scripts, media QC, demo runner.
 - [ ] Phase 3 — narration and audio
 - [ ] Phase 4 — research, evidence, claims
 - [ ] Phase 5 — skills, models, routing, ComfyUI
@@ -57,6 +61,19 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 | Clean-checkout gate | `scripts/gate-clean-checkout.sh` (git clone → ./setup.sh → doctor --json → tests) | "doctor fails: []", 41 passed, gate OK |
 
 Core suite: `uv run pytest -m "not integration and not gpu and not live"` → 41 passed; `pnpm -r test` → 67 passed.
+
+## Phase 2 results (commands actually run)
+| Item | Command | Result |
+|---|---|---|
+| Contracts roundtrip | `just schemas` + `pnpm --filter @content-factory/content-schema-ts test` | 29 schemas / 128 defs; 17/17 (valid fixtures accepted; bad layer kind + bad visibility rejected) |
+| DAG compiler | `uv run pytest tests/unit/test_dag_compiler.py` | 6/6: image-only → no audio/video stages; article-only → no timeline; shared stages once; narration=False prunes TTS with typed reason; deterministic hash |
+| Timeline compiler | `uv run pytest tests/unit/test_timeline_compiler.py` | 4/4 incl. Hypothesis: integer frames, contiguous, refuses to freeze narrated timing before measurement |
+| Renderer determinism | `pnpm --filter @content-factory/renderer test` | 6/6: PNG byte-identical across runs; scene MP4 byte-identical (sha `2304538567d0a753…`) and frame-identical |
+| Offline demo | `uv run content-factory demo --quality smoke` / `--quality demo` | PASS both deliverables; PNG 1080×1080 sha `ae4ff8bd…` (matches subagent's independent render); MP4 h264 yuv420p 1080×1920 30 fps 518 frames 17.27 s faststart sha `e98a5089…` (matches) |
+| Media QC | `uv run pytest tests/unit/test_media_qc.py` | 3/3 (blank/dimension/fps/black-frame detection on synthetic clips) |
+| Visual review | frames 60/200/330/480 + artboard PNG inspected | legible editorial layout; follow-up: cross-scene vertical anchor consistency (phase 7 QC) |
+
+Core suites now: Python 49 unit + 5 security; Node 105 tests (schema-ts 17, web-ui 32, content-ui 21, editor-core 8, web 14, video-ui 7, renderer 6).
 
 ## Decisions (see docs/adr/0001–0010)
 - MinIO archived upstream 2026-04-25 → optional S3 service is SeaweedFS 4.44 (Apache-2.0).

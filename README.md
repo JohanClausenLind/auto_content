@@ -3,7 +3,7 @@
 Self-hosted, local-first, single-operator content production and distribution platform.
 Private project — no billing, no SaaS surfaces. See `STATUS.md` for the current phase.
 
-## What works now (phases 0–1 verified on this machine)
+## What works now (phases 0–2 verified on this machine)
 - Typed contracts: Pydantic → JSON Schema 2020-12 → TypeScript + Ajv, with drift check.
 - EditorCore: typed edit operations applied and undone to identical revision hashes.
 - Remotion renderer: 3 s 1080p clip with a pinned local font, verified by ffprobe.
@@ -26,10 +26,14 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
 - CLI: `login`, `whoami`, `workspaces list|use`, `bootstrap`, `serve`, `worker`, `doctor`.
 - ArtifactStore (filesystem + S3), signed skill registry, execution-policy routing with
   explainable decisions, hardware probe.
+- Content contracts (campaign → deliverables → scenes/artboards → compiled timeline → render
+  bundle), a DAG compiler that prunes unneeded branches with typed reasons, a timeline compiler
+  in integer frames, and deterministic renderers: `content-factory demo` produces a 1080×1080
+  data-card PNG and a 17 s 1080×1920 MP4 that pass ffprobe/PIL QC and are byte-identical on rerun.
 
 ## Not implemented yet
-Phases 2–13: content contracts and renderers beyond the smoke clip, production pipeline,
-research/claims, TTS, distribution, analytics, personas, engagement. Nothing publishes anywhere.
+Phases 3–13: narration/audio, research/claims, production pipeline,
+editor/QC/Revision Box UI, distribution, analytics, personas, engagement. Nothing publishes anywhere.
 
 ## Prerequisites
 Linux (tested on Ubuntu 24.04), Docker Engine + Compose plugin, Node 22/24 LTS, Python 3.12,
