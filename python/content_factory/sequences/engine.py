@@ -87,14 +87,8 @@ class MockReferenceEditBackend(ReferenceEditBackend):
         out = base.copy()
         draw = ImageDraw.Draw(out)
         w, h = out.size
-        # Clear the anchor's subject area to background, then paint the subject at the control box.
-        px = base.getpixel((2, 2))
-        for x in range(w):
-            for y in range(0, h, max(1, h // 64)):
-                pass
-        del px
-        # Simplified deterministic repaint: cover centre band with background colour, then draw
-        # the subject rectangle where the control says it should be.
+        # Deterministic repaint: cover the centre band with the background colour (removing the
+        # subject wherever it was), then draw the subject where the control says it should be.
         bg = base.getpixel((1, 1))
         draw.rectangle([0, int(h * 0.3), w, int(h * 0.8)], fill=bg)
         control_l = control.convert("L")

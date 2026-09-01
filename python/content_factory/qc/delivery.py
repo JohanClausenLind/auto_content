@@ -134,7 +134,7 @@ def check_delivery_promise(
             Finding(
                 "delivery_promise",
                 Severity.critical,
-                f"promised an animated explainer but only {animated_scenes}/{total} scenes show real animation (pan-zoom slides detected)",
+                f"promised an animated explainer but only {animated_scenes}/{total} scenes show real animation (pan-zoom slides detected)",  # noqa: E501
             )
         )
     return QCResult(tuple(findings), facts)

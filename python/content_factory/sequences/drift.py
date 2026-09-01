@@ -81,7 +81,7 @@ def drift_report(
     reasons: list[str] = []
     if locked < locked_region_similarity_min:
         reasons.append(
-            f"locked-region similarity {locked:.3f} below {locked_region_similarity_min} (composition drift)"
+            f"locked-region similarity {locked:.3f} below {locked_region_similarity_min} (composition drift)"  # noqa: E501
         )
     if style > style_delta_max:
         reasons.append(f"style delta {style:.3f} above {style_delta_max}")
