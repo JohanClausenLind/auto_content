@@ -116,7 +116,8 @@ def test_exactly_once_under_chaos_retries(tmp_path: Path) -> None:
     )  # the timeout's landed post was found by reconciliation, not re-posted
     # A later retry of the same intent returns the stored receipt without touching the API.
     state2, receipt2 = publish_with_intent("key1", PKG, backend, store, POLICY)
-    assert state2 == PublishState.published and receipt2.remote_id == receipt.remote_id
+    assert state2 == PublishState.published and receipt2 is not None
+    assert receipt2.remote_id == receipt.remote_id
     assert len(server.posts) == 1
 
 
@@ -135,7 +136,8 @@ def test_ambiguous_without_reconciliation_stays_blocking(tmp_path: Path) -> None
     store = IntentStore(tmp_path)
     state, receipt = publish_with_intent("key2", PKG, backend, store, POLICY)
     assert state == PublishState.ambiguous and receipt is None
-    assert store.load("key2")["state"] == "ambiguous"
+    record = store.load("key2")
+    assert record is not None and record["state"] == "ambiguous"
     # Later, reconciliation succeeds (the read path is back) and resolves WITHOUT a new post.
     healthy = masto(server)
     state2, receipt2 = publish_with_intent("key2", PKG, healthy, store, POLICY)
@@ -181,7 +183,8 @@ def test_capability_validation_blocks_locally(tmp_path: Path) -> None:
     store = IntentStore(tmp_path)
     with pytest.raises(PublishBlockedError, match="allows 500"):
         publish_with_intent("k3", big, masto(server), store, POLICY)
-    assert server.posts == [] and store.load("k3")["state"] == "blocked"
+    blocked = store.load("k3")
+    assert server.posts == [] and blocked is not None and blocked["state"] == "blocked"
     no_alt = PostPackage(
         text="hi", media=(MediaAttachment(data=b"x" * 10, mime="image/png", alt_text=" "),)
     )
@@ -229,7 +232,8 @@ def test_bluesky_validation_and_reconciliation() -> None:
     assert backend.validate(PostPackage(text="x" * 301)) != []
     assert backend.validate(PostPackage(text="ok", visibility="draft")) != []
     receipt = backend.publish(PKG)
-    assert receipt.remote_id.startswith("at://") and "bsky.app/profile/op.example" in receipt.url
+    assert receipt.remote_id.startswith("at://")
+    assert receipt.url is not None and "bsky.app/profile/op.example" in receipt.url
     found = backend.find_existing(PKG)
     assert found is not None and found.remote_id == receipt.remote_id
     assert backend.find_existing(PostPackage(text="something else")) is None
