@@ -77,9 +77,11 @@ class MockReferenceEditBackend(ReferenceEditBackend):
             int(instruction.split("frame ")[-1].split(" ")[0]) if "frame " in instruction else -1
         )
         if self.drift_at is not None and self.drift_at == (frame_index, attempt):
-            drifted = (
-                Image.open(io.BytesIO(anchor_png)).convert("RGB").point(lambda v: min(255, v + 90))
-            )
+
+            def _brighten(v: int) -> int:
+                return min(255, v + 90)
+
+            drifted = Image.open(io.BytesIO(anchor_png)).convert("RGB").point(_brighten)
             buf = io.BytesIO()
             drifted.save(buf, format="PNG", compress_level=6)
             return buf.getvalue()
