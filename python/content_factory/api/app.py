@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from content_factory import __version__
 from content_factory.api.routes import campaigns as campaign_routes
+from content_factory.api.routes import distribution as distribution_routes
 from content_factory.api.routes import notifications as notification_routes
 from content_factory.api.routes import operations as operations_routes
 from content_factory.api.routes import revisions as revision_routes
@@ -48,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notification_routes.router)
     app.include_router(campaign_routes.router)
     app.include_router(operations_routes.router)
+    app.include_router(distribution_routes.router)
     app.include_router(workspace_routes.router)
 
     @app.get("/healthz", include_in_schema=False)

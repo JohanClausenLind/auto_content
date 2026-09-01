@@ -9,6 +9,7 @@ from temporalio.worker import Worker
 
 from content_factory.config import get_settings
 from content_factory.logging import configure_logging, get_logger
+from content_factory.programs import scheduler
 from content_factory.workflows import production, spike
 
 log = get_logger(__name__)
@@ -16,8 +17,8 @@ log = get_logger(__name__)
 # task queue -> (workflows, activities). Only queues with registered work are startable.
 REGISTRY: dict[str, tuple[list[type], list[object]]] = {
     "control": (
-        [spike.SpikeProductionRun, production.ProductionWorkflow],
-        [spike.run_stage, *production.PRODUCTION_ACTIVITIES],
+        [spike.SpikeProductionRun, production.ProductionWorkflow, scheduler.ProgramTickWorkflow],
+        [spike.run_stage, *production.PRODUCTION_ACTIVITIES, *scheduler.PROGRAM_ACTIVITIES],
     ),
 }
 

@@ -281,6 +281,43 @@ def runs_approve(
     asyncio.run(_run())
 
 
+distribution_app = typer.Typer(help="Distribution safety controls")
+app.add_typer(distribution_app, name="distribution")
+
+
+@distribution_app.command("kill-switch")
+def distribution_kill_switch(
+    state: str = typer.Argument(..., help="on | off"),
+    confirm: bool = typer.Option(False, "--confirm", help="Required."),
+) -> None:
+    """Flip the global distribution kill switch for the fixture workspace (also in the UI/PWA)."""
+    if state not in {"on", "off"}:
+        raise typer.BadParameter("state must be on or off")
+    if not confirm:
+        console.print("[red]refusing without --confirm[/]")
+        raise typer.Exit(1)
+    import asyncio
+
+    from content_factory.db.base import utcnow
+    from content_factory.db.models import DistributionState
+    from content_factory.db.session import session_scope
+    from content_factory.schemas.fixtures import WS
+
+    async def _run() -> None:
+        async with session_scope() as db:
+            row = await db.get(DistributionState, WS)
+            if row is None:
+                row = DistributionState(workspace_id=WS, kill_switch=state == "on")
+                db.add(row)
+            else:
+                row.kill_switch = state == "on"
+            row.updated_by = "cli-operator"
+            row.updated_at = utcnow()
+        console.print(f"kill switch is now [bold]{state.upper()}[/]")
+
+    asyncio.run(_run())
+
+
 @app.command()
 def mcp() -> None:
     """Run the MCP server on stdio (the only external-agent surface)."""

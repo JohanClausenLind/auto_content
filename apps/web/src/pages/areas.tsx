@@ -13,14 +13,6 @@ export function HomePage() {
   );
 }
 
-export function CreatePage() {
-  return (
-    <Page title="Create" lead="Start a brief and the factory takes it from there.">
-      <EmptyState title="The Create flow lands in the next phase" body="You'll describe what you want in plain words, pick a persona and formats, and review a plan before anything is made." />
-    </Page>
-  );
-}
-
 export function InboxPage() {
   return (
     <Page title="Inbox" lead="Approvals, questions from the factory, and replies that need you.">
@@ -33,14 +25,6 @@ export function PersonasPage() {
   return (
     <Page title="Personas" lead="The voices your content is written in.">
       <EmptyState title="No personas yet" body="A persona holds tone, boundaries and disclosure rules. Every piece of content is made through one." />
-    </Page>
-  );
-}
-
-export function CalendarPage() {
-  return (
-    <Page title="Calendar" lead="What goes out, where, and when.">
-      <EmptyState title="Nothing on the calendar" body="Scheduled and published posts will be laid out by day across all connected channels." />
     </Page>
   );
 }

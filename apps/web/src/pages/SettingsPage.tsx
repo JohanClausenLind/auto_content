@@ -1,6 +1,7 @@
 import { Tab, TabList, TabPanel, Tabs, ThemeCustomizer } from "@content-factory/web-ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { EmptyState, Page } from "./EmptyState";
+import { PushSettings } from "./PushSettings";
 
 export type SettingsTab = "themes" | "account" | "workspace" | "notifications";
 const TABS: SettingsTab[] = ["themes", "account", "workspace", "notifications"];
@@ -32,7 +33,7 @@ export function SettingsPage() {
           <EmptyState title="Workspace settings" body="Name, slug and member roles for the current workspace." />
         </TabPanel>
         <TabPanel id="notifications">
-          <EmptyState title="Notifications" body="Choose which events reach you by push or in the Action Center." />
+          <PushSettings />
         </TabPanel>
       </Tabs>
     </Page>

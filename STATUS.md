@@ -56,8 +56,23 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       PSE, reading order, alt text, exportable report), image-sequence engine (anchor + GenerationLock
       + deterministic controls + hub-and-spoke + drift QC + bounded regen + contact sheet/MP4
       preview/print flipbook PDF; single-frame revisions rebuild exactly one frame).
-- [ ] Phase 8 — product UX, PWA, assistant, Tailscale
-- [ ] Phase 9 — scheduler and first live publishing
+- [~] **Phase 8 — product UX, PWA, assistant, Tailscale** — backend GREEN; create-flow/push/operations
+      UI with a subagent. Done: Web Push (VAPID keygen in setup, subscriptions API, deep-link-only
+      payloads, dead-subscription cleanup), MCP server (`content-factory mcp`, scoped token, 8 typed
+      tools, refusals surface policies), campaigns API (matrix with honest supported/unsupported
+      reasons, validate-and-quote preview, create), operations API (owner-only doctor + audit tail).
+      Blocked on operator: `sudo tailscale set --operator=$USER` for the serve check.
+- [~] **Phase 9 — scheduler and first live publishing** — everything but the live post is GREEN.
+      Token vault (AES-256-GCM envelope, context-bound AAD, key-ring rotation), OAuth broker
+      (state+PKCE S256, single-use workspace-bound callbacks), Tier-1 adapters (Bluesky app-password;
+      Mastodon with native Idempotency-Key + async media polling + instance limits; Discord webhook
+      with mention safety), idempotent publisher (PublishIntent → validate → policy → publish once;
+      ambiguous responses become blocking reconciliation, never blind retries; exactly-once proven
+      under chaos 500s/timeouts), distribution profiles as immutable authorized revisions +
+      kill switch (API + CLI, step-up gated), ContentProgram Temporal Schedules (overlap SKIP,
+      pause-on-failure, catch-up policies; no-burst proven). LIVE gate pending operator: set
+      BLUESKY_HANDLE/BLUESKY_APP_PASSWORD for a designated TEST account, then
+      `uv run pytest -m live tests/live -q`.
 - [ ] Phase 10 — Tier 2/3 adapters and analytics
 - [ ] Phase 11 — personas, human tasks, engagement, style exploration
 - [ ] Phase 12 — feature wave
