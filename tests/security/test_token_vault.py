@@ -17,7 +17,7 @@ def test_seal_open_roundtrip_with_context_binding(monkeypatch: pytest.MonkeyPatc
     vault = TokenVault()
     sealed = vault.seal("oauth-refresh-token-xyz", aad="ws_a|bluesky|refresh")
     assert vault.open(sealed, aad="ws_a|bluesky|refresh") == "oauth-refresh-token-xyz"
-    with pytest.raises(VaultError, match="mismatched context|tampered|wrong key"):
+    with pytest.raises(VaultError, match=r"mismatched context|tampered|wrong key"):
         vault.open(sealed, aad="ws_b|bluesky|refresh")  # copied to another workspace: refuses
     tampered = Sealed(sealed.key_id, sealed.nonce_b64, sealed.ciphertext_b64[:-4] + "AAAA")
     with pytest.raises(VaultError):

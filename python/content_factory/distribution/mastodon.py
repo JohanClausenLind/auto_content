@@ -60,7 +60,7 @@ class MastodonBackend(DistributionBackend):
         problems: list[str] = []
         if len(package.text) > caps.max_text_chars:
             problems.append(
-                f"text is {len(package.text)} characters; this instance allows {caps.max_text_chars}"
+                f"text is {len(package.text)} characters; this instance allows {caps.max_text_chars}"  # noqa: E501
             )
         if len(package.media) > caps.max_images:
             problems.append(

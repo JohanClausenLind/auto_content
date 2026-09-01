@@ -61,14 +61,14 @@ class BlueskyBackend(DistributionBackend):
         caps = self.capabilities()
         if _grapheme_len(package.text) > caps.max_text_chars:
             problems.append(
-                f"text is {_grapheme_len(package.text)} characters; Bluesky allows {caps.max_text_chars}"
+                f"text is {_grapheme_len(package.text)} characters; Bluesky allows {caps.max_text_chars}"  # noqa: E501
             )
         if len(package.media) > caps.max_images:
             problems.append(f"{len(package.media)} images; Bluesky allows {caps.max_images}")
         for m in package.media:
             if len(m.data) > caps.max_image_bytes:
                 problems.append(
-                    f"an image is {len(m.data)} bytes; Bluesky blobs are capped at {caps.max_image_bytes}"
+                    f"an image is {len(m.data)} bytes; Bluesky blobs are capped at {caps.max_image_bytes}"  # noqa: E501
                 )
             if not m.alt_text.strip():
                 problems.append("every image needs alt text")
