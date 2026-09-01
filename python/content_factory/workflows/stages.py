@@ -177,7 +177,7 @@ def stage_compile_text_package(ctx: StageContext) -> StageOutput:
 
 def stage_compile_artboards(ctx: StageContext) -> StageOutput:
     bundle = demo_fixtures.artboard_bundle_for(ctx.deliverable_id or "")
-    _write(ctx.ddir() / "artboards" / "artboard.json", bundle.artboard.model_dump_json(indent=1))  # type: ignore[union-attr]
+    _write(ctx.ddir() / "artboards" / "artboard.json", bundle.artboard.model_dump_json(indent=1))  # type: ignore[union-attr]  # noqa: E501
     _write(ctx.ddir() / "artboards" / "bundle.json", bundle.model_dump_json(indent=1))
     return StageOutput(bundle.content_hash(), {"artboards": 1})
 
@@ -415,23 +415,137 @@ def stage_compose_video(ctx: StageContext) -> StageOutput:
 
 
 def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
-    result = {
-        "deliverable_id": ctx.deliverable_id,
-        "passed": True,
-        "layers": ["contract", "static", "post-render"],
-    }
-    _write(ctx.ddir() / "qc" / "report.json", json.dumps(result, indent=1))
-    return StageOutput(_hash_obj(result), result)
+    """Real per-deliverable QC (17): accessibility on artboards, flashing + delivery checks on
+    video, claim gate already ran as a shared stage. A failing layer fails the stage honestly."""
+    from dataclasses import asdict
+
+    from content_factory.qc.accessibility import (
+        check_artboard_accessibility,
+        check_flashing,
+        export_accessibility_report,
+    )
+    from content_factory.qc.delivery import check_delivery_promise
+
+    spec = _spec(ctx)
+    checks: dict[str, object] = {}
+    a11y_results = {}
+    artboard_path = ctx.ddir() / "artboards" / "artboard.json"
+    if artboard_path.exists():
+        board = ArtboardSpec.model_validate_json(artboard_path.read_text())
+        r = check_artboard_accessibility(board)
+        a11y_results["artboard"] = r
+        checks["artboard_accessibility"] = {
+            "passed": r.passed,
+            "findings": [asdict(f) for f in r.findings],
+        }
+    cards_manifest = ctx.ddir() / "artboards" / "cards.json"
+    if cards_manifest.exists():
+        for entry in json.loads(cards_manifest.read_text())["cards"]:
+            bundle_path = ctx.ddir() / "artboards" / f"{entry['card_id']}.bundle.json"
+            board = RenderBundle.model_validate_json(bundle_path.read_text()).artboard
+            assert board is not None
+            r = check_artboard_accessibility(board)
+            a11y_results[entry["card_id"]] = r
+            if not r.passed:
+                checks[f"card_accessibility:{entry['card_id']}"] = {
+                    "passed": False,
+                    "findings": [asdict(f) for f in r.findings],
+                }
+    video_path = ctx.ddir() / "exports" / "bnd_run000000001.mp4"
+    compiled_path = ctx.ddir() / "timeline" / "compiled.json"
+    if video_path.exists() and compiled_path.exists():
+        from content_factory.schemas.scenes import CompiledTimeline
+
+        tl = CompiledTimeline.model_validate_json(compiled_path.read_text())
+        flash = check_flashing(video_path, fps=tl.fps, frames=tl.total_frames)
+        a11y_results["flashing"] = flash
+        checks["flashing"] = {"passed": flash.passed, "facts": flash.facts}
+        if spec.type in {"long_video", "short_video"}:
+            # These scenes are chart/number-led, not promised as fully animated explainers;
+            # the delivery check records facts and blocks only when the promise is "animated".
+            promise = (
+                "animated_explainer"
+                if getattr(spec, "intent", "").startswith("animated")
+                else "chart_led"
+            )
+            delivery = check_delivery_promise(video_path, tl, promised=promise)
+            checks["delivery_promise"] = {"passed": delivery.passed, "facts": delivery.facts}
+            if not delivery.passed:
+                a11y_results["delivery"] = delivery
+    if a11y_results:
+        export_accessibility_report(
+            ctx.ddir() / "qc" / "accessibility.json", ctx.deliverable_id or "", a11y_results
+        )
+    passed = all(bool(c.get("passed", True)) for c in checks.values() if isinstance(c, dict))
+    result = {"deliverable_id": ctx.deliverable_id, "passed": passed, "checks": checks}
+    _write(ctx.ddir() / "qc" / "report.json", json.dumps(result, indent=1, default=str))
+    if not passed:
+        raise RuntimeError(
+            f"deliverable QC failed: {[k for k, c in checks.items() if isinstance(c, dict) and not c.get('passed', True)]}"  # noqa: E501
+        )
+    return StageOutput(_hash_obj(result), {"passed": passed, "checks": sorted(checks)})
 
 
 def stage_originality_gate(ctx: StageContext) -> StageOutput:
-    decision = {
+    """The real originality gate (2.10): the new piece's fingerprint against the workspace's
+    content memory. Blocking verdicts fail the stage; a model cannot override them."""
+    from content_factory.imports.history import ContentMemoryStore
+    from content_factory.originality.fingerprint import compare, decide, fingerprint_script
+
+    texts: list[str] = []
+    kinds: list[str] = []
+    plan_path = ctx.project_dir / "story" / "plan.json"
+    if plan_path.exists():
+        plan = json.loads(plan_path.read_text())
+        texts = [b["display_text"] for b in plan.get("beats", [])]
+        kinds = [sc.get("kind", "") for sc in plan.get("scenes", [])]
+    copy_path = ctx.ddir() / "copy.json"
+    if copy_path.exists():
+        copy = json.loads(copy_path.read_text())
+        texts += [c["text"] for c in copy.get("cards", [])] or (
+            [copy["caption"]] if copy.get("caption") else []
+        )
+    fp_new = fingerprint_script(texts or ["(no text)"], kinds or ["single"])
+    store = ContentMemoryStore(ctx.project_dir.parent / ".content-memory" / ctx.workspace_id)
+    comparisons = []
+    for key, entry in sorted(store.entries.items()):
+        if key.startswith(f"{ctx.campaign.campaign_id}:"):
+            continue  # this campaign's own deliverables are one intentional content family
+        prior_texts = entry.get("texts") or [entry.get("title", "")]
+        prior_kinds = entry.get("scene_kinds") or ["single"]
+        comparisons.append(
+            compare(fp_new, fingerprint_script(prior_texts, prior_kinds), against=key)
+        )
+    decision = decide(comparisons)
+    payload = {
         "deliverable_id": ctx.deliverable_id,
-        "decision": "ORIGINAL",
+        "decision": decision.verdict.value,
+        "blocking": decision.blocking,
+        "explanations": list(decision.explanations),
+        "compared": len(comparisons),
         "compared_scopes": ["account", "workspace", "content_family"],
     }
-    _write(ctx.ddir() / "originality.json", json.dumps(decision, indent=1))
-    return StageOutput(_hash_obj(decision), decision)
+    _write(ctx.ddir() / "originality.json", json.dumps(payload, indent=1))
+    if decision.blocking:
+        raise RuntimeError(
+            f"originality gate: {decision.verdict.value} — {decision.explanations[0]}"
+        )
+    # Record this piece into the archive so future runs compare against it (idempotent by key).
+    store.add(
+        f"{ctx.campaign.campaign_id}:{ctx.deliverable_id}",
+        {
+            "title": texts[0][:120] if texts else "",
+            "texts": texts,
+            "scene_kinds": kinds,
+            "platform": "workspace",
+            "url": f"project://{ctx.project_dir.name}/{ctx.deliverable_id}",
+            "published_at": "",
+            "batch_id": "pipeline",
+        },
+    )
+    return StageOutput(
+        _hash_obj(payload), {"decision": decision.verdict.value, "compared": len(comparisons)}
+    )
 
 
 def stage_compile_destination_packages(ctx: StageContext) -> StageOutput:

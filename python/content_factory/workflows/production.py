@@ -410,6 +410,18 @@ PRODUCTION_ACTIVITIES = [
 
 
 # --- workflow ----------------------------------------------------------------------------------
+def _error_text(exc: BaseException) -> str:
+    """The deepest cause message: Temporal wraps stage errors in generic ActivityError text."""
+    seen: list[str] = []
+    current: BaseException | None = exc
+    while current is not None and len(seen) < 8:
+        message = getattr(current, "message", None) or str(current)
+        if message and message not in seen:
+            seen.append(message)
+        current = getattr(current, "cause", None) or current.__cause__
+    return seen[-1] if seen else str(exc)
+
+
 @dataclass
 class ApprovalSignal:
     actor: str
@@ -773,7 +785,7 @@ class ProductionWorkflow:
                 "FAILED",
                 campaign_id=campaign_id,
                 project_id=plan.project_id,
-                error=str(exc)[:800],
+                error=_error_text(exc)[:800],
             )  # type: ignore[arg-type]
             await workflow.execute_activity(
                 upsert_action_item,
@@ -782,7 +794,7 @@ class ProductionWorkflow:
                     kind="run_failed",
                     severity="high",
                     title=f"Run {inp.run_id} failed",
-                    body=str(exc)[:500],
+                    body=_error_text(exc)[:500],
                     dedupe_key=f"failed:{inp.run_id}",
                     run_id=inp.run_id,
                 ),

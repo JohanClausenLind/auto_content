@@ -318,3 +318,35 @@ async def _worker_kill_flow(tmp_path: Path) -> None:
             proc.terminate()
             proc.wait(timeout=10)
         worker_mod.REGISTRY.pop(queue, None)
+
+
+@pytest.mark.skipif(not BROWSER.exists(), reason="headless browser not downloaded")
+def test_originality_gate_blocks_a_near_duplicate_second_campaign(tmp_path: Path) -> None:
+    asyncio.run(_originality_block_flow(tmp_path))
+
+
+async def _originality_block_flow(tmp_path: Path) -> None:
+    try:
+        client = await _connect()
+    except Exception as exc:
+        pytest.skip(f"temporal unreachable: {exc}")
+    await _ensure_fixture_workspace()
+    queue = f"orig-{uuid.uuid4().hex[:8]}"
+    projects = tmp_path / "projects"
+
+    async def run_campaign(campaign_id: str) -> str:
+        campaign = _campaign().model_copy(update={"campaign_id": campaign_id})
+        run_id = await start_run(campaign, quality="demo", projects_dir=projects, artifacts_dir=tmp_path / "artifacts", task_queue=queue)
+        view = await _wait_state(run_id, "WAITING_FOR_APPROVAL")
+        await approve_run(run_id, actor="operator", revision_hash=view["preflight_revision_hash"])
+        return run_id
+
+    async with Worker(client, task_queue=queue, workflows=[ProductionWorkflow], activities=PRODUCTION_ACTIVITIES):
+        first = await run_campaign("cmp_origfirst001")
+        await _wait_state(first, "COMPLETE")
+        # A SECOND campaign with the same fixture content must hit the blocking gate and FAIL,
+        # with the typed verdict in the run error — a model cannot override this.
+        second = await run_campaign("cmp_origsecond01")
+        view = await _wait_state(second, "FAILED", timeout_s=180)
+        assert "originality gate" in (view["error"] or "")
+        assert "TOO_SIMILAR" in view["error"] or "MASS_PRODUCTION_RISK" in view["error"]
