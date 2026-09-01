@@ -69,7 +69,7 @@ def _build_campaign(body: CampaignBody, workspace_id: str) -> content.ContentCam
     for choice in body.deliverables:
         if choice.type not in SUPPORTED:
             reason = UNSUPPORTED_REASON.get(choice.type, "unknown deliverable type")
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{choice.type}: {reason}")
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"{choice.type}: {reason}")
         common = {"deliverable_id": new_id("dlv"), "title": choice.title, "destinations": (export,)}
         if choice.type == "single_image_post":
             deliverables.append(content.SingleImagePostSpec(layout="number_led", **common))

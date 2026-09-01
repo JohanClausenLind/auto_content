@@ -273,6 +273,13 @@ class PersonaSettings(StrictModel):
     default_disclosure: Literal["disclose_on_ask", "deflect"] = "disclose_on_ask"
 
 
+class PortalSettings(StrictModel):
+    enabled: bool = True
+    # Signing secret is resolved from this environment variable at request time (never stored).
+    secret_env: str = "CF_PORTAL_SECRET"  # noqa: S105 - the env var NAME, not a secret
+    default_ttl_days: int = Field(default=30, ge=1, le=365)
+
+
 class EngagementSettings(StrictModel):
     enabled: bool = False
     default_autonomy: Literal["draft_only", "human_approve_each", "auto_send_low_risk"] = (
@@ -386,6 +393,7 @@ class Settings(BaseSettings):
     distribution: DistributionSettings = DistributionSettings()
     attribution: AttributionSettings = AttributionSettings()
     personas: PersonaSettings = PersonaSettings()
+    portal: PortalSettings = PortalSettings()
     engagement: EngagementSettings = EngagementSettings()
     human_tasks: HumanTaskSettings = HumanTaskSettings()
     style_exploration: StyleExplorationSettings = StyleExplorationSettings()

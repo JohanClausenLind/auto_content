@@ -70,7 +70,8 @@ def test_wordpress_draft_carries_sources_and_finds_existing() -> None:
     )
     receipt = wp.create_draft(ARTICLE)
     assert receipt.remote_id == "42" and receipt.status == "draft"
-    assert wp.find_existing(ARTICLE).remote_id == "42"
+    existing = wp.find_existing(ARTICLE)
+    assert existing is not None and existing.remote_id == "42"
 
 
 def test_ghost_jwt_shape_and_draft_creation() -> None:

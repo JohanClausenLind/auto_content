@@ -54,8 +54,10 @@ API JSON where noted; Docker Hub "N days ago" values are relative to 2026-08-27.
       "workflow-schedule-id",
       Schedule(
           action=ScheduleActionStartWorkflow(
-              YourSchedulesWorkflow.run, "my schedule arg",
-              id="schedules-workflow-id", task_queue="schedules-task-queue",
+              YourSchedulesWorkflow.run,
+              "my schedule arg",
+              id="schedules-workflow-id",
+              task_queue="schedules-task-queue",
           ),
           spec=ScheduleSpec(intervals=[ScheduleIntervalSpec(every=timedelta(minutes=2))]),
           state=ScheduleState(note="Here's a note on my Schedule."),

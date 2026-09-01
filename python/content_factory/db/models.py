@@ -366,3 +366,72 @@ class DistributionState(Base):
     kill_switch: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     updated_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PersonaRow(WorkspaceScoped, TimestampMixin, Base):
+    """Persisted persona: `document` holds the full validated Persona contract at `revision`.
+    Revision history lives in the audit log (persona.apply records each diff)."""
+
+    __tablename__ = "personas"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)  # identity.display_name copy
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    document: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class BrandNodeRow(WorkspaceScoped, TimestampMixin, Base):
+    """One node of the brand hierarchy; lock semantics are enforced by brands.hierarchy on write."""
+
+    __tablename__ = "brand_nodes"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    parent_id: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("brand_nodes.id", ondelete="RESTRICT"), nullable=True
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    tokens: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    locked_tokens: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    policies: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    locked_policies: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+
+class PortalLink(WorkspaceScoped, TimestampMixin, Base):
+    """Issued portal token (stored only as a hash, for listing and revocation)."""
+
+    __tablename__ = "portal_links"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    label: Mapped[str] = mapped_column(String(200), nullable=False)
+    token_sha256: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PortalBriefStatus(StrEnum):
+    new = "new"
+    accepted = "accepted"
+    declined = "declined"
+
+
+class PortalBrief(WorkspaceScoped, TimestampMixin, Base):
+    """A brief submitted through the portal. Never creates a run by itself."""
+
+    __tablename__ = "portal_briefs"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    link_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("portal_links.id", ondelete="CASCADE"), nullable=False
+    )
+    topic: Mapped[str] = mapped_column(String(500), nullable=False)
+    objective: Mapped[str] = mapped_column(Text, nullable=False)
+    deadline: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    contact: Mapped[str] = mapped_column(String(300), nullable=False)
+    status: Mapped[PortalBriefStatus] = mapped_column(
+        Enum(PortalBriefStatus, name="portal_brief_status"),
+        nullable=False,
+        default=PortalBriefStatus.new,
+    )
+    decided_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
