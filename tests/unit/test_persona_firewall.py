@@ -46,10 +46,8 @@ def test_real_fact_and_pii_leaks_block() -> None:
         decision = screen_outbound(leak, deny_list=DENY)
         assert decision.action == FirewallAction.block and decision.rule == rule
     d = _govern(draft="I live near Solna station, come by!")
-    assert (
-        d.disposition == ReplyDisposition.blocked
-        and d.firewall.rule == FirewallRule.real_person_leak
-    )
+    assert d.disposition == ReplyDisposition.blocked
+    assert d.firewall is not None and d.firewall.rule == FirewallRule.real_person_leak
 
 
 def test_prompt_injection_in_fan_messages_escalates_as_data() -> None:

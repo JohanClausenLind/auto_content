@@ -115,9 +115,8 @@ class PersonaSchedule:
     jitter_seed: str = "persona"
 
     def _rng(self, key: str) -> random.Random:
-        return random.Random(
-            int(hashlib.sha256(f"{self.jitter_seed}|{key}".encode()).hexdigest()[:12], 16)
-        )
+        seed = int(hashlib.sha256(f"{self.jitter_seed}|{key}".encode()).hexdigest()[:12], 16)
+        return random.Random(seed)  # noqa: S311 - human-shaped jitter, not cryptography
 
     def release_time(self, now: datetime, *, message_id: str) -> datetime:
         """Deterministic per message (idempotent retries), human-shaped delays."""
