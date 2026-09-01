@@ -300,3 +300,69 @@ class PushSubscription(TimestampMixin, Base):
     user_agent: Mapped[str | None] = mapped_column(String(400), nullable=True)
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class ConnectedAccount(WorkspaceScoped, TimestampMixin, Base):
+    """A connected destination account. Token plaintext lives ONLY in the vault columns
+    (sealed); models, logs, and the browser never see it."""
+
+    __tablename__ = "connected_accounts"
+    __table_args__ = (UniqueConstraint("workspace_id", "platform", "handle"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    platform: Mapped[str] = mapped_column(String(40), nullable=False)
+    handle: Mapped[str] = mapped_column(String(200), nullable=False)
+    scopes: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    token_key_id: Mapped[str] = mapped_column(String(24), nullable=False)
+    token_nonce: Mapped[str] = mapped_column(String(64), nullable=False)
+    token_ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
+    refresh_key_id: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    refresh_nonce: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    refresh_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    health: Mapped[str] = mapped_column(String(20), nullable=False, default="CONNECTED")
+
+
+class OAuthState(WorkspaceScoped, Base):
+    """Single-use OAuth intent: state + PKCE verifier, bound to workspace and redirect URI."""
+
+    __tablename__ = "oauth_states"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    state: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    platform: Mapped[str] = mapped_column(String(40), nullable=False)
+    code_verifier: Mapped[str] = mapped_column(String(256), nullable=False)
+    redirect_uri: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class DistributionProfile(WorkspaceScoped, TimestampMixin, Base):
+    """Immutable authorized revisions: any change creates a new revision needing re-authorization."""
+
+    __tablename__ = "distribution_profiles"
+    __table_args__ = (UniqueConstraint("workspace_id", "name", "revision"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    config: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False
+    )  # accounts, visibilities, cadence, caps
+    authorized_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    authorized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class DistributionState(Base):
+    """Per-workspace distribution switches (the kill switch is honoured by every publish path)."""
+
+    __tablename__ = "distribution_state"
+
+    workspace_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("workspaces.id", ondelete="CASCADE"), primary_key=True
+    )
+    kill_switch: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    updated_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

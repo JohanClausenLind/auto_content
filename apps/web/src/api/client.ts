@@ -2,9 +2,17 @@ import type { ThemeState } from "@content-factory/web-ui";
 import type {
   ActionItem,
   ApprovalRequest,
+  AuditEvent,
+  CampaignBody,
+  CampaignCreated,
+  CampaignPreview,
+  DeliverableMatrix,
   LoginResult,
   Meta,
+  OperationsHealth,
   PasskeyOptions,
+  PushSubscriptionBody,
+  PushTestResult,
   RevisionOutcome,
   RunDetail,
   RunQuality,
@@ -98,6 +106,21 @@ export const api = {
   revisions: {
     propose: (body: { project_id: string; unit_id?: string; feedback: string }) => request<{ outcome: RevisionOutcome }>("POST", "/revisions", body).then((r) => r.data.outcome),
     apply: (body: { project_id: string; feedback: string }) => request<{ run_id: string }>("POST", "/revisions/apply", body).then((r) => r.data),
+  },
+  campaigns: {
+    matrix: () => request<DeliverableMatrix>("GET", "/campaigns/matrix").then((r) => r.data),
+    preview: (body: CampaignBody) => request<CampaignPreview>("POST", "/campaigns/preview", body).then((r) => r.data),
+    create: (body: CampaignBody) => request<CampaignCreated>("POST", "/campaigns", body).then((r) => r.data),
+  },
+  operations: {
+    health: () => request<OperationsHealth>("GET", "/operations/health").then((r) => r.data),
+    audit: (limit = 50) => request<AuditEvent[]>("GET", `/operations/audit?limit=${limit}`).then((r) => r.data),
+  },
+  notifications: {
+    vapidPublicKey: () => request<{ public_key: string }>("GET", "/notifications/vapid-public-key").then((r) => r.data),
+    subscribe: (body: PushSubscriptionBody) => request<{ id: string }>("POST", "/notifications/subscriptions", body).then((r) => r.data),
+    unsubscribe: (endpoint: string) => request<void>("DELETE", `/notifications/subscriptions?endpoint=${encodeURIComponent(endpoint)}`).then(() => undefined),
+    test: () => request<PushTestResult>("POST", "/notifications/test").then((r) => r.data),
   },
   workspaces: {
     list: () => request<Workspace[]>("GET", "/workspaces").then((r) => r.data),

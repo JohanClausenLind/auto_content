@@ -93,6 +93,103 @@ export interface ActionItem {
   created_at: string;
 }
 
+// --- Campaigns (Create flow) ---
+
+export interface MatrixRow {
+  type: string;
+  supported: boolean;
+  /** Plain-language: why it works (supported) or why it doesn't (unsupported). */
+  reason: string;
+  destinations: string[];
+}
+
+export interface DeliverableMatrix {
+  rows: MatrixRow[];
+  notes: string[];
+}
+
+export interface DeliverableChoice {
+  type: string;
+  title: string;
+  card_count?: number;
+}
+
+export interface CampaignBody {
+  topic: string;
+  objective: string;
+  deliverables: DeliverableChoice[];
+  quality: RunQuality;
+}
+
+export interface DagNode {
+  node_id: string;
+  stage: string;
+  deliverable_id: string | null;
+  depends_on: string[];
+}
+
+export interface PrunedStage {
+  stage: string;
+  deliverable_id: string | null;
+  reason: string;
+}
+
+export interface CampaignEstimates {
+  external_cost_usd: number;
+  external_calls: number;
+  local_render: boolean;
+}
+
+export interface CampaignPreview {
+  campaign: unknown;
+  dag: { nodes: DagNode[]; pruned: PrunedStage[] };
+  estimates: CampaignEstimates;
+  notes: string[];
+}
+
+export interface CampaignCreated {
+  run_id: string;
+  campaign_id: string;
+}
+
+// --- Operations ---
+
+export type HealthStatus = "ok" | "warn" | "fail" | "skip" | (string & {});
+
+export interface HealthCheck {
+  name: string;
+  status: HealthStatus;
+  detail: string;
+  fix: string | null;
+}
+
+export interface OperationsHealth {
+  ok: boolean;
+  checks: HealthCheck[];
+}
+
+export interface AuditEvent {
+  id: string;
+  action: string;
+  actor: string | null;
+  workspace_id: string | null;
+  target: string | null;
+  created_at: string;
+}
+
+// --- Notifications (web push) ---
+
+export interface PushSubscriptionBody {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  user_agent?: string;
+}
+
+export interface PushTestResult {
+  sent: number;
+  total: number;
+}
+
 // --- Revisions ---
 
 export interface FixPlanOutcome {

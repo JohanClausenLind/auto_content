@@ -9,6 +9,9 @@ export const queryKeys = {
   runs: ["runs"] as const,
   run: (runId: string) => ["runs", runId] as const,
   actionItems: ["action-items", "open"] as const,
+  matrix: ["campaigns", "matrix"] as const,
+  opsHealth: ["operations", "health"] as const,
+  opsAudit: ["operations", "audit"] as const,
 };
 
 /** How often the run views poll while open. */
@@ -52,6 +55,22 @@ export const actionItemsQuery = queryOptions({
   queryKey: queryKeys.actionItems,
   queryFn: api.actionItems.open,
   staleTime: 10_000,
+});
+
+export const matrixQuery = queryOptions({
+  queryKey: queryKeys.matrix,
+  queryFn: api.campaigns.matrix,
+  staleTime: 5 * 60_000,
+});
+
+export const opsHealthQuery = queryOptions({
+  queryKey: queryKeys.opsHealth,
+  queryFn: api.operations.health,
+});
+
+export const opsAuditQuery = queryOptions({
+  queryKey: queryKeys.opsAudit,
+  queryFn: () => api.operations.audit(50),
 });
 
 export function useSession() {
