@@ -336,12 +336,20 @@ async def _originality_block_flow(tmp_path: Path) -> None:
 
     async def run_campaign(campaign_id: str) -> str:
         campaign = _campaign().model_copy(update={"campaign_id": campaign_id})
-        run_id = await start_run(campaign, quality="demo", projects_dir=projects, artifacts_dir=tmp_path / "artifacts", task_queue=queue)
+        run_id = await start_run(
+            campaign,
+            quality="demo",
+            projects_dir=projects,
+            artifacts_dir=tmp_path / "artifacts",
+            task_queue=queue,
+        )  # noqa: E501
         view = await _wait_state(run_id, "WAITING_FOR_APPROVAL")
         await approve_run(run_id, actor="operator", revision_hash=view["preflight_revision_hash"])
         return run_id
 
-    async with Worker(client, task_queue=queue, workflows=[ProductionWorkflow], activities=PRODUCTION_ACTIVITIES):
+    async with Worker(
+        client, task_queue=queue, workflows=[ProductionWorkflow], activities=PRODUCTION_ACTIVITIES
+    ):  # noqa: E501
         first = await run_campaign("cmp_origfirst001")
         await _wait_state(first, "COMPLETE")
         # A SECOND campaign with the same fixture content must hit the blocking gate and FAIL,

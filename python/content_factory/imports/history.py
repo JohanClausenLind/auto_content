@@ -13,7 +13,7 @@ from content_factory.schemas.base import sha256_hex
 REQUIRED_COLUMNS = ("published_at", "platform", "title", "url")
 
 
-class ImportError_(Exception):
+class HistoryImportError(Exception):
     pass
 
 
@@ -64,7 +64,7 @@ def import_history_csv(
     with csv_path.open(newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         if reader.fieldnames is None or any(c not in reader.fieldnames for c in REQUIRED_COLUMNS):
-            raise ImportError_(
+            raise HistoryImportError(
                 f"CSV must carry columns {REQUIRED_COLUMNS}; found {reader.fieldnames}"
             )
         rows = list(reader)

@@ -6,7 +6,7 @@ import pytest
 
 from content_factory.imports.history import (
     ContentMemoryStore,
-    ImportError_,
+    HistoryImportError,
     import_history_csv,
     reconcile,
 )
@@ -46,5 +46,5 @@ def test_dry_run_dedup_import_rollback_reconcile(tmp_path: Path) -> None:
 
     bad = tmp_path / "bad.csv"
     bad.write_text("a,b\n1,2\n")
-    with pytest.raises(ImportError_, match="must carry columns"):
+    with pytest.raises(HistoryImportError, match="must carry columns"):
         import_history_csv(bad, store)
