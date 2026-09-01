@@ -91,6 +91,70 @@ def bootstrap(
     asyncio.run(_run())
 
 
+@app.command("model-check")
+def model_check(
+    prompt: str = typer.Argument(
+        "Name three qualities of a good video hook.", help="Question to send."
+    ),
+) -> None:
+    """Prove the local model path end to end: route via the default catalog (local_only, zero
+    cloud candidates), call Ollama, validate the structured reply. No cloud egress, ever."""
+    from pydantic import BaseModel, Field
+
+    from content_factory.budgets.ledger import Cap, Scope
+    from content_factory.models.catalog import build_gateway
+    from content_factory.models.gateway import ExecutionPausedError, GatewayError
+    from content_factory.schemas.skills import (
+        PRESETS,
+        CostEstimator,
+        ExecutionLocation,
+        ExecutorType,
+        Lifecycle,
+        SkillManifest,
+        SkillPermissions,
+    )
+
+    class Reply(BaseModel):
+        answer: str = Field(min_length=1)
+
+    skill = SkillManifest(
+        skill_id="ops.model_check",
+        version="1.0.0",
+        status=Lifecycle.active,
+        purpose="operator smoke check of the local model path",
+        input_schema="EditBatch",
+        output_schema="EditBatch",
+        executor=ExecutorType.model_role,
+        implementation_ref="content_factory.cli.main:model_check",
+        permitted_locations=(ExecutionLocation.local_gpu, ExecutionLocation.local_cpu),
+        required_models=("local_structured", "local_structured_small"),
+        permissions=SkillPermissions(network_egress=False),
+        license_evidence="Apache-2.0",
+        cost=CostEstimator(kind="per_token", usd=0),
+        timeout_seconds=300,
+        max_retries=1,
+    )
+    gateway = build_gateway()
+    gateway.ledger.set_cap(Cap(scope=Scope.monthly, key="ops", limit_usd=1.0))
+    try:
+        result = gateway.complete_structured(
+            skill,
+            PRESETS["private_local"],
+            Reply,
+            [{"role": "user", "content": prompt}],
+            budget_scopes=[(Scope.monthly, "ops")],
+        )
+    except (ExecutionPausedError, GatewayError) as exc:
+        console.print(f"[red]model check failed:[/] {exc}")
+        raise typer.Exit(1) from exc
+    console.print(f"model: [bold]{result.model_alias}[/] (attempts={result.attempts})")
+    console.print(
+        f"tokens: {result.input_tokens} in / {result.output_tokens} out · "
+        f"{result.elapsed_s:.1f}s · ${result.actual_usd:.4f}"
+    )
+    console.print(f"answer: {result.value.answer}")  # type: ignore[attr-defined]
+
+
 @app.command("reset-password")
 def reset_password(
     username: str = typer.Argument("operator", help="Account to reset."),

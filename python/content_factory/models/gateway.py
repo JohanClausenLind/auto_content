@@ -236,6 +236,9 @@ class ModelGateway:
 
 def _strip_fences(text: str) -> str:
     t = text.strip()
+    # Reasoning models (Qwen3 et al.) prepend a <think>…</think> block before the answer.
+    if t.startswith("<think>") and "</think>" in t:
+        t = t.split("</think>", 1)[1].strip()
     if t.startswith("```"):
         t = t.split("\n", 1)[1] if "\n" in t else t
         if t.endswith("```"):
