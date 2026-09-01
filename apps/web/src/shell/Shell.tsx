@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { actionItemsQuery, useLogout, useMeta, useSession, useSwitchWorkspace } from "../api/queries";
 import type { Session } from "../api/types";
+import { AssistantPanel } from "./AssistantPanel";
 import { buildCommands } from "./commands";
 import { NAV_SECTIONS, visibleAreas } from "./nav";
 import { UserMenu } from "./UserMenu";
@@ -24,6 +25,7 @@ function ShellInner({ session }: { session: Session }) {
   const logout = useLogout();
   const [paletteOpen, setPaletteOpen] = useCommandPaletteHotkey();
   const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const { data: actionItems } = useQuery(actionItemsQuery);
   const actionTone = actionItems?.some((i) => i.severity === "critical") ? "danger" : actionItems?.some((i) => i.severity === "warning") ? "warn" : "neutral";
@@ -88,6 +90,9 @@ function ShellInner({ session }: { session: Session }) {
             Budget <span aria-hidden="true">—</span>
             <span className="cf-visually-hidden">not tracked yet</span>
           </span>
+          <Button variant="ghost" size="sm" onPress={() => setAssistantOpen(true)}>
+            Assistant
+          </Button>
           <ActionCenterBadge count={actionItems?.length ?? 0} tone={actionTone} onPress={() => go("/")} />
           <Button variant="ghost" size="sm" aria-label={schemeLabel} aria-pressed={theme.resolved.scheme === "dark"} onPress={theme.toggleScheme}>
             <span aria-hidden="true">{theme.resolved.scheme === "dark" ? "☾" : "☀"}</span>
@@ -122,6 +127,7 @@ function ShellInner({ session }: { session: Session }) {
       </main>
 
       <CommandPalette commands={commands} isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
+      <AssistantPanel isOpen={assistantOpen} onOpenChange={setAssistantOpen} />
       <Dialog title="Customize theme" description="Changes apply immediately and are saved to your account." size="lg" isOpen={customizerOpen} onOpenChange={setCustomizerOpen}>
         <ThemeCustomizer />
       </Dialog>

@@ -110,3 +110,7 @@
   .cf-shell[data-nav-open] .cf-sidenav { display: flex; }
   .cf-main { padding: var(--cf-space-4); }
 }
+
+/* Right-side drawer variant for the assistant panel (overrides the centered overlay). */
+.cf-overlay--right { align-items: stretch; justify-content: flex-end; padding: 0; }
+.cf-overlay--right .cf-modal { height: 100%; max-height: none; border-radius: 0; border-top: none; border-right: none; border-bottom: none; }

@@ -1,0 +1,421 @@
+/* Create flow, Operations, Calendar, Push settings. Colours come from --cf-* tokens. */
+
+/* --- Create: step indicator --- */
+.cf-steps {
+  list-style: none;
+  display: flex;
+  gap: var(--cf-space-4);
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+.cf-steps__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cf-space-2);
+  color: var(--cf-muted);
+  font-size: 0.9rem;
+}
+.cf-steps__item[data-state="current"] {
+  color: var(--cf-fg);
+  font-weight: 600;
+}
+.cf-steps__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--cf-radius-full);
+  border: 1px solid var(--cf-border);
+  background: var(--cf-panel-2);
+  font-size: 0.8rem;
+}
+.cf-steps__item[data-state="current"] .cf-steps__number {
+  border-color: var(--cf-accent);
+  background: var(--cf-accent-soft);
+}
+.cf-steps__item[data-state="done"] .cf-steps__number {
+  border-color: var(--cf-success);
+  background: var(--cf-success-soft);
+}
+
+/* --- Create: steps --- */
+.cf-create__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-4);
+}
+.cf-create__heading {
+  margin: 0;
+  font-size: 1.15rem;
+  outline: none;
+}
+.cf-create__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-4);
+  max-width: 34rem;
+}
+.cf-create__objective {
+  resize: vertical;
+  min-height: 4.5rem;
+  font: inherit;
+}
+.cf-create__quality select {
+  max-width: 18rem;
+}
+.cf-create__nav {
+  display: flex;
+  gap: var(--cf-space-2);
+  flex-wrap: wrap;
+}
+.cf-create__notes {
+  margin: 0;
+  padding-left: var(--cf-space-5);
+  color: var(--cf-muted);
+  font-size: 0.875rem;
+}
+.cf-create__error {
+  margin: 0;
+  color: var(--cf-danger);
+  background: var(--cf-danger-soft);
+  padding: var(--cf-space-2) var(--cf-space-3);
+  border-radius: var(--cf-radius-md);
+}
+.cf-create__rejected {
+  border: 1px solid var(--cf-warn);
+  background: var(--cf-warn-soft);
+  border-radius: var(--cf-radius-lg);
+  padding: var(--cf-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  align-items: flex-start;
+}
+.cf-create__rejected p {
+  margin: 0;
+}
+.cf-create__rejectedtitle {
+  margin: 0;
+  font-size: 1rem;
+}
+.cf-create__hint {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.875rem;
+}
+
+/* --- Create: deliverable matrix --- */
+.cf-matrix th,
+.cf-matrix td {
+  white-space: normal;
+  vertical-align: top;
+}
+.cf-matrix__type {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cf-matrix__row--disabled .cf-matrix__type,
+.cf-matrix__row--disabled .cf-matrix__destinations {
+  color: var(--cf-muted);
+}
+.cf-matrix__row--invalid {
+  background: var(--cf-danger-soft);
+}
+.cf-matrix__unavailable {
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.cf-matrix__reason {
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+  max-width: 22rem;
+}
+.cf-matrix__alert {
+  margin: var(--cf-space-1) 0 0;
+  color: var(--cf-danger);
+  font-weight: 600;
+}
+.cf-matrix__fields {
+  display: flex;
+  gap: var(--cf-space-3);
+  align-items: end;
+  flex-wrap: wrap;
+  min-width: 14rem;
+}
+.cf-matrix__count {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-1);
+}
+.cf-matrix__count .cf-input {
+  width: 5rem;
+}
+.cf-matrix__check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--cf-accent);
+}
+
+/* --- Create: preview --- */
+.cf-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-4);
+}
+.cf-preview__estimates {
+  margin: 0;
+  font-weight: 600;
+  border: 1px solid var(--cf-success);
+  background: var(--cf-success-soft);
+  border-radius: var(--cf-radius-md);
+  padding: var(--cf-space-2) var(--cf-space-3);
+  align-self: flex-start;
+}
+.cf-preview__group {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-panel);
+  padding: var(--cf-space-4);
+}
+.cf-preview__group--pruned {
+  background: var(--cf-panel-2);
+}
+.cf-preview__heading {
+  margin: 0 0 var(--cf-space-2);
+  font-size: 0.95rem;
+}
+.cf-preview__list {
+  margin: 0;
+  padding-left: var(--cf-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-1);
+  font-size: 0.9rem;
+}
+.cf-preview__stage {
+  font-weight: 600;
+}
+.cf-preview__deps,
+.cf-preview__for {
+  color: var(--cf-muted);
+}
+.cf-preview__none {
+  margin: 0;
+  color: var(--cf-muted);
+}
+
+/* --- Operations --- */
+.cf-ops__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3);
+}
+.cf-ops__sectionhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cf-space-3);
+}
+.cf-ops__heading {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.cf-ops__lead {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.9rem;
+}
+.cf-ops__verdict {
+  margin: 0;
+}
+.cf-ops__table th,
+.cf-ops__table td {
+  white-space: normal;
+  vertical-align: top;
+}
+.cf-ops__detail,
+.cf-ops__fix {
+  color: var(--cf-muted);
+  font-size: 0.875rem;
+}
+.cf-ops__target {
+  font-family: var(--cf-font-mono);
+  font-size: 0.8rem;
+}
+.cf-healthchip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem var(--cf-space-3);
+  border-radius: var(--cf-radius-full);
+  border: 1px solid var(--cf-border);
+  background: var(--cf-panel-2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cf-healthchip[data-status="ok"] {
+  border-color: var(--cf-success);
+  background: var(--cf-success-soft);
+}
+.cf-healthchip[data-status="warn"] {
+  border-color: var(--cf-warn);
+  background: var(--cf-warn-soft);
+}
+.cf-healthchip[data-status="fail"] {
+  border-color: var(--cf-danger);
+  background: var(--cf-danger-soft);
+}
+.cf-healthchip[data-status="skip"] {
+  color: var(--cf-muted);
+}
+.cf-ops__temporal {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.9rem;
+}
+.cf-ops__temporal a {
+  color: var(--cf-accent);
+}
+
+/* --- Calendar --- */
+.cf-calendar__notice {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-panel);
+  padding: var(--cf-space-4) var(--cf-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-calendar__noticetitle {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.cf-calendar__noticebody {
+  margin: 0;
+  color: var(--cf-muted);
+}
+.cf-calendar__day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-calendar__dayheading {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cf-muted);
+}
+.cf-calendar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-calendar__run {
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-panel);
+  padding: var(--cf-space-2) var(--cf-space-4);
+}
+.cf-calendar__time {
+  margin-left: auto;
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+}
+
+/* --- Settings: push --- */
+.cf-push {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3);
+  max-width: 40rem;
+}
+.cf-push__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.cf-push__body {
+  margin: 0;
+}
+.cf-push__note {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.9rem;
+}
+.cf-push__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3);
+  align-items: flex-start;
+}
+.cf-push__buttons {
+  display: flex;
+  gap: var(--cf-space-2);
+  flex-wrap: wrap;
+}
+.cf-push__status,
+.cf-push__result {
+  margin: 0;
+  font-weight: 600;
+}
+.cf-push__error {
+  margin: 0;
+  color: var(--cf-danger);
+}
+
+/* --- Assistant drawer content --- */
+.cf-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3);
+}
+.cf-assistant__heading {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cf-muted);
+}
+.cf-assistant__tools {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-assistant__tool {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel-2);
+  padding: var(--cf-space-2) var(--cf-space-3);
+}
+.cf-assistant__name {
+  font-family: var(--cf-font-mono);
+  font-size: 0.85rem;
+}
+.cf-assistant__desc {
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+}
+.cf-assistant__cli {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.875rem;
+}
+.cf-assistant__cli code {
+  font-family: var(--cf-font-mono);
+}

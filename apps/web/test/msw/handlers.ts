@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import type { Meta, Session, Workspace } from "../../src/api/types";
+import { productHandlers } from "./campaigns";
 
 export const WORKSPACES: Workspace[] = [
   { id: "ws_1", slug: "acme", name: "Acme Studio", role: "owner" },
@@ -41,4 +42,5 @@ export const baseHandlers = [
     const { workspace_id } = (await request.json()) as { workspace_id: string };
     return HttpResponse.json(makeSession({ current_workspace_id: workspace_id }));
   }),
+  ...productHandlers,
 ];

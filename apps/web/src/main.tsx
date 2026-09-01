@@ -2,6 +2,7 @@ import "@content-factory/web-ui/styles.css";
 import "@content-factory/pipeline-canvas/styles.css";
 import "./shell/shell.css";
 import "./pages/runs.css";
+import "./pages/product.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App, createAppQueryClient } from "./app";
