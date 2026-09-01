@@ -339,7 +339,7 @@ class OAuthState(WorkspaceScoped, Base):
 
 
 class DistributionProfile(WorkspaceScoped, TimestampMixin, Base):
-    """Immutable authorized revisions: any change creates a new revision needing re-authorization."""
+    """Immutable authorized revisions: any change creates a new revision needing re-authorization."""  # noqa: E501
 
     __tablename__ = "distribution_profiles"
     __table_args__ = (UniqueConstraint("workspace_id", "name", "revision"),)
