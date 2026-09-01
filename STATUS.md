@@ -249,6 +249,7 @@ minimum, Buttondown API tier.
 | API suite | `uv run pytest tests/api -q` (compose postgres) | 16 passed |
 | Web | `pnpm exec vitest run` (apps/web) | 54 passed / 14 files; `tsc --noEmit` clean |
 | Lint | `uv run ruff format --check . && uv run ruff check . && uv run pyright` | all clean, 0 findings |
+| Local model (2026-09-01) | `uv run content-factory model-check "…"` | GREEN against the real Ollama: routing chose `local_structured` (qwen38-ridge:latest, 3090), 1 attempt, structured reply validated, $0.0000; qwen3:8b is the small-GPU fallback (`models/catalog.py`) |
 
 ## Resume instruction (next smallest task)
 Everything buildable without the operator is built. Tailnet serve is verified (see Phase 0
