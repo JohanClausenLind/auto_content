@@ -98,7 +98,8 @@ class MockReferenceEditBackend(ReferenceEditBackend):
         bg = base.getpixel((1, 1))
         draw.rectangle([0, int(h * 0.3), w, int(h * 0.8)], fill=bg)
         control_l = control.convert("L")
-        bbox = control_l.point(lambda v: 255 if int(v) > 8 else 0)  # type: ignore[arg-type].getbbox()
+        mask = control_l.point(lambda v: 255 if int(v) > 8 else 0)  # type: ignore[arg-type]
+        bbox = mask.getbbox()
         if bbox:
             draw.rectangle(bbox, fill=(180, 60, 40))
         buf = io.BytesIO()

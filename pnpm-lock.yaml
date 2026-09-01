@@ -72,6 +72,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@content-factory/pipeline-canvas':
+        specifier: workspace:*
+        version: link:../../packages/pipeline-canvas
       '@content-factory/web-ui':
         specifier: workspace:*
         version: link:../../packages/web-ui
