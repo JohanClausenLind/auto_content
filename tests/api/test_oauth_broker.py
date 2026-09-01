@@ -52,7 +52,7 @@ def token_transport(seen: list[dict]) -> httpx.MockTransport:
                 )
                 .rstrip(b"=")
                 .decode()
-            )  # noqa: E501
+            )
         return httpx.Response(
             200,
             json={
@@ -61,7 +61,7 @@ def token_transport(seen: list[dict]) -> httpx.MockTransport:
                 "expires_in": 3600,
                 "_challenge": expected_challenge,
             },
-        )  # noqa: E501
+        )
 
     return httpx.MockTransport(handler)
 
@@ -76,7 +76,7 @@ async def _ws(sessionmaker, ws_id: str, slug: str) -> None:
             insert(Workspace)
             .values(id=ws_id, slug=slug, name=slug, settings={})
             .on_conflict_do_nothing(index_elements=[Workspace.id])
-        )  # noqa: E501
+        )
         await db.commit()
 
 
@@ -86,11 +86,11 @@ async def test_full_flow_seals_tokens_and_verifies_pkce(sessionmaker, vault) -> 
     async with sessionmaker() as db:
         url, state = await begin(
             db, workspace_id=WS_A, app=APP, redirect_uri="http://127.0.0.1:3000/callback"
-        )  # noqa: E501
+        )
         await db.commit()
     assert (
         "code_challenge=" in url and "code_challenge_method=S256" in url and f"state={state}" in url
-    )  # noqa: E501
+    )
     async with sessionmaker() as db:
         account = await complete(
             db,
@@ -101,7 +101,7 @@ async def test_full_flow_seals_tokens_and_verifies_pkce(sessionmaker, vault) -> 
             vault=vault,
             handle="op@masto.example",
             transport=token_transport(seen),
-        )  # noqa: E501
+        )
         await db.commit()
     body = seen[0]
     assert body["grant_type"] == "authorization_code" and "code_verifier" in body
@@ -111,7 +111,7 @@ async def test_full_flow_seals_tokens_and_verifies_pkce(sessionmaker, vault) -> 
     # Tokens never stored in plaintext; the vault opens them with the right context only.
     assert "access-tok-1" not in json.dumps(
         {"ct": account.token_ciphertext, "n": account.token_nonce}
-    )  # noqa: E501
+    )
     assert open_access_token(account, vault) == "access-tok-1"
 
 
@@ -122,7 +122,7 @@ async def test_replay_foreign_state_expiry_and_workspace_binding(sessionmaker, v
     async with sessionmaker() as db:
         _url, state = await begin(
             db, workspace_id=WS_A, app=APP, redirect_uri="http://127.0.0.1:3000/cb"
-        )  # noqa: E501
+        )
         await db.commit()
     # Wrong workspace
     async with sessionmaker() as db:
@@ -136,7 +136,7 @@ async def test_replay_foreign_state_expiry_and_workspace_binding(sessionmaker, v
                 vault=vault,
                 handle="h",
                 transport=token_transport(seen),
-            )  # noqa: E501
+            )
         await db.rollback()
     # Consume once, then replay is refused.
     async with sessionmaker() as db:
@@ -149,7 +149,7 @@ async def test_replay_foreign_state_expiry_and_workspace_binding(sessionmaker, v
             vault=vault,
             handle="h",
             transport=token_transport(seen),
-        )  # noqa: E501
+        )
         await db.commit()
     async with sessionmaker() as db:
         with pytest.raises(OAuthError, match="replay"):
@@ -162,7 +162,7 @@ async def test_replay_foreign_state_expiry_and_workspace_binding(sessionmaker, v
                 vault=vault,
                 handle="h",
                 transport=token_transport(seen),
-            )  # noqa: E501
+            )
         await db.rollback()
     # Unknown state
     async with sessionmaker() as db:
@@ -176,7 +176,7 @@ async def test_replay_foreign_state_expiry_and_workspace_binding(sessionmaker, v
                 vault=vault,
                 handle="h",
                 transport=token_transport(seen),
-            )  # noqa: E501
+            )
         await db.rollback()
     # Bad redirect target at begin()
     async with sessionmaker() as db:

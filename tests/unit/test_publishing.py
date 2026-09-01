@@ -23,7 +23,7 @@ from content_factory.distribution.publisher import IntentStore, PublishPolicy, p
 PKG = PostPackage(
     text="Wind supplied about 21% of Sweden's electricity in 2025.",
     idempotency_token="intent-abc123",
-)  # noqa: E501
+)
 POLICY = PublishPolicy(kill_switch=False, distribution_enabled=True)
 
 
@@ -46,7 +46,7 @@ class MastodonServer:
                         "media_attachments": {"image_size_limit": 1000000},
                     }
                 },
-            )  # noqa: E501
+            )
         if path == "/api/v1/accounts/verify_credentials":
             return httpx.Response(200, json={"id": "acct1"})
         if path == "/api/v1/accounts/acct1/statuses":
@@ -60,7 +60,7 @@ class MastodonServer:
                     }
                     for p in self.posts
                 ],
-            )  # noqa: E501
+            )
         if path == "/api/v1/statuses":
             if self.fail_next:
                 mode = self.fail_next.pop(0)
@@ -78,7 +78,7 @@ class MastodonServer:
                 p = self.idempotency[key]
                 return httpx.Response(
                     200, json={"id": p["id"], "url": f"https://masto.example/@op/{p['id']}"}
-                )  # noqa: E501
+                )
             import json as _json
 
             body = _json.loads(request.content)
@@ -88,7 +88,7 @@ class MastodonServer:
                 self.idempotency[key] = post
             return httpx.Response(
                 200, json={"id": post["id"], "url": f"https://masto.example/@op/{post['id']}"}
-            )  # noqa: E501
+            )
         return httpx.Response(404)
 
 
@@ -97,7 +97,7 @@ def masto(server: MastodonServer) -> MastodonBackend:
         base_url="https://masto.example",
         token_getter=lambda: "tok",
         transport=httpx.MockTransport(server.handler),
-    )  # noqa: E501
+    )
 
 
 def test_exactly_once_under_chaos_retries(tmp_path: Path) -> None:
@@ -106,14 +106,14 @@ def test_exactly_once_under_chaos_retries(tmp_path: Path) -> None:
         "500",
         "500",
         "timeout-after-post",
-    ]  # two transient failures, then an ambiguous success  # noqa: E501
+    ]  # two transient failures, then an ambiguous success
     backend = masto(server)
     store = IntentStore(tmp_path)
     state, receipt = publish_with_intent("key1", PKG, backend, store, POLICY)
     assert state == PublishState.published and receipt is not None
     assert (
         len(server.posts) == 1
-    )  # the timeout's landed post was found by reconciliation, not re-posted  # noqa: E501
+    )  # the timeout's landed post was found by reconciliation, not re-posted
     # A later retry of the same intent returns the stored receipt without touching the API.
     state2, receipt2 = publish_with_intent("key1", PKG, backend, store, POLICY)
     assert state2 == PublishState.published and receipt2.remote_id == receipt.remote_id
@@ -131,7 +131,7 @@ def test_ambiguous_without_reconciliation_stays_blocking(tmp_path: Path) -> None
         base_url="https://masto.example",
         token_getter=lambda: "tok",
         transport=httpx.MockTransport(server.handler),
-    )  # noqa: E501
+    )
     store = IntentStore(tmp_path)
     state, receipt = publish_with_intent("key2", PKG, backend, store, POLICY)
     assert state == PublishState.ambiguous and receipt is None
@@ -153,7 +153,7 @@ def test_kill_switch_and_disabled_distribution_block_everything(tmp_path: Path) 
             masto(server),
             store,
             PublishPolicy(kill_switch=True, distribution_enabled=True),
-        )  # noqa: E501
+        )
     with pytest.raises(PublishBlockedError, match="disabled"):
         publish_with_intent(
             "k",
@@ -161,7 +161,7 @@ def test_kill_switch_and_disabled_distribution_block_everything(tmp_path: Path) 
             masto(server),
             store,
             PublishPolicy(kill_switch=False, distribution_enabled=False),
-        )  # noqa: E501
+        )
     with pytest.raises(PublishBlockedError, match="not authorized"):
         publish_with_intent(
             "k",
@@ -171,7 +171,7 @@ def test_kill_switch_and_disabled_distribution_block_everything(tmp_path: Path) 
             PublishPolicy(
                 kill_switch=False, distribution_enabled=True, allowed_visibilities=("draft",)
             ),
-        )  # noqa: E501
+        )
     assert server.posts == []
 
 
@@ -184,7 +184,7 @@ def test_capability_validation_blocks_locally(tmp_path: Path) -> None:
     assert server.posts == [] and store.load("k3")["state"] == "blocked"
     no_alt = PostPackage(
         text="hi", media=(MediaAttachment(data=b"x" * 10, mime="image/png", alt_text=" "),)
-    )  # noqa: E501
+    )
     with pytest.raises(PublishBlockedError, match="alt text"):
         publish_with_intent("k4", no_alt, masto(server), store, POLICY)
 
@@ -207,7 +207,7 @@ def test_bluesky_validation_and_reconciliation() -> None:
                     "uri": f"at://did:plc:abc/app.bsky.feed.post/rkey{len(posts)}",
                     "cid": "cid1",
                 },
-            )  # noqa: E501
+            )
         if path.endswith("listRecords"):
             return httpx.Response(
                 200,
@@ -217,7 +217,7 @@ def test_bluesky_validation_and_reconciliation() -> None:
                         for i, r in enumerate(posts)
                     ]
                 },
-            )  # noqa: E501
+            )
         return httpx.Response(404)
 
     backend = BlueskyBackend(
@@ -225,7 +225,7 @@ def test_bluesky_validation_and_reconciliation() -> None:
         handle="op.example",
         app_password_getter=lambda: "app-pass",
         transport=httpx.MockTransport(handler),
-    )  # noqa: E501
+    )
     assert backend.validate(PostPackage(text="x" * 301)) != []
     assert backend.validate(PostPackage(text="ok", visibility="draft")) != []
     receipt = backend.publish(PKG)
@@ -247,7 +247,7 @@ def test_discord_mention_safety_and_length() -> None:
     backend = DiscordWebhookBackend(
         webhook_url_getter=lambda: "https://discord.com/api/webhooks/1/tok",
         transport=httpx.MockTransport(handler),
-    )  # noqa: E501
+    )
     backend.publish(PostPackage(text="hello @everyone <@123>"))
     assert seen[0]["allowed_mentions"] == {"parse": []}  # pings can never fire
     assert backend.validate(PostPackage(text="x" * 2001)) != []

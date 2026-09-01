@@ -140,8 +140,15 @@ export interface CampaignEstimates {
   local_render: boolean;
 }
 
+/** The slice of the compiled campaign the preview screen needs; the server sends more. */
+export interface PreviewDeliverable {
+  deliverable_id: string;
+  type: string;
+  title: string;
+}
+
 export interface CampaignPreview {
-  campaign: unknown;
+  campaign: { campaign_id: string; deliverables: PreviewDeliverable[] };
   dag: { nodes: DagNode[]; pruned: PrunedStage[] };
   estimates: CampaignEstimates;
   notes: string[];
