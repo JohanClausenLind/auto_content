@@ -24,14 +24,14 @@ Capability → release state → where it lives → how it is proven. States: **
 | ComfyUI adapter + workflow packages | mock-gated | `comfyui/` | fixture-server suite; real sidecar is operator-opt-in |
 | Token vault + OAuth broker | live | `security/vault.py`, `connections/oauth.py` | vault + attack tests |
 | Tier-1 publishing (Bluesky/Mastodon/Discord) + exactly-once intents | mock-gated | `distribution/` | chaos-retry suite; `tests/live` needs a designated test account |
-| Article (WordPress/Ghost) & newsletter (Listmonk/Buttondown/Mailchimp) | pending (package-only) | — | constraints in `docs/research/cms-email-analytics-and-python-libs.md` |
+| Article (WordPress/Ghost) & newsletter (Listmonk) | mock-gated (drafts only) | `distribution/articles.py` | `tests/unit/test_article_newsletter_adapters.py` (Ghost JWT byte-verified; unsubscribe/plaintext enforced); Buttondown/Mailchimp remain package-only per `docs/research/cms-email-analytics-and-python-libs.md` |
 | Tier-2/3 platforms (YouTube/Meta/TikTok/X/…) | package-only | — | constraints in `docs/research/tier2-tier3-platform-constraints.md` |
 | Program schedules (no-burst catch-up) | live | `programs/scheduler.py` | schedule integration test |
 | Kill switch + distribution profiles | live | `api/routes/distribution.py`, CLI | publisher tests; step-up gated |
 | Analytics/attribution (UTM, webhooks, retention mapping) | live (ingest mock-gated) | `analytics/attribution.py` | attribution suite; GA4/Shopify need operator credentials |
-| Personas: contracts, revise, consistency, firewall, schedule | live | `personas/`, `schemas/personas.py` | persona suites (fail-closed fixtures) |
+| Personas: contracts, revise, consistency, firewall, schedule, persistence + UI | live | `personas/`, `schemas/personas.py`, `api/routes/personas.py` | persona suites + `tests/api/test_personas_brands_portal.py` (revision-bound apply, workspace isolation) |
 | Human task slots + completeness gate | live | `workflows/production.py`, `human_tasks/` | `test_human_task_slot.py` |
-| Engagement: classification, governance, read adapters, fan memory | mock-gated | `engagement/`, `personas/replies.py` | engagement suites; live reads need bot/user tokens |
+| Engagement: classification, governance, read adapters, fan memory, inbox API/UI | mock-gated | `engagement/`, `personas/replies.py`, `api/routes/engagement.py` | engagement suites + `tests/api/test_engagement_inbox.py` (idempotent sync, safety escalation, skip-needs-reason); live reads need bot/user tokens |
 | Style explore/exploit | live | `style/exploration.py` | exploration suite |
 | Radar signals | live (fixture feeds) | `radar/signals.py` | radar suite |
 | Imports (dry-run/dedup/rollback/reconcile) | live | `imports/history.py` | imports suite |
@@ -41,8 +41,9 @@ Capability → release state → where it lives → how it is proven. States: **
 | Backups + restore rehearsal | live (executed) | `scripts/backup.sh`, `scripts/restore-rehearsal.sh` | executed against the dev DB |
 | Retention + legal hold | live | `services/retention.py` | retention suite |
 | Audit JSONL export | live | CLI `audit export` | executed against the dev DB |
-| Brand hierarchy | live (logic) | `brands/hierarchy.py` | hierarchy suite; persistence in phase 12 UI |
-| Request portal | live (logic) | `portal/requests.py` | portal suite; route arrives with the portal page |
+| Brand hierarchy | live | `brands/hierarchy.py`, `api/routes/brands.py` | hierarchy suite + API test (ancestor locks refused on write; effective merge served) |
+| Request portal | live | `portal/requests.py`, `api/routes/portal.py` | portal suite + API test (token hashed at rest, shown once, revocable; public submit creates brief + ActionItem only) |
 | Enterprise identity (OIDC) | dormant | `auth/oidc.py` | fixture-IdP suite; SAML/SCIM are schema-only |
 | Tailscale serve/funnel guards | live (config) / operator-blocked (serve check) | `config/settings.py` | config invariants suite; needs `sudo tailscale set --operator` |
-| Localization, i18n, OTIO export, multimodal critic | pending | — | scheduled after live-publishing phases |
+| App i18n scaffolding | live | `apps/web/src/i18n/` | `apps/web/test/i18n.test.tsx` (typed catalogs, locale pref persists, sv coverage enforced) |
+| Content localization, OTIO export, multimodal critic | pending | — | scheduled after live-publishing phases |
