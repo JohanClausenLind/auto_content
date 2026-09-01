@@ -2669,7 +2669,7 @@
     },
     "VisualBeat": {
       "additionalProperties": false,
-      "description": "An editorial beat: 1–3 sentences of narration and the scene that visualizes it.",
+      "description": "An editorial beat: 1-3 sentences of narration and the scene that visualizes it.",
       "properties": {
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",

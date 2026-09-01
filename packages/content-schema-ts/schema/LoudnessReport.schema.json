@@ -1,0 +1,52 @@
+{
+  "$id": "https://content-factory.local/schema/LoudnessReport.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "integrated_lufs": {
+      "title": "Integrated Lufs",
+      "type": "number"
+    },
+    "loudness_range_lu": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Loudness Range Lu"
+    },
+    "target_lufs": {
+      "default": -14.0,
+      "title": "Target Lufs",
+      "type": "number"
+    },
+    "target_true_peak_dbtp": {
+      "default": -1.0,
+      "title": "Target True Peak Dbtp",
+      "type": "number"
+    },
+    "tolerance_lu": {
+      "default": 1.0,
+      "title": "Tolerance Lu",
+      "type": "number"
+    },
+    "true_peak_dbtp": {
+      "title": "True Peak Dbtp",
+      "type": "number"
+    }
+  },
+  "required": [
+    "integrated_lufs",
+    "loudness_range_lu",
+    "target_lufs",
+    "target_true_peak_dbtp",
+    "tolerance_lu",
+    "true_peak_dbtp"
+  ],
+  "title": "LoudnessReport",
+  "type": "object"
+}

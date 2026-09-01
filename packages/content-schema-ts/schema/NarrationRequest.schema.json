@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "PronunciationEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "ipa": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ipa"
+        },
+        "locale": {
+          "default": "en",
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+          "title": "Locale",
+          "type": "string"
+        },
+        "notes": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Notes",
+          "type": "string"
+        },
+        "respelling": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Respelling",
+          "type": "string"
+        },
+        "term": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Term",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ipa",
+        "locale",
+        "notes",
+        "respelling",
+        "term"
+      ],
+      "title": "PronunciationEntry",
+      "type": "object"
+    },
+    "VoiceIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "locale": {
+          "default": "en",
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+          "title": "Locale",
+          "type": "string"
+        },
+        "model_revision": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "mock",
+            "kokoro",
+            "elevenlabs",
+            "azure"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "speed": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "title": "Speed",
+          "type": "number"
+        },
+        "voice_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Voice Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locale",
+        "model_revision",
+        "provider",
+        "seed",
+        "speed",
+        "voice_id"
+      ],
+      "title": "VoiceIdentity",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/NarrationRequest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "beat_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Beat Id",
+      "type": "string"
+    },
+    "display_text": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Display Text",
+      "type": "string"
+    },
+    "lexicon": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PronunciationEntry"
+      },
+      "title": "Lexicon",
+      "type": "array"
+    },
+    "normalization_version": {
+      "default": "1",
+      "minLength": 1,
+      "title": "Normalization Version",
+      "type": "string"
+    },
+    "spoken_text": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Spoken Text",
+      "type": "string"
+    },
+    "voice": {
+      "$ref": "#/$defs/VoiceIdentity"
+    }
+  },
+  "required": [
+    "beat_id",
+    "display_text",
+    "lexicon",
+    "normalization_version",
+    "spoken_text",
+    "voice"
+  ],
+  "title": "NarrationRequest",
+  "type": "object"
+}

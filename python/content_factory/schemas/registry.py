@@ -11,6 +11,7 @@ from pydantic.json_schema import GenerateJsonSchema
 
 from content_factory.schemas import (
     artboards,
+    audio,
     comfyui,
     content,
     dag,
@@ -53,6 +54,12 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "DeliverableDAG": dag.DeliverableDAG,
     "RenderBundle": render.RenderBundle,
     "DatasetTable": render.DatasetTable,
+    "NarrationRequest": audio.NarrationRequest,
+    "NarrationSegment": audio.NarrationSegment,
+    "AlignmentReport": audio.AlignmentReport,
+    "CaptionTrack": audio.CaptionTrack,
+    "LoudnessReport": audio.LoudnessReport,
+    "AudioMixSpec": audio.AudioMixSpec,
 }
 
 SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"

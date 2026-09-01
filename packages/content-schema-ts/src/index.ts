@@ -4,7 +4,10 @@ import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020.
 import addFormats from "ajv-formats";
 
 import { SCHEMA_NAMES, type SchemaName } from "../generated/index.js";
+import AlignmentReport from "../schema/AlignmentReport.schema.json";
 import ArtboardSpec from "../schema/ArtboardSpec.schema.json";
+import AudioMixSpec from "../schema/AudioMixSpec.schema.json";
+import CaptionTrack from "../schema/CaptionTrack.schema.json";
 import ComfyProvenance from "../schema/ComfyProvenance.schema.json";
 import ComfyWorkflowPackage from "../schema/ComfyWorkflowPackage.schema.json";
 import CompiledTimeline from "../schema/CompiledTimeline.schema.json";
@@ -24,8 +27,11 @@ import FrameSpec from "../schema/FrameSpec.schema.json";
 import GenerationLock from "../schema/GenerationLock.schema.json";
 import HardwareInventory from "../schema/HardwareInventory.schema.json";
 import LayerSpec from "../schema/LayerSpec.schema.json";
+import LoudnessReport from "../schema/LoudnessReport.schema.json";
 import ModelDescriptor from "../schema/ModelDescriptor.schema.json";
 import MotionPlan from "../schema/MotionPlan.schema.json";
+import NarrationRequest from "../schema/NarrationRequest.schema.json";
+import NarrationSegment from "../schema/NarrationSegment.schema.json";
 import ProjectBrief from "../schema/ProjectBrief.schema.json";
 import RenderBundle from "../schema/RenderBundle.schema.json";
 import RevisionOutcome from "../schema/RevisionOutcome.schema.json";
@@ -38,7 +44,10 @@ export type * from "../generated/index.js";
 export { SCHEMA_NAMES };
 
 const SCHEMAS: Record<SchemaName, object> = {
+  AlignmentReport,
   ArtboardSpec,
+  AudioMixSpec,
+  CaptionTrack,
   ComfyProvenance,
   ComfyWorkflowPackage,
   CompiledTimeline,
@@ -58,8 +67,11 @@ const SCHEMAS: Record<SchemaName, object> = {
   GenerationLock,
   HardwareInventory,
   LayerSpec,
+  LoudnessReport,
   ModelDescriptor,
   MotionPlan,
+  NarrationRequest,
+  NarrationSegment,
   ProjectBrief,
   RenderBundle,
   RevisionOutcome,

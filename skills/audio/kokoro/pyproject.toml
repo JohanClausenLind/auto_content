@@ -1,0 +1,6 @@
+[project]
+name = "cf-skill-kokoro"
+version = "0.1.0"
+description = "Isolated environment for the Kokoro-82M local TTS executor (Apache-2.0 model; espeak-ng GPL as a separate dependency)"
+requires-python = ">=3.10,<3.13"
+dependencies = ["kokoro==0.9.4", "soundfile>=0.12"]

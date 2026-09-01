@@ -1,0 +1,198 @@
+{
+  "$defs": {
+    "TimingSource": {
+      "enum": [
+        "provider",
+        "forced_alignment",
+        "asr",
+        "synthetic"
+      ],
+      "title": "TimingSource",
+      "type": "string"
+    },
+    "VoiceIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "locale": {
+          "default": "en",
+          "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+          "title": "Locale",
+          "type": "string"
+        },
+        "model_revision": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "mock",
+            "kokoro",
+            "elevenlabs",
+            "azure"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "speed": {
+          "default": 1.0,
+          "maximum": 2.0,
+          "minimum": 0.5,
+          "title": "Speed",
+          "type": "number"
+        },
+        "voice_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Voice Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "locale",
+        "model_revision",
+        "provider",
+        "seed",
+        "speed",
+        "voice_id"
+      ],
+      "title": "VoiceIdentity",
+      "type": "object"
+    },
+    "WordTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "end_ms": {
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "start_ms": {
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "word": {
+          "title": "Word",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end_ms",
+        "start_ms",
+        "word"
+      ],
+      "title": "WordTiming",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/NarrationSegment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One synthesized beat: immutable audio + measured word timings (ms, segment-relative).",
+  "properties": {
+    "audio_format": {
+      "default": "wav",
+      "enum": [
+        "wav",
+        "mp3",
+        "flac"
+      ],
+      "title": "Audio Format",
+      "type": "string"
+    },
+    "audio_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Audio Sha256",
+      "type": "string"
+    },
+    "beat_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Beat Id",
+      "type": "string"
+    },
+    "channels": {
+      "default": 1,
+      "enum": [
+        1,
+        2
+      ],
+      "title": "Channels",
+      "type": "integer"
+    },
+    "display_text": {
+      "title": "Display Text",
+      "type": "string"
+    },
+    "duration_ms": {
+      "minimum": 1,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "normalization_version": {
+      "title": "Normalization Version",
+      "type": "string"
+    },
+    "sample_rate_hz": {
+      "maximum": 192000,
+      "minimum": 8000,
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "spoken_text": {
+      "title": "Spoken Text",
+      "type": "string"
+    },
+    "timing_source": {
+      "$ref": "#/$defs/TimingSource"
+    },
+    "voice": {
+      "$ref": "#/$defs/VoiceIdentity"
+    },
+    "words": {
+      "items": {
+        "$ref": "#/$defs/WordTiming"
+      },
+      "minItems": 1,
+      "title": "Words",
+      "type": "array"
+    }
+  },
+  "required": [
+    "audio_format",
+    "audio_sha256",
+    "beat_id",
+    "channels",
+    "display_text",
+    "duration_ms",
+    "normalization_version",
+    "sample_rate_hz",
+    "schema_version",
+    "spoken_text",
+    "timing_source",
+    "voice",
+    "words"
+  ],
+  "title": "NarrationSegment",
+  "type": "object"
+}

@@ -1,0 +1,85 @@
+{
+  "$id": "https://content-factory.local/schema/AudioMixSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Narration stem laid out on the timeline; music optional with provenance (phase 3: none).",
+  "properties": {
+    "deliverable_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Deliverable Id",
+      "type": "string"
+    },
+    "inter_beat_pause_ms": {
+      "default": 350,
+      "maximum": 5000,
+      "minimum": 0,
+      "title": "Inter Beat Pause Ms",
+      "type": "integer"
+    },
+    "lead_in_ms": {
+      "default": 400,
+      "maximum": 5000,
+      "minimum": 0,
+      "title": "Lead In Ms",
+      "type": "integer"
+    },
+    "music_asset_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Music Asset Sha256"
+    },
+    "music_gain_db": {
+      "default": -18.0,
+      "maximum": 0,
+      "title": "Music Gain Db",
+      "type": "number"
+    },
+    "sample_rate_hz": {
+      "default": 48000,
+      "enum": [
+        44100,
+        48000
+      ],
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "tail_ms": {
+      "default": 600,
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Tail Ms",
+      "type": "integer"
+    },
+    "target_lufs": {
+      "default": -14.0,
+      "title": "Target Lufs",
+      "type": "number"
+    },
+    "target_true_peak_dbtp": {
+      "default": -1.0,
+      "title": "Target True Peak Dbtp",
+      "type": "number"
+    }
+  },
+  "required": [
+    "deliverable_id",
+    "inter_beat_pause_ms",
+    "lead_in_ms",
+    "music_asset_sha256",
+    "music_gain_db",
+    "sample_rate_hz",
+    "tail_ms",
+    "target_lufs",
+    "target_true_peak_dbtp"
+  ],
+  "title": "AudioMixSpec",
+  "type": "object"
+}

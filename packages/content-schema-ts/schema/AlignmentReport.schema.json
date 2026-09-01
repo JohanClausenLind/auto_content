@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "AlignmentFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "monotonic",
+            "overlap",
+            "missing_words",
+            "extra_words",
+            "gap",
+            "duration_mismatch",
+            "empty"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "blocker",
+            "critical",
+            "major",
+            "minor",
+            "advisory"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "word_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Word Index"
+        }
+      },
+      "required": [
+        "check",
+        "message",
+        "severity",
+        "word_index"
+      ],
+      "title": "AlignmentFinding",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/AlignmentReport.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "beat_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Beat Id",
+      "type": "string"
+    },
+    "coverage": {
+      "description": "fraction of script words with timings",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Coverage",
+      "type": "number"
+    },
+    "findings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AlignmentFinding"
+      },
+      "title": "Findings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "beat_id",
+    "coverage",
+    "findings"
+  ],
+  "title": "AlignmentReport",
+  "type": "object"
+}
