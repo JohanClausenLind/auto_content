@@ -116,7 +116,7 @@ def run_demo(
         EvidenceRecord(
             evidence_id="evd_wind0000001",
             source_id="src_energimynd01",
-            excerpt="wind power generated 34.9 TWh in 2025, about 21 percent of Sweden's total electricity generation",
+            excerpt="wind power generated 34.9 TWh in 2025, about 21 percent of Sweden's total electricity generation",  # noqa: E501
             locator=EvidenceLocator(kind="char_range", start=120, end=240),
             captured_at="2026-09-01",
         ),

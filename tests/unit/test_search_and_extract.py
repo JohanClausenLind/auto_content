@@ -16,11 +16,11 @@ def test_searxng_adapter_parses_json_results() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.params["format"] == "json"
         return httpx.Response(200, json={"results": [
-            {"title": "Energy in Sweden", "url": "https://example.se/r", "content": "wind 21%", "engine": "duckduckgo"},
+            {"title": "Energy in Sweden", "url": "https://example.se/r", "content": "wind 21%", "engine": "duckduckgo"},  # noqa: E501
             {"title": "No URL entry", "content": "ignored"},
         ]})
 
-    provider = SearxngSearchProvider("http://127.0.0.1:8083", transport=httpx.MockTransport(handler))
+    provider = SearxngSearchProvider("http://127.0.0.1:8083", transport=httpx.MockTransport(handler))  # noqa: E501
     results = provider.search("sweden wind share 2025")
     assert len(results) == 1 and results[0].url == "https://example.se/r"
 
@@ -39,7 +39,7 @@ def test_fixture_provider_matches_exact_then_overlap(tmp_path: Path) -> None:
 
 def test_article_extraction_from_fixture_html() -> None:
     html = (FIXTURES / "energimyndigheten_wind_2025.html").read_bytes()
-    cap = CapturedContent("https://example.se/wind", "https://example.se/wind", 200, "text/html", html, "0" * 64, ())
+    cap = CapturedContent("https://example.se/wind", "https://example.se/wind", 200, "text/html", html, "0" * 64, ())  # noqa: E501
     doc = extract(cap)
     assert doc.kind == "article"
     assert ("21" in doc.text and "vindkraft" in doc.text.lower()) or "wind" in doc.text.lower()
