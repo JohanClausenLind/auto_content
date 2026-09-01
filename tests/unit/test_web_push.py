@@ -82,7 +82,7 @@ def test_dead_subscription_is_reported_gone() -> None:
     from pywebpush import WebPushException
 
     class GoneSession(FakeSession):
-        def post(self, url, data=None, headers=None, timeout=None, **kw):  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: E501
+        def post(self, url, data=None, headers=None, timeout=None, **kw):  # pyright: ignore[reportIncompatibleMethodOverride]
             raise WebPushException("gone", response=FakeResponse(410))
 
     result = send_web_push(SUB, {"title": "x"}, vapid=keys, requests_session=GoneSession())
