@@ -20,10 +20,9 @@ from content_factory.audio.mix import apply_measurements, build_narration_stem, 
 from content_factory.audio.normalize import normalize_for_speech
 from content_factory.audio.tts import MockTTS
 from content_factory.deliverables.dag_compiler import compile_dag
+from content_factory.qc.audio import check_audio_in_video
 from content_factory.research.citations import export_research, script_claim_gate
 from content_factory.research.claims import build_claim
-from content_factory.schemas.research import EvidenceLocator, EvidenceRecord, SourceRecord
-from content_factory.qc.audio import check_audio_in_video
 from content_factory.schemas.audio import AudioMixSpec, NarrationRequest, VoiceIdentity
 from content_factory.schemas.fixtures import (
     WS,
@@ -34,6 +33,12 @@ from content_factory.schemas.fixtures import (
     sample_story_plan,
 )
 from content_factory.schemas.render import RenderBundle
+from content_factory.schemas.research import (
+    EvidenceLocator,
+    EvidenceRecord,
+    SourceClass,
+    SourceRecord,
+)
 from content_factory.timeline.compiler import compile_timeline
 from content_factory.video.render import render_artboard, render_timeline
 
@@ -89,7 +94,7 @@ def run_demo(
             content_type="text/html",
             size_bytes=2048,
             published_at="2026-03-01",
-            classification="official",
+            classification=SourceClass.official,
         ),
         SourceRecord(
             source_id="src_svk00000001",
@@ -104,7 +109,7 @@ def run_demo(
             content_type="text/html",
             size_bytes=1024,
             published_at="2026-02-10",
-            classification="official",
+            classification=SourceClass.official,
         ),
     ]
     evidence = [
