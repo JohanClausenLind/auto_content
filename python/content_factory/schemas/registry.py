@@ -18,6 +18,7 @@ from content_factory.schemas import (
     editing,
     hardware,
     render,
+    research,
     scenes,
     sequences,
     skills,
@@ -60,6 +61,11 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "CaptionTrack": audio.CaptionTrack,
     "LoudnessReport": audio.LoudnessReport,
     "AudioMixSpec": audio.AudioMixSpec,
+    "SourceRecord": research.SourceRecord,
+    "EvidenceRecord": research.EvidenceRecord,
+    "ClaimRecord": research.ClaimRecord,
+    "EvidenceRequirementPlan": research.EvidenceRequirementPlan,
+    "ResearchPack": research.ResearchPack,
 }
 
 SCHEMA_DIALECT = "https://json-schema.org/draft/2020-12/schema"

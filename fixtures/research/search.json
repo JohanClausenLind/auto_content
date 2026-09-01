@@ -1,0 +1,6 @@
+{
+  "sweden wind share electricity 2025": [
+    {"title": "Wind power supplied 21 percent of Sweden's electricity in 2025", "url": "https://example.se/wind-2025", "snippet": "Preliminary statistics show wind generated 34.9 TWh in 2025, about 21 percent of total generation.", "engine": "fixture", "published": "2026-03-01"},
+    {"title": "Grid statistics 2025", "url": "https://example.se/grid-2025", "snippet": "Total generation was 166 TWh in 2025.", "engine": "fixture"}
+  ]
+}
