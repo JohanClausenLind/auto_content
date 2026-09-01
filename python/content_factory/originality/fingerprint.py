@@ -24,7 +24,7 @@ BLOCKING = {OriginalityVerdict.too_similar, OriginalityVerdict.mass_production_r
 
 _WORD = re.compile(r"[a-z0-9']+")
 _STOP = frozenset(
-    "a an the of to in and or is are was were be been on for with that this it as at by from".split()
+    "a an the of to in and or is are was were be been on for with that this it as at by from".split()  # noqa: E501
 )
 
 
@@ -49,10 +49,12 @@ def jaccard(a: set, b: set) -> float:
 
 def dhash(image: Image.Image, size: int = 8) -> int:
     grey = image.convert("L").resize((size + 1, size))
+    px = list(grey.getdata())
+    width = size + 1
     bits = 0
     for y in range(size):
         for x in range(size):
-            bits = (bits << 1) | (1 if grey.getpixel((x, y)) > grey.getpixel((x + 1, y)) else 0)
+            bits = (bits << 1) | (1 if px[y * width + x] > px[y * width + x + 1] else 0)
     return bits
 
 
@@ -156,10 +158,13 @@ def compare(
     )
 
 
+DEFAULT_THRESHOLDS = Thresholds()
+
+
 def decide(
     comparisons: list[Comparison],
     *,
-    thresholds: Thresholds = Thresholds(),
+    thresholds: Thresholds = DEFAULT_THRESHOLDS,
     declared_adaptation_of: str | None = None,
 ) -> OriginalityDecision:
     explanations: list[str] = []
@@ -195,37 +200,37 @@ def decide(
             if is_declared:
                 bump(OriginalityVerdict.acceptable_adaptation)
                 explanations.append(
-                    f"{c.against}: {c.phrase_overlap:.0%} phrase overlap, but it is a declared adaptation of this piece"
+                    f"{c.against}: {c.phrase_overlap:.0%} phrase overlap, but it is a declared adaptation of this piece"  # noqa: E501
                 )
             else:
                 bump(OriginalityVerdict.too_similar)
                 detail = f"{c.phrase_overlap:.0%} of 3-word phrases match"
                 if noun_swap and c.phrase_overlap < thresholds.too_similar_phrase:
-                    detail = f"sentence frame is {c.frame_overlap:.0%} identical with only content words swapped"
+                    detail = f"sentence frame is {c.frame_overlap:.0%} identical with only content words swapped"  # noqa: E501
                 if near_image:
-                    detail += f"; the visual fingerprint is {c.image_distance} bits from an existing design"
+                    detail += f"; the visual fingerprint is {c.image_distance} bits from an existing design"  # noqa: E501
                 explanations.append(f"{c.against}: {detail}")
             continue
         if near_image:
             bump(OriginalityVerdict.needs_differentiation)
             explanations.append(
-                f"{c.against}: near-identical visual design ({c.image_distance} bits) — vary the layout"
+                f"{c.against}: near-identical visual design ({c.image_distance} bits) — vary the layout"  # noqa: E501
             )
             continue
         if c.hook_overlap >= thresholds.hook_match and c.beat_order_match >= thresholds.beat_match:
             bump(OriginalityVerdict.needs_differentiation)
             explanations.append(
-                f"{c.against}: same hook structure ({c.hook_overlap:.0%}) and identical beat order — vary the opening or restructure"
+                f"{c.against}: same hook structure ({c.hook_overlap:.0%}) and identical beat order — vary the opening or restructure"  # noqa: E501
             )
         elif c.phrase_overlap >= thresholds.needs_diff_phrase:
             bump(OriginalityVerdict.needs_differentiation)
             explanations.append(
-                f"{c.against}: {c.phrase_overlap:.0%} phrase overlap sits above the differentiation threshold"
+                f"{c.against}: {c.phrase_overlap:.0%} phrase overlap sits above the differentiation threshold"  # noqa: E501
             )
     if near_identical >= thresholds.mass_production_min_matches:
         bump(OriginalityVerdict.mass_production_risk)
         explanations.append(
-            f"{near_identical} near-identical prior pieces — mass-production pattern across the channel's own history"
+            f"{near_identical} near-identical prior pieces — mass-production pattern across the channel's own history"  # noqa: E501
         )
     if not explanations:
         explanations.append(
