@@ -12,6 +12,12 @@ export const queryKeys = {
   matrix: ["campaigns", "matrix"] as const,
   opsHealth: ["operations", "health"] as const,
   opsAudit: ["operations", "audit"] as const,
+  personas: ["personas"] as const,
+  persona: (id: string) => ["personas", id] as const,
+  brandNodes: ["brand-nodes"] as const,
+  brandEffective: (id: string) => ["brand-nodes", id, "effective"] as const,
+  portalLinks: ["portal-links"] as const,
+  portalBriefs: ["portal-briefs"] as const,
 };
 
 /** How often the run views poll while open. */
@@ -61,6 +67,38 @@ export const matrixQuery = queryOptions({
   queryKey: queryKeys.matrix,
   queryFn: api.campaigns.matrix,
   staleTime: 5 * 60_000,
+});
+
+export const personasQuery = queryOptions({
+  queryKey: queryKeys.personas,
+  queryFn: () => api.personas.list(),
+});
+
+export const personaQuery = (id: string) =>
+  queryOptions({
+    queryKey: queryKeys.persona(id),
+    queryFn: () => api.personas.get(id),
+  });
+
+export const brandNodesQuery = queryOptions({
+  queryKey: queryKeys.brandNodes,
+  queryFn: () => api.brands.nodes(),
+});
+
+export const brandEffectiveQuery = (id: string) =>
+  queryOptions({
+    queryKey: queryKeys.brandEffective(id),
+    queryFn: () => api.brands.effective(id),
+  });
+
+export const portalLinksQuery = queryOptions({
+  queryKey: queryKeys.portalLinks,
+  queryFn: () => api.portal.links(),
+});
+
+export const portalBriefsQuery = queryOptions({
+  queryKey: queryKeys.portalBriefs,
+  queryFn: () => api.portal.briefs(),
 });
 
 export const opsHealthQuery = queryOptions({

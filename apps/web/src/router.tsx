@@ -4,15 +4,16 @@ import { sessionQuery } from "./api/queries";
 import {
   AnalyticsPage,
   AssetsPage,
-  BrandPage,
   ConnectionsPage,
   HomePage,
   InboxPage,
   NotFoundPage,
-  PersonasPage,
   SourcesPage,
   TemplatesPage,
 } from "./pages/areas";
+import { BrandPage } from "./pages/BrandPage";
+import { PersonasPage } from "./pages/PersonasPage";
+import { RequestsPage } from "./pages/RequestsPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { CreatePage } from "./pages/CreatePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -85,6 +86,7 @@ const routeTree = rootRoute.addChildren([
     page("/create", CreatePage),
     page("/inbox", InboxPage),
     page("/personas", PersonasPage),
+    page("/requests", RequestsPage),
     page("/calendar", CalendarPage),
     page("/projects", ProjectsPage),
     runDetailRoute,

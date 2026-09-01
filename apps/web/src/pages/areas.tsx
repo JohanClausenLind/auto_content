@@ -21,13 +21,6 @@ export function InboxPage() {
   );
 }
 
-export function PersonasPage() {
-  return (
-    <Page title="Personas" lead="The voices your content is written in.">
-      <EmptyState title="No personas yet" body="A persona holds tone, boundaries and disclosure rules. Every piece of content is made through one." />
-    </Page>
-  );
-}
 
 export function AssetsPage() {
   return (
@@ -37,13 +30,6 @@ export function AssetsPage() {
   );
 }
 
-export function BrandPage() {
-  return (
-    <Page title="Brand" lead="Colours, fonts, logos and rules for rendered content.">
-      <EmptyState title="No brand kit yet" body="A brand kit makes every rendered image and video consistent. This is separate from the app theme." />
-    </Page>
-  );
-}
 
 export function SourcesPage() {
   return (

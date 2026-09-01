@@ -33,6 +33,10 @@ export const baseHandlers = [
   http.get("*/v1/runs", () => HttpResponse.json([])),
   http.get("*/v1/workspaces", () => HttpResponse.json(WORKSPACES)),
   http.get("*/v1/prefs/theme", () => HttpResponse.json({ value: null })),
+  http.get("*/v1/personas", () => HttpResponse.json([])),
+  http.get("*/v1/brand-nodes", () => HttpResponse.json([])),
+  http.get("*/v1/portal-links", () => HttpResponse.json([])),
+  http.get("*/v1/portal-briefs", () => HttpResponse.json([])),
   http.put("*/v1/prefs/theme", async ({ request }) => {
     themePuts.push(await request.json());
     return new HttpResponse(null, { status: 204 });

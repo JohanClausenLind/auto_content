@@ -5,12 +5,20 @@ import type {
   AuditEvent,
   CampaignBody,
   CampaignCreated,
+  BrandEffective,
+  BrandNode,
   CampaignPreview,
   DeliverableMatrix,
   LoginResult,
   Meta,
   OperationsHealth,
   PasskeyOptions,
+  PersonaDetail,
+  PersonaDiff,
+  PersonaSummary,
+  PortalBriefRow,
+  PortalLinkCreated,
+  PortalLinkRow,
   PushSubscriptionBody,
   PushTestResult,
   RevisionOutcome,
@@ -131,6 +139,26 @@ export const api = {
   },
   meta: {
     get: () => request<Meta>("GET", "/meta").then((r) => r.data),
+  },
+  personas: {
+    list: () => request<PersonaSummary[]>("GET", "/personas").then((r) => r.data),
+    get: (id: string) => request<PersonaDetail>("GET", `/personas/${encodeURIComponent(id)}`).then((r) => r.data),
+    create: (doc: unknown) => request<PersonaDetail>("POST", "/personas", doc).then((r) => r.data),
+    revise: (id: string, feedback: string) => request<PersonaDiff>("POST", `/personas/${encodeURIComponent(id)}/revise`, { feedback }).then((r) => r.data),
+    apply: (id: string, diff: PersonaDiff) => request<PersonaDetail>("POST", `/personas/${encodeURIComponent(id)}/apply`, diff).then((r) => r.data),
+  },
+  brands: {
+    nodes: () => request<BrandNode[]>("GET", "/brand-nodes").then((r) => r.data),
+    create: (body: { name: string; parent_id?: string | null; tokens?: Record<string, string>; locked_tokens?: string[]; policies?: Record<string, string>; locked_policies?: string[] }) =>
+      request<BrandNode>("POST", "/brand-nodes", body).then((r) => r.data),
+    effective: (id: string) => request<BrandEffective>("GET", `/brand-nodes/${encodeURIComponent(id)}/effective`).then((r) => r.data),
+  },
+  portal: {
+    links: () => request<PortalLinkRow[]>("GET", "/portal-links").then((r) => r.data),
+    createLink: (label: string) => request<PortalLinkCreated>("POST", "/portal-links", { label }).then((r) => r.data),
+    revokeLink: (id: string) => request<void>("DELETE", `/portal-links/${encodeURIComponent(id)}`).then(() => undefined),
+    briefs: () => request<PortalBriefRow[]>("GET", "/portal-briefs").then((r) => r.data),
+    decide: (id: string, decision: "accepted" | "declined") => request<PortalBriefRow>("POST", `/portal-briefs/${encodeURIComponent(id)}/decision`, { decision }).then((r) => r.data),
   },
 };
 

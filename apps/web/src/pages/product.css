@@ -419,3 +419,106 @@
 .cf-assistant__cli code {
   font-family: var(--cf-font-mono);
 }
+
+/* --- Personas / Brand / Requests ------------------------------------------------------------ */
+.cf-personas__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: var(--cf-space-3);
+}
+.cf-personas__list,
+.cf-brandtree__list,
+.cf-requests__linklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-personas__item,
+.cf-brandtree__item {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel-2);
+}
+.cf-personas__open {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cf-space-3);
+  width: 100%;
+  padding: var(--cf-space-2) var(--cf-space-3);
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.cf-personas__name {
+  font-weight: 600;
+}
+.cf-personas__rev,
+.cf-brandtree__lock,
+.cf-requests__revoked {
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+}
+.cf-personas__create,
+.cf-persona-card,
+.cf-requests__mint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3);
+  padding: var(--cf-space-3);
+  border-block-start: 1px solid var(--cf-border);
+}
+.cf-personas__create {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  margin-block-end: var(--cf-space-3);
+  max-width: 32rem;
+}
+.cf-persona-card__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--cf-space-1) var(--cf-space-3);
+  margin: 0;
+}
+.cf-persona-card__facts dt {
+  color: var(--cf-muted);
+}
+.cf-persona-card__facts dd {
+  margin: 0;
+}
+.cf-persona-card__diffactions,
+.cf-requests__actions {
+  display: flex;
+  gap: var(--cf-space-2);
+}
+.cf-requests__briefs {
+  margin-block-end: var(--cf-space-5);
+}
+.cf-requests__minted {
+  padding: var(--cf-space-2) var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel-2);
+  overflow-wrap: anywhere;
+}
+.cf-requests__minted code {
+  font-family: var(--cf-font-mono);
+  font-size: 0.85rem;
+}
+.cf-requests__link {
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-3);
+  padding: var(--cf-space-2) var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel-2);
+}
+.cf-requests__link .cf-personas__rev {
+  margin-inline-start: auto;
+}

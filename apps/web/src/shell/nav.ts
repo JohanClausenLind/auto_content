@@ -12,6 +12,7 @@ export const NAV_AREAS: readonly NavArea[] = [
   { to: "/inbox", label: "Inbox", section: "work", keywords: "approvals tasks" },
   { to: "/calendar", label: "Calendar", section: "work", keywords: "schedule" },
   { to: "/projects", label: "Projects", section: "work", keywords: "campaigns" },
+  { to: "/requests", label: "Requests", section: "work", keywords: "portal briefs clients" },
   { to: "/personas", label: "Personas", section: "library", keywords: "voice" },
   { to: "/assets", label: "Assets", section: "library", keywords: "media images video" },
   { to: "/brand", label: "Brand", section: "library", keywords: "colours fonts logo" },

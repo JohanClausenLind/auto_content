@@ -227,3 +227,90 @@ export interface GateRequiredOutcome {
 }
 
 export type RevisionOutcome = FixPlanOutcome | ClarifyingQuestionOutcome | RefusalOutcome | GateRequiredOutcome;
+
+// --- Personas ---
+
+export interface PersonaSummary {
+  id: string;
+  name: string;
+  revision: number;
+  archived: boolean;
+}
+
+export interface PersonaVoiceDoc {
+  tone: string[];
+  vocabulary: string;
+  sentence_length: string;
+  emoji_policy: string;
+  punctuation: string;
+  humor: string;
+  pet_names: string[];
+}
+
+export interface PersonaDocument {
+  persona_id: string;
+  revision: number;
+  identity: { display_name: string; pronouns: string; presented_age: number };
+  voice: PersonaVoiceDoc;
+  backstory: { bio: string };
+  disclosure: "disclose_on_ask" | "deflect";
+}
+
+export interface PersonaDetail extends PersonaSummary {
+  document: PersonaDocument;
+}
+
+export interface PersonaFieldChange {
+  path: string;
+  before: string;
+  after: string;
+  reason: string;
+}
+
+export interface PersonaDiff {
+  persona_id: string;
+  base_revision: number;
+  changes: PersonaFieldChange[];
+  plain_language: string;
+}
+
+// --- Brand hierarchy ---
+
+export interface BrandNode {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  tokens: Record<string, string>;
+  locked_tokens: string[];
+  policies: Record<string, string>;
+  locked_policies: string[];
+}
+
+export interface BrandEffective {
+  tokens: Record<string, string>;
+  policies: Record<string, string>;
+}
+
+// --- Portal ---
+
+export interface PortalLinkRow {
+  id: string;
+  label: string;
+  expires_at: string;
+  revoked: boolean;
+}
+
+export interface PortalLinkCreated extends PortalLinkRow {
+  token: string;
+  submit_url: string;
+}
+
+export interface PortalBriefRow {
+  id: string;
+  topic: string;
+  objective: string;
+  deadline: string | null;
+  contact: string;
+  status: "new" | "accepted" | "declined";
+  created_at: string | null;
+}
