@@ -64,8 +64,9 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       reasons), run detail + Pipeline Canvas + Revision Box + approval with step-up, Action Center,
       Operations page, Calendar (honest placeholder), Push settings, assistant drawer (honest: lists
       the MCP tools; no local model wired yet). 40 web tests + 12 canvas tests pass; build clean.
-      Operator-blocked: `sudo tailscale set --operator=$USER` (tailnet serve check); extra push/
-      assistant/calendar UI tests were cut short by the account spend limit.
+      Operator-blocked: `sudo tailscale set --operator=$USER` (tailnet serve check). The push/
+      assistant/calendar UI tests that were cut short are now in
+      `apps/web/test/calendarPushAssistant.test.tsx` (2026-09-01).
 - [~] **Phase 9 — scheduler and first live publishing** — everything but the live post is GREEN.
       Token vault (AES-256-GCM envelope, context-bound AAD, key-ring rotation), OAuth broker
       (state+PKCE S256, single-use workspace-bound callbacks), Tier-1 adapters (Bluesky app-password;
@@ -83,9 +84,13 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       exact scene-range mapping with no causal claims, raw observations preserved verbatim.
       Originality Engine (2.10) GREEN: text+frame shingles (noun-swap detection), hook/beat
       structure, perceptual dhash, typed decisions (ORIGINAL…MASS_PRODUCTION_RISK), declared
-      adaptations, model can never override blocking. Tier 2/3 platform adapters remain
-      package-only (constraints documented in docs/research/tier2-tier3-platform-constraints.md;
-      each needs the operator's own developer app + live draft test).
+      adaptations, model can never override blocking. Article/newsletter destinations (21) GREEN
+      offline (2026-09-01): WordPress (Application-Passwords Basic auth), Ghost (Admin API HS256
+      JWT, signature byte-verified in the mock), Listmonk (draft campaigns; refuses missing
+      unsubscribe or plain-text alternative) — drafts only, publishing stays behind the same
+      gates as social. Other Tier 2/3 platform adapters remain package-only (constraints in
+      docs/research/tier2-tier3-platform-constraints.md; each needs the operator's own developer
+      app + live draft test).
 - [~] **Phase 11 — personas, human tasks, engagement, style** — core GREEN:
       PersonaFirewall immutable in code (real-person deny-list, PII, injection-as-data, minor
       safety always escalates and is not configurable, crisis always escalates, exploitation/
@@ -98,20 +103,34 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       rejected with reasons, completeness gate proven: nothing downstream ran before the slot
       filled), style explore/exploit (jittered cadence never consecutive, cooldown retests,
       ADOPT needs min samples + conservative spread, guardrail breach retires, all conclusions
-      labeled observational). Remaining: persona CRUD/Revision-Box UI, engagement inbox adapters,
-      per-fan memory store.
+      labeled observational). Completed 2026-09-01: persona persistence + /v1/personas API
+      (server-assigned ids, revise=typed-diff preview, revision-bound apply, stale diff → 409) +
+      real Personas page; engagement read adapters (Mastodon mentions, Discord channels) wired to
+      /v1/engagement (idempotent sync, deterministic classification, safety/harassment →
+      critical ActionItems, skip-requires-reason ledger) + real Inbox page; per-fan memory store
+      (fan_memory.py). Phase 11 is GREEN.
 - [~] **Phase 12 — feature wave** — Radar signals (topic gap/overlap/saturation/expiring, evidence
       attached, never auto-posts), import toolkit (CSV dry-run → dedup → import → reconcile →
-      rollback, all proven), SIEM-shaped `content-factory audit export` JSONL. Remaining: brand
-      hierarchy, request portal, app i18n, dormant-OIDC fixtures.
+      rollback, all proven), SIEM-shaped `content-factory audit export` JSONL. Completed
+      2026-09-01: brand hierarchy persisted (/v1/brand-nodes; ancestor locks enforced on write,
+      effective merge served, real Brand page with lock badges), request portal (HMAC portal
+      tokens hashed at rest, revocable links, public /portal/briefs creates brief + ActionItem
+      only, Requests page with one-time link minting), app i18n scaffolding (typed catalogs
+      en/sv, useT with English fallback, per-account locale pref), dormant OIDC module with
+      fixtures (auth/oidc.py). Phase 12 is GREEN.
 - [~] **Phase 13 — hardening** — `scripts/backup.sh` (pg_dump -Fc + artifact rsync + SHA256SUMS)
       and `scripts/restore-rehearsal.sh` both EXECUTED against the live dev DB (restored scratch DB
-      verified: workspaces=3, runs=25, audit=7). Remaining: retention jobs, perf pass at realistic
-      scale, external security review, requirements-traceability doc.
-- [ ] Phase 10 — Tier 2/3 adapters and analytics
-- [ ] Phase 11 — personas, human tasks, engagement, style exploration
-- [ ] Phase 12 — feature wave
-- [ ] Phase 13 — hardening
+      verified: workspaces=3, runs=25, audit=7). Retention sweeps (services/retention.py:
+      retention_days=0 keeps forever, legal-hold prefixes, dry-run), requirements-traceability doc
+      (docs/requirements-traceability.md), perf pass 2026-09-01 (content-memory bulk writes fixed
+      an O(n²) import — 2000 pieces now ~0.2s; composite DB indexes; scale tests keep /v1/runs and
+      /v1/action-items <1s at 400 runs/1200 nodes/300 items). Remaining: external security review
+      (needs a human reviewer outside this codebase).
+- [~] Phase 10 — Tier 2/3 adapters and analytics (analytics, originality, article/newsletter
+      drafts GREEN; remaining platform adapters are package-only pending operator dev apps)
+- [x] Phase 11 — personas, human tasks, engagement, style exploration
+- [x] Phase 12 — feature wave
+- [~] Phase 13 — hardening (external security review outstanding)
 
 ## Phase 0 results (commands actually run)
 | Spike | Command | Result |
@@ -217,9 +236,30 @@ minimum, Buttondown API tier.
 - `tests/unit/test_temporal_replay_offline.py` skips if the history fixture is absent; the fixture
   is committed.
 
+## Phase 11/12/13 completion results (commands actually run, 2026-09-01)
+| What | Command | Result |
+| --- | --- | --- |
+| Article/newsletter adapters | `uv run pytest tests/unit/test_article_newsletter_adapters.py -q` | 3 passed (Ghost JWT byte-verified; Listmonk refuses missing unsubscribe/plaintext) |
+| Persona/brand/portal API | `uv run pytest tests/api/test_personas_brands_portal.py -q` | 5 passed (stale diff 409, lock conflict 409, token shown once, revocation immediate) |
+| Engagement inbox API | `uv run pytest tests/api/test_engagement_inbox.py -q` | 3 passed (idempotent sync, safety→critical ActionItem, skip-needs-reason, disabled→503) |
+| Scale (API) | `uv run pytest tests/api/test_scale_perf.py -q` | 1 passed in 0.63s (400 runs/1200 nodes/300 items; both lists <1s) |
+| Scale (memory) | `uv run pytest tests/perf/test_scale.py -q` | 1 passed in 0.17s (2000-piece import + compare) |
+| Alembic | `uv run alembic upgrade head` (dev + test DBs) | 3 new migrations applied (phase12 tables, engagement, perf indexes) |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 193 passed |
+| API suite | `uv run pytest tests/api -q` (compose postgres) | 16 passed |
+| Web | `pnpm exec vitest run` (apps/web) | 54 passed / 14 files; `tsc --noEmit` clean |
+| Lint | `uv run ruff format --check . && uv run ruff check . && uv run pyright` | all clean, 0 findings |
+
 ## Resume instruction (next smallest task)
-Finish Phase 1: integrate `apps/web` + `packages/web-ui` (verify `pnpm -r test`, `pnpm -r
-typecheck`, `pnpm --filter @content-factory/web build`), run `scripts/gate-clean-checkout.sh`,
-confirm theme PUT/GET `/v1/prefs/theme` round-trips from the UI, update this file, commit.
-Then Phase 2 (typed contracts + deterministic static/video rendering).
-Run: `set -a; . ./.env; set +a; just doctor && just test`.
+Everything buildable without the operator is built. The remaining items each need the operator:
+1. Tailnet check: `sudo tailscale set --operator=$USER`, then
+   `tailscale serve --bg --https=8443 8000` (the existing serve on 443 → 8002 is another app —
+   leave it untouched), then open https://<host>.tailnet:8443/healthz.
+2. Live Bluesky gate: put a designated TEST account's BLUESKY_HANDLE/BLUESKY_APP_PASSWORD in
+   `.env`, then `set -a; . ./.env; set +a; uv run pytest -m live tests/live -q`.
+3. Tier 2/3 + article destinations live drafts: create per-platform developer apps/API keys, then
+   exercise each adapter against a real draft (they are mock-proven; wiring is in
+   `python/content_factory/distribution/`).
+4. External security review (docs/requirements-traceability.md maps capability → code → proof).
+Baseline check before any new work:
+`set -a; . ./.env; set +a; just doctor && just test && uv run pytest tests/api -q`.
