@@ -33,6 +33,7 @@ class ProductionInput:
     projects_dir: str
     artifacts_dir: str
     project_id: str | None = None  # reuse an existing project for targeted rebuilds
+    human_stages_json: str = "{}"  # deliverable_id -> [stage names] executed by a human (14.3)
 
 
 @dataclass
@@ -41,6 +42,7 @@ class NodePlan:
     stage: str
     deliverable_id: str | None
     depends_on: list[str]
+    executor: str = "deterministic"
 
 
 @dataclass
@@ -65,6 +67,24 @@ class ExecuteNodeInput:
     artifacts_dir: str
     input_hash: str
     dep_outputs_json: str = "{}"
+
+
+@dataclass
+class HumanTaskSubmission:
+    node_id: str
+    payload_json: str  # stage-specific: e.g. {"cards": [...]} for write_copy
+
+
+@dataclass
+class HumanValidationInput:
+    run_id: str
+    workspace_id: str
+    node_id: str
+    stage: str
+    deliverable_id: str | None
+    project_dir: str
+    payload_json: str
+    input_hash: str
 
 
 @dataclass
@@ -120,9 +140,12 @@ class ActionItemUpsert:
 async def compile_plan(inp: ProductionInput) -> CompiledPlan:
     from content_factory.deliverables.dag_compiler import compile_dag
     from content_factory.schemas.content import ContentCampaign
+    from content_factory.schemas.dag import Stage as StageEnum
 
     campaign = ContentCampaign.model_validate_json(inp.campaign_json)
-    dag = compile_dag(campaign)
+    human_raw = json.loads(inp.human_stages_json or "{}")
+    human_stages = {d: {StageEnum(v) for v in stages} for d, stages in human_raw.items()}
+    dag = compile_dag(campaign, human_stages=human_stages)
     project_id = inp.project_id or f"prj_{inp.run_id.replace('-', '')[:22]}"
     project_dir = Path(inp.projects_dir) / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
@@ -141,7 +164,7 @@ async def compile_plan(inp: ProductionInput) -> CompiledPlan:
     (project_dir / "dag.json").write_text(dag.model_dump_json(indent=1))
     (project_dir / "campaign.json").write_text(campaign.model_dump_json(indent=1))
     nodes = [
-        NodePlan(n.node_id, n.stage.value, n.deliverable_id, list(n.depends_on))
+        NodePlan(n.node_id, n.stage.value, n.deliverable_id, list(n.depends_on), n.executor.value)
         for n in dag.topological()
     ]
     overlay_path = project_dir / "edits" / "overlay.json"
@@ -309,9 +332,77 @@ async def upsert_action_item(item: ActionItemUpsert) -> None:
         await db.execute(stmt.on_conflict_do_nothing(index_elements=[ActionItem.dedupe_key]))
 
 
+@activity.defn
+async def validate_human_submission(inp: HumanValidationInput) -> NodeResult:
+    """Validate one submission; an empty outputs_hash means rejected (with reasons in facts)."""
+    import hashlib as _hashlib
+
+    project_dir = Path(inp.project_dir)
+    try:
+        payload = json.loads(inp.payload_json)
+    except ValueError:
+        return NodeResult(
+            inp.node_id, "", False, json.dumps({"rejected": "payload is not valid JSON"})
+        )
+    if inp.stage == "write_copy":
+        cards = payload.get("cards")
+        caption = payload.get("caption")
+        if cards is not None:
+            problems = []
+            if not isinstance(cards, list) or not cards:
+                problems.append("cards must be a non-empty list")
+            else:
+                for i, card in enumerate(cards):
+                    if (
+                        not isinstance(card.get("card_id"), str)
+                        or not isinstance(card.get("text"), str)
+                        or not card["text"].strip()
+                    ):
+                        problems.append(f"card {i + 1} needs card_id and non-empty text")
+            if problems:
+                return NodeResult(inp.node_id, "", False, json.dumps({"rejected": problems}))
+        elif not isinstance(caption, str) or not caption.strip():
+            return NodeResult(
+                inp.node_id, "", False, json.dumps({"rejected": "caption text is required"})
+            )
+        assert inp.deliverable_id is not None
+        ddir = project_dir / "deliverables" / inp.deliverable_id
+        ddir.mkdir(parents=True, exist_ok=True)
+        text = json.dumps(payload, indent=1, sort_keys=True)
+        tmp = ddir / "copy.json.tmp"
+        tmp.write_text(text)
+        tmp.replace(ddir / "copy.json")
+        marker = project_dir / ".stages" / f"{inp.node_id.replace(':', '_')}.done.json"
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        outputs_hash = _hashlib.sha256(text.encode()).hexdigest()
+        marker.write_text(
+            json.dumps(
+                {
+                    "input_hash": inp.input_hash,
+                    "outputs_hash": outputs_hash,
+                    "facts": {"human": True},
+                },
+                indent=1,
+            )
+        )
+        return NodeResult(
+            inp.node_id,
+            outputs_hash,
+            False,
+            json.dumps({"accepted": True, "units": len(payload.get("cards", [1]))}),
+        )
+    return NodeResult(
+        inp.node_id,
+        "",
+        False,
+        json.dumps({"rejected": f"no human validator for stage {inp.stage}"}),
+    )
+
+
 PRODUCTION_ACTIVITIES = [
     compile_plan,
     execute_node,
+    validate_human_submission,
     record_run_state,
     record_node_state,
     upsert_action_item,
@@ -334,6 +425,16 @@ class ProductionWorkflow:
         self._state = "CREATED"
         self._preflight_hash: str | None = None
         self._rejections: list[str] = []
+        self._human_submissions: dict[str, HumanTaskSubmission] = {}
+        self._waiting_human_tasks: set[str] = set()
+
+    @workflow.signal
+    def submit_human_task(self, submission: HumanTaskSubmission) -> None:
+        self._human_submissions[submission.node_id] = submission
+
+    @workflow.query
+    def waiting_human_tasks(self) -> list[str]:
+        return sorted(self._waiting_human_tasks)
 
     @workflow.signal
     def submit_approval(self, signal: ApprovalSignal) -> None:
@@ -420,6 +521,9 @@ class ProductionWorkflow:
                 )
             for dep in sorted(node.depends_on):
                 digest.update(f"{dep}={outputs[dep]}".encode())
+            if node.executor == "human":
+                return await run_human_node(node, digest.hexdigest())
+
             exec_input = ExecuteNodeInput(
                 run_id=inp.run_id,
                 workspace_id=inp.workspace_id,
@@ -477,6 +581,100 @@ class ProductionWorkflow:
                     "complete",
                     cache_hit=result.cache_hit,
                     duration_ms=duration_ms,
+                ),
+                **opts,
+            )
+            outputs[node.node_id] = result.outputs_hash
+            results[node.node_id] = result
+            return result
+
+        async def run_human_node(node: NodePlan, input_hash: str) -> NodeResult:
+            """The workflow PARKS here on a signal wait — no worker slot is consumed. The spec is
+            shown on the node (ActionItem + Pipeline Canvas); the operator drops the asset in;
+            validation accepts or requests a redo; only then does anything downstream run."""
+            await workflow.execute_activity(
+                record_node_state,
+                NodeStateUpdate(
+                    inp.run_id,
+                    inp.workspace_id,
+                    node.node_id,
+                    node.stage,
+                    node.deliverable_id,
+                    "blocked",
+                    error="waiting for a human task submission",
+                ),
+                **opts,
+            )
+            await workflow.execute_activity(
+                upsert_action_item,
+                ActionItemUpsert(
+                    workspace_id=inp.workspace_id,
+                    kind="human_task_waiting",
+                    severity="normal",
+                    title=f"Your turn: {node.stage} for {node.deliverable_id}",
+                    body="The pipeline is parked on this slot. Drop the finished asset onto the node (or submit via the PWA); it will be validated before anything downstream runs.",  # noqa: E501
+                    dedupe_key=f"human:{inp.run_id}:{node.node_id}",
+                    run_id=inp.run_id,
+                    deep_link=f"/projects/{inp.run_id}",
+                ),
+                **opts,
+            )
+            self._waiting_human_tasks.add(node.node_id)
+            while True:
+                await workflow.wait_condition(lambda: node.node_id in self._human_submissions)
+                submission = self._human_submissions.pop(node.node_id)
+                result: NodeResult = await workflow.execute_activity(
+                    validate_human_submission,
+                    HumanValidationInput(
+                        run_id=inp.run_id,
+                        workspace_id=inp.workspace_id,
+                        node_id=node.node_id,
+                        stage=node.stage,
+                        deliverable_id=node.deliverable_id,
+                        project_dir=plan.project_dir,
+                        payload_json=submission.payload_json,
+                        input_hash=input_hash,
+                    ),
+                    **opts,
+                )
+                if result.outputs_hash:
+                    break
+                await workflow.execute_activity(
+                    record_node_state,
+                    NodeStateUpdate(
+                        inp.run_id,
+                        inp.workspace_id,
+                        node.node_id,
+                        node.stage,
+                        node.deliverable_id,
+                        "blocked",
+                        error=f"submission rejected: {result.facts_json[:300]}",
+                    ),
+                    **opts,
+                )
+            self._waiting_human_tasks.discard(node.node_id)
+            await workflow.execute_activity(
+                upsert_action_item,
+                ActionItemUpsert(
+                    workspace_id=inp.workspace_id,
+                    kind="human_task_waiting",
+                    severity="normal",
+                    title="",
+                    body="",
+                    dedupe_key=f"human:{inp.run_id}:{node.node_id}",
+                    resolve=True,
+                ),
+                **opts,
+            )
+            await workflow.execute_activity(
+                record_node_state,
+                NodeStateUpdate(
+                    inp.run_id,
+                    inp.workspace_id,
+                    node.node_id,
+                    node.stage,
+                    node.deliverable_id,
+                    "complete",
                 ),
                 **opts,
             )

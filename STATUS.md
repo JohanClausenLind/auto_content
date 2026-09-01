@@ -56,12 +56,16 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       PSE, reading order, alt text, exportable report), image-sequence engine (anchor + GenerationLock
       + deterministic controls + hub-and-spoke + drift QC + bounded regen + contact sheet/MP4
       preview/print flipbook PDF; single-frame revisions rebuild exactly one frame).
-- [~] **Phase 8 — product UX, PWA, assistant, Tailscale** — backend GREEN; create-flow/push/operations
-      UI with a subagent. Done: Web Push (VAPID keygen in setup, subscriptions API, deep-link-only
-      payloads, dead-subscription cleanup), MCP server (`content-factory mcp`, scoped token, 8 typed
-      tools, refusals surface policies), campaigns API (matrix with honest supported/unsupported
-      reasons, validate-and-quote preview, create), operations API (owner-only doctor + audit tail).
-      Blocked on operator: `sudo tailscale set --operator=$USER` for the serve check.
+- [x] **Phase 8 — product UX, PWA, assistant, Tailscale** — GREEN except two operator-blocked items.
+      Backend: Web Push (VAPID keygen in setup, subscriptions API, deep-link-only payloads),
+      MCP server (`content-factory mcp`, scoped token, 8 typed tools), campaigns API (honest
+      deliverable matrix, validate-and-quote preview, create), operations API (owner-only doctor +
+      audit tail). UI: 3-step create flow with the matrix (unsupported types disabled with plain
+      reasons), run detail + Pipeline Canvas + Revision Box + approval with step-up, Action Center,
+      Operations page, Calendar (honest placeholder), Push settings, assistant drawer (honest: lists
+      the MCP tools; no local model wired yet). 40 web tests + 12 canvas tests pass; build clean.
+      Operator-blocked: `sudo tailscale set --operator=$USER` (tailnet serve check); extra push/
+      assistant/calendar UI tests were cut short by the account spend limit.
 - [~] **Phase 9 — scheduler and first live publishing** — everything but the live post is GREEN.
       Token vault (AES-256-GCM envelope, context-bound AAD, key-ring rotation), OAuth broker
       (state+PKCE S256, single-use workspace-bound callbacks), Tier-1 adapters (Bluesky app-password;
@@ -73,6 +77,31 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       pause-on-failure, catch-up policies; no-burst proven). LIVE gate pending operator: set
       BLUESKY_HANDLE/BLUESKY_APP_PASSWORD for a designated TEST account, then
       `uv run pytest -m live tests/live -q`.
+- [~] **Phase 10 — Tier 2/3 adapters and analytics** — analytics/attribution GREEN offline:
+      governed UTM builder (deterministic identity), Shopify/generic HMAC webhook verification,
+      last-touch AttributionRecords (always correlation-labeled, missing stays missing), retention→
+      exact scene-range mapping with no causal claims, raw observations preserved verbatim.
+      Originality Engine (2.10) GREEN: text+frame shingles (noun-swap detection), hook/beat
+      structure, perceptual dhash, typed decisions (ORIGINAL…MASS_PRODUCTION_RISK), declared
+      adaptations, model can never override blocking. Tier 2/3 platform adapters remain
+      package-only (constraints documented in docs/research/tier2-tier3-platform-constraints.md;
+      each needs the operator's own developer app + live draft test).
+- [~] **Phase 11 — personas, human tasks, engagement, style** — core GREEN:
+      PersonaFirewall immutable in code (real-person deny-list, PII, injection-as-data, minor
+      safety always escalates and is not configurable, crisis always escalates, exploitation/
+      off-platform/meeting blocks, disclosure floor: no autonomous reply can claim to be human),
+      reply governance (autonomy tiers, variation pressure vs recent replies, hourly caps,
+      answer-everything skip reasons), PersonaSchedule (awake windows, deterministic jitter,
+      never metronomic), human-take validation (probes + ASR-vs-script diff with tolerance,
+      accept-as-performed vs re-record), human task slots IN the durable workflow (parked node
+      consumes zero pending activities, ActionItem + Canvas deep link, invalid submissions
+      rejected with reasons, completeness gate proven: nothing downstream ran before the slot
+      filled), style explore/exploit (jittered cadence never consecutive, cooldown retests,
+      ADOPT needs min samples + conservative spread, guardrail breach retires, all conclusions
+      labeled observational). Remaining: persona CRUD/Revision-Box UI, engagement inbox adapters,
+      per-fan memory store.
+- [ ] Phase 12 — feature wave (Radar, imports, brand hierarchy, portal, i18n, OIDC completion, audit export)
+- [ ] Phase 13 — hardening (backups + restore rehearsal, retention jobs, perf pass, security review, traceability)
 - [ ] Phase 10 — Tier 2/3 adapters and analytics
 - [ ] Phase 11 — personas, human tasks, engagement, style exploration
 - [ ] Phase 12 — feature wave

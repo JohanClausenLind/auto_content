@@ -3,7 +3,7 @@
 Self-hosted, local-first, single-operator content production and distribution platform.
 Private project — no billing, no SaaS surfaces. See `STATUS.md` for the current phase.
 
-## What works now (phases 0–2 verified on this machine)
+## What works now (phases 0–9 core + 10/11 foundations, verified on this machine)
 - Typed contracts: Pydantic → JSON Schema 2020-12 → TypeScript + Ajv, with drift check.
 - EditorCore: typed edit operations applied and undone to identical revision hashes.
 - Remotion renderer: 3 s 1080p clip with a pinned local font, verified by ffprobe.
@@ -26,10 +26,20 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
 - CLI: `login`, `whoami`, `workspaces list|use`, `bootstrap`, `serve`, `worker`, `doctor`.
 - ArtifactStore (filesystem + S3), signed skill registry, execution-policy routing with
   explainable decisions, hardware probe.
-- Content contracts (campaign → deliverables → scenes/artboards → compiled timeline → render
-  bundle), a DAG compiler that prunes unneeded branches with typed reasons, a timeline compiler
-  in integer frames, and deterministic renderers: `content-factory demo` produces a 1080×1080
-  data-card PNG and a 17 s 1080×1920 MP4 that pass ffprobe/PIL QC and are byte-identical on rerun.
+- Content contracts → pruned DAG → deterministic renders: `content-factory demo` produces a
+  data-card PNG and a narrated 16 s vertical MP4 (mock voice, −14 LUFS, captions, claim-gated
+  citations) that pass QC and are byte-identical on rerun.
+- A durable Temporal pipeline: preflight approval bound to exact revisions, worker-kill resume
+  without duplicate work, per-card rebuild caching, Revision Box (feedback → typed FixPlan →
+  apply → targeted rebuild → undo), human task slots that park the workflow and gate publishing.
+- Research/claims machinery (SSRF-safe fetch, claim verification, citations), originality engine,
+  image-sequence engine (anchor/lock/hub-and-spoke/drift QC/flipbook PDF), persona firewall,
+  style experiments, cost ledger + zero-egress local routing, token vault + OAuth broker,
+  Tier-1 publishing adapters (Bluesky/Mastodon/Discord) with exactly-once intents — mocks only
+  until the operator authorizes a test account.
+- Web app: create flow with an honest deliverable matrix, run view with a React Flow pipeline
+  canvas, approvals with step-up, Action Center, operations, themes, PWA + Web Push.
+- MCP server (`content-factory mcp`) as the only external-agent surface.
 
 ## Not implemented yet
 Phases 3–13: narration/audio, research/claims, production pipeline,
