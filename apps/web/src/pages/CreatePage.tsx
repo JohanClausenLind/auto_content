@@ -42,7 +42,15 @@ export function formatEstimates(e: CampaignPreview["estimates"]): string {
 
 interface Pick {
   title: string;
-  cardCount: number;
+  /** Kept as the raw field text; parsed and clamped when the body is built. */
+  cardCount: string;
+}
+
+/** Card count for a carousel: an integer clamped to the API's 2–20, defaulting to 5. */
+export function parseCardCount(raw: string): number {
+  const n = Number.parseInt(raw, 10);
+  if (Number.isNaN(n)) return 5;
+  return Math.min(20, Math.max(2, n));
 }
 
 const STEPS = ["What it's about", "What to make", "Review the plan"] as const;
@@ -77,7 +85,7 @@ export function CreatePage() {
         .map((row) => {
           const pick = picks[row.type];
           const title = pick?.title.trim() || topic.trim();
-          return { type: row.type, title, ...(row.type === "carousel" ? { card_count: pick?.cardCount ?? 5 } : {}) };
+          return { type: row.type, title, ...(row.type === "carousel" ? { card_count: parseCardCount(pick?.cardCount ?? "") } : {}) };
         }),
       quality,
     }),
@@ -101,7 +109,7 @@ export function CreatePage() {
     setOffendingType(null);
     setPicks((current) => {
       const next = { ...current };
-      if (checked) next[row.type] = current[row.type] ?? { title: topic.trim(), cardCount: 5 };
+      if (checked) next[row.type] = current[row.type] ?? { title: topic.trim(), cardCount: "5" };
       else delete next[row.type];
       return next;
     });
@@ -308,17 +316,14 @@ function MatrixTable({
                       <TextField label={`Title for ${typeLabel(row.type).toLowerCase()}`} value={pick.title} onChange={(v) => onPick(row.type, { title: v })} placeholder={topic.trim() || "Title"} />
                       {row.type === "carousel" && (
                         <label className="cf-matrix__count">
-                          <span className="cf-field__label">Cards</span>
+                          <span className="cf-field__label">Cards (2–20)</span>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={2}
                             className="cf-input"
-                            min={2}
-                            max={20}
                             value={pick.cardCount}
-                            onChange={(e) => {
-                              const n = Number(e.target.value);
-                              if (Number.isInteger(n)) onPick(row.type, { cardCount: n });
-                            }}
+                            onChange={(e) => onPick(row.type, { cardCount: e.target.value })}
                           />
                         </label>
                       )}

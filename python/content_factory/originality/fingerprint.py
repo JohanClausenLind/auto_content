@@ -49,7 +49,7 @@ def jaccard(a: set, b: set) -> float:
 
 def dhash(image: Image.Image, size: int = 8) -> int:
     grey = image.convert("L").resize((size + 1, size))
-    px = list(grey.getdata())
+    px = list(grey.tobytes())
     width = size + 1
     bits = 0
     for y in range(size):
