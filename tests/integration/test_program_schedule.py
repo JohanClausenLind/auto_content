@@ -45,7 +45,7 @@ async def _flow(tmp_path) -> None:
 
     @activity.defn(name="start_program_run")
     async def fake_start(inp) -> dict:
-        started.append(activity.info().workflow_id)
+        started.append(activity.info().workflow_id or "")
         return {"run_id": f"fake-{len(started)}", "tick": activity.info().workflow_id}
 
     async with Worker(

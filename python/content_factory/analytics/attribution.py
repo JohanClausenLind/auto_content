@@ -99,7 +99,7 @@ class AttributionRecord:
     def as_report_line(self) -> str:
         return (
             f"{self.kind_line()} is associated with {self.deliverable_id} (variant {self.variant}) "
-            f"under {self.model} attribution within {self.window_days} days. This is a correlation; "
+            f"under {self.model} attribution within {self.window_days} days. This is a correlation; "  # noqa: E501
             f"topic, timing, and audience confound any causal reading."
         )
 
@@ -172,7 +172,7 @@ def map_retention_to_timeline(
                     "exit": exit_r,
                     "delta": round(exit_r - entry_r, 4),
                 },
-                "note": "observational: a drop here coincides with this scene; causes are not established",
+                "note": "observational: a drop here coincides with this scene; causes are not established",  # noqa: E501
             }
         )
     return out

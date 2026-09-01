@@ -92,7 +92,7 @@ class StyleExperiment:
             self.state = (
                 ExperimentState.retest if self.can_retest(today) else ExperimentState.observe
             )
-            self.conclusion = f"{n}/{self.policy.min_samples_before_adopt} matched samples; keep observing. ({label})"
+            self.conclusion = f"{n}/{self.policy.min_samples_before_adopt} matched samples; keep observing. ({label})"  # noqa: E501
         else:
             mean_c = sum(cand) / len(cand)
             mean_b = sum(base) / len(base)
@@ -100,13 +100,13 @@ class StyleExperiment:
             lift = (mean_c - mean_b) / mean_b if mean_b else 0.0
             if lift >= self.policy.confidence_margin and (mean_c - mean_b) > spread:
                 self.state = ExperimentState.adopted
-                self.conclusion = f"candidate ahead by {lift:.0%} over {n} matched pairs (beyond spread {spread:.3f}); adopted with periodic retests. ({label})"
+                self.conclusion = f"candidate ahead by {lift:.0%} over {n} matched pairs (beyond spread {spread:.3f}); adopted with periodic retests. ({label})"  # noqa: E501
             elif lift <= -self.policy.confidence_margin and (mean_b - mean_c) > spread:
                 self.state = ExperimentState.retired
                 self.conclusion = f"candidate behind by {abs(lift):.0%}; retired. ({label})"
             else:
                 self.state = ExperimentState.inconclusive
-                self.conclusion = f"difference {lift:+.0%} within noise (spread {spread:.3f}); parked, may re-queue. ({label})"
+                self.conclusion = f"difference {lift:+.0%} within noise (spread {spread:.3f}); parked, may re-queue. ({label})"  # noqa: E501
         return {
             "state": self.state.value,
             "conclusion": self.conclusion,

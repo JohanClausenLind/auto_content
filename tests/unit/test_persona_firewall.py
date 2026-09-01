@@ -33,7 +33,7 @@ def _govern(**over):
         recent_replies=[],
     )
     base.update(over)
-    return govern_reply(**base)
+    return govern_reply(**base)  # type: ignore[arg-type]
 
 
 def test_real_fact_and_pii_leaks_block() -> None:

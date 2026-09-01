@@ -79,7 +79,7 @@ def validate_take(
     if target_duration_s and not (target_duration_s[0] <= duration <= target_duration_s[1]):
         diff = (
             *diff,
-            f"duration {duration:.1f}s outside the direction {target_duration_s[0]:.0f}-{target_duration_s[1]:.0f}s",
+            f"duration {duration:.1f}s outside the direction {target_duration_s[0]:.0f}-{target_duration_s[1]:.0f}s",  # noqa: E501
         )
         if verdict == "accept":
             verdict = "offer_accept_as_performed"
