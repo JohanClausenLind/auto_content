@@ -15,7 +15,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from authlib.jose import JsonWebKey, JsonWebToken  # noqa: E501 - authlib.jose is deprecated upstream in favour of joserfc; migrate when the pinned Authlib drops it
+from authlib.jose import (
+    JsonWebKey,
+    JsonWebToken,
+)
 from authlib.jose.errors import JoseError
 
 
