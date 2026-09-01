@@ -50,6 +50,12 @@ class ContentMemoryStore:
         self.entries[key] = record
         self._save()
 
+    def add_many(self, items: list[tuple[str, dict]]) -> None:
+        """Bulk insert with a single write — per-row add() rewrites the file every time."""
+        for key, record in items:
+            self.entries[key] = record
+        self._save()
+
     def remove_batch(self, batch_id: str) -> int:
         doomed = [k for k, v in self.entries.items() if v.get("batch_id") == batch_id]
         for k in doomed:
@@ -104,8 +110,7 @@ def import_history_csv(
         )
     if dry_run:
         return ImportReport(True, len(rows), len(valid_rows), tuple(invalid), duplicates, 0, None)
-    for key, record in to_import:
-        store.add(key, record)
+    store.add_many(to_import)
     return ImportReport(
         False, len(rows), len(valid_rows), tuple(invalid), duplicates, len(to_import), batch_source
     )

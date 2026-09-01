@@ -13,6 +13,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     String,
@@ -216,6 +217,7 @@ class NodeState(StrEnum):
 
 class ProductionRun(WorkspaceScoped, TimestampMixin, Base):
     __tablename__ = "production_runs"
+    __table_args__ = (Index("ix_production_runs_ws_created", "workspace_id", "created_at"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)  # temporal workflow id
     campaign_id: Mapped[str] = mapped_column(String(40), nullable=False)
@@ -263,6 +265,7 @@ class ActionItem(WorkspaceScoped, TimestampMixin, Base):
         UniqueConstraint(
             "dedupe_key",
         ),
+        Index("ix_action_items_ws_status", "workspace_id", "status"),
     )
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
@@ -379,7 +382,10 @@ class EngagementMessage(WorkspaceScoped, TimestampMixin, Base):
     Idempotent sync: (workspace, platform, message_id) is unique, re-fetching never duplicates."""
 
     __tablename__ = "engagement_messages"
-    __table_args__ = (UniqueConstraint("workspace_id", "platform", "message_id"),)
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "platform", "message_id"),
+        Index("ix_engagement_messages_ws_disposition", "workspace_id", "disposition"),
+    )
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
     platform: Mapped[str] = mapped_column(String(40), nullable=False)
