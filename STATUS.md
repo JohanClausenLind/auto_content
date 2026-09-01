@@ -41,8 +41,21 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       on success, release on failure), `image.generate` through ComfyUI fixture AND mock cloud via
       one invocation path, evaluation packs with approval lifecycle (approve/revoke per model x
       skill), allowlisted `comfy model download` planner with hash verification.
-- [ ] Phase 6 — durable pipeline
-- [ ] Phase 7 — editor, QC, Revision Box, image sequences
+- [x] **Phase 6 — durable pipeline (backend)** — **GREEN** (2026-09-01); Pipeline Canvas UI in progress.
+      Durable ProductionWorkflow (CREATED→PREFLIGHTING→WAITING_FOR_APPROVAL→APPROVED→PRODUCING→
+      COMPLETE), approval signal bound to the exact preflight revision (stale approvals recorded and
+      ignored), ActionItems (open on waiting, resolved on decision), idempotent cached stage
+      activities (input hash = campaign + quality + dependency outputs + edit overlays), per-card
+      render cache, heartbeats for fast failover, run/node persistence, /v1/runs + /v1/action-items
+      API, CLI `runs start|status|approve`.
+- [x] **Phase 7 — editor/QC/Revision Box/image sequences (backend)** — **GREEN** (2026-09-01); editor UI arrives with the web agent.
+      Revision Box loop (feedback → typed FixPlan/question/refusal/gate → apply as append-only
+      overlay revisions → targeted rebuild → undo chain), /v1/revisions API, mask rasterization
+      (rect/polygon/brush, subtract/invert/feather/expand/protect, byte-identical), delivery-promise
+      QC (pan-zoom slideshow detection with sub-pixel compensation), accessibility pack (flashing/
+      PSE, reading order, alt text, exportable report), image-sequence engine (anchor + GenerationLock
+      + deterministic controls + hub-and-spoke + drift QC + bounded regen + contact sheet/MP4
+      preview/print flipbook PDF; single-frame revisions rebuild exactly one frame).
 - [ ] Phase 8 — product UX, PWA, assistant, Tailscale
 - [ ] Phase 9 — scheduler and first live publishing
 - [ ] Phase 10 — Tier 2/3 adapters and analytics
@@ -102,6 +115,15 @@ Core suites now: Python 49 unit + 5 security; Node 105 tests (schema-ts 17, web-
 | Audio units | `uv run pytest tests/unit/test_audio_tts_and_alignment.py tests/unit/test_captions_and_mix.py` | 8/8: mock determinism (same request → identical bytes/timings), alignment catches injected overlap/missing/gap, character→word collapsing, ElevenLabs adapter parses `with-timestamps` (mocked), captions ≤2 lines non-overlapping, mastering reaches target |
 | Narrated demo | `uv run content-factory demo --quality demo` | PASS: 16.4 s 1080×1920 MP4, integrated −14.0 LUFS, true peak −8.6 dBTP, AV delta 7 ms, alignment green, 4 caption cues, stems + SRT/VTT on disk |
 | e2e | `tests/e2e/test_offline_demo.py` (in core suite) | narrated demo gates asserted end to end |
+
+## Phase 6/7 results (commands actually run)
+| Item | Command | Result |
+|---|---|---|
+| Approval binding + card rebuild | `uv run pytest tests/integration/test_production_workflow.py::test_full_run_...` | stale-revision approval ignored (workflow query shows rejection); exact revision approves; every node executed once; after a card-2 edit only card 2 re-rendered (cards 1/3 cached, image branch cache_hit=True) |
+| Worker kill | `...::test_worker_kill_resumes_without_duplicate_executions` | SIGKILL mid-production; resumed on a fresh worker; nodes completed before the kill executed exactly once; ≤1 node executed twice |
+| Revision loop | `uv run pytest tests/unit/test_revision_apply.py tests/unit/test_critique_mapping.py` | apply → overlay revision; undo chain restores prior states; refusal/gate never apply |
+| Sequence gate | `uv run pytest tests/unit/test_image_sequences.py` | 5/5: hub-and-spoke (all generations reference the anchor), locks intact, injected drifted frame regenerated from the anchor, persistent drift fails honestly, flipbook PDF 6 pages + h264 preview, single-frame revision → exactly one new generation |
+| Delivery/a11y QC | `uv run pytest tests/unit/test_delivery_and_accessibility_qc.py tests/unit/test_masks.py` | pan-zoom slideshow FAILS the animated-explainer promise; real animation passes; strobe blocked; alt-text/reading-order enforced; masks byte-identical |
 
 ## Phase 4 results (commands actually run)
 | Item | Command | Result |
