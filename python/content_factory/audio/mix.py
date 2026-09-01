@@ -92,11 +92,11 @@ def build_narration_stem(
     for i, seg in enumerate(segments):
         inputs += ["-i", str(audio_files[seg.beat_id])]
         filters.append(
-            f"[{i}:a]aresample={spec.sample_rate_hz},aformat=channel_layouts=mono,adelay={laid[i].start_ms}:all=1[a{i}]"
+            f"[{i}:a]aresample={spec.sample_rate_hz},aformat=channel_layouts=mono,adelay={laid[i].start_ms}:all=1[a{i}]"  # noqa: E501
         )
     mix_inputs = "".join(f"[a{i}]" for i in range(len(segments)))
     filters.append(
-        f"{mix_inputs}amix=inputs={len(segments)}:normalize=0:duration=longest,apad=whole_dur={total_ms}ms,atrim=0:{total_ms}ms[out]"
+        f"{mix_inputs}amix=inputs={len(segments)}:normalize=0:duration=longest,apad=whole_dur={total_ms}ms,atrim=0:{total_ms}ms[out]"  # noqa: E501
     )
     ffmpeg(
         [
@@ -192,7 +192,7 @@ def master(
     stats = json.loads(m.group(0))
     if stats["input_i"] == "-inf":
         raise AudioError("input is silent")
-    lin = f"loudnorm=I={target_lufs}:TP={target_tp}:LRA=11:measured_I={stats['input_i']}:measured_TP={stats['input_tp']}:measured_LRA={stats['input_lra']}:measured_thresh={stats['input_thresh']}:offset={stats['target_offset']}:linear=true:print_format=summary"
+    lin = f"loudnorm=I={target_lufs}:TP={target_tp}:LRA=11:measured_I={stats['input_i']}:measured_TP={stats['input_tp']}:measured_LRA={stats['input_lra']}:measured_thresh={stats['input_thresh']}:offset={stats['target_offset']}:linear=true:print_format=summary"  # noqa: E501
     ffmpeg(
         ["-i", str(in_wav), "-af", lin, "-ar", str(sample_rate), "-c:a", "pcm_s16le", str(out_wav)]
     )

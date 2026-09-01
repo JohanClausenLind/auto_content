@@ -2,7 +2,7 @@
 
 quality "smoke": silent single-scene video render (fast).
 quality "demo":  full narrated pipeline — mock TTS per beat, measured word timings, narrated
-timeline, full render, mastered stem (−14 LUFS / −1 dBTP), mux, captions (SRT + WebVTT),
+timeline, full render, mastered stem (-14 LUFS / -1 dBTP), mux, captions (SRT + WebVTT),
 alignment + audio + video QC. No network, no models, no credentials.
 """
 

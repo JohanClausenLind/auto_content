@@ -79,7 +79,7 @@ class MockTTS(TTSExecutor):
         for i, w in enumerate(words):
             syllables = max(1, sum(1 for ch in w.lower() if ch in "aeiouy"))
             dur = int((130 + 115 * syllables) / speed)
-            freq = 160 + ((seed >> (i % 16)) & 0x3F) * 3  # 160–349 Hz, deterministic per word
+            freq = 160 + ((seed >> (i % 16)) & 0x3F) * 3  # 160-349 Hz, deterministic per word
             n = self.SAMPLE_RATE * dur // 1000
             for k in range(n):
                 env = min(1.0, k / 240, (n - k) / 240)
@@ -122,28 +122,28 @@ def words_from_character_alignment(
     end: float = 0.0
     for ch, s, e in zip(chars, starts_s, ends_s, strict=True):
         if ch.isspace():
-            if current:
+            if current and start is not None:
                 words.append(
                     WordTiming(
                         word="".join(current).strip(".,;:!?\"'()"),
                         start_ms=round(start * 1000),
                         end_ms=round(end * 1000),
                     )
-                )  # type: ignore[arg-type]
+                )
                 current, start = [], None
             continue
         if start is None:
             start = s
         current.append(ch)
         end = e
-    if current:
+    if current and start is not None:
         words.append(
             WordTiming(
                 word="".join(current).strip(".,;:!?\"'()"),
                 start_ms=round(start * 1000),
                 end_ms=round(end * 1000),
             )
-        )  # type: ignore[arg-type]
+        )
     words = [w for w in words if w.word]
     if len(words) != len(tokenize_words(text)):
         raise TTSError(
@@ -238,7 +238,7 @@ class KokoroTTS(TTSExecutor):
             "--lang",
             request.voice.locale,
         ]
-        proc = subprocess.run(
+        proc = subprocess.run(  # noqa: S603
             cmd,
             input=request.spoken_text,
             capture_output=True,
@@ -254,8 +254,8 @@ class KokoroTTS(TTSExecutor):
         words = [
             WordTiming(
                 word=t["text"],
-                start_ms=int(round(t["start_ts"] * 1000)),
-                end_ms=int(round(t["end_ts"] * 1000)),
+                start_ms=round(t["start_ts"] * 1000),
+                end_ms=round(t["end_ts"] * 1000),
             )
             for t in out["tokens"]
             if t.get("start_ts") is not None

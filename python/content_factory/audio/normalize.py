@@ -28,12 +28,12 @@ def normalize_for_speech(text: str, lexicon: tuple[PronunciationEntry, ...] = ()
     for k, v in _ABBREV.items():
         out = out.replace(k, v)
     out = re.sub(r"(\d)\s*percent", r"\1 percent", out)
-    out = re.sub(r"[“”]", '"', out)
-    out = re.sub(r"[‘’]", "'", out)
+    out = re.sub(r"[\u201c\u201d]", '"', out)
+    out = re.sub(r"[\u2018\u2019]", "'", out)
     out = re.sub(r"\s+", " ", out).strip()
     return out
 
 
 def tokenize_words(text: str) -> list[str]:
-    """Words as a TTS/aligner sees them: punctuation stripped, hyphens kept, empty tokens dropped."""
+    """Words as a TTS/aligner sees them: punctuation stripped, hyphens kept, empty tokens dropped."""  # noqa: E501
     return [w for w in (re.sub(r"^[^\w]+|[^\w]+$", "", t) for t in text.split()) if w]
