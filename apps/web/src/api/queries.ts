@@ -16,6 +16,7 @@ export const queryKeys = {
   persona: (id: string) => ["personas", id] as const,
   brandNodes: ["brand-nodes"] as const,
   brandEffective: (id: string) => ["brand-nodes", id, "effective"] as const,
+  fanInbox: ["engagement", "inbox"] as const,
   portalLinks: ["portal-links"] as const,
   portalBriefs: ["portal-briefs"] as const,
 };
@@ -90,6 +91,11 @@ export const brandEffectiveQuery = (id: string) =>
     queryKey: queryKeys.brandEffective(id),
     queryFn: () => api.brands.effective(id),
   });
+
+export const fanInboxQuery = queryOptions({
+  queryKey: queryKeys.fanInbox,
+  queryFn: () => api.engagement.inbox("pending"),
+});
 
 export const portalLinksQuery = queryOptions({
   queryKey: queryKeys.portalLinks,

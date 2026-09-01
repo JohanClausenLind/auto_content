@@ -368,6 +368,38 @@ class DistributionState(Base):
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class MessageDisposition(StrEnum):
+    pending = "pending"
+    answered = "answered"
+    skipped = "skipped"
+
+
+class EngagementMessage(WorkspaceScoped, TimestampMixin, Base):
+    """A normalized inbound fan message with its classification and answer-ledger state.
+    Idempotent sync: (workspace, platform, message_id) is unique, re-fetching never duplicates."""
+
+    __tablename__ = "engagement_messages"
+    __table_args__ = (UniqueConstraint("workspace_id", "platform", "message_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    platform: Mapped[str] = mapped_column(String(40), nullable=False)
+    account_handle: Mapped[str] = mapped_column(String(200), nullable=False)
+    message_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    thread_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    fan_id: Mapped[str] = mapped_column(String(200), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    received_at: Mapped[str] = mapped_column(String(64), nullable=False)
+    message_class: Mapped[str] = mapped_column(String(40), nullable=False)
+    vip: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    disposition: Mapped[MessageDisposition] = mapped_column(
+        Enum(MessageDisposition, name="message_disposition"),
+        nullable=False,
+        default=MessageDisposition.pending,
+    )
+    skip_reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class PersonaRow(WorkspaceScoped, TimestampMixin, Base):
     """Persisted persona: `document` holds the full validated Persona contract at `revision`.
     Revision history lives in the audit log (persona.apply records each diff)."""

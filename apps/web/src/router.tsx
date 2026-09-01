@@ -6,12 +6,12 @@ import {
   AssetsPage,
   ConnectionsPage,
   HomePage,
-  InboxPage,
   NotFoundPage,
   SourcesPage,
   TemplatesPage,
 } from "./pages/areas";
 import { BrandPage } from "./pages/BrandPage";
+import { InboxPage } from "./pages/InboxPage";
 import { PersonasPage } from "./pages/PersonasPage";
 import { RequestsPage } from "./pages/RequestsPage";
 import { CalendarPage } from "./pages/CalendarPage";

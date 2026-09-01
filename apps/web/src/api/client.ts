@@ -7,6 +7,8 @@ import type {
   CampaignCreated,
   BrandEffective,
   BrandNode,
+  EngagementSyncResult,
+  FanMessage,
   CampaignPreview,
   DeliverableMatrix,
   LoginResult,
@@ -152,6 +154,12 @@ export const api = {
     create: (body: { name: string; parent_id?: string | null; tokens?: Record<string, string>; locked_tokens?: string[]; policies?: Record<string, string>; locked_policies?: string[] }) =>
       request<BrandNode>("POST", "/brand-nodes", body).then((r) => r.data),
     effective: (id: string) => request<BrandEffective>("GET", `/brand-nodes/${encodeURIComponent(id)}/effective`).then((r) => r.data),
+  },
+  engagement: {
+    inbox: (disposition = "pending") => request<FanMessage[]>("GET", `/engagement/inbox?disposition=${disposition}`).then((r) => r.data),
+    setDisposition: (id: string, disposition: "answered" | "skipped", reason?: string) =>
+      request<FanMessage>("POST", `/engagement/inbox/${encodeURIComponent(id)}/disposition`, { disposition, ...(reason ? { reason } : {}) }).then((r) => r.data),
+    sync: () => request<EngagementSyncResult>("POST", "/engagement/sync").then((r) => r.data),
   },
   portal: {
     links: () => request<PortalLinkRow[]>("GET", "/portal-links").then((r) => r.data),

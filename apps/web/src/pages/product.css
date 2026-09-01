@@ -522,3 +522,58 @@
 .cf-requests__link .cf-personas__rev {
   margin-inline-start: auto;
 }
+
+/* --- Inbox ----------------------------------------------------------------------------------- */
+.cf-inbox__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-inbox__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  padding: var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel-2);
+}
+.cf-inbox__item[data-urgent] {
+  border-color: var(--cf-danger, #b3261e);
+}
+.cf-inbox__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cf-space-2);
+}
+.cf-inbox__class,
+.cf-inbox__vip {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 var(--cf-space-1);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  color: var(--cf-muted);
+}
+.cf-inbox__class[data-class="safety_relevant"],
+.cf-inbox__class[data-class="harassment"] {
+  color: var(--cf-danger, #b3261e);
+  border-color: currentcolor;
+}
+.cf-inbox__text {
+  margin: 0;
+}
+.cf-inbox__guidance {
+  margin: 0;
+  color: var(--cf-danger, #b3261e);
+  font-size: 0.875rem;
+}
+.cf-inbox__skip {
+  display: flex;
+  align-items: end;
+  gap: var(--cf-space-2);
+}

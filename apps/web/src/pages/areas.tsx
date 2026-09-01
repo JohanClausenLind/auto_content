@@ -13,13 +13,6 @@ export function HomePage() {
   );
 }
 
-export function InboxPage() {
-  return (
-    <Page title="Inbox" lead="Approvals, questions from the factory, and replies that need you.">
-      <EmptyState title="Your inbox is clear" body="Items appear here when a pipeline pauses for your decision or a reply needs a human." />
-    </Page>
-  );
-}
 
 
 export function AssetsPage() {

@@ -314,3 +314,25 @@ export interface PortalBriefRow {
   status: "new" | "accepted" | "declined";
   created_at: string | null;
 }
+
+// --- Engagement inbox ---
+
+export interface FanMessage {
+  id: string;
+  platform: string;
+  account: string;
+  fan_id: string;
+  text: string;
+  received_at: string;
+  message_class: string;
+  vip: boolean;
+  disposition: "pending" | "answered" | "skipped";
+  skip_reason: string | null;
+}
+
+export interface EngagementSyncResult {
+  fetched: number;
+  stored: number;
+  escalated: number;
+  accounts: number;
+}

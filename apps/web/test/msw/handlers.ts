@@ -34,6 +34,7 @@ export const baseHandlers = [
   http.get("*/v1/workspaces", () => HttpResponse.json(WORKSPACES)),
   http.get("*/v1/prefs/theme", () => HttpResponse.json({ value: null })),
   http.get("*/v1/personas", () => HttpResponse.json([])),
+  http.get("*/v1/engagement/inbox", () => HttpResponse.json([])),
   http.get("*/v1/brand-nodes", () => HttpResponse.json([])),
   http.get("*/v1/portal-links", () => HttpResponse.json([])),
   http.get("*/v1/portal-briefs", () => HttpResponse.json([])),

@@ -12,6 +12,7 @@ from content_factory import __version__
 from content_factory.api.routes import brands as brand_routes
 from content_factory.api.routes import campaigns as campaign_routes
 from content_factory.api.routes import distribution as distribution_routes
+from content_factory.api.routes import engagement as engagement_routes
 from content_factory.api.routes import notifications as notification_routes
 from content_factory.api.routes import operations as operations_routes
 from content_factory.api.routes import personas as persona_routes
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/v1/openapi.json",
         lifespan=lifespan,
     )
+    app.state.settings = settings
 
     app.include_router(session_routes.router)
     app.include_router(run_routes.router)
@@ -57,6 +59,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(persona_routes.router)
     app.include_router(brand_routes.router)
     app.include_router(portal_routes.router)
+    app.include_router(engagement_routes.router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> JSONResponse:
