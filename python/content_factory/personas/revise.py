@@ -118,7 +118,7 @@ def map_persona_feedback(feedback: str, persona: Persona) -> PersonaRevisionDiff
         )
     if not changes:
         raise ReviseError(
-            "I couldn't map that to persona fields — say what should change (tone, message length, emoji, punctuation, pet names)."
+            "I couldn't map that to persona fields — say what should change (tone, message length, emoji, punctuation, pet names)."  # noqa: E501
         )
     return PersonaRevisionDiff(
         persona_id=persona.persona_id,
@@ -131,7 +131,7 @@ def map_persona_feedback(feedback: str, persona: Persona) -> PersonaRevisionDiff
 def apply_diff(persona: Persona, diff: PersonaRevisionDiff) -> Persona:
     if diff.base_revision != persona.revision:
         raise ReviseError(
-            f"diff was made against revision {diff.base_revision}, persona is at {persona.revision} — re-review"
+            f"diff was made against revision {diff.base_revision}, persona is at {persona.revision} — re-review"  # noqa: E501
         )
     voice = persona.voice
     for c in diff.changes:

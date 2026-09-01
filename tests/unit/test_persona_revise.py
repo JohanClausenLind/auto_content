@@ -72,7 +72,7 @@ def test_consistency_check_proposes_remakes_and_never_touches_published() -> Non
         QueuedItem(
             "scr_000000000001",
             "queued_script",
-            "Good morning darling. I was thinking about the long walk we could take together, and honestly it might be the best part of my whole entire week ahead.",
+            "Good morning darling. I was thinking about the long walk we could take together, and honestly it might be the best part of my whole entire week ahead.",  # noqa: E501
         ),
         QueuedItem(
             "scr_000000000002",

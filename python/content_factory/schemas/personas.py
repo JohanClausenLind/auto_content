@@ -89,7 +89,7 @@ class PersonaRevisionDiff(SchemaModel):
 
 
 class RemakeProposal(SchemaModel):
-    """Retroactive consistency (14.1): queued/unpublished items that no longer fit; ASK, never act."""
+    """Retroactive consistency (14.1): queued/unpublished items that no longer fit; ASK, never act."""  # noqa: E501
 
     item_id: OpaqueId
     item_kind: Literal["queued_script", "reply_draft", "queued_thumbnail", "open_draft"]

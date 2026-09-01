@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from itertools import pairwise
 from pathlib import Path
 
 from content_factory.audio.normalize import normalize_for_speech
@@ -65,7 +66,7 @@ def test_exploration_cadence_is_jittered_and_never_consecutive() -> None:
             picks.append(i)
             last = i
     assert 30 <= len(picks) <= 90  # ~15% with jitter
-    gaps = [b - a for a, b in zip(picks, picks[1:], strict=False)]
+    gaps = [b - a for a, b in pairwise(picks)]
     assert min(gaps) >= 2  # never two explorations in a row
     assert len(set(gaps)) > 3  # not mechanical
     assert picks != [p for p in range(0, 400, 7)][: len(picks)]

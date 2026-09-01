@@ -29,9 +29,8 @@ def should_explore(
     """Deterministic jittered cadence: on average every 1/rate posts, never two in a row."""
     if last_exploration_index is not None and post_index - last_exploration_index < 2:
         return False
-    rng = random.Random(
-        int(hashlib.sha256(f"{policy.seed}|{post_index}".encode()).hexdigest()[:12], 16)
-    )
+    seed = int(hashlib.sha256(f"{policy.seed}|{post_index}".encode()).hexdigest()[:12], 16)
+    rng = random.Random(seed)  # noqa: S311 - jittered cadence, not cryptography
     return rng.random() < policy.rate
 
 
