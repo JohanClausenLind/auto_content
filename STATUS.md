@@ -17,7 +17,13 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       DeliverableDAG, StoryPlan/CompiledTimeline, RenderBundle), DAG compiler with typed pruning,
       timeline compiler (ms → integer frames), content-ui design system + Artboard, video-ui scenes
       + TimelineComposition, renderer scripts, media QC, demo runner.
-- [ ] Phase 3 — narration and audio
+- [x] **Phase 3 — narration and audio** — **GREEN** (2026-09-01).
+      `voice.synthesize` contract with three executors (deterministic mock; ElevenLabs
+      with-timestamps, respx-tested; Kokoro-82M in an isolated uv env at `skills/audio/kokoro`,
+      opt-in), speech normalization + pronunciation lexicon, alignment validation, SRT/WebVTT
+      captions, narration stem layout, two-pass loudnorm mastering to -14 LUFS/-1 dBTP, mux,
+      audio QC (loudness, true peak, long silences, A/V duration), narrated timeline compilation
+      from measured word timings.
 - [ ] Phase 4 — research, evidence, claims
 - [ ] Phase 5 — skills, models, routing, ComfyUI
 - [ ] Phase 6 — durable pipeline
@@ -74,6 +80,16 @@ Core suite: `uv run pytest -m "not integration and not gpu and not live"` → 41
 | Visual review | frames 60/200/330/480 + artboard PNG inspected | legible editorial layout; follow-up: cross-scene vertical anchor consistency (phase 7 QC) |
 
 Core suites now: Python 49 unit + 5 security; Node 105 tests (schema-ts 17, web-ui 32, content-ui 21, editor-core 8, web 14, video-ui 7, renderer 6).
+
+## Phase 3 results (commands actually run)
+| Item | Command | Result |
+|---|---|---|
+| Audio units | `uv run pytest tests/unit/test_audio_tts_and_alignment.py tests/unit/test_captions_and_mix.py` | 8/8: mock determinism (same request → identical bytes/timings), alignment catches injected overlap/missing/gap, character→word collapsing, ElevenLabs adapter parses `with-timestamps` (mocked), captions ≤2 lines non-overlapping, mastering reaches target |
+| Narrated demo | `uv run content-factory demo --quality demo` | PASS: 16.4 s 1080×1920 MP4, integrated −14.0 LUFS, true peak −8.6 dBTP, AV delta 7 ms, alignment green, 4 caption cues, stems + SRT/VTT on disk |
+| e2e | `tests/e2e/test_offline_demo.py` (in core suite) | narrated demo gates asserted end to end |
+
+Known limitation: forced-alignment fallback (WhisperX) and the Kokoro executor need model downloads;
+they are contract-complete but not evaluated — evaluation packs land in phase 5.
 
 ## Decisions (see docs/adr/0001–0010)
 - MinIO archived upstream 2026-04-25 → optional S3 service is SeaweedFS 4.44 (Apache-2.0).

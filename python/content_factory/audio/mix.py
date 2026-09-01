@@ -92,11 +92,11 @@ def build_narration_stem(
     for i, seg in enumerate(segments):
         inputs += ["-i", str(audio_files[seg.beat_id])]
         filters.append(
-            f"[{i}:a]aresample={spec.sample_rate_hz},aformat=channel_layouts=mono,adelay={laid[i].start_ms}:all=1[a{i}]"  # noqa: E501
+            f"[{i}:a]aresample={spec.sample_rate_hz},aformat=channel_layouts=mono,adelay={laid[i].start_ms}:all=1[a{i}]"
         )
     mix_inputs = "".join(f"[a{i}]" for i in range(len(segments)))
     filters.append(
-        f"{mix_inputs}amix=inputs={len(segments)}:normalize=0:duration=longest,apad=whole_dur={total_ms}ms,atrim=0:{total_ms}ms[out]"  # noqa: E501
+        f"{mix_inputs}amix=inputs={len(segments)}:normalize=0:duration=longest,apad=whole_dur={total_ms}ms,atrim=0:{total_ms}ms[out]"
     )
     ffmpeg(
         [

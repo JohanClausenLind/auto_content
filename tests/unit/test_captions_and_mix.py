@@ -1,7 +1,8 @@
-"""Phase-3: caption compilation (SRT/WebVTT), stem layout, mastering to −14 LUFS, mux QC."""
+"""Phase-3: caption compilation (SRT/WebVTT), stem layout, mastering to -14 LUFS, mux QC."""
 
 from __future__ import annotations
 
+from itertools import pairwise
 from pathlib import Path
 
 from content_factory.audio.captions import compile_captions, to_srt, to_webvtt
@@ -45,7 +46,7 @@ def test_layout_measurements_drive_narrated_timeline(tmp_path: Path) -> None:
     plan, segs, _ = _segments(tmp_path)
     laid = lay_out(segs, SPEC)
     assert laid[0].start_ms == SPEC.lead_in_ms
-    for prev, nxt in zip(laid, laid[1:], strict=False):
+    for prev, nxt in pairwise(laid):
         assert nxt.start_ms == prev.end_ms + SPEC.inter_beat_pause_ms
     beats = apply_measurements(plan.beats, laid)
     assert all(b.measured_start_ms is not None and b.words for b in beats)
@@ -60,7 +61,7 @@ def test_layout_measurements_drive_narrated_timeline(tmp_path: Path) -> None:
 
 
 def test_captions_srt_and_vtt_format(tmp_path: Path) -> None:
-    plan, segs, _ = _segments(tmp_path)
+    _plan, segs, _ = _segments(tmp_path)
     laid = lay_out(segs, SPEC)
     words = [w for b in laid for w in b.words]
     track = compile_captions("dlv_short0000001", words)
@@ -75,7 +76,7 @@ def test_captions_srt_and_vtt_format(tmp_path: Path) -> None:
 
 
 def test_stem_master_and_loudness(tmp_path: Path) -> None:
-    plan, segs, files = _segments(tmp_path)
+    _plan, segs, files = _segments(tmp_path)
     stem = tmp_path / "stem.wav"
     total_ms = build_narration_stem(segs, files, SPEC, stem)
     laid = lay_out(segs, SPEC)
