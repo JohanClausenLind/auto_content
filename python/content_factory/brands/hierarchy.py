@@ -36,7 +36,7 @@ class BrandTree:
         illegal_policies = set(node.policies) & locked["policies"]
         if illegal_tokens or illegal_policies:
             raise BrandHierarchyError(
-                f"locked upstream, cannot override here: tokens={sorted(illegal_tokens)} policies={sorted(illegal_policies)}"
+                f"locked upstream, cannot override here: tokens={sorted(illegal_tokens)} policies={sorted(illegal_policies)}"  # noqa: E501
             )
         self.nodes[node.node_id] = node
 

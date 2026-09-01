@@ -127,6 +127,6 @@ class DiscordEngagement(EngagementProvider):
 
 
 MANUAL_ONLY_SURFACES: dict[str, str] = {
-    "linkedin_comments": "no official member comment-read API (r_member_social is closed) — handle in the app via the deep link",
+    "linkedin_comments": "no official member comment-read API (r_member_social is closed) — handle in the app via the deep link",  # noqa: E501
     "tiktok_dms": "no official DM API — handle in the TikTok app",
 }
