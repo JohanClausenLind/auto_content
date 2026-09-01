@@ -24,7 +24,15 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       captions, narration stem layout, two-pass loudnorm mastering to -14 LUFS/-1 dBTP, mux,
       audio QC (loudness, true peak, long silences, A/V duration), narrated timeline compilation
       from measured word timings.
-- [ ] Phase 4 — research, evidence, claims
+- [x] **Phase 4 — research, evidence, claims** — **GREEN** (2026-09-01).
+      Source/Evidence/Claim contracts (+ EvidenceRequirementPlan), SSRF-safe fetch (private ranges,
+      redirect re-validation, decompressed size cap, MIME allowlist, egress allowlist, injection
+      scan), SearchProvider (SearXNG + fixture), extraction (trafilatura article, pypdf, safe
+      feeds via defusedxml), deterministic claim classification (2.14), numeric verification with
+      unit/period/rounding handling + staleness policy, citations export + script claim gate,
+      reproducible Polars transforms, magic-sniffed upload ingestion. Demo now exports
+      research/{sources,evidence,claims}.json + final/sources.md + citations.json and blocks on
+      the claim gate.
 - [ ] Phase 5 — skills, models, routing, ComfyUI
 - [ ] Phase 6 — durable pipeline
 - [ ] Phase 7 — editor, QC, Revision Box, image sequences
@@ -88,7 +96,17 @@ Core suites now: Python 49 unit + 5 security; Node 105 tests (schema-ts 17, web-
 | Narrated demo | `uv run content-factory demo --quality demo` | PASS: 16.4 s 1080×1920 MP4, integrated −14.0 LUFS, true peak −8.6 dBTP, AV delta 7 ms, alignment green, 4 caption cues, stems + SRT/VTT on disk |
 | e2e | `tests/e2e/test_offline_demo.py` (in core suite) | narrated demo gates asserted end to end |
 
-Known limitation: forced-alignment fallback (WhisperX) and the Kokoro executor need model downloads;
+## Phase 4 results (commands actually run)
+| Item | Command | Result |
+|---|---|---|
+| SSRF/hostile files | `uv run pytest tests/security/test_ssrf_and_hostile_files.py` | 11/11: private/link-local/v6/credentialed URLs blocked, redirect-to-private blocked, decompression bomb capped, content-type allowlist, egress allowlist, billion-laughs feed refused, hostile PDF fails closed, injection markers flagged as data |
+| Claims | `uv run pytest tests/unit/test_claims_and_citations.py` | 8/8: kinds classified, numbers parsed (units/scales/periods), supported/caveat/unsupported/dataset verification, staleness, operator assertions never silently verified, high-stakes blocks full_auto, script gate blocks uncited critical claims |
+| Transforms/uploads | `uv run pytest tests/unit/test_transforms_and_uploads.py` | 3/3: derived data reproduces to identical content hash; fail-closed transforms; magic-based upload validation (HTML-as-mp4 rejected, svg rejected) |
+| Search/extract | `uv run pytest tests/unit/test_search_and_extract.py` | 3/3: SearXNG JSON adapter, fixture provider overlap match, article extraction drops scripts |
+| Demo | `uv run content-factory demo --quality smoke` | claim gate PASS, research/ + final/sources.md + citations.json written |
+
+Follow-ups: AssetLibrary records and RSS→ContentSourceEvent connector land with their first
+consumer (phases 6/12); WhisperX forced-alignment fallback and the Kokoro executor need model downloads;
 they are contract-complete but not evaluated — evaluation packs land in phase 5.
 
 ## Decisions (see docs/adr/0001–0010)

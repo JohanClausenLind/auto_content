@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import httpx
-import pytest
 
 from content_factory.research.extract import extract
 from content_factory.research.fetch import CapturedContent
@@ -43,6 +42,6 @@ def test_article_extraction_from_fixture_html() -> None:
     cap = CapturedContent("https://example.se/wind", "https://example.se/wind", 200, "text/html", html, "0" * 64, ())
     doc = extract(cap)
     assert doc.kind == "article"
-    assert "21" in doc.text and "vindkraft" in doc.text.lower() or "wind" in doc.text.lower()
+    assert ("21" in doc.text and "vindkraft" in doc.text.lower()) or "wind" in doc.text.lower()
     assert "<script" not in doc.text.lower()
     assert doc.title

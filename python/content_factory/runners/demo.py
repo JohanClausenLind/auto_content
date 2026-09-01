@@ -20,6 +20,9 @@ from content_factory.audio.mix import apply_measurements, build_narration_stem, 
 from content_factory.audio.normalize import normalize_for_speech
 from content_factory.audio.tts import MockTTS
 from content_factory.deliverables.dag_compiler import compile_dag
+from content_factory.research.citations import export_research, script_claim_gate
+from content_factory.research.claims import build_claim
+from content_factory.schemas.research import EvidenceLocator, EvidenceRecord, SourceRecord
 from content_factory.qc.audio import check_audio_in_video
 from content_factory.schemas.audio import AudioMixSpec, NarrationRequest, VoiceIdentity
 from content_factory.schemas.fixtures import (
@@ -70,6 +73,91 @@ def run_demo(
         "dag_nodes": len(dag.nodes),
         "dag_pruned": len(dag.pruned),
     }
+
+    # --- research/claims (fixture evidence; the script gate blocks uncited critical claims) --
+    sources = [
+        SourceRecord(
+            source_id="src_energimynd01",
+            workspace_id=WS,
+            canonical_url="https://example.se/wind-2025",
+            requested_url="https://example.se/wind-2025",
+            final_url="https://example.se/wind-2025",
+            title="Wind power supplied 21 percent of Sweden's electricity in 2025 (fixture)",
+            publisher="Energimyndigheten",
+            accessed_at="2026-09-01",
+            capture_sha256="0" * 64,
+            content_type="text/html",
+            size_bytes=2048,
+            published_at="2026-03-01",
+            classification="official",
+        ),
+        SourceRecord(
+            source_id="src_svk00000001",
+            workspace_id=WS,
+            canonical_url="https://example.se/grid-2025",
+            requested_url="https://example.se/grid-2025",
+            final_url="https://example.se/grid-2025",
+            title="Grid statistics 2025 (fixture)",
+            publisher="Svenska kraftnät",
+            accessed_at="2026-09-01",
+            capture_sha256="1" * 64,
+            content_type="text/html",
+            size_bytes=1024,
+            published_at="2026-02-10",
+            classification="official",
+        ),
+    ]
+    evidence = [
+        EvidenceRecord(
+            evidence_id="evd_wind0000001",
+            source_id="src_energimynd01",
+            excerpt="wind power generated 34.9 TWh in 2025, about 21 percent of Sweden's total electricity generation",
+            locator=EvidenceLocator(kind="char_range", start=120, end=240),
+            captured_at="2026-09-01",
+        ),
+        EvidenceRecord(
+            evidence_id="evd_wind0000002",
+            source_id="src_energimynd01",
+            excerpt="The share has roughly doubled since 2018, when wind supplied 11 percent.",
+            locator=EvidenceLocator(kind="char_range", start=241, end=320),
+            captured_at="2026-09-01",
+        ),
+    ]
+    claims = [
+        build_claim(
+            "clm_wind0000001",
+            WS,
+            "In 2025, wind supplied about 21% of Sweden's electricity.",
+            [evidence[0]],
+            dataset=sample_dataset(),
+            dataset_id="ds_wind00000001",
+            sources_by_id={s.source_id: s for s in sources},
+            checked_at="2026-09-01",
+        ),
+        build_claim(
+            "clm_wind0000002",
+            WS,
+            "That share has roughly doubled since 2018, from 11% to 21%.",
+            [evidence[1]],
+            sources_by_id={s.source_id: s for s in sources},
+            checked_at="2026-09-01",
+        ),
+    ]
+    export_research(root, sources, evidence, claims)
+    gate = script_claim_gate(sample_story_plan(), claims)
+    report["claim_gate"] = {
+        "passed": gate.passed,
+        "findings": [f.__dict__ for f in gate.findings],
+        "facts": gate.facts,
+    }
+    report["claims"] = {
+        c.claim_id: {"status": c.status.value, "caveats": list(c.caveats)} for c in claims
+    }
+    if not gate.passed:
+        report["passed"] = False
+        (root / "final").mkdir(exist_ok=True)
+        (root / "final" / "run-report.json").write_text(json.dumps(report, indent=1, default=str))
+        return report
 
     # --- static deliverable -----------------------------------------------------------------
     art = sample_artboard_bundle()
@@ -201,7 +289,9 @@ def run_demo(
 
     report["deliverables"][plan.deliverable_id] = video_entry
     report["elapsed_s"] = round(time.monotonic() - t0, 1)
-    report["passed"] = all(d["qc_passed"] for d in report["deliverables"].values())
+    report["passed"] = report["claim_gate"]["passed"] and all(
+        d["qc_passed"] for d in report["deliverables"].values()
+    )
     (root / "final").mkdir(exist_ok=True)
     (root / "final" / "run-report.json").write_text(json.dumps(report, indent=1, default=str))
     return report
