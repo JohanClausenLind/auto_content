@@ -6,7 +6,13 @@ export const queryKeys = {
   session: ["session"] as const,
   meta: ["meta"] as const,
   workspaces: ["workspaces"] as const,
+  runs: ["runs"] as const,
+  run: (runId: string) => ["runs", runId] as const,
+  actionItems: ["action-items", "open"] as const,
 };
+
+/** How often the run views poll while open. */
+export const RUN_POLL_MS = 2000;
 
 /** Resolves to null on 401 so callers can branch without try/catch. */
 export const sessionQuery = queryOptions({
@@ -27,6 +33,25 @@ export const metaQuery = queryOptions({
   queryKey: queryKeys.meta,
   queryFn: api.meta.get,
   staleTime: 5 * 60_000,
+});
+
+export const runsQuery = queryOptions({
+  queryKey: queryKeys.runs,
+  queryFn: api.runs.list,
+  refetchInterval: RUN_POLL_MS,
+});
+
+export const runQuery = (runId: string) =>
+  queryOptions({
+    queryKey: queryKeys.run(runId),
+    queryFn: () => api.runs.get(runId),
+    refetchInterval: RUN_POLL_MS,
+  });
+
+export const actionItemsQuery = queryOptions({
+  queryKey: queryKeys.actionItems,
+  queryFn: api.actionItems.open,
+  staleTime: 10_000,
 });
 
 export function useSession() {

@@ -13,11 +13,12 @@ import {
   NotFoundPage,
   OperationsPage,
   PersonasPage,
-  ProjectsPage,
   SourcesPage,
   TemplatesPage,
 } from "./pages/areas";
 import { LoginPage } from "./pages/LoginPage";
+import { ProjectsPage } from "./pages/ProjectsPage";
+import { RunDetailPage } from "./pages/RunDetailPage";
 import { parseSettingsSearch, SettingsPage } from "./pages/SettingsPage";
 import { Shell } from "./shell/Shell";
 
@@ -64,6 +65,12 @@ const operationsRoute = createRoute({
   component: OperationsPage,
 });
 
+const runDetailRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "/projects/$runId",
+  component: RunDetailPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "/settings",
@@ -80,6 +87,7 @@ const routeTree = rootRoute.addChildren([
     page("/personas", PersonasPage),
     page("/calendar", CalendarPage),
     page("/projects", ProjectsPage),
+    runDetailRoute,
     page("/assets", AssetsPage),
     page("/brand", BrandPage),
     page("/sources", SourcesPage),

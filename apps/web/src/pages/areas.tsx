@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useSession } from "../api/queries";
+import { ActionCenter } from "./ActionCenter";
 import { EmptyState, Page } from "./EmptyState";
 
 export function HomePage() {
@@ -7,15 +8,7 @@ export function HomePage() {
   const ws = session?.workspaces.find((w) => w.id === session.current_workspace_id);
   return (
     <Page title={ws ? `Good to see you, ${session?.account.display_name}.` : "Home"} lead={ws ? `You're working in ${ws.name}.` : undefined}>
-      <EmptyState
-        title="Nothing scheduled yet"
-        body="When you create content, drafts, approvals and upcoming posts show up here so you can see the week at a glance."
-        action={
-          <Link to="/create" className="cf-button cf-button--primary cf-button--md">
-            Create something
-          </Link>
-        }
-      />
+      <ActionCenter />
     </Page>
   );
 }
@@ -48,14 +41,6 @@ export function CalendarPage() {
   return (
     <Page title="Calendar" lead="What goes out, where, and when.">
       <EmptyState title="Nothing on the calendar" body="Scheduled and published posts will be laid out by day across all connected channels." />
-    </Page>
-  );
-}
-
-export function ProjectsPage() {
-  return (
-    <Page title="Projects" lead="Group related briefs, drafts and assets.">
-      <EmptyState title="No projects yet" body="Projects keep a campaign's pieces together. The first one is created for you when you start creating." />
     </Page>
   );
 }

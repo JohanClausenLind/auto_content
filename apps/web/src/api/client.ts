@@ -1,14 +1,30 @@
 import type { ThemeState } from "@content-factory/web-ui";
-import type { LoginResult, Meta, PasskeyOptions, Session, ThemePrefs, Workspace } from "./types";
+import type {
+  ActionItem,
+  ApprovalRequest,
+  LoginResult,
+  Meta,
+  PasskeyOptions,
+  RevisionOutcome,
+  RunDetail,
+  RunQuality,
+  RunSummary,
+  Session,
+  ThemePrefs,
+  Workspace,
+} from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
   readonly detail: string;
-  constructor(status: number, detail: string) {
+  /** True when the server answered 403 with `X-Step-Up: required` (re-auth needed). */
+  readonly stepUpRequired: boolean;
+  constructor(status: number, detail: string, stepUpRequired = false) {
     super(detail);
     this.name = "ApiError";
     this.status = status;
     this.detail = detail;
+    this.stepUpRequired = stepUpRequired;
   }
 }
 
@@ -50,7 +66,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         : res.status === 401
           ? "You're signed out."
           : `Request failed (${res.status}).`;
-    throw new ApiError(res.status, detail);
+    throw new ApiError(res.status, detail, res.headers.get("X-Step-Up") === "required");
   }
   return { status: res.status, data: data as T };
 }
@@ -68,6 +84,20 @@ export const api = {
     passkeyOptions: () => request<PasskeyOptions>("POST", "/session/passkey/options").then((r) => r.data),
     passkeyVerify: (challenge_id: string, credential: unknown) => request<Session>("POST", "/session/passkey/verify", { challenge_id, credential }).then((r) => r.data),
     switchWorkspace: (workspace_id: string) => request<Session>("POST", "/session/workspace", { workspace_id }).then((r) => r.data),
+    stepUp: (password: string) => request<unknown>("POST", "/session/step-up", { password }).then(() => undefined),
+  },
+  runs: {
+    list: () => request<RunSummary[]>("GET", "/runs").then((r) => r.data),
+    get: (runId: string) => request<RunDetail>("GET", `/runs/${encodeURIComponent(runId)}`).then((r) => r.data),
+    start: (quality: RunQuality) => request<{ run_id: string }>("POST", "/runs", { quality, campaign: "fixture" }).then((r) => r.data),
+    approval: (runId: string, body: ApprovalRequest) => request<unknown>("POST", `/runs/${encodeURIComponent(runId)}/approval`, body).then(() => undefined),
+  },
+  actionItems: {
+    open: () => request<ActionItem[]>("GET", "/action-items?status_filter=open").then((r) => r.data),
+  },
+  revisions: {
+    propose: (body: { project_id: string; unit_id?: string; feedback: string }) => request<{ outcome: RevisionOutcome }>("POST", "/revisions", body).then((r) => r.data.outcome),
+    apply: (body: { project_id: string; feedback: string }) => request<{ run_id: string }>("POST", "/revisions/apply", body).then((r) => r.data),
   },
   workspaces: {
     list: () => request<Workspace[]>("GET", "/workspaces").then((r) => r.data),

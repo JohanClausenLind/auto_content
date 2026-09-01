@@ -1,0 +1,233 @@
+/* Pipeline canvas styles. All colours come from the app's --cf-* tokens; no remote assets. */
+@import "@xyflow/react/dist/style.css";
+
+.cf-runcanvas {
+  height: 24rem;
+  min-height: 18rem;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-bg);
+  overflow: hidden;
+}
+.cf-runcanvas .react-flow__attribution {
+  background: transparent;
+  color: var(--cf-muted);
+}
+.cf-runcanvas .react-flow__edge-path {
+  stroke: var(--cf-border-strong);
+  stroke-width: 1.5;
+}
+.cf-runcanvas .react-flow__handle.cf-runnode__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* One node card. State is carried on data-state. */
+.cf-runnode {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--cf-space-2) var(--cf-space-3);
+  border: 1.5px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+  color: var(--cf-fg);
+  font-family: var(--cf-font-sans);
+  font-size: 0.8rem;
+  text-align: left;
+}
+/* Clickable nodes look pressable; read-only nodes stay flat. */
+.cf-runnode[data-interactive] {
+  cursor: pointer;
+  box-shadow: var(--cf-shadow-sm);
+}
+.cf-runnode[data-interactive]:hover {
+  border-color: var(--cf-border-strong);
+  background: var(--cf-hover);
+}
+.cf-runnode[data-interactive]:focus-visible {
+  outline: 2px solid var(--cf-focus);
+  outline-offset: 2px;
+}
+.cf-runnode[data-selected] {
+  border-color: var(--cf-accent);
+  background: var(--cf-accent-soft);
+}
+.cf-runnode:not([data-interactive]) {
+  cursor: default;
+  border-style: solid;
+  background: var(--cf-panel-2);
+}
+
+.cf-runnode[data-state="queued"] {
+  border-style: dotted;
+  color: var(--cf-muted);
+}
+.cf-runnode[data-state="running"] {
+  border-color: var(--cf-accent);
+  animation: cf-runnode-pulse 1.4s ease-in-out infinite;
+}
+.cf-runnode[data-state="failed"] {
+  border-color: var(--cf-danger);
+  background: var(--cf-danger-soft);
+}
+.cf-runnode[data-state="blocked"] {
+  border-color: var(--cf-warn);
+  background: var(--cf-warn-soft);
+}
+.cf-runnode[data-state="skipped"] {
+  opacity: 0.6;
+  border-style: dashed;
+  color: var(--cf-muted);
+}
+@keyframes cf-runnode-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--cf-accent-soft);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--cf-accent-soft);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-runnode[data-state="running"] {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--cf-accent-soft);
+  }
+}
+
+.cf-runnode__stage {
+  font-weight: 650;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cf-runnode__scope {
+  color: var(--cf-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cf-runnode__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--cf-space-2);
+  min-width: 0;
+}
+.cf-runnode__check {
+  color: var(--cf-accent);
+  font-weight: 700;
+}
+.cf-runnode__cross {
+  color: var(--cf-danger);
+  font-weight: 700;
+}
+.cf-runnode__state {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.68rem;
+  color: var(--cf-muted);
+}
+.cf-runnode[data-state="failed"] .cf-runnode__state {
+  color: var(--cf-danger);
+}
+.cf-runnode__badge {
+  padding: 0 var(--cf-space-2);
+  border-radius: var(--cf-radius-full);
+  border: 1px solid var(--cf-border);
+  background: var(--cf-success-soft);
+  color: var(--cf-fg);
+  font-size: 0.68rem;
+}
+.cf-runnode__duration {
+  color: var(--cf-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Parallel plain list (screen readers / small screens). */
+.cf-runlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cf-runlist__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cf-space-3);
+  width: 100%;
+  padding: var(--cf-space-2) var(--cf-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+}
+.cf-runlist__row--button {
+  cursor: pointer;
+}
+.cf-runlist__row--button:hover {
+  background: var(--cf-hover);
+}
+.cf-runlist__row--button:focus-visible {
+  outline: 2px solid var(--cf-focus);
+  outline-offset: 1px;
+}
+.cf-runlist__row--button[aria-pressed="true"] {
+  background: var(--cf-accent-soft);
+  border-color: var(--cf-accent);
+}
+.cf-runlist__stage {
+  font-weight: 600;
+  min-width: 8rem;
+}
+.cf-runlist__scope {
+  color: var(--cf-muted);
+  min-width: 6rem;
+}
+.cf-runlist__state {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  color: var(--cf-muted);
+}
+.cf-runlist__state[data-state="running"] {
+  color: var(--cf-accent);
+}
+.cf-runlist__state[data-state="complete"] {
+  color: var(--cf-success);
+}
+.cf-runlist__state[data-state="failed"] {
+  color: var(--cf-danger);
+}
+.cf-runlist__state[data-state="blocked"] {
+  color: var(--cf-warn);
+}
+.cf-runlist__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cf-space-2);
+  color: var(--cf-muted);
+  font-size: 0.8rem;
+  min-width: 0;
+}
+.cf-runlist__badge {
+  padding: 0 var(--cf-space-2);
+  border-radius: var(--cf-radius-full);
+  border: 1px solid var(--cf-border);
+  background: var(--cf-success-soft);
+  color: var(--cf-fg);
+  font-size: 0.7rem;
+}
+.cf-runlist__error {
+  color: var(--cf-danger);
+}

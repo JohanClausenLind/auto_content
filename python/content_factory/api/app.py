@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from content_factory import __version__
+from content_factory.api.routes import revisions as revision_routes
 from content_factory.api.routes import runs as run_routes
 from content_factory.api.routes import session as session_routes
 from content_factory.api.routes import workspaces as workspace_routes
@@ -40,6 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(session_routes.router)
     app.include_router(run_routes.router)
+    app.include_router(revision_routes.router)
     app.include_router(workspace_routes.router)
 
     @app.get("/healthz", include_in_schema=False)

@@ -139,6 +139,11 @@ _ORDINALS = {
 _PRESS_RELEASE = re.compile(
     r"\b(press release|corporate|salesy|marketing speak|too formal)\b", re.I
 )
+_CARD_SAY = re.compile(
+    r"\bcard\s*(\d+)\b[^\"']*(?:should\s+(?:say|read)|change\s+to|make\s+it\s+say)\s*"
+    r"[\"'](?P<text>[^\"']{3,300})[\"']",
+    re.I,
+)
 
 
 def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
@@ -202,6 +207,42 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                 plain=f"Shorten {intro.label} from {intro.duration_frames} to {new_len} frames; narration and captions recompile from measured audio.",  # noqa: E501
                 seconds=40,
             )
+
+    say = _CARD_SAY.search(text)
+    if say:
+        cards = sorted(ctx.of_kind(UnitKind.carousel_card), key=lambda u: u.ordinal)
+        idx = int(say.group(1)) - 1
+        if 0 <= idx < len(cards):
+            target = cards[idx]
+            return _plan(
+                CritiqueFinding(
+                    category=CritiqueCategory.tone,
+                    severity=Severity.minor,
+                    target_unit_ids=(target.unit_id,),
+                    summary=f"Operator rewrote the text of {target.label}.",
+                ),
+                (
+                    ReplaceTextRange(
+                        unit_id=target.unit_id,
+                        start=0,
+                        end=0,
+                        replacement=say.group("text"),
+                        expected_before=None,
+                    ),
+                ),
+                units=(target.unit_id,),
+                scopes=(
+                    InvalidationScope.layout,
+                    InvalidationScope.render,
+                    InvalidationScope.originality,
+                ),
+                plain=f"Replace the text of {target.label} with the wording you gave; only that card re-renders.",
+                seconds=20,
+            )
+        return ClarifyingQuestion(
+            question=f"There are {len(cards)} cards; which one do you mean?",
+            candidate_unit_ids=tuple(u.unit_id for u in cards),
+        )
 
     m = _CARD_REF.search(text)
     if m and re.search(r"\bmatch\b", text, re.I):

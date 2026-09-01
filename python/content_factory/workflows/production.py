@@ -139,6 +139,7 @@ async def compile_plan(inp: ProductionInput) -> CompiledPlan:
         )
     )
     (project_dir / "dag.json").write_text(dag.model_dump_json(indent=1))
+    (project_dir / "campaign.json").write_text(campaign.model_dump_json(indent=1))
     nodes = [
         NodePlan(n.node_id, n.stage.value, n.deliverable_id, list(n.depends_on))
         for n in dag.topological()

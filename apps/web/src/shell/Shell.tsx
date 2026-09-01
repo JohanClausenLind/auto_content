@@ -1,7 +1,8 @@
 import { ActionCenterBadge, Button, CommandPalette, Dialog, ThemeCustomizer, useCommandPaletteHotkey, useTheme } from "@content-factory/web-ui";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useLogout, useMeta, useSession, useSwitchWorkspace } from "../api/queries";
+import { useQuery } from "@tanstack/react-query";
+import { actionItemsQuery, useLogout, useMeta, useSession, useSwitchWorkspace } from "../api/queries";
 import type { Session } from "../api/types";
 import { buildCommands } from "./commands";
 import { NAV_SECTIONS, visibleAreas } from "./nav";
@@ -24,6 +25,8 @@ function ShellInner({ session }: { session: Session }) {
   const [paletteOpen, setPaletteOpen] = useCommandPaletteHotkey();
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const { data: actionItems } = useQuery(actionItemsQuery);
+  const actionTone = actionItems?.some((i) => i.severity === "critical") ? "danger" : actionItems?.some((i) => i.severity === "warning") ? "warn" : "neutral";
 
   const areas = useMemo(() => visibleAreas(session.account.is_owner), [session.account.is_owner]);
   const go = (to: string) => void navigate({ to });
@@ -85,7 +88,7 @@ function ShellInner({ session }: { session: Session }) {
             Budget <span aria-hidden="true">—</span>
             <span className="cf-visually-hidden">not tracked yet</span>
           </span>
-          <ActionCenterBadge count={0} onPress={() => go("/inbox")} />
+          <ActionCenterBadge count={actionItems?.length ?? 0} tone={actionTone} onPress={() => go("/")} />
           <Button variant="ghost" size="sm" aria-label={schemeLabel} aria-pressed={theme.resolved.scheme === "dark"} onPress={theme.toggleScheme}>
             <span aria-hidden="true">{theme.resolved.scheme === "dark" ? "☾" : "☀"}</span>
           </Button>

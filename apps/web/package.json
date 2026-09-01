@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@content-factory/pipeline-canvas": "workspace:*",
     "@content-factory/web-ui": "workspace:*",
     "@simplewebauthn/browser": "13.3.0",
     "@tanstack/react-query": "5.102.4",
