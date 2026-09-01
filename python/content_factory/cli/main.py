@@ -318,6 +318,68 @@ def distribution_kill_switch(
     asyncio.run(_run())
 
 
+audit_app = typer.Typer(help="Audit log")
+app.add_typer(audit_app, name="audit")
+
+
+@audit_app.command("export")
+def audit_export(
+    since: str = typer.Option("1970-01-01", help="ISO date lower bound."),
+    out: str = typer.Option("-", help="Output file (JSONL) or - for stdout."),
+) -> None:
+    """SIEM-shaped JSONL export of the append-only audit log."""
+    import asyncio
+    import json as _json
+    import sys
+    from datetime import date
+
+    from sqlalchemy import select
+
+    from content_factory.db.models import AuditEvent
+    from content_factory.db.session import session_scope
+
+    lower = date.fromisoformat(since)
+
+    async def _run() -> None:
+        async with session_scope() as db:
+            rows = (
+                (await db.execute(select(AuditEvent).order_by(AuditEvent.created_at)))
+                .scalars()
+                .all()
+            )
+        stream = sys.stdout if out == "-" else open(out, "w", encoding="utf-8")  # noqa: ASYNC230
+        try:
+            n = 0
+            for a in rows:
+                if a.created_at.date() < lower:
+                    continue
+                stream.write(
+                    _json.dumps(
+                        {
+                            "ts": a.created_at.isoformat(),
+                            "event.id": a.id,
+                            "event.action": a.action,
+                            "actor.id": a.actor_account_id,
+                            "workspace.id": a.workspace_id,
+                            "target.type": a.target_type,
+                            "target.id": a.target_id,
+                            "source.ip": a.ip,
+                            "event.detail": a.detail,
+                        },
+                        sort_keys=True,
+                    )
+                    + "\n"
+                )
+                n += 1
+        finally:
+            if stream is not sys.stdout:
+                stream.close()
+        if out != "-":
+            console.print(f"wrote {n} events to {out}")
+
+    asyncio.run(_run())
+
+
 @app.command()
 def mcp() -> None:
     """Run the MCP server on stdio (the only external-agent surface)."""

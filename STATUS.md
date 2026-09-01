@@ -100,8 +100,14 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       ADOPT needs min samples + conservative spread, guardrail breach retires, all conclusions
       labeled observational). Remaining: persona CRUD/Revision-Box UI, engagement inbox adapters,
       per-fan memory store.
-- [ ] Phase 12 — feature wave (Radar, imports, brand hierarchy, portal, i18n, OIDC completion, audit export)
-- [ ] Phase 13 — hardening (backups + restore rehearsal, retention jobs, perf pass, security review, traceability)
+- [~] **Phase 12 — feature wave** — Radar signals (topic gap/overlap/saturation/expiring, evidence
+      attached, never auto-posts), import toolkit (CSV dry-run → dedup → import → reconcile →
+      rollback, all proven), SIEM-shaped `content-factory audit export` JSONL. Remaining: brand
+      hierarchy, request portal, app i18n, dormant-OIDC fixtures.
+- [~] **Phase 13 — hardening** — `scripts/backup.sh` (pg_dump -Fc + artifact rsync + SHA256SUMS)
+      and `scripts/restore-rehearsal.sh` both EXECUTED against the live dev DB (restored scratch DB
+      verified: workspaces=3, runs=25, audit=7). Remaining: retention jobs, perf pass at realistic
+      scale, external security review, requirements-traceability doc.
 - [ ] Phase 10 — Tier 2/3 adapters and analytics
 - [ ] Phase 11 — personas, human tasks, engagement, style exploration
 - [ ] Phase 12 — feature wave
