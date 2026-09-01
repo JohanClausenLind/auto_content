@@ -18,25 +18,74 @@ from content_factory.analytics.attribution import (
 
 
 def test_utm_builder_is_deterministic_and_preserves_existing_query() -> None:
-    url = build_utm_url("https://shop.example/product?ref=nav", platform="bluesky", campaign_id="cmp_a", deliverable_id="dlv_1", variant="b")
-    assert "utm_source=bluesky" in url and "utm_campaign=cmp_a" in url and "utm_content=dlv_1%3Ab" in url
+    url = build_utm_url(
+        "https://shop.example/product?ref=nav",
+        platform="bluesky",
+        campaign_id="cmp_a",
+        deliverable_id="dlv_1",
+        variant="b",
+    )
+    assert (
+        "utm_source=bluesky" in url
+        and "utm_campaign=cmp_a" in url
+        and "utm_content=dlv_1%3Ab" in url
+    )
     assert "ref=nav" in url
-    assert build_utm_url("https://shop.example/product?ref=nav", platform="bluesky", campaign_id="cmp_a", deliverable_id="dlv_1", variant="b") == url
+    assert (
+        build_utm_url(
+            "https://shop.example/product?ref=nav",
+            platform="bluesky",
+            campaign_id="cmp_a",
+            deliverable_id="dlv_1",
+            variant="b",
+        )
+        == url
+    )
     identity = parse_utm_identity(url)
-    assert identity == {"campaign_id": "cmp_a", "deliverable_id": "dlv_1", "variant": "b", "source": "bluesky", "medium": "social"}
+    assert identity == {
+        "campaign_id": "cmp_a",
+        "deliverable_id": "dlv_1",
+        "variant": "b",
+        "source": "bluesky",
+        "medium": "social",
+    }
 
 
 def test_conversion_joins_to_exact_post_and_is_labeled_correlation() -> None:
-    url = build_utm_url("https://shop.example/p", platform="mastodon", campaign_id="cmp_a", deliverable_id="dlv_short0001", variant="a")
-    event = ConversionEvent(event_id="ord_1", kind="order", value=49.0, currency="EUR", landing_url=url, occurred_at="2026-09-01T10:00:00Z")
+    url = build_utm_url(
+        "https://shop.example/p",
+        platform="mastodon",
+        campaign_id="cmp_a",
+        deliverable_id="dlv_short0001",
+        variant="a",
+    )
+    event = ConversionEvent(
+        event_id="ord_1",
+        kind="order",
+        value=49.0,
+        currency="EUR",
+        landing_url=url,
+        occurred_at="2026-09-01T10:00:00Z",
+    )
     record = attribute_last_touch(event)
     assert record is not None
-    assert record.deliverable_id == "dlv_short0001" and record.variant == "a" and record.model == "last_touch"
+    assert (
+        record.deliverable_id == "dlv_short0001"
+        and record.variant == "a"
+        and record.model == "last_touch"
+    )
     assert record.label == "correlation"
     line = record.as_report_line()
     assert "correlation" in line and "confound" in line and "caus" in line
     # Missing UTM identity stays missing — no guessing.
-    naked = ConversionEvent(event_id="ord_2", kind="order", value=10.0, currency="EUR", landing_url="https://shop.example/p", occurred_at="2026-09-01T11:00:00Z")
+    naked = ConversionEvent(
+        event_id="ord_2",
+        kind="order",
+        value=10.0,
+        currency="EUR",
+        landing_url="https://shop.example/p",
+        occurred_at="2026-09-01T11:00:00Z",
+    )
     assert attribute_last_touch(naked) is None
 
 
@@ -66,6 +115,14 @@ def test_retention_maps_to_scene_ranges_without_causal_claims() -> None:
 
 
 def test_raw_observations_preserve_names_and_missing_values() -> None:
-    obs = RawObservation(provider="youtube", metric_name="estimatedMinutesWatched", definition="as defined by YouTube Analytics API dimension docs", value=None, scope="video:abc", window="2026-08", collected_at="2026-09-01")
+    obs = RawObservation(
+        provider="youtube",
+        metric_name="estimatedMinutesWatched",
+        definition="as defined by YouTube Analytics API dimension docs",
+        value=None,
+        scope="video:abc",
+        window="2026-08",
+        collected_at="2026-09-01",
+    )
     assert obs.metric_name == "estimatedMinutesWatched"  # never renamed
     assert obs.value is None  # missing stays missing

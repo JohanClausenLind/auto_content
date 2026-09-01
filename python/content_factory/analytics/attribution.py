@@ -12,7 +12,14 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 @dataclass(frozen=True)
 class UTMPolicy:
-    source_by_platform: dict[str, str] = field(default_factory=lambda: {"bluesky": "bluesky", "mastodon": "mastodon", "discord": "discord", "export": "export"})
+    source_by_platform: dict[str, str] = field(
+        default_factory=lambda: {
+            "bluesky": "bluesky",
+            "mastodon": "mastodon",
+            "discord": "discord",
+            "export": "export",
+        }
+    )
     medium: str = "social"
 
 
@@ -45,7 +52,13 @@ def parse_utm_identity(url: str) -> dict[str, str] | None:
     if "utm_campaign" not in q or "utm_content" not in q:
         return None
     deliverable_id, _, variant = q["utm_content"].partition(":")
-    return {"campaign_id": q["utm_campaign"], "deliverable_id": deliverable_id, "variant": variant or "a", "source": q.get("utm_source", ""), "medium": q.get("utm_medium", "")}
+    return {
+        "campaign_id": q["utm_campaign"],
+        "deliverable_id": deliverable_id,
+        "variant": variant or "a",
+        "source": q.get("utm_source", ""),
+        "medium": q.get("utm_medium", ""),
+    }
 
 
 def verify_shopify_hmac(body: bytes, header_b64: str, client_secret: str) -> bool:
@@ -94,7 +107,9 @@ class AttributionRecord:
         return f"conversion {self.event_id}"
 
 
-def attribute_last_touch(event: ConversionEvent, *, window_days: int = 30) -> AttributionRecord | None:
+def attribute_last_touch(
+    event: ConversionEvent, *, window_days: int = 30
+) -> AttributionRecord | None:
     identity = parse_utm_identity(event.landing_url)
     if identity is None:
         return None  # missing stays missing — never guessed
@@ -135,15 +150,29 @@ def map_retention_to_timeline(
         e_frac = (start + duration) / total_frames
         points = [p for p in retention_points if s_frac <= p[0] < e_frac]
         if not points:
-            out.append({"scene_id": scene_id, "start_s": round(start / fps, 2), "end_s": round((start + duration) / fps, 2), "retention": None, "note": "no data points in this range (missing stays missing)"})
+            out.append(
+                {
+                    "scene_id": scene_id,
+                    "start_s": round(start / fps, 2),
+                    "end_s": round((start + duration) / fps, 2),
+                    "retention": None,
+                    "note": "no data points in this range (missing stays missing)",
+                }
+            )
             continue
         entry_r = points[0][1]
         exit_r = points[-1][1]
-        out.append({
-            "scene_id": scene_id,
-            "start_s": round(start / fps, 2),
-            "end_s": round((start + duration) / fps, 2),
-            "retention": {"entry": entry_r, "exit": exit_r, "delta": round(exit_r - entry_r, 4)},
-            "note": "observational: a drop here coincides with this scene; causes are not established",
-        })
+        out.append(
+            {
+                "scene_id": scene_id,
+                "start_s": round(start / fps, 2),
+                "end_s": round((start + duration) / fps, 2),
+                "retention": {
+                    "entry": entry_r,
+                    "exit": exit_r,
+                    "delta": round(exit_r - entry_r, 4),
+                },
+                "note": "observational: a drop here coincides with this scene; causes are not established",
+            }
+        )
     return out
