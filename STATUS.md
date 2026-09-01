@@ -5,7 +5,7 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 
 ## Phase checklist
 - [x] **Phase 0 — research and spikes** (gate: all spikes pass; no license blocker) — **GREEN**
-      except one manual check that needs the operator (Tailscale operator rights, see below).
+      (Tailscale operator check completed 2026-09-01, see below).
 - [x] **Phase 1 — foundation** — **GREEN** (gate rehearsed 2026-08-27).
       Monorepo, lockfiles, CI, Postgres schema + Alembic, local auth API (Argon2id, TOTP, passkeys,
       step-up, sessions, deny-by-default RBAC), ArtifactStore (filesystem + S3), signed
@@ -64,7 +64,7 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       reasons), run detail + Pipeline Canvas + Revision Box + approval with step-up, Action Center,
       Operations page, Calendar (honest placeholder), Push settings, assistant drawer (honest: lists
       the MCP tools; no local model wired yet). 40 web tests + 12 canvas tests pass; build clean.
-      Operator-blocked: `sudo tailscale set --operator=$USER` (tailnet serve check). The push/
+      Tailnet serve verified 2026-09-01 (operator ran `sudo tailscale set --operator=$USER`). The push/
       assistant/calendar UI tests that were cut short are now in
       `apps/web/test/calendarPushAssistant.test.tsx` (2026-09-01).
 - [~] **Phase 9 — scheduler and first live publishing** — everything but the live post is GREEN.
@@ -144,7 +144,7 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
 | Deterministic control compiler | `uv run pytest tests/unit/test_control_compile.py` | 3/3 pass; 8 pose + 8 layout frames byte-identical on rerun |
 | Local auth + passkey | `uv run pytest tests/unit/test_auth_primitives.py` | 4/4 pass (Argon2id, TOTP replay refused, passkey register+auth, stale challenge/wrong origin rejected) |
 | Lint/type | `uv run ruff check . && uv run pyright python tests scripts` | 0 findings / 0 errors |
-| Tailscale serve | `tailscale serve --bg --https=8443 8000` | **BLOCKED (needs operator)**: "Use 'sudo tailscale serve …' or `sudo tailscale set --operator=$USER` once". Existing serve on 443 → 127.0.0.1:8002 (another app) was left untouched. API on loopback verified: `curl 127.0.0.1:8000/healthz` → ok |
+| Tailscale serve | `tailscale serve --bg --https=8443 8000` | **DONE 2026-09-01** (operator granted `tailscale set --operator=$USER`). `https://vegaserv.tail07205e.ts.net:8443/healthz` → `{"status":"ok","version":"0.1.0"}` with valid tailnet TLS; `/v1/meta` → 200; unauthenticated `/v1/session` → 401. API binds 127.0.0.1:8000 only (`ss -ltn`). Existing serve on 443 → 127.0.0.1:8002 (another app) untouched. Disable with `tailscale serve --https=8443 off` |
 
 ## Phase 1 results so far (commands actually run)
 | Item | Command | Result |
@@ -251,15 +251,13 @@ minimum, Buttondown API tier.
 | Lint | `uv run ruff format --check . && uv run ruff check . && uv run pyright` | all clean, 0 findings |
 
 ## Resume instruction (next smallest task)
-Everything buildable without the operator is built. The remaining items each need the operator:
-1. Tailnet check: `sudo tailscale set --operator=$USER`, then
-   `tailscale serve --bg --https=8443 8000` (the existing serve on 443 → 8002 is another app —
-   leave it untouched), then open https://<host>.tailnet:8443/healthz.
-2. Live Bluesky gate: put a designated TEST account's BLUESKY_HANDLE/BLUESKY_APP_PASSWORD in
+Everything buildable without the operator is built. Tailnet serve is verified (see Phase 0
+results). The remaining items each need the operator:
+1. Live Bluesky gate: put a designated TEST account's BLUESKY_HANDLE/BLUESKY_APP_PASSWORD in
    `.env`, then `set -a; . ./.env; set +a; uv run pytest -m live tests/live -q`.
-3. Tier 2/3 + article destinations live drafts: create per-platform developer apps/API keys, then
+2. Tier 2/3 + article destinations live drafts: create per-platform developer apps/API keys, then
    exercise each adapter against a real draft (they are mock-proven; wiring is in
    `python/content_factory/distribution/`).
-4. External security review (docs/requirements-traceability.md maps capability → code → proof).
+3. External security review (docs/requirements-traceability.md maps capability → code → proof).
 Baseline check before any new work:
 `set -a; . ./.env; set +a; just doctor && just test && uv run pytest tests/api -q`.
