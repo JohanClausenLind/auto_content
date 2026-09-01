@@ -18,6 +18,12 @@ from content_factory.workflows.production import ApprovalSignal, ProductionInput
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
+def projects_root() -> Path:
+    import os
+
+    return Path(os.environ.get("CF_PROJECTS_DIR", str(REPO_ROOT / "projects")))
+
+
 async def temporal_client() -> Client:
     s = get_settings()
     return await Client.connect(s.temporal.address, namespace=s.temporal.namespace)

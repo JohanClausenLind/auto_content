@@ -282,6 +282,14 @@ def runs_approve(
 
 
 @app.command()
+def mcp() -> None:
+    """Run the MCP server on stdio (the only external-agent surface)."""
+    from content_factory.mcp_server import main as run_mcp
+
+    run_mcp()
+
+
+@app.command()
 def config(
     show_defaults: bool = typer.Option(False, help="Print the effective configuration as YAML."),
 ) -> None:

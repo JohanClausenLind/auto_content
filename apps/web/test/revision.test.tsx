@@ -52,7 +52,7 @@ describe("revision box", () => {
     const user = await sendFeedback("The intro is too long.");
 
     expect(await screen.findByText("Here's the plan")).toBeInTheDocument();
-    expect(screen.getByText(FIX_PLAN.kind === "fix_plan" ? FIX_PLAN.plain_language : "")).toBeInTheDocument();
+    expect(screen.getByText(FIX_PLAN.plain_language)).toBeInTheDocument();
     expect(screen.getByText(/Estimated cost \$1\.25/)).toHaveTextContent("about 2 minutes");
     expect(screen.getByText("Affects 2 units:")).toBeInTheDocument();
     expect(screen.getByText("unit_intro")).toBeInTheDocument();
@@ -105,16 +105,10 @@ describe("revision box", () => {
 });
 
 describe("revision box persistence", () => {
-  it("keeps the box available while a run is producing", async () => {
+  it("is present even while a run is still producing, with submit disabled until there is text", async () => {
     server.use(authenticated(), http.get("*/v1/runs/run_1", () => HttpResponse.json(makeRunDetail())));
     renderApp("/projects/run_1");
     expect(await screen.findByLabelText("Tell me what you don't like.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Send feedback" })).toBeDisabled();
-  });
-
-  it("waits for the outcome and disables double submit", async () => {
-    setupRun(FIX_PLAN);
-    await sendFeedback("Shorter please.");
-    await waitFor(() => expect(screen.getByText("Here's the plan")).toBeInTheDocument());
   });
 });

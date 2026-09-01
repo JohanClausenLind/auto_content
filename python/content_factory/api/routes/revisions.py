@@ -16,7 +16,7 @@ from content_factory.editor.critique import map_feedback
 from content_factory.editor.project_context import ProjectContextError, load_context
 from content_factory.schemas.editing import FixPlan
 from content_factory.services import audit
-from content_factory.services.runs import REPO_ROOT, start_run
+from content_factory.services.runs import projects_root, start_run
 
 router = APIRouter(prefix="/v1/revisions", tags=["revisions"])
 EDITOR = require_role(Role.editor)
@@ -29,7 +29,7 @@ class FeedbackBody(BaseModel):
 
 
 def _project_dir(project_id: str) -> Path:
-    path = REPO_ROOT / "projects" / project_id
+    path = projects_root() / project_id
     if not (path / "manifest.json").exists():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "project not found")
     return path

@@ -281,3 +281,22 @@ class ActionItem(WorkspaceScoped, TimestampMixin, Base):
     run_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     deep_link: Mapped[str | None] = mapped_column(String(300), nullable=True)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PushSubscription(TimestampMixin, Base):
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "endpoint",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        String(40), ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    endpoint: Mapped[str] = mapped_column(String(1000), nullable=False)
+    keys: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)  # p256dh + auth
+    user_agent: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

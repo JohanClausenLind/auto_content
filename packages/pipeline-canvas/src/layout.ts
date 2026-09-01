@@ -1,4 +1,5 @@
-import ELK, { type ElkNode } from "elkjs/lib/elk.bundled.js";
+import type ElkConstructor from "elkjs/lib/elk.bundled.js";
+import type { ElkNode } from "elkjs/lib/elk.bundled.js";
 import { buildGraph, type GraphEdge, type RunGraph } from "./graph";
 import type { RunNode } from "./types";
 
@@ -20,7 +21,15 @@ export interface LaidOutGraph {
   height: number;
 }
 
-const elk = new ELK();
+/** elkjs is ~1.4 MB, so it is loaded on demand the first time a layout runs. */
+let elkInstance: InstanceType<typeof ElkConstructor> | null = null;
+async function getElk(): Promise<InstanceType<typeof ElkConstructor>> {
+  if (!elkInstance) {
+    const { default: ELK } = await import("elkjs/lib/elk.bundled.js");
+    elkInstance = new ELK();
+  }
+  return elkInstance;
+}
 
 /** Position a run graph left-to-right with ELK's layered algorithm. */
 export async function layoutGraph(graph: RunGraph): Promise<LaidOutGraph> {
@@ -36,6 +45,7 @@ export async function layoutGraph(graph: RunGraph): Promise<LaidOutGraph> {
     children: graph.nodes.map((n) => ({ id: n.node_id, width: NODE_WIDTH, height: NODE_HEIGHT })),
     edges: graph.edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
   };
+  const elk = await getElk();
   const result = await elk.layout(root);
   const byId = new Map((result.children ?? []).map((child) => [child.id, child]));
   const nodes: PositionedRunNode[] = graph.nodes.map((node) => {
