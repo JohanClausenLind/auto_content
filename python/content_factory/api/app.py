@@ -19,6 +19,7 @@ from content_factory.api.routes import personas as persona_routes
 from content_factory.api.routes import portal as portal_routes
 from content_factory.api.routes import revisions as revision_routes
 from content_factory.api.routes import runs as run_routes
+from content_factory.api.routes import sequences as sequence_routes
 from content_factory.api.routes import session as session_routes
 from content_factory.api.routes import workspaces as workspace_routes
 from content_factory.config import Settings, get_settings
@@ -60,6 +61,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(brand_routes.router)
     app.include_router(portal_routes.router)
     app.include_router(engagement_routes.router)
+    app.include_router(sequence_routes.router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz() -> JSONResponse:

@@ -19,6 +19,7 @@ import type {
   PersonaDiff,
   PersonaSummary,
   PortalBriefRow,
+  SequenceSummary,
   PortalLinkCreated,
   PortalLinkRow,
   PushSubscriptionBody,
@@ -156,6 +157,10 @@ export const api = {
     create: (body: { name: string; parent_id?: string | null; tokens?: Record<string, string>; locked_tokens?: string[]; policies?: Record<string, string>; locked_policies?: string[] }) =>
       request<BrandNode>("POST", "/brand-nodes", body).then((r) => r.data),
     effective: (id: string) => request<BrandEffective>("GET", `/brand-nodes/${encodeURIComponent(id)}/effective`).then((r) => r.data),
+  },
+  sequences: {
+    list: () => request<SequenceSummary[]>("GET", "/sequences").then((r) => r.data),
+    fileUrl: (name: string, file: string) => url(`/sequences/${encodeURIComponent(name)}/files/${file}`),
   },
   engagement: {
     inbox: (disposition = "pending") => request<FanMessage[]>("GET", `/engagement/inbox?disposition=${disposition}`).then((r) => r.data),

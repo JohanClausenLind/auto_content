@@ -17,6 +17,7 @@ export const queryKeys = {
   brandNodes: ["brand-nodes"] as const,
   brandEffective: (id: string) => ["brand-nodes", id, "effective"] as const,
   fanInbox: ["engagement", "inbox"] as const,
+  sequences: ["sequences"] as const,
   portalLinks: ["portal-links"] as const,
   portalBriefs: ["portal-briefs"] as const,
 };
@@ -91,6 +92,12 @@ export const brandEffectiveQuery = (id: string) =>
     queryKey: queryKeys.brandEffective(id),
     queryFn: () => api.brands.effective(id),
   });
+
+export const sequencesQuery = queryOptions({
+  queryKey: queryKeys.sequences,
+  queryFn: () => api.sequences.list(),
+  refetchInterval: 8000, // sequences appear/grow while a generation run is in progress
+});
 
 export const fanInboxQuery = queryOptions({
   queryKey: queryKeys.fanInbox,

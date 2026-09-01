@@ -1,0 +1,15 @@
+{
+ "anchor_sha256": "7af141f81b281d070e35b92c07ca4eaa23f18b6dfa45f84ee6429777b8b2949e",
+ "attempts": 1,
+ "cache_hit": false,
+ "control_sha256": "3dbd34ad78596bef40504d92ae1590b037b987f965ddf6670cb6f9397a88c064",
+ "drift": {
+  "locked": 0.8232,
+  "style": 0.1624
+ },
+ "frame_index": 3,
+ "input_hash": "66bc8341d7a7dcf389c1ab29c3d0331b232acb809414093236d1a81f50b57c80",
+ "lock_sha256": "3f2f2fa895e9685f95a1de24d7ceeaa1804bfcfd6a4a1ee8dc929342563b4cc2",
+ "png_sha256": "b8ad25f629aa8ab759dddf9eb2d994403ba44d095809e24d11dd198a28a0b5ba",
+ "reference": "anchor"
+}

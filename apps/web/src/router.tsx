@@ -3,13 +3,13 @@ import { createMemoryHistory, createRootRouteWithContext, createRoute, createRou
 import { sessionQuery } from "./api/queries";
 import {
   AnalyticsPage,
-  AssetsPage,
   ConnectionsPage,
   HomePage,
   NotFoundPage,
   SourcesPage,
   TemplatesPage,
 } from "./pages/areas";
+import { AssetsPage } from "./pages/AssetsPage";
 import { BrandPage } from "./pages/BrandPage";
 import { InboxPage } from "./pages/InboxPage";
 import { PersonasPage } from "./pages/PersonasPage";

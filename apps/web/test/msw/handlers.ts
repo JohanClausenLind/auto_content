@@ -37,6 +37,7 @@ export const baseHandlers = [
   http.put("*/v1/prefs/locale", () => new HttpResponse(null, { status: 204 })),
   http.get("*/v1/personas", () => HttpResponse.json([])),
   http.get("*/v1/engagement/inbox", () => HttpResponse.json([])),
+  http.get("*/v1/sequences", () => HttpResponse.json([])),
   http.get("*/v1/brand-nodes", () => HttpResponse.json([])),
   http.get("*/v1/portal-links", () => HttpResponse.json([])),
   http.get("*/v1/portal-briefs", () => HttpResponse.json([])),

@@ -336,3 +336,23 @@ export interface EngagementSyncResult {
   escalated: number;
   accounts: number;
 }
+
+// --- Image sequences ---
+
+export interface SequenceFrame {
+  index: number;
+  file: string;
+  attempts: number | null;
+  cache_hit: boolean;
+  drift: { locked: number; style: number } | null;
+}
+
+export interface SequenceSummary {
+  name: string;
+  anchor: boolean;
+  frames: SequenceFrame[];
+  videos: string[];
+  contact_sheet: boolean;
+  flipbook: boolean;
+  updated_at: number | null;
+}

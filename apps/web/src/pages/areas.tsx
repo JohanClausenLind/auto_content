@@ -15,13 +15,6 @@ export function HomePage() {
 
 
 
-export function AssetsPage() {
-  return (
-    <Page title="Assets" lead="Images, video, audio and documents the factory can use.">
-      <EmptyState title="The library is empty" body="Uploads and generated media are stored with provenance so you always know where something came from." />
-    </Page>
-  );
-}
 
 
 export function SourcesPage() {

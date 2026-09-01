@@ -312,6 +312,8 @@ class DriftThresholds(StrictModel):
 
 class ImageSequenceSettings(StrictModel):
     enabled: bool = True
+    # Where sequence runs write their workdirs; the review API serves files from here only.
+    output_root: str = "out"
     default_working_resolution: tuple[int, int] = (1024, 576)
     default_final_resolution: tuple[int, int] = (1536, 864)
     hub_and_spoke_only: bool = True
