@@ -91,6 +91,43 @@ def bootstrap(
     asyncio.run(_run())
 
 
+@app.command("reset-password")
+def reset_password(
+    username: str = typer.Argument("operator", help="Account to reset."),
+    password: str | None = typer.Option(
+        None, help="New password (a strong one is generated if omitted)."
+    ),
+) -> None:
+    """Reset a local account's password (direct DB access; run on the server as the operator).
+    Prints the new password once — Argon2id hashes cannot be recovered, only replaced."""
+    import asyncio
+    import secrets as _secrets
+
+    from sqlalchemy import select
+
+    from content_factory.auth import passwords as _passwords
+    from content_factory.db.models import Account
+    from content_factory.db.session import session_scope
+
+    async def _run() -> None:
+        new_password = password or _secrets.token_urlsafe(18)
+        async with session_scope() as db:
+            acct = (
+                await db.execute(select(Account).where(Account.username == username))
+            ).scalar_one_or_none()
+            if acct is None:
+                console.print(f"[red]no account named {username!r}[/]")
+                raise typer.Exit(1)
+            acct.password_hash = _passwords.hash_password(new_password)
+            has_totp = acct.totp_secret is not None
+        console.print(f"account: [bold]{username}[/]")
+        console.print(f"new password (shown once): [bold red]{new_password}[/]")
+        if has_totp:
+            console.print("TOTP is enrolled — you'll still need your authenticator code.")
+
+    asyncio.run(_run())
+
+
 @app.command()
 def login(
     username: str = typer.Option(..., prompt=True),
