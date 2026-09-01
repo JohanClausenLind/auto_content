@@ -4,6 +4,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { isApiError } from "./api/client";
 import { useSession } from "./api/queries";
+import { LocaleProvider } from "./i18n";
 import type { AppRouter } from "./router";
 import { themeSyncAdapter } from "./theme/adapter";
 
@@ -24,7 +25,9 @@ function ThemedRouter({ router, initialTheme }: { router: AppRouter; initialThem
   const sync = useMemo(() => (session ? themeSyncAdapter : null), [session?.account.id]);
   return (
     <ThemeProvider sync={sync} {...(initialTheme ? { initialState: initialTheme } : {})}>
-      <RouterProvider router={router} />
+      <LocaleProvider>
+        <RouterProvider router={router} />
+      </LocaleProvider>
     </ThemeProvider>
   );
 }

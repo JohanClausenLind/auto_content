@@ -138,6 +138,8 @@ export const api = {
   prefs: {
     getTheme: () => request<ThemePrefs>("GET", "/prefs/theme").then((r) => r.data),
     putTheme: (value: ThemeState) => request<void>("PUT", "/prefs/theme", { value }).then(() => undefined),
+    get: (key: string) => request<{ value: unknown }>("GET", `/prefs/${encodeURIComponent(key)}`).then((r) => r.data),
+    put: (key: string, value: unknown) => request<void>("PUT", `/prefs/${encodeURIComponent(key)}`, { value }).then(() => undefined),
   },
   meta: {
     get: () => request<Meta>("GET", "/meta").then((r) => r.data),

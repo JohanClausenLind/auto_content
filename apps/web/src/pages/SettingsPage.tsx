@@ -1,4 +1,7 @@
 import { Tab, TabList, TabPanel, Tabs, ThemeCustomizer } from "@content-factory/web-ui";
+import { useId } from "react";
+import { useLocale, useT } from "../i18n";
+import { LOCALE_NAMES, type LocaleId } from "../i18n/messages";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { EmptyState, Page } from "./EmptyState";
 import { PushSettings } from "./PushSettings";
@@ -27,6 +30,7 @@ export function SettingsPage() {
           <ThemeCustomizer />
         </TabPanel>
         <TabPanel id="account">
+          <LanguageSettings />
           <EmptyState title="Account settings arrive with passkey management" body="Change your display name, add passkeys and rotate your TOTP secret here." />
         </TabPanel>
         <TabPanel id="workspace">
@@ -37,5 +41,26 @@ export function SettingsPage() {
         </TabPanel>
       </Tabs>
     </Page>
+  );
+}
+
+function LanguageSettings() {
+  const t = useT();
+  const { locale, setLocale } = useLocale();
+  const id = useId();
+  return (
+    <div className="cf-field cf-settings__language">
+      <label className="cf-field__label" htmlFor={id}>
+        {t("settings.language.label")}
+      </label>
+      <select id={id} className="cf-input" value={locale} onChange={(e) => setLocale(e.target.value as LocaleId)}>
+        {Object.entries(LOCALE_NAMES).map(([value, name]) => (
+          <option key={value} value={value}>
+            {name}
+          </option>
+        ))}
+      </select>
+      <p className="cf-field__description">{t("settings.language.description")}</p>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import { api, isApiError } from "../api/client";
 import { fanInboxQuery, queryKeys } from "../api/queries";
 import type { FanMessage } from "../api/types";
+import { useT } from "../i18n";
 import { EmptyState, ErrorState, LoadingState, Page } from "./EmptyState";
 
 const CLASS_LABEL: Record<string, string> = {
@@ -19,6 +20,7 @@ const CLASS_LABEL: Record<string, string> = {
 
 /** Fan messages pulled by the read adapters. Every message gets answered or skipped-with-reason. */
 export function InboxPage() {
+  const t = useT();
   const client = useQueryClient();
   const inbox = useQuery(fanInboxQuery);
   const sync = useMutation({
@@ -27,10 +29,10 @@ export function InboxPage() {
   });
 
   return (
-    <Page title="Inbox" lead="Messages from fans. Nothing is sent from here — you decide what each one needs.">
+    <Page title={t("inbox.title")} lead={t("inbox.lead")}>
       <div className="cf-personas__toolbar">
         <button type="button" className="cf-button cf-button--secondary cf-button--sm" disabled={sync.isPending} onClick={() => sync.mutate()}>
-          {sync.isPending ? "Checking…" : "Check for new messages"}
+          {sync.isPending ? t("inbox.checking") : t("inbox.check")}
         </button>
       </div>
       {sync.isError && (
@@ -39,11 +41,11 @@ export function InboxPage() {
         </p>
       )}
       {inbox.isPending ? (
-        <LoadingState label="Loading your inbox…" />
+        <LoadingState label={t("common.loading")} />
       ) : inbox.isError ? (
         <ErrorState {...(isApiError(inbox.error) ? { detail: inbox.error.detail } : {})} retry={() => void inbox.refetch()} />
       ) : inbox.data.length === 0 ? (
-        <EmptyState title="Your inbox is clear" body="New fan messages appear here after a check, each one classified so you can see what needs a human first." />
+        <EmptyState title={t("inbox.empty.title")} body={t("inbox.empty.body")} />
       ) : (
         <ul className="cf-inbox__list">
           {inbox.data.map((m) => (
@@ -56,6 +58,7 @@ export function InboxPage() {
 }
 
 function MessageRow({ message }: { message: FanMessage }) {
+  const t = useT();
   const client = useQueryClient();
   const reasonId = useId();
   const [skipping, setSkipping] = useState(false);
@@ -79,7 +82,7 @@ function MessageRow({ message }: { message: FanMessage }) {
       </div>
       <p className="cf-inbox__text">{message.text}</p>
       {urgent ? (
-        <p className="cf-inbox__guidance">This one needs you personally — it is never handled automatically.</p>
+        <p className="cf-inbox__guidance">{t("inbox.urgent")}</p>
       ) : null}
       <div className="cf-requests__actions">
         <button
@@ -88,10 +91,10 @@ function MessageRow({ message }: { message: FanMessage }) {
           disabled={decide.isPending}
           onClick={() => decide.mutate({ disposition: "answered" })}
         >
-          Mark answered
+          {t("inbox.markAnswered")}
         </button>
         <button type="button" className="cf-button cf-button--ghost cf-button--sm" onClick={() => setSkipping((s) => !s)}>
-          {skipping ? "Cancel skip" : "Skip"}
+          {skipping ? t("inbox.cancelSkip") : t("inbox.skip")}
         </button>
       </div>
       {skipping && (
@@ -104,12 +107,12 @@ function MessageRow({ message }: { message: FanMessage }) {
         >
           <div className="cf-field">
             <label className="cf-field__label" htmlFor={reasonId}>
-              Why skip this one?
+              {t("inbox.skipReasonLabel")}
             </label>
             <input id={reasonId} className="cf-input" value={reason} onChange={(e) => setReason(e.target.value)} required />
           </div>
           <button type="submit" className="cf-button cf-button--secondary cf-button--sm" disabled={!reason.trim() || decide.isPending}>
-            Skip with reason
+            {t("inbox.skipWithReason")}
           </button>
         </form>
       )}
