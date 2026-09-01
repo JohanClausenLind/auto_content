@@ -8,6 +8,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Float,
     Boolean,
     DateTime,
     Enum,
@@ -190,3 +191,93 @@ class BrandKit(WorkspaceScoped, TimestampMixin, Base):
     slug: Mapped[str] = mapped_column(String(64), nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     tokens: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+
+
+class RunState(StrEnum):
+    created = "CREATED"
+    preflighting = "PREFLIGHTING"
+    waiting_for_approval = "WAITING_FOR_APPROVAL"
+    approved = "APPROVED"
+    producing = "PRODUCING"
+    complete = "COMPLETE"
+    blocked = "BLOCKED"
+    failed = "FAILED"
+    cancelled = "CANCELLED"
+
+
+class NodeState(StrEnum):
+    queued = "queued"
+    running = "running"
+    complete = "complete"
+    failed = "failed"
+    blocked = "blocked"
+    skipped = "skipped"
+
+
+class ProductionRun(WorkspaceScoped, TimestampMixin, Base):
+    __tablename__ = "production_runs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # temporal workflow id
+    campaign_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    project_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    state: Mapped[RunState] = mapped_column(
+        Enum(RunState, name="run_state"), nullable=False, default=RunState.created
+    )
+    quality: Mapped[str] = mapped_column(String(20), nullable=False, default="demo")
+    preflight_revision_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    report: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+
+
+class RunNode(WorkspaceScoped, TimestampMixin, Base):
+    __tablename__ = "run_nodes"
+    __table_args__ = (UniqueConstraint("run_id", "node_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    run_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("production_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    node_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    stage: Mapped[str] = mapped_column(String(60), nullable=False)
+    deliverable_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    state: Mapped[NodeState] = mapped_column(
+        Enum(NodeState, name="node_state"), nullable=False, default=NodeState.queued
+    )
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cache_hit: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ActionItemStatus(StrEnum):
+    open = "open"
+    resolved = "resolved"
+
+
+class ActionItem(WorkspaceScoped, TimestampMixin, Base):
+    __tablename__ = "action_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "dedupe_key",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    kind: Mapped[str] = mapped_column(
+        String(60), nullable=False
+    )  # approval_waiting, run_failed, ...
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="normal")
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    dedupe_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    status: Mapped[ActionItemStatus] = mapped_column(
+        Enum(ActionItemStatus, name="action_item_status"),
+        nullable=False,
+        default=ActionItemStatus.open,
+    )
+    run_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    deep_link: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

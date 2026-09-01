@@ -33,7 +33,14 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       reproducible Polars transforms, magic-sniffed upload ingestion. Demo now exports
       research/{sources,evidence,claims}.json + final/sources.md + citations.json and blocks on
       the claim gate.
-- [ ] Phase 5 — skills, models, routing, ComfyUI
+- [x] **Phase 5 — skills, models, routing, ComfyUI** — **GREEN** (2026-09-01).
+      Cost ledger (estimate→reserve→settle, hard caps, warn thresholds, thread-safe, property-
+      tested), resource leases with measured-calibration override + OOM quarantine, ModelGateway
+      (litellm 1.99.0 + schema-validated retries; local_only provably zero cloud calls; skills
+      without network egress never see cloud candidates; credentials from env only; budget settle
+      on success, release on failure), `image.generate` through ComfyUI fixture AND mock cloud via
+      one invocation path, evaluation packs with approval lifecycle (approve/revoke per model x
+      skill), allowlisted `comfy model download` planner with hash verification.
 - [ ] Phase 6 — durable pipeline
 - [ ] Phase 7 — editor, QC, Revision Box, image sequences
 - [ ] Phase 8 — product UX, PWA, assistant, Tailscale
