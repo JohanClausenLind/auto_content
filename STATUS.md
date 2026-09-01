@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-08-27 (session 1). Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
+Last updated: 2026-09-01. Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
 RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 24.19.0).
 
 ## Phase checklist
@@ -56,7 +56,7 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       PSE, reading order, alt text, exportable report), image-sequence engine (anchor + GenerationLock
       + deterministic controls + hub-and-spoke + drift QC + bounded regen + contact sheet/MP4
       preview/print flipbook PDF; single-frame revisions rebuild exactly one frame).
-- [x] **Phase 8 — product UX, PWA, assistant, Tailscale** — GREEN except two operator-blocked items.
+- [x] **Phase 8 — product UX, PWA, assistant, Tailscale** — **GREEN** (both operator-blocked items resolved 2026-09-01).
       Backend: Web Push (VAPID keygen in setup, subscriptions API, deep-link-only payloads),
       MCP server (`content-factory mcp`, scoped token, 8 typed tools), campaigns API (honest
       deliverable matrix, validate-and-quote preview, create), operations API (owner-only doctor +
