@@ -177,7 +177,7 @@ def stage_compile_text_package(ctx: StageContext) -> StageOutput:
 
 def stage_compile_artboards(ctx: StageContext) -> StageOutput:
     bundle = demo_fixtures.artboard_bundle_for(ctx.deliverable_id or "")
-    _write(ctx.ddir() / "artboards" / "artboard.json", bundle.artboard.model_dump_json(indent=1))  # type: ignore[union-attr]  # noqa: E501
+    _write(ctx.ddir() / "artboards" / "artboard.json", bundle.artboard.model_dump_json(indent=1))  # type: ignore[union-attr]
     _write(ctx.ddir() / "artboards" / "bundle.json", bundle.model_dump_json(indent=1))
     return StageOutput(bundle.content_hash(), {"artboards": 1})
 

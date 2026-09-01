@@ -576,7 +576,7 @@ class ProductionWorkflow:
                         node.stage,
                         node.deliverable_id,
                         "failed",
-                        error=str(exc)[:800],
+                        error=_error_text(exc)[:800],
                     ),
                     **opts,
                 )
