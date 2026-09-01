@@ -1,0 +1,19 @@
+[project]
+name = "cf-skill-hidream"
+version = "0.1.0"
+description = "Isolated environment for the HiDream-O1-Image local server (MIT model code; weights from HiDream-ai on Hugging Face). Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "torch>=2.10,<2.11",
+    "torchvision",
+    "transformers==4.57.1",
+    "diffusers",
+    "accelerate",
+    "einops",
+    "numpy",
+    "pillow",
+    "tqdm",
+    "scipy",
+    "flask",
+    "huggingface-hub[hf-transfer]",
+]

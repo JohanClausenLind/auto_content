@@ -39,7 +39,7 @@ def main() -> int:
     wav = np.concatenate(chunks)
     out = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     sf.write(out.name, wav, 24000)
-    print(  # noqa: T201 - the JSON line on stdout IS this script's interface
+    print(
         json.dumps(
             {
                 "wav": out.name,

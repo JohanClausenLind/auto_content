@@ -15,6 +15,7 @@ from content_factory.audio.captions import compile_captions, to_srt, to_webvtt
 from content_factory.audio.mix import apply_measurements, build_narration_stem, lay_out, master, mux
 from content_factory.audio.normalize import normalize_for_speech
 from content_factory.audio.tts import MockTTS
+from content_factory.config import get_settings
 from content_factory.qc.audio import check_audio_in_video
 from content_factory.research.citations import export_research, script_claim_gate
 from content_factory.runners import demo as demo_fixtures
@@ -150,19 +151,33 @@ def _spec(ctx: StageContext):
 def stage_write_copy(ctx: StageContext) -> StageOutput:
     spec = _spec(ctx)
     overlay = ctx.edit_overlay().get("copy", {}).get(spec.deliverable_id, {})
+    use_model = get_settings().execution.local_copywriter
     if spec.type == "carousel":
         assert isinstance(spec, CarouselSpec)
+        if use_model:
+            from content_factory.models.copywriter import draft_carousel
+
+            drafted = draft_carousel(ctx.campaign, card_count=spec.card_count)
+            base_cards = [c["text"] for c in drafted["cards"]]
+        else:
+            base_cards = list(demo_fixtures.CAROUSEL_TEXTS[: spec.card_count])
         cards = [
             {"card_id": f"card_{i + 1:012d}", "text": overlay.get(f"card_{i + 1:012d}", t)}
-            for i, t in enumerate(demo_fixtures.CAROUSEL_TEXTS[: spec.card_count])
+            for i, t in enumerate(base_cards)
         ]
         payload = {"cards": cards}
     else:
+        if use_model:
+            from content_factory.models.copywriter import draft_caption
+
+            drafted = draft_caption(ctx.campaign)
+            base_caption, base_alt = drafted["caption"], drafted["alt_text"]
+        else:
+            base_caption = "About a fifth of Sweden's electricity came from wind in 2025."
+            base_alt = "Data card about wind power's share."
         payload = {
-            "caption": overlay.get(
-                "caption", "About a fifth of Sweden's electricity came from wind in 2025."
-            ),
-            "alt_text": "Data card about wind power's share.",
+            "caption": overlay.get("caption", base_caption),
+            "alt_text": overlay.get("alt_text", base_alt),
         }
     _write(ctx.ddir() / "copy.json", json.dumps(payload, indent=1))
     return StageOutput(_hash_obj(payload), {"units": len(payload.get("cards", [1]))})

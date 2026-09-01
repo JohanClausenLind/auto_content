@@ -128,6 +128,9 @@ class BudgetSettings(StrictModel):
 class ExecutionSettings(StrictModel):
     default_policy: ExecutionPolicyKind = ExecutionPolicyKind.quality_auto
     allow_cloud_fallback: bool = True
+    # Draft copy with the local model catalog (qwen38-ridge via Ollama) instead of fixtures.
+    # Off by default so offline runs and tests stay deterministic.
+    local_copywriter: bool = False
     minimum_vram_headroom_ratio: float = Field(default=0.12, ge=0, lt=1)
     calibration_max_age_days: int = Field(default=30, ge=1)
 

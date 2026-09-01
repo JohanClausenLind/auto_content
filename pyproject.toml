@@ -76,6 +76,8 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 "python/content_factory/qc/accessibility.py" = ["S607"]
 "python/content_factory/sequences/engine.py" = ["S603", "S607"]
 "scripts/**" = ["T20"]
+"scripts/generate_holding_hands.py" = ["S603", "S607"]  # typed ffmpeg/ffprobe argument arrays
+"skills/**" = ["T20", "S105"]  # executor scripts print their interface; special tokens, not secrets
 
 [tool.pyright]
 pythonVersion = "3.12"
