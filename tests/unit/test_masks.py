@@ -43,7 +43,7 @@ def test_subtract_invert_feather_expand_and_protect() -> None:
     asset, png = rasterize(r, width=200, height=200, mask_id="msk_b0000000001", source_revision=SRC)
     img = Image.open(io.BytesIO(png))
     assert img.getpixel((100, 100)) == 0 and img.getpixel((60, 60)) == 255
-    inv, png_inv = rasterize(
+    _inv, png_inv = rasterize(
         region(invert=True), width=200, height=200, mask_id="msk_c0000000001", source_revision=SRC
     )
     assert Image.open(io.BytesIO(png_inv)).getpixel((10, 10)) == 255
