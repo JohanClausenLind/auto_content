@@ -28,6 +28,8 @@ export const authenticated = (session: Session = makeSession()) => http.get("*/v
 export const baseHandlers = [
   unauthenticated(),
   http.get("*/v1/meta", () => HttpResponse.json(META)),
+  http.get("*/v1/action-items", () => HttpResponse.json([])),
+  http.get("*/v1/runs", () => HttpResponse.json([])),
   http.get("*/v1/workspaces", () => HttpResponse.json(WORKSPACES)),
   http.get("*/v1/prefs/theme", () => HttpResponse.json({ value: null })),
   http.put("*/v1/prefs/theme", async ({ request }) => {

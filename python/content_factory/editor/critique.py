@@ -236,7 +236,7 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                     InvalidationScope.render,
                     InvalidationScope.originality,
                 ),
-                plain=f"Replace the text of {target.label} with the wording you gave; only that card re-renders.",
+                plain=f"Replace the text of {target.label} with the wording you gave; only that card re-renders.",  # noqa: E501
                 seconds=20,
             )
         return ClarifyingQuestion(

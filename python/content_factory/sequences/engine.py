@@ -98,7 +98,7 @@ class MockReferenceEditBackend(ReferenceEditBackend):
         bg = base.getpixel((1, 1))
         draw.rectangle([0, int(h * 0.3), w, int(h * 0.8)], fill=bg)
         control_l = control.convert("L")
-        bbox = control_l.point(lambda v: 255 if int(v) > 8 else 0).getbbox()
+        bbox = control_l.point(lambda v: 255 if int(v) > 8 else 0)  # type: ignore[arg-type].getbbox()
         if bbox:
             draw.rectangle(bbox, fill=(180, 60, 40))
         buf = io.BytesIO()
@@ -275,7 +275,7 @@ def package_sequence(plan: MotionPlan, workdir: Path, *, fps: int = 8) -> dict:
     sheet.save(sheet_path, compress_level=6)
     # Animated preview (MP4)
     preview = workdir / "preview.mp4"
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         [
             "ffmpeg",
             "-v",

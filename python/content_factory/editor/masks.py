@@ -8,6 +8,7 @@ capability flags — this module only produces the masks)."""
 from __future__ import annotations
 
 import io
+import itertools
 from typing import Annotated, Literal
 
 from PIL import Image, ImageDraw
@@ -77,7 +78,7 @@ def _draw(shape: SelectionShape, draw: ImageDraw.ImageDraw, w: int, h: int, valu
     else:
         r = round(shape.radius * min(w, h))
         pts = [(round(p.x * (w - 1)), round(p.y * (h - 1))) for p in shape.points]
-        for a, b in zip(pts, pts[1:], strict=False) or []:
+        for a, b in itertools.pairwise(pts):
             draw.line([a, b], fill=value, width=max(1, 2 * r))
         for cx, cy in pts:
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=value)

@@ -70,6 +70,9 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 "python/content_factory/qc/media.py" = ["S607"]  # ffmpeg/ffprobe resolved from PATH by design
 "python/content_factory/audio/mix.py" = ["S603", "S607"]  # typed ffmpeg wrapper, argument arrays only
 "python/content_factory/qc/audio.py" = ["S603", "S607"]
+"python/content_factory/qc/delivery.py" = ["S607"]
+"python/content_factory/qc/accessibility.py" = ["S607"]
+"python/content_factory/sequences/engine.py" = ["S603", "S607"]
 "scripts/**" = ["T20"]
 
 [tool.pyright]

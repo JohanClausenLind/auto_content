@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import itertools
 import json
 import subprocess
 from dataclasses import asdict
@@ -45,7 +46,7 @@ def check_flashing(
         lumas.append(sum(i * c for i, c in enumerate(hist)) / sum(hist))
     swings = 0
     direction = 0
-    for a, b in zip(lumas, lumas[1:], strict=False):
+    for a, b in itertools.pairwise(lumas):
         delta = b - a
         if abs(delta) > 20:  # a "general flash"-scale luminance change on the downscaled frame
             new_dir = 1 if delta > 0 else -1
@@ -60,7 +61,7 @@ def check_flashing(
             Finding(
                 "flashing",
                 Severity.blocker,
-                f"{rate:.1f} flashes/s exceeds the {max_flashes_per_second}/s photosensitivity limit",
+                f"{rate:.1f} flashes/s exceeds the {max_flashes_per_second}/s photosensitivity limit",  # noqa: E501
             )
         )
     return QCResult(
