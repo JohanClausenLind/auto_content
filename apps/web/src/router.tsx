@@ -5,18 +5,18 @@ import {
   AnalyticsPage,
   AssetsPage,
   BrandPage,
-  CalendarPage,
   ConnectionsPage,
-  CreatePage,
   HomePage,
   InboxPage,
   NotFoundPage,
-  OperationsPage,
   PersonasPage,
   SourcesPage,
   TemplatesPage,
 } from "./pages/areas";
+import { CalendarPage } from "./pages/CalendarPage";
+import { CreatePage } from "./pages/CreatePage";
 import { LoginPage } from "./pages/LoginPage";
+import { OperationsPage } from "./pages/OperationsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
 import { parseSettingsSearch, SettingsPage } from "./pages/SettingsPage";

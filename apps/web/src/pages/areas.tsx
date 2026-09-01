@@ -77,14 +77,6 @@ export function AnalyticsPage() {
   );
 }
 
-export function OperationsPage() {
-  return (
-    <Page title="Operations" lead="Owner tools: workers, queues, the kill switch and budgets.">
-      <EmptyState title="All quiet" body="Health of the pipeline, running jobs and the global kill switch will be controlled from here." />
-    </Page>
-  );
-}
-
 export function NotFoundPage() {
   return (
     <Page title="Page not found">

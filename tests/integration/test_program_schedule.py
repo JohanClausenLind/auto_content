@@ -12,7 +12,6 @@ from temporalio.client import Client, ScheduleOverlapPolicy
 from temporalio.worker import Worker
 
 from content_factory.programs.scheduler import (
-    PROGRAM_ACTIVITIES,
     ProgramTickWorkflow,
     create_program_schedule,
     delete_schedule,
@@ -23,11 +22,11 @@ from content_factory.workflows.production import PRODUCTION_ACTIVITIES, Producti
 pytestmark = pytest.mark.integration
 
 
-def test_schedule_ticks_and_pause_prevents_burst(tmp_path) -> None:  # noqa: ANN001
+def test_schedule_ticks_and_pause_prevents_burst(tmp_path) -> None:
     asyncio.run(_flow(tmp_path))
 
 
-async def _flow(tmp_path) -> None:  # noqa: ANN001
+async def _flow(tmp_path) -> None:
     from content_factory.config import get_settings
     from tests.integration.test_production_workflow import _ensure_fixture_workspace
 
@@ -45,7 +44,7 @@ async def _flow(tmp_path) -> None:  # noqa: ANN001
     from temporalio import activity
 
     @activity.defn(name="start_program_run")
-    async def fake_start(inp) -> dict:  # noqa: ANN001
+    async def fake_start(inp) -> dict:
         started.append(activity.info().workflow_id)
         return {"run_id": f"fake-{len(started)}", "tick": activity.info().workflow_id}
 
