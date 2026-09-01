@@ -33,7 +33,7 @@ SUB = {
     "endpoint": "https://push.example/send/abc123",
     "keys": {
         # A real browser subscription shape; values are a valid P-256 point + 16-byte auth secret.
-        "p256dh": "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM",
+        "p256dh": "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM",  # noqa: E501
         "auth": "tBHItJI5svbpez7KI4CCXg",
     },
 }
@@ -82,7 +82,7 @@ def test_dead_subscription_is_reported_gone() -> None:
     from pywebpush import WebPushException
 
     class GoneSession(FakeSession):
-        def post(self, url, **kw):
+        def post(self, url, data=None, headers=None, timeout=None, **kw):  # pyright: ignore[reportIncompatibleMethodOverride]  # noqa: E501
             raise WebPushException("gone", response=FakeResponse(410))
 
     result = send_web_push(SUB, {"title": "x"}, vapid=keys, requests_session=GoneSession())
