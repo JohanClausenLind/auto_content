@@ -43,6 +43,99 @@ from content_factory.timeline.compiler import compile_timeline
 from content_factory.video.render import render_artboard, render_timeline
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+
+CAROUSEL_TEXTS = [
+    "Wind supplied about a fifth of Sweden's electricity in 2025.",
+    "That share has roughly doubled since 2018.",
+    "New turbines drove most of the growth.",
+    "Better siting raised output per turbine.",
+    "Cheaper finance made projects viable.",
+    "Sources: Energimyndigheten, Svenska kraftnat.",
+]
+
+
+def fixture_research(workspace_id: str):
+    """Deterministic fixture sources/evidence/claims shared by the demo and the workflow stages."""
+    sources = [
+        SourceRecord(
+            source_id="src_energimynd01",
+            workspace_id=workspace_id,
+            canonical_url="https://example.se/wind-2025",
+            requested_url="https://example.se/wind-2025",
+            final_url="https://example.se/wind-2025",
+            title="Wind power supplied 21 percent of Sweden's electricity in 2025 (fixture)",
+            publisher="Energimyndigheten",
+            accessed_at="2026-09-01",
+            capture_sha256="0" * 64,
+            content_type="text/html",
+            size_bytes=2048,
+            published_at="2026-03-01",
+            classification=SourceClass.official,
+        ),
+        SourceRecord(
+            source_id="src_svk00000001",
+            workspace_id=workspace_id,
+            canonical_url="https://example.se/grid-2025",
+            requested_url="https://example.se/grid-2025",
+            final_url="https://example.se/grid-2025",
+            title="Grid statistics 2025 (fixture)",
+            publisher="Svenska kraftnat",
+            accessed_at="2026-09-01",
+            capture_sha256="1" * 64,
+            content_type="text/html",
+            size_bytes=1024,
+            published_at="2026-02-10",
+            classification=SourceClass.official,
+        ),
+    ]
+    evidence = [
+        EvidenceRecord(
+            evidence_id="evd_wind0000001",
+            source_id="src_energimynd01",
+            excerpt="wind power generated 34.9 TWh in 2025, about 21 percent of Sweden's total electricity generation",  # noqa: E501
+            locator=EvidenceLocator(kind="char_range", start=120, end=240),
+            captured_at="2026-09-01",
+        ),
+        EvidenceRecord(
+            evidence_id="evd_wind0000002",
+            source_id="src_energimynd01",
+            excerpt="The share has roughly doubled since 2018, when wind supplied 11 percent.",
+            locator=EvidenceLocator(kind="char_range", start=241, end=320),
+            captured_at="2026-09-01",
+        ),
+    ]
+    claims = [
+        build_claim(
+            "clm_wind0000001",
+            workspace_id,
+            "In 2025, wind supplied about 21% of Sweden's electricity.",
+            [evidence[0]],
+            dataset=sample_dataset(),
+            dataset_id="ds_wind00000001",
+            sources_by_id={s.source_id: s for s in sources},
+            checked_at="2026-09-01",
+        ),
+        build_claim(
+            "clm_wind0000002",
+            workspace_id,
+            "That share has roughly doubled since 2018, from 11% to 21%.",
+            [evidence[1]],
+            sources_by_id={s.source_id: s for s in sources},
+            checked_at="2026-09-01",
+        ),
+    ]
+    return sources, evidence, claims
+
+
+def artboard_bundle_for(deliverable_id: str):
+    bundle = sample_artboard_bundle()
+    assert bundle.artboard is not None
+    if bundle.artboard.deliverable_id != deliverable_id:
+        art = bundle.artboard.model_copy(update={"deliverable_id": deliverable_id})
+        bundle = bundle.model_copy(update={"artboard": art})
+    return bundle
+
+
 MOCK_VOICE = VoiceIdentity(provider="mock", voice_id="narrator-a", model_revision="mock-1")
 
 
@@ -80,74 +173,7 @@ def run_demo(
     }
 
     # --- research/claims (fixture evidence; the script gate blocks uncited critical claims) --
-    sources = [
-        SourceRecord(
-            source_id="src_energimynd01",
-            workspace_id=WS,
-            canonical_url="https://example.se/wind-2025",
-            requested_url="https://example.se/wind-2025",
-            final_url="https://example.se/wind-2025",
-            title="Wind power supplied 21 percent of Sweden's electricity in 2025 (fixture)",
-            publisher="Energimyndigheten",
-            accessed_at="2026-09-01",
-            capture_sha256="0" * 64,
-            content_type="text/html",
-            size_bytes=2048,
-            published_at="2026-03-01",
-            classification=SourceClass.official,
-        ),
-        SourceRecord(
-            source_id="src_svk00000001",
-            workspace_id=WS,
-            canonical_url="https://example.se/grid-2025",
-            requested_url="https://example.se/grid-2025",
-            final_url="https://example.se/grid-2025",
-            title="Grid statistics 2025 (fixture)",
-            publisher="Svenska kraftnät",
-            accessed_at="2026-09-01",
-            capture_sha256="1" * 64,
-            content_type="text/html",
-            size_bytes=1024,
-            published_at="2026-02-10",
-            classification=SourceClass.official,
-        ),
-    ]
-    evidence = [
-        EvidenceRecord(
-            evidence_id="evd_wind0000001",
-            source_id="src_energimynd01",
-            excerpt="wind power generated 34.9 TWh in 2025, about 21 percent of Sweden's total electricity generation",  # noqa: E501
-            locator=EvidenceLocator(kind="char_range", start=120, end=240),
-            captured_at="2026-09-01",
-        ),
-        EvidenceRecord(
-            evidence_id="evd_wind0000002",
-            source_id="src_energimynd01",
-            excerpt="The share has roughly doubled since 2018, when wind supplied 11 percent.",
-            locator=EvidenceLocator(kind="char_range", start=241, end=320),
-            captured_at="2026-09-01",
-        ),
-    ]
-    claims = [
-        build_claim(
-            "clm_wind0000001",
-            WS,
-            "In 2025, wind supplied about 21% of Sweden's electricity.",
-            [evidence[0]],
-            dataset=sample_dataset(),
-            dataset_id="ds_wind00000001",
-            sources_by_id={s.source_id: s for s in sources},
-            checked_at="2026-09-01",
-        ),
-        build_claim(
-            "clm_wind0000002",
-            WS,
-            "That share has roughly doubled since 2018, from 11% to 21%.",
-            [evidence[1]],
-            sources_by_id={s.source_id: s for s in sources},
-            checked_at="2026-09-01",
-        ),
-    ]
+    sources, evidence, claims = fixture_research(WS)
     export_research(root, sources, evidence, claims)
     gate = script_claim_gate(sample_story_plan(), claims)
     report["claim_gate"] = {

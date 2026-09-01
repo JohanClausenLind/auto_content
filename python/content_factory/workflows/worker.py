@@ -9,20 +9,29 @@ from temporalio.worker import Worker
 
 from content_factory.config import get_settings
 from content_factory.logging import configure_logging, get_logger
-from content_factory.workflows import spike
+from content_factory.workflows import production, spike
 
 log = get_logger(__name__)
 
 # task queue -> (workflows, activities). Only queues with registered work are startable.
 REGISTRY: dict[str, tuple[list[type], list[object]]] = {
-    "control": ([spike.SpikeProductionRun], [spike.run_stage]),
+    "control": (
+        [spike.SpikeProductionRun, production.ProductionWorkflow],
+        [spike.run_stage, *production.PRODUCTION_ACTIVITIES],
+    ),
 }
 
 
 async def run_worker(queue: str) -> None:
+    import os
+
     if queue not in REGISTRY:
-        msg = f"unknown task queue {queue!r}; known: {sorted(REGISTRY)}"
-        raise SystemExit(msg)
+        if os.environ.get("CF_WORKER_ALLOW_ANY_QUEUE") == "1":
+            # Test harnesses poll ephemeral queues with the standard registration.
+            REGISTRY[queue] = REGISTRY["control"]
+        else:
+            msg = f"unknown task queue {queue!r}; known: {sorted(REGISTRY)}"
+            raise SystemExit(msg)
     settings = get_settings()
     configure_logging(json=settings.environment == "production")
     client = await Client.connect(settings.temporal.address, namespace=settings.temporal.namespace)

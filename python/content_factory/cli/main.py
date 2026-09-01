@@ -204,6 +204,83 @@ def demo(quality: str = typer.Option("smoke", help="smoke (one scene) | demo (fu
     raise typer.Exit(code=0 if report["passed"] else 1)
 
 
+runs_app = typer.Typer(help="Production runs")
+app.add_typer(runs_app, name="runs")
+
+
+@runs_app.command("start")
+def runs_start(quality: str = typer.Option("demo")) -> None:
+    """Start the fixture campaign as a durable production run (requires worker + temporal)."""
+    import asyncio
+
+    from content_factory.schemas.fixtures import sample_campaign
+    from content_factory.services.runs import start_run
+
+    run_id = asyncio.run(start_run(sample_campaign(), quality=quality))
+    console.print(
+        f"started [bold]{run_id}[/] — approve with: content-factory runs approve {run_id}"
+    )
+
+
+@runs_app.command("status")
+def runs_status(run_id: str) -> None:
+    import asyncio
+
+    from content_factory.db.session import session_scope
+    from content_factory.schemas.fixtures import WS
+    from content_factory.services.runs import run_view
+
+    async def _run() -> None:
+        async with session_scope() as db:
+            view = await run_view(db, WS, run_id)
+        if view is None:
+            console.print("[red]not found[/]")
+            raise typer.Exit(1)
+        console.print(f"[bold]{view['state']}[/] {view['run_id']}  project={view['project_id']}")
+        for n in view["nodes"]:
+            mark = {
+                "complete": "[green]✔[/]",
+                "running": "[yellow]…[/]",
+                "failed": "[red]✘[/]",
+                "queued": "·",
+            }.get(n["state"], n["state"])
+            cache = " (cache)" if n["cache_hit"] else ""
+            console.print(f"  {mark} {n['node_id']}{cache}")
+
+    asyncio.run(_run())
+
+
+@runs_app.command("approve")
+def runs_approve(
+    run_id: str, reject: bool = typer.Option(False), reason: str = typer.Option("")
+) -> None:
+    """Approve (or reject) the waiting preflight revision of a run."""
+    import asyncio
+
+    from content_factory.db.session import session_scope
+    from content_factory.schemas.fixtures import WS
+    from content_factory.services.runs import approve_run, run_view
+
+    async def _run() -> None:
+        async with session_scope() as db:
+            view = await run_view(db, WS, run_id)
+        if view is None or not view["preflight_revision_hash"]:
+            console.print("[red]run not found or not waiting for approval[/]")
+            raise typer.Exit(1)
+        await approve_run(
+            run_id,
+            actor="cli-operator",
+            revision_hash=view["preflight_revision_hash"],
+            decision="reject" if reject else "approve",
+            reason=reason,
+        )
+        console.print(
+            "rejected" if reject else f"approved revision {view['preflight_revision_hash'][:12]}"
+        )
+
+    asyncio.run(_run())
+
+
 @app.command()
 def config(
     show_defaults: bool = typer.Option(False, help="Print the effective configuration as YAML."),

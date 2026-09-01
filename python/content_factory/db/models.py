@@ -8,10 +8,10 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
-    Float,
     Boolean,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     LargeBinary,
