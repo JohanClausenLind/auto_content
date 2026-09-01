@@ -1,0 +1,172 @@
+{
+  "$defs": {
+    "FetchStatus": {
+      "enum": [
+        "captured",
+        "blocked_robots",
+        "failed",
+        "skipped_policy"
+      ],
+      "title": "FetchStatus",
+      "type": "string"
+    },
+    "RightsStatus": {
+      "enum": [
+        "quotable_excerpt",
+        "licensed",
+        "operator_owned",
+        "public_domain",
+        "restricted"
+      ],
+      "title": "RightsStatus",
+      "type": "string"
+    },
+    "SourceClass": {
+      "enum": [
+        "official",
+        "primary",
+        "reference",
+        "news",
+        "analysis",
+        "blog",
+        "social",
+        "operator_upload",
+        "unknown"
+      ],
+      "title": "SourceClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/SourceRecord.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accessed_at": {
+      "minLength": 4,
+      "title": "Accessed At",
+      "type": "string"
+    },
+    "author": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Author",
+      "type": "string"
+    },
+    "canonical_url": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Canonical Url",
+      "type": "string"
+    },
+    "capture_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Capture Sha256",
+      "type": "string"
+    },
+    "classification": {
+      "$ref": "#/$defs/SourceClass",
+      "default": "unknown"
+    },
+    "content_type": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Content Type",
+      "type": "string"
+    },
+    "fetch_status": {
+      "$ref": "#/$defs/FetchStatus",
+      "default": "captured"
+    },
+    "final_url": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Final Url",
+      "type": "string"
+    },
+    "injection_flags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Injection Flags",
+      "type": "array"
+    },
+    "published_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Published At"
+    },
+    "publisher": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Publisher",
+      "type": "string"
+    },
+    "requested_url": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Requested Url",
+      "type": "string"
+    },
+    "rights_status": {
+      "$ref": "#/$defs/RightsStatus",
+      "default": "quotable_excerpt"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "size_bytes": {
+      "minimum": 0,
+      "title": "Size Bytes",
+      "type": "integer"
+    },
+    "source_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "title": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Title",
+      "type": "string"
+    },
+    "workspace_id": {
+      "pattern": "^ws_[A-Za-z0-9_-]{8,32}$",
+      "title": "Workspace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "accessed_at",
+    "author",
+    "canonical_url",
+    "capture_sha256",
+    "classification",
+    "content_type",
+    "fetch_status",
+    "final_url",
+    "injection_flags",
+    "published_at",
+    "publisher",
+    "requested_url",
+    "rights_status",
+    "schema_version",
+    "size_bytes",
+    "source_id",
+    "title",
+    "workspace_id"
+  ],
+  "title": "SourceRecord",
+  "type": "object"
+}

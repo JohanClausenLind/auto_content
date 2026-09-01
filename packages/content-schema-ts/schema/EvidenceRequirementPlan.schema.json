@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "ClaimKind": {
+      "enum": [
+        "externally_verifiable_fact",
+        "operator_assertion",
+        "attributed_quotation",
+        "opinion",
+        "promotional",
+        "estimate",
+        "illustration"
+      ],
+      "title": "ClaimKind",
+      "type": "string"
+    },
+    "Criticality": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Criticality",
+      "type": "string"
+    },
+    "EvidenceRequirement": {
+      "additionalProperties": false,
+      "description": "Per planned statement: how much evidence its kind and criticality demand (2.14).",
+      "properties": {
+        "blocks_full_auto": {
+          "default": false,
+          "title": "Blocks Full Auto",
+          "type": "boolean"
+        },
+        "criticality": {
+          "$ref": "#/$defs/Criticality"
+        },
+        "kind": {
+          "$ref": "#/$defs/ClaimKind"
+        },
+        "reason": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "requires_evidence": {
+          "title": "Requires Evidence",
+          "type": "boolean"
+        },
+        "requires_independent_sources": {
+          "default": 1,
+          "maximum": 3,
+          "minimum": 0,
+          "title": "Requires Independent Sources",
+          "type": "integer"
+        },
+        "statement": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "blocks_full_auto",
+        "criticality",
+        "kind",
+        "reason",
+        "requires_evidence",
+        "requires_independent_sources",
+        "statement"
+      ],
+      "title": "EvidenceRequirement",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/EvidenceRequirementPlan.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "brief_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Brief Id",
+      "type": "string"
+    },
+    "freshness_days": {
+      "minimum": 1,
+      "title": "Freshness Days",
+      "type": "integer"
+    },
+    "requirements": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRequirement"
+      },
+      "title": "Requirements",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "brief_id",
+    "freshness_days",
+    "requirements",
+    "schema_version"
+  ],
+  "title": "EvidenceRequirementPlan",
+  "type": "object"
+}

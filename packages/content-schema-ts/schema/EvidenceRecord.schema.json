@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "EvidenceLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "minimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "char_range",
+            "pdf_page",
+            "table_cell",
+            "timestamp_ms"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "end",
+        "kind",
+        "start"
+      ],
+      "title": "EvidenceLocator",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/EvidenceRecord.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "captured_at": {
+      "minLength": 4,
+      "title": "Captured At",
+      "type": "string"
+    },
+    "evidence_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "excerpt": {
+      "maxLength": 800,
+      "minLength": 1,
+      "title": "Excerpt",
+      "type": "string"
+    },
+    "locator": {
+      "$ref": "#/$defs/EvidenceLocator"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Source Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "captured_at",
+    "evidence_id",
+    "excerpt",
+    "locator",
+    "schema_version",
+    "source_id"
+  ],
+  "title": "EvidenceRecord",
+  "type": "object"
+}

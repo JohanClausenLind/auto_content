@@ -1,0 +1,186 @@
+{
+  "$defs": {
+    "ClaimKind": {
+      "enum": [
+        "externally_verifiable_fact",
+        "operator_assertion",
+        "attributed_quotation",
+        "opinion",
+        "promotional",
+        "estimate",
+        "illustration"
+      ],
+      "title": "ClaimKind",
+      "type": "string"
+    },
+    "Criticality": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Criticality",
+      "type": "string"
+    },
+    "NumericValue": {
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "default": "unspecified",
+          "enum": [
+            "nominal",
+            "real",
+            "unspecified"
+          ],
+          "title": "Basis",
+          "type": "string"
+        },
+        "period": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Period",
+          "type": "string"
+        },
+        "unit": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "basis",
+        "period",
+        "unit",
+        "value"
+      ],
+      "title": "NumericValue",
+      "type": "object"
+    },
+    "VerificationStatus": {
+      "enum": [
+        "supported",
+        "supported_with_caveat",
+        "disputed",
+        "unsupported",
+        "stale",
+        "needs_review",
+        "not_applicable"
+      ],
+      "title": "VerificationStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ClaimRecord.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "caveats": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Caveats",
+      "type": "array"
+    },
+    "checked_at": {
+      "minLength": 4,
+      "title": "Checked At",
+      "type": "string"
+    },
+    "claim_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "conflicts": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+        "type": "string"
+      },
+      "title": "Conflicts",
+      "type": "array"
+    },
+    "criticality": {
+      "$ref": "#/$defs/Criticality"
+    },
+    "dataset_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dataset Id"
+    },
+    "evidence_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/ClaimKind"
+    },
+    "numeric": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NumericValue"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "statement": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/VerificationStatus"
+    },
+    "workspace_id": {
+      "pattern": "^ws_[A-Za-z0-9_-]{8,32}$",
+      "title": "Workspace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "caveats",
+    "checked_at",
+    "claim_id",
+    "conflicts",
+    "criticality",
+    "dataset_id",
+    "evidence_ids",
+    "kind",
+    "numeric",
+    "schema_version",
+    "statement",
+    "status",
+    "workspace_id"
+  ],
+  "title": "ClaimRecord",
+  "type": "object"
+}

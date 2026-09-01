@@ -8,6 +8,7 @@ import AlignmentReport from "../schema/AlignmentReport.schema.json";
 import ArtboardSpec from "../schema/ArtboardSpec.schema.json";
 import AudioMixSpec from "../schema/AudioMixSpec.schema.json";
 import CaptionTrack from "../schema/CaptionTrack.schema.json";
+import ClaimRecord from "../schema/ClaimRecord.schema.json";
 import ComfyProvenance from "../schema/ComfyProvenance.schema.json";
 import ComfyWorkflowPackage from "../schema/ComfyWorkflowPackage.schema.json";
 import CompiledTimeline from "../schema/CompiledTimeline.schema.json";
@@ -20,6 +21,8 @@ import DependencyImpact from "../schema/DependencyImpact.schema.json";
 import DestinationBinding from "../schema/DestinationBinding.schema.json";
 import EditBatch from "../schema/EditBatch.schema.json";
 import EditOperation from "../schema/EditOperation.schema.json";
+import EvidenceRecord from "../schema/EvidenceRecord.schema.json";
+import EvidenceRequirementPlan from "../schema/EvidenceRequirementPlan.schema.json";
 import ExecutionDecision from "../schema/ExecutionDecision.schema.json";
 import ExecutionPolicy from "../schema/ExecutionPolicy.schema.json";
 import FixPlan from "../schema/FixPlan.schema.json";
@@ -34,10 +37,12 @@ import NarrationRequest from "../schema/NarrationRequest.schema.json";
 import NarrationSegment from "../schema/NarrationSegment.schema.json";
 import ProjectBrief from "../schema/ProjectBrief.schema.json";
 import RenderBundle from "../schema/RenderBundle.schema.json";
+import ResearchPack from "../schema/ResearchPack.schema.json";
 import RevisionOutcome from "../schema/RevisionOutcome.schema.json";
 import RevisionRequest from "../schema/RevisionRequest.schema.json";
 import SceneSpec from "../schema/SceneSpec.schema.json";
 import SkillManifest from "../schema/SkillManifest.schema.json";
+import SourceRecord from "../schema/SourceRecord.schema.json";
 import StoryPlan from "../schema/StoryPlan.schema.json";
 
 export type * from "../generated/index.js";
@@ -48,6 +53,7 @@ const SCHEMAS: Record<SchemaName, object> = {
   ArtboardSpec,
   AudioMixSpec,
   CaptionTrack,
+  ClaimRecord,
   ComfyProvenance,
   ComfyWorkflowPackage,
   CompiledTimeline,
@@ -60,6 +66,8 @@ const SCHEMAS: Record<SchemaName, object> = {
   DestinationBinding,
   EditBatch,
   EditOperation,
+  EvidenceRecord,
+  EvidenceRequirementPlan,
   ExecutionDecision,
   ExecutionPolicy,
   FixPlan,
@@ -74,10 +82,12 @@ const SCHEMAS: Record<SchemaName, object> = {
   NarrationSegment,
   ProjectBrief,
   RenderBundle,
+  ResearchPack,
   RevisionOutcome,
   RevisionRequest,
   SceneSpec,
   SkillManifest,
+  SourceRecord,
   StoryPlan,
 };
 
