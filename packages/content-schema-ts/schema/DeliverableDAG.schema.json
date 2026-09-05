@@ -65,20 +65,33 @@
         "compose_email",
         "compile_email",
         "email_preview_qc",
+        "review_assets",
+        "find_reference",
+        "plan_shots",
+        "route_shots",
         "generate_anchor",
         "lock_generation",
         "compile_controls",
         "generate_keyframes",
         "drift_qc",
+        "review_frames",
         "interpolate",
         "package_sequence",
         "lock_script",
         "synthesize_narration",
+        "voice_over",
+        "restore_speech",
+        "sound_design",
         "align_words",
         "compile_captions",
+        "select_music",
         "mix_audio",
+        "fix_video",
+        "upscale_video",
         "compile_timeline",
+        "render_animation",
         "render_scenes",
+        "generate_video",
         "compose_video",
         "qc_deliverable",
         "originality_gate",
@@ -126,6 +139,13 @@
           "title": "Optional",
           "type": "boolean"
         },
+        "params": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Params",
+          "type": "object"
+        },
         "resource_class": {
           "default": "control",
           "enum": [
@@ -135,6 +155,7 @@
             "render-gpu",
             "inference-llm",
             "inference-image",
+            "inference-video",
             "inference-audio",
             "publish"
           ],
@@ -151,6 +172,7 @@
         "executor",
         "node_id",
         "optional",
+        "params",
         "resource_class",
         "stage"
       ],

@@ -1,0 +1,19 @@
+[project]
+name = "cf-skill-blender-scene"
+version = "0.1.0"
+description = "Headless Blender scene controller: renders per-shot control passes (rough RGB, depth, normals, segmentation, skeleton + layout JSON, camera.json) from a ShotSpec. Blender itself is the system snap (/snap/bin/blender); this env holds only the runner + post-processing deps."
+requires-python = ">=3.12"
+dependencies = [
+    "numpy==2.5.2",
+    "pillow==12.3.0",
+    "opencv-python-headless==4.13.0.92",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

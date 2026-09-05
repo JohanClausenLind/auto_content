@@ -4,6 +4,15 @@
       "additionalProperties": false,
       "description": "One compiled per-frame control image plus provenance (deterministic: same plan, same bytes).",
       "properties": {
+        "compiler": {
+          "default": "motion_plan",
+          "enum": [
+            "motion_plan",
+            "blender"
+          ],
+          "title": "Compiler",
+          "type": "string"
+        },
         "compiler_version": {
           "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
           "title": "Compiler Version",
@@ -32,6 +41,19 @@
           "title": "Png Sha256",
           "type": "string"
         },
+        "shot_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shot Id"
+        },
         "width": {
           "minimum": 1,
           "title": "Width",
@@ -39,21 +61,31 @@
         }
       },
       "required": [
+        "compiler",
         "compiler_version",
         "frame_index",
         "height",
         "kind",
         "motion_plan_hash",
         "png_sha256",
+        "shot_id",
         "width"
       ],
       "title": "ControlAsset",
       "type": "object"
     },
     "ControlKind": {
+      "description": "Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest\nare rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec.",
       "enum": [
         "pose_skeleton",
-        "layout_boxes"
+        "layout_boxes",
+        "rough_rgb",
+        "depth",
+        "depth16",
+        "depth_exr",
+        "normals",
+        "segmentation",
+        "canny"
       ],
       "title": "ControlKind",
       "type": "string"

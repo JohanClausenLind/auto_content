@@ -1,0 +1,549 @@
+{
+  "$defs": {
+    "Box": {
+      "additionalProperties": false,
+      "properties": {
+        "h": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "H",
+          "type": "number"
+        },
+        "w": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "W",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "h",
+        "w",
+        "x",
+        "y"
+      ],
+      "title": "Box",
+      "type": "object"
+    },
+    "CameraFrame": {
+      "additionalProperties": false,
+      "description": "Camera state for one frame. Rotation is a Blender camera quaternion (looks down local -Z,\n+Y up); ``intrinsics`` is (fx, fy, cx, cy) in pixels; ``world_to_camera`` is row-major 4x4.",
+      "properties": {
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "intrinsics": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Intrinsics",
+          "type": "array"
+        },
+        "lens_mm": {
+          "exclusiveMinimum": 0.0,
+          "title": "Lens Mm",
+          "type": "number"
+        },
+        "look_at": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Look At"
+        },
+        "position": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "rotation_quat_wxyz": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rotation Quat Wxyz",
+          "type": "array"
+        },
+        "sensor_width_mm": {
+          "exclusiveMinimum": 0.0,
+          "title": "Sensor Width Mm",
+          "type": "number"
+        },
+        "world_to_camera": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 16,
+          "minItems": 16,
+          "title": "World To Camera",
+          "type": "array"
+        }
+      },
+      "required": [
+        "frame_index",
+        "intrinsics",
+        "lens_mm",
+        "look_at",
+        "position",
+        "rotation_quat_wxyz",
+        "sensor_width_mm",
+        "world_to_camera"
+      ],
+      "title": "CameraFrame",
+      "type": "object"
+    },
+    "ControlAsset": {
+      "additionalProperties": false,
+      "description": "One compiled per-frame control image plus provenance (deterministic: same plan, same bytes).",
+      "properties": {
+        "compiler": {
+          "default": "motion_plan",
+          "enum": [
+            "motion_plan",
+            "blender"
+          ],
+          "title": "Compiler",
+          "type": "string"
+        },
+        "compiler_version": {
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+          "title": "Compiler Version",
+          "type": "string"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/ControlKind"
+        },
+        "motion_plan_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Motion Plan Hash",
+          "type": "string"
+        },
+        "png_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Png Sha256",
+          "type": "string"
+        },
+        "shot_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shot Id"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "compiler",
+        "compiler_version",
+        "frame_index",
+        "height",
+        "kind",
+        "motion_plan_hash",
+        "png_sha256",
+        "shot_id",
+        "width"
+      ],
+      "title": "ControlAsset",
+      "type": "object"
+    },
+    "ControlEncoding": {
+      "enum": [
+        "rgb8",
+        "gray8",
+        "gray16",
+        "index8",
+        "exr32"
+      ],
+      "title": "ControlEncoding",
+      "type": "string"
+    },
+    "ControlKind": {
+      "description": "Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest\nare rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec.",
+      "enum": [
+        "pose_skeleton",
+        "layout_boxes",
+        "rough_rgb",
+        "depth",
+        "depth16",
+        "depth_exr",
+        "normals",
+        "segmentation",
+        "canny"
+      ],
+      "title": "ControlKind",
+      "type": "string"
+    },
+    "ControlTrack": {
+      "additionalProperties": false,
+      "properties": {
+        "encoding": {
+          "$ref": "#/$defs/ControlEncoding"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/ControlAsset"
+          },
+          "minItems": 1,
+          "title": "Frames",
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/ControlKind"
+        }
+      },
+      "required": [
+        "encoding",
+        "frames",
+        "kind"
+      ],
+      "title": "ControlTrack",
+      "type": "object"
+    },
+    "Point": {
+      "additionalProperties": false,
+      "description": "Normalized coordinates in [0, 1] relative to the frame.",
+      "properties": {
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "SkeletonPose": {
+      "additionalProperties": false,
+      "description": "A named subset of an OpenPose-style body/hand rig, all points normalized.",
+      "properties": {
+        "bones": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Bones",
+          "type": "array"
+        },
+        "joints": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Point"
+          },
+          "title": "Joints",
+          "type": "object"
+        }
+      },
+      "required": [
+        "bones",
+        "joints"
+      ],
+      "title": "SkeletonPose",
+      "type": "object"
+    },
+    "SubjectTrack": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "layouts": {
+          "default": [],
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Box"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Layouts",
+          "type": "array"
+        },
+        "poses": {
+          "default": [],
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/SkeletonPose"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Poses",
+          "type": "array"
+        },
+        "segmentation_index": {
+          "maximum": 254,
+          "minimum": 1,
+          "title": "Segmentation Index",
+          "type": "integer"
+        },
+        "subject_id": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Subject Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "layouts",
+        "poses",
+        "segmentation_index",
+        "subject_id"
+      ],
+      "title": "SubjectTrack",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ControlBundle.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Everything compiled for one shot (or one MotionPlan sequence): per-kind frame tracks,\nper-subject layout/pose tracks and, for 3D compilers, the camera per frame.",
+  "properties": {
+    "anchor_frames": {
+      "default": [
+        0
+      ],
+      "items": {
+        "type": "integer"
+      },
+      "title": "Anchor Frames",
+      "type": "array"
+    },
+    "blender_version": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Blender Version"
+    },
+    "bundle_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "camera": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CameraFrame"
+      },
+      "title": "Camera",
+      "type": "array"
+    },
+    "compiler": {
+      "enum": [
+        "motion_plan",
+        "blender"
+      ],
+      "title": "Compiler",
+      "type": "string"
+    },
+    "compiler_version": {
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "fps": {
+      "default": 24,
+      "enum": [
+        24,
+        25,
+        30,
+        60
+      ],
+      "title": "Fps",
+      "type": "integer"
+    },
+    "frame_count": {
+      "maximum": 600,
+      "minimum": 1,
+      "title": "Frame Count",
+      "type": "integer"
+    },
+    "height": {
+      "maximum": 8192,
+      "minimum": 64,
+      "title": "Height",
+      "type": "integer"
+    },
+    "plan_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Plan Hash",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "shot_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Shot Id",
+      "type": "string"
+    },
+    "subjects": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SubjectTrack"
+      },
+      "title": "Subjects",
+      "type": "array"
+    },
+    "tracks": {
+      "items": {
+        "$ref": "#/$defs/ControlTrack"
+      },
+      "minItems": 1,
+      "title": "Tracks",
+      "type": "array"
+    },
+    "width": {
+      "maximum": 8192,
+      "minimum": 64,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "anchor_frames",
+    "blender_version",
+    "bundle_id",
+    "camera",
+    "compiler",
+    "compiler_version",
+    "fps",
+    "frame_count",
+    "height",
+    "plan_hash",
+    "schema_version",
+    "shot_id",
+    "subjects",
+    "tracks",
+    "width"
+  ],
+  "title": "ControlBundle",
+  "type": "object"
+}

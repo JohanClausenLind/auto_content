@@ -1,0 +1,5200 @@
+{
+ "deliverable_id": "dlv_runner_film",
+ "plan_id": "shp_runner_plan",
+ "planner": "fixture",
+ "planner_version": "0.1.0",
+ "schema_version": 1,
+ "shots": [
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.2,
+      "frame_index": 0,
+      "lens_mm": 32.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -1.5912,
+       2.7561,
+       1.2845
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 1 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 0,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4000,
+   "shot_id": "sht_run_0000",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.227,
+      "frame_index": 0,
+      "lens_mm": 32.77,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -2.0749,
+       2.4428,
+       1.3254
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.975266,
+         -0.221033,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.975266,
+         0.221033,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.957828,
+         0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.957828,
+         -0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.957828,
+         -0.287342,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 2 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 1,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4001,
+   "shot_id": "sht_run_0001",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.307,
+      "frame_index": 0,
+      "lens_mm": 35.04,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -2.5297,
+       2.0713,
+       1.4474
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.996514,
+         0.083428,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.996514,
+         -0.083428,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.994041,
+         -0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.994041,
+         0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.994041,
+         -0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 3 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 2,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4002,
+   "shot_id": "sht_run_0002",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.438,
+      "frame_index": 0,
+      "lens_mm": 38.65,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -2.9453,
+       1.6303,
+       1.6474
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.981706,
+         0.190402,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.981706,
+         -0.190402,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.968784,
+         -0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.968784,
+         0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.968784,
+         -0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 4 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 3,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4003,
+   "shot_id": "sht_run_0003",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.616,
+      "frame_index": 0,
+      "lens_mm": 43.36,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.3013,
+       1.1123,
+       1.9176
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.987962,
+         -0.154695,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.987962,
+         0.154695,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.979444,
+         0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.979444,
+         -0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.979444,
+         -0.201716,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 5 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 4,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4004,
+   "shot_id": "sht_run_0004",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.835,
+      "frame_index": 0,
+      "lens_mm": 48.85,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.5726,
+       0.5196,
+       2.2429
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.99112,
+         -0.132969,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.99112,
+         0.132969,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.984831,
+         0.173517,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.984831,
+         -0.173517,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.984831,
+         -0.173517,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 6 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 5,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4005,
+   "shot_id": "sht_run_0005",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.089,
+      "frame_index": 0,
+      "lens_mm": 54.75,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.7383,
+       -0.135,
+       2.6008
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.979,
+         0.20386,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.979,
+         -0.20386,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.964179,
+         -0.265254,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.964179,
+         0.265254,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.964179,
+         -0.265254,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 7 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 6,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4006,
+   "shot_id": "sht_run_0006",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.37,
+      "frame_index": 0,
+      "lens_mm": 60.67,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.7886,
+       -0.8339,
+       2.9622
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.998408,
+         0.056396,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.998408,
+         -0.056396,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.997279,
+         -0.073721,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.997279,
+         0.073721,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.997279,
+         -0.073721,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 8 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 7,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4007,
+   "shot_id": "sht_run_0007",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.67,
+      "frame_index": 0,
+      "lens_mm": 66.21,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.7245,
+       -1.5625,
+       3.295
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.974471,
+         -0.224515,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.974471,
+         0.224515,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.956476,
+         0.291812,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.956476,
+         -0.291812,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.956476,
+         -0.291812,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 9 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 8,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4008,
+   "shot_id": "sht_run_0008",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.98,
+      "frame_index": 0,
+      "lens_mm": 71.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.5498,
+       -2.3144,
+       3.5668
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.999596,
+         0.028433,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.999596,
+         -0.028433,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.999309,
+         -0.037179,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.999309,
+         0.037179,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.999309,
+         -0.037179,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 10 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 9,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4009,
+   "shot_id": "sht_run_0009",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.291,
+      "frame_index": 0,
+      "lens_mm": 74.71,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -3.2604,
+       -3.0884,
+       3.7479
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.976808,
+         0.214117,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.976808,
+         -0.214117,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.96045,
+         -0.278454,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.96045,
+         0.278454,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.96045,
+         -0.278454,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 11 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 10,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4010,
+   "shot_id": "sht_run_0010",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.593,
+      "frame_index": 0,
+      "lens_mm": 77.09,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -2.838,
+       -3.8766,
+       3.8138
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.994032,
+         -0.109089,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.994032,
+         0.109089,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.989802,
+         0.142453,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.989802,
+         -0.142453,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.989802,
+         -0.142453,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 12 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 11,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4011,
+   "shot_id": "sht_run_0011",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.877,
+      "frame_index": 0,
+      "lens_mm": 77.99,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -2.2544,
+       -4.6506,
+       3.7489
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.984757,
+         -0.173935,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.984757,
+         0.173935,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.973981,
+         0.22663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.973981,
+         -0.22663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.973981,
+         -0.22663,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 13 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 12,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4012,
+   "shot_id": "sht_run_0012",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.135,
+      "frame_index": 0,
+      "lens_mm": 77.35,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -1.4865,
+       -5.3539,
+       3.5516
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.984757,
+         0.173935,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.984757,
+         -0.173935,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.973981,
+         -0.22663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.973981,
+         0.22663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.973981,
+         -0.22663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 14 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 13,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4013,
+   "shot_id": "sht_run_0013",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.359,
+      "frame_index": 0,
+      "lens_mm": 75.2,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       -0.5349,
+       -5.9085,
+       3.2396
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.994032,
+         0.109089,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.994032,
+         -0.109089,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.989802,
+         -0.142453,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.989802,
+         0.142453,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.989802,
+         -0.142453,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 15 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 14,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4014,
+   "shot_id": "sht_run_0014",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.542,
+      "frame_index": 0,
+      "lens_mm": 71.7,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       0.5643,
+       -6.2344,
+       2.8515
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.976808,
+         -0.214117,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.976808,
+         0.214117,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.96045,
+         0.278454,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.96045,
+         -0.278454,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.96045,
+         -0.278454,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 16 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 15,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4015,
+   "shot_id": "sht_run_0015",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.679,
+      "frame_index": 0,
+      "lens_mm": 67.07,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       1.7417,
+       -6.2731,
+       2.4424
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.999596,
+         -0.028433,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.999596,
+         0.028433,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.999309,
+         0.037179,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.999309,
+         -0.037179,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.999309,
+         -0.037179,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 17 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 16,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4016,
+   "shot_id": "sht_run_0016",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.766,
+      "frame_index": 0,
+      "lens_mm": 61.63,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       2.9103,
+       -6.0037,
+       2.0739
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.974471,
+         0.224515,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.974471,
+         -0.224515,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.956476,
+         -0.291812,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.956476,
+         0.291812,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.956476,
+         -0.291812,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 18 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 17,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4017,
+   "shot_id": "sht_run_0017",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.8,
+      "frame_index": 0,
+      "lens_mm": 55.75,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       3.9848,
+       -5.4432,
+       1.8024
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.998408,
+         -0.056396,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.998408,
+         0.056396,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.997279,
+         0.073721,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.997279,
+         -0.073721,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.997279,
+         -0.073721,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 19 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 18,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4018,
+   "shot_id": "sht_run_0018",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.779,
+      "frame_index": 0,
+      "lens_mm": 49.81,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       4.8941,
+       -4.636,
+       1.6676
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.979,
+         -0.20386,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.979,
+         0.20386,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.964179,
+         0.265254,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.964179,
+         -0.265254,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.964179,
+         -0.265254,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 20 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 19,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4019,
+   "shot_id": "sht_run_0019",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.706,
+      "frame_index": 0,
+      "lens_mm": 44.23,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       5.5834,
+       -3.6402,
+       1.6863
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.99112,
+         0.132969,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.99112,
+         -0.132969,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.984831,
+         -0.173517,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.984831,
+         0.173517,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.984831,
+         -0.173517,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 21 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 20,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4020,
+   "shot_id": "sht_run_0020",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.581,
+      "frame_index": 0,
+      "lens_mm": 39.36,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       6.0117,
+       -2.522,
+       1.8501
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.987962,
+         0.154695,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.987962,
+         -0.154695,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.979444,
+         -0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.979444,
+         0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.979444,
+         -0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 22 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 21,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4021,
+   "shot_id": "sht_run_0021",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.409,
+      "frame_index": 0,
+      "lens_mm": 35.55,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       6.1527,
+       -1.3543,
+       2.1272
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.981706,
+         -0.190402,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.981706,
+         0.190402,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.968784,
+         0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.968784,
+         -0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.968784,
+         -0.247905,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 23 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 22,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4022,
+   "shot_id": "sht_run_0022",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.195,
+      "frame_index": 0,
+      "lens_mm": 33.05,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       6.0019,
+       -0.2168,
+       2.4684
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.996514,
+         -0.083428,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.996514,
+         0.083428,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.994041,
+         0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.994041,
+         -0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.994041,
+         -0.109008,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 24 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 23,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4023,
+   "shot_id": "sht_run_0023",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.945,
+      "frame_index": 0,
+      "lens_mm": 32.02,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       5.5854,
+       0.8124,
+       2.8162
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.975266,
+         0.221033,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.975266,
+         -0.221033,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.957828,
+         -0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.957828,
+         0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.957828,
+         -0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 25 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 24,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4024,
+   "shot_id": "sht_run_0024",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.666,
+      "frame_index": 0,
+      "lens_mm": 32.54,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       4.9617,
+       1.6718,
+       3.1164
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 26 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 25,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4025,
+   "shot_id": "sht_run_0025",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.368,
+      "frame_index": 0,
+      "lens_mm": 34.56,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       4.2104,
+       2.3306,
+       3.328
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.975266,
+         -0.221033,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.975266,
+         0.221033,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.957828,
+         0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.957828,
+         -0.287342,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.957828,
+         -0.287342,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 27 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 26,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4026,
+   "shot_id": "sht_run_0026",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.058,
+      "frame_index": 0,
+      "lens_mm": 37.96,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       3.4115,
+       2.7933,
+       3.4293
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.996514,
+         0.083428,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.996514,
+         -0.083428,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.994041,
+         -0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.994041,
+         0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.994041,
+         -0.109008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 28 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 27,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4027,
+   "shot_id": "sht_run_0027",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.747,
+      "frame_index": 0,
+      "lens_mm": 42.51,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       2.6255,
+       3.091,
+       3.4177
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.981706,
+         0.190402,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.981706,
+         -0.190402,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.968784,
+         -0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.968784,
+         0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         0.968784,
+         -0.247905,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 29 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 28,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4028,
+   "shot_id": "sht_run_0028",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.444,
+      "frame_index": 0,
+      "lens_mm": 47.89,
+      "look_at": [
+       0.0,
+       0.0,
+       0.95
+      ],
+      "position": [
+       1.8843,
+       3.2636,
+       3.3048
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.987962,
+         -0.154695,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.987962,
+         0.154695,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         0.979444,
+         0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         0.979444,
+         -0.201716,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         0.979444,
+         -0.201716,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    }
+   ],
+   "description": "A runner mid-stride on wet stone, the city behind them. Camera 30 of 30.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace, coat and hair moving with it",
+   "order": 29,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4029,
+   "shot_id": "sht_run_0029",
+   "width": 1024
+  }
+ ],
+ "story_plan_hash": null
+}

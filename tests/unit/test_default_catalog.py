@@ -40,7 +40,13 @@ def _skill() -> SkillManifest:
 
 def test_catalog_prefers_ridge_on_the_3090_and_falls_back_on_small_gpus() -> None:
     catalog = default_catalog()
-    assert [m.model_id for m in catalog] == ["qwen38-ridge:latest", "qwen3:8b"]
+    assert [m.alias for m in catalog] == [
+        "local_structured",
+        "local_structured_small",
+        # The quality tier the 2026-09-05 model-role decision queued. A skill has to ASK for it —
+        # it is not in this skill's required_models, so it cannot be chosen here.
+        "local_structured_quality",
+    ]
     assert all(m.location != ExecutionLocation.cloud for m in catalog)
     big = decide(
         _skill(),
@@ -58,6 +64,51 @@ def test_catalog_prefers_ridge_on_the_3090_and_falls_back_on_small_gpus() -> Non
         budget_remaining_usd=1.0,
     )
     assert small.outcome == "dispatch" and small.chosen_alias == "local_structured_small"
+
+
+def test_every_weight_field_is_recorded_and_the_quality_tier_is_a_better_quant() -> None:
+    """Two of these were wrong before they were read off `ollama show`: the primary's context was
+    recorded as 32768 (it declares 262144) and its quantisation was not recorded at all — which is
+    the fact that makes the quality tier worth having, because the primary is a *two-bit* quant."""
+    by_alias = {m.alias: m for m in default_catalog()}
+    for descriptor in by_alias.values():
+        assert descriptor.revision and len(descriptor.revision) == 12, descriptor.alias
+        assert descriptor.quantization, descriptor.alias
+        assert descriptor.context_tokens and descriptor.vram_bytes_estimate, descriptor.alias
+
+    primary, quality = by_alias["local_structured"], by_alias["local_structured_quality"]
+    assert primary.quantization == "IQ2_M" and quality.quantization == "Q4_K_M"
+    assert primary.vram_bytes_estimate is not None
+    assert quality.vram_bytes_estimate is not None
+    assert quality.vram_bytes_estimate > primary.vram_bytes_estimate  # 17 GB against 12 GB
+    assert quality.fallback_aliases == ("local_structured",)
+    # A community fine-tune with no licence file of its own does not get to claim commercial use.
+    assert quality.commercial_use is False and "licence unstated" in quality.license
+    assert "vision" in quality.capabilities  # ollama show reports a clip projector on this build
+
+
+def test_a_skill_that_asks_for_the_quality_tier_gets_it_on_the_3090() -> None:
+    catalog = default_catalog()
+    tiered = _skill().model_copy(update={"required_models": ("local_structured_quality",)})
+    out = decide(
+        tiered,
+        PRESETS["private_local"],
+        catalog,
+        mock_inventory("rtx3090"),
+        budget_remaining_usd=1.0,
+    )
+    assert out.outcome == "dispatch" and out.chosen_alias == "local_structured_quality"
+    # And it does not fit an 8 GB card, so that machine falls back rather than OOMing.
+    small = decide(
+        tiered.model_copy(
+            update={"required_models": ("local_structured_quality", "local_structured_small")}
+        ),
+        PRESETS["private_local"],
+        catalog,
+        mock_inventory("rtx4060_8gb"),
+        budget_remaining_usd=1.0,
+    )
+    assert small.chosen_alias == "local_structured_small"
 
 
 def test_build_gateway_wires_ollama_chat_endpoint_only() -> None:

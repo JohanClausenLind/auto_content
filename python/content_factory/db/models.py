@@ -215,6 +215,18 @@ class NodeState(StrEnum):
     skipped = "skipped"
 
 
+class WorkspaceGraphDoc(WorkspaceScoped, TimestampMixin, Base):
+    """A saved node-graph editor document. The doc column is the WorkspaceGraph contract JSON —
+    validated on every write, opaque to SQL."""
+
+    __tablename__ = "workspace_graphs"
+    __table_args__ = (Index("ix_workspace_graphs_ws_updated", "workspace_id", "updated_at"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # graph_id from the editor
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    doc: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
 class ProductionRun(WorkspaceScoped, TimestampMixin, Base):
     __tablename__ = "production_runs"
     __table_args__ = (Index("ix_production_runs_ws_created", "workspace_id", "created_at"),)

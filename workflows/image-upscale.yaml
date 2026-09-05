@@ -1,0 +1,77 @@
+# Stills the operator already has, made bigger and cleaner.
+#
+# There is no generation anywhere in this lane. It takes the pictures that exist, runs SeedVR2 over
+# them, checks the result and packages it. What comes out is the same pictures at a higher
+# resolution, which is the whole point: nothing new is invented, so nothing can drift away from
+# what the operator shot or drew.
+#
+# The stage is called upscale_video and that is not a mistake. SeedVR2 works frame by frame over a
+# SEQUENCE, so a folder of stills is the same job as a folder of video frames, and the stage's
+# frames input accepts SEQUENCE as readily as VIDEO. A second "upscale_image" stage would be the
+# same executor under a second name, which is the duplication this catalogue exists to avoid.
+schema_version: 1
+id: image-upscale
+name: Image upscale
+description: >
+  Images that already exist are restored and enlarged, then checked and packaged for delivery.
+  SeedVR2 does the work one frame at a time, so the lane is indifferent to whether the folder holds
+  photographs, drawings or rendered stills. Nothing is generated: the output is the input at a
+  higher resolution.
+category: utility
+tags: [upscale, stills, restore, seedvr2, delivery]
+prerequisite: >
+  The images to upscale, staged in the run's input frame directory. This lane produces no material
+  of its own, so with no pictures in place there is nothing for it to do.
+caveat: >
+  The first stage takes no wire. upscale.frames is a required input left unwired on purpose: the
+  operator's images are read from the run directory rather than handed over by an upstream node, so
+  the graph starts from a slot the canvas shows as empty. Every stage in the lane has an executor.
+models:
+  - kind: path
+    label: SeedVR2 7B upscaler transformer
+    path_includes: seedvr2-7b
+    filename: seedvr2_7b_int8_convrot.safetensors
+  - kind: path
+    label: SeedVR2 VAE
+    path_includes: seedvr2-7b
+    filename: seedvr2_ema_vae_fp16.safetensors
+  - kind: path
+    label: SeedVR2 3B transformer (smaller, for tight VRAM)
+    path_includes: seedvr2
+    filename: seedvr2_3b_fp16.safetensors
+    optional: true
+  - kind: skill
+    label: Post chain skill env
+    skill: skills/video/postchain
+
+nodes:
+  - key: upscale
+    type: upscale_video
+    values: {resolution: "2160"}
+    note: >
+      Frame by frame over the stills, so a folder of pictures is one job. 2160 rather than the 1080
+      default because enlarging is the errand. The runner reads the resolution from
+      settings.postchain.upscale_resolution today, so a local run needs that set to match.
+  - key: qc
+    type: qc_deliverable
+    note: An upscaler can smear a face or invent texture, so the enlarged set is looked at before it ships.
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: upscale, from_slot: frames, to_key: qc, to_slot: deliverable}
+  - {from_key: upscale, from_slot: frames, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - upscale
+  - qc
+  - pack

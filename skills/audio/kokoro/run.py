@@ -11,20 +11,63 @@ import json
 import sys
 import tempfile
 
+# Locale -> Kokoro lang code, mirroring content_factory/audio/languages.py. Explicit, because the
+# line this replaces was `"a" if lang.startswith("en") else "b"` — and "b" is British English, so
+# every non-English locale silently produced a British voice reading foreign words as English.
+# Kokoro's own LANG_CODES (read from the installed package, 2026-09-08): a American English,
+# b British English, e es, f fr-fr, h hi, i it, p pt-br, j Japanese, z Mandarin Chinese.
+LANG_CODES = {
+    "en": "a",
+    "en-gb": "b",
+    "es": "e",
+    "fr": "f",
+    "hi": "h",
+    "it": "i",
+    "pt": "p",
+    "ja": "j",
+    "zh": "z",
+}
+
+
+def lang_code(lang: str) -> str:
+    """Kokoro's code for a locale, or the code itself if one was passed. Refuses anything else.
+
+    A locale Kokoro cannot speak is an error here and not a fallback: a fallback is what produced
+    a whole film narrated in the wrong language with nothing in the run reporting it.
+    """
+    value = lang.strip().lower()
+    if value in set(LANG_CODES.values()):
+        return value
+    if value in LANG_CODES:
+        return LANG_CODES[value]
+    prefix = value.split("-", 1)[0]
+    if prefix in LANG_CODES:
+        return LANG_CODES[prefix]
+    supported = ", ".join(sorted(LANG_CODES))
+    msg = f"kokoro cannot speak {lang!r}; it supports: {supported}"
+    raise SystemExit(msg)
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--voice", default="af_heart")
     ap.add_argument("--speed", type=float, default=1.0)
-    ap.add_argument("--lang", default="en")
+    ap.add_argument("--lang", default="en", help="locale (en, en-GB, ja, ...) or a kokoro code")
+    ap.add_argument(
+        "--device",
+        default="cpu",
+        choices=["cpu", "cuda"],
+        help="cpu (default: the GPU is usually held by the image/video models) or cuda",
+    )
     args = ap.parse_args()
+    # Resolved before the import below, so a bad locale costs nothing: the model never loads.
+    code = lang_code(args.lang)
     text = sys.stdin.read().strip()
     import numpy as np
     import soundfile as sf
     from kokoro import KPipeline
 
-    lang_code = "a" if args.lang.startswith("en") else "b"
-    pipeline = KPipeline(lang_code=lang_code)
+    pipeline = KPipeline(lang_code=code, device=args.device)
     chunks, tokens = [], []
     offset = 0.0
     for result in pipeline(text, voice=args.voice, speed=args.speed):
@@ -47,6 +90,7 @@ def main() -> int:
                 "duration_ms": int(len(wav) * 1000 / 24000),
                 "tokens": tokens,
                 "model_revision": "hexgrad/Kokoro-82M",
+                "lang_code": code,
             }
         )
     )

@@ -1,0 +1,276 @@
+{
+  "$defs": {
+    "OfferPrice": {
+      "additionalProperties": false,
+      "properties": {
+        "billing_increment_s": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Billing Increment S",
+          "type": "integer"
+        },
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "egress_usd_per_gb": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Egress Usd Per Gb",
+          "type": "number"
+        },
+        "min_billed_s": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Min Billed S",
+          "type": "integer"
+        },
+        "original_amount_per_hour": {
+          "minimum": 0,
+          "title": "Original Amount Per Hour",
+          "type": "number"
+        },
+        "prepaid_required": {
+          "default": false,
+          "title": "Prepaid Required",
+          "type": "boolean"
+        },
+        "requests_usd_per_1000": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Requests Usd Per 1000",
+          "type": "number"
+        },
+        "storage_usd_per_gb_month": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Storage Usd Per Gb Month",
+          "type": "number"
+        },
+        "usd_per_hour": {
+          "minimum": 0,
+          "title": "Usd Per Hour",
+          "type": "number"
+        }
+      },
+      "required": [
+        "billing_increment_s",
+        "currency",
+        "egress_usd_per_gb",
+        "min_billed_s",
+        "original_amount_per_hour",
+        "prepaid_required",
+        "requests_usd_per_1000",
+        "storage_usd_per_gb_month",
+        "usd_per_hour"
+      ],
+      "title": "OfferPrice",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ComputeOffer.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "availability": {
+      "default": "uncertain",
+      "enum": [
+        "available",
+        "limited",
+        "uncertain",
+        "unavailable"
+      ],
+      "title": "Availability",
+      "type": "string"
+    },
+    "broker": {
+      "anyOf": [
+        {
+          "maxLength": 80,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Broker"
+    },
+    "cpu_cores": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Cpu Cores",
+      "type": "integer"
+    },
+    "disk_gb": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Disk Gb",
+      "type": "number"
+    },
+    "encoders": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Encoders",
+      "type": "array"
+    },
+    "expires_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expires At"
+    },
+    "gpu_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Gpu Count",
+      "type": "integer"
+    },
+    "gpu_model": {
+      "default": "",
+      "maxLength": 80,
+      "title": "Gpu Model",
+      "type": "string"
+    },
+    "interconnect": {
+      "default": "unknown",
+      "maxLength": 60,
+      "title": "Interconnect",
+      "type": "string"
+    },
+    "interruption_rate_per_hour": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Interruption Rate Per Hour"
+    },
+    "notes": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Notes",
+      "type": "string"
+    },
+    "offer_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Offer Id",
+      "type": "string"
+    },
+    "price": {
+      "$ref": "#/$defs/OfferPrice"
+    },
+    "provider": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "provisioning_overhead_s": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Provisioning Overhead S",
+      "type": "integer"
+    },
+    "purchase_mode": {
+      "default": "on_demand",
+      "enum": [
+        "on_demand",
+        "spot",
+        "reserved"
+      ],
+      "title": "Purchase Mode",
+      "type": "string"
+    },
+    "ram_gb": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Ram Gb",
+      "type": "number"
+    },
+    "region": {
+      "default": "unknown",
+      "maxLength": 80,
+      "title": "Region",
+      "type": "string"
+    },
+    "retrieved_at": {
+      "minLength": 4,
+      "title": "Retrieved At",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_api": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Source Api",
+      "type": "string"
+    },
+    "underlying_host": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Underlying Host"
+    },
+    "vram_gb_per_gpu": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Vram Gb Per Gpu",
+      "type": "number"
+    }
+  },
+  "required": [
+    "availability",
+    "broker",
+    "cpu_cores",
+    "disk_gb",
+    "encoders",
+    "expires_at",
+    "gpu_count",
+    "gpu_model",
+    "interconnect",
+    "interruption_rate_per_hour",
+    "notes",
+    "offer_id",
+    "price",
+    "provider",
+    "provisioning_overhead_s",
+    "purchase_mode",
+    "ram_gb",
+    "region",
+    "retrieved_at",
+    "schema_version",
+    "source_api",
+    "underlying_host",
+    "vram_gb_per_gpu"
+  ],
+  "title": "ComputeOffer",
+  "type": "object"
+}

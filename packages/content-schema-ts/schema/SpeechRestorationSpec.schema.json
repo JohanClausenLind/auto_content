@@ -1,0 +1,376 @@
+{
+  "$defs": {
+    "AudioArtifactThresholds": {
+      "additionalProperties": false,
+      "description": "Where \"this asset has a problem\" begins. One place, so the detector, the QC gate and the\nprocessing chains all agree on the same numbers.\n\nUse :meth:`for_profile` rather than the bare defaults: the defaults are the speech ones, and\napplying them to a sound effect would flag rain as hiss and a whoosh as harsh.",
+      "properties": {
+        "band_limit_hz_min": {
+          "default": 14000.0,
+          "exclusiveMinimum": 0,
+          "title": "Band Limit Hz Min",
+          "type": "number"
+        },
+        "clipped_sample_ratio_max": {
+          "default": 0.0005,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clipped Sample Ratio Max",
+          "type": "number"
+        },
+        "dc_offset_max": {
+          "default": 0.002,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Dc Offset Max",
+          "type": "number"
+        },
+        "noise_floor_dbfs_max": {
+          "default": -55.0,
+          "maximum": 0,
+          "title": "Noise Floor Dbfs Max",
+          "type": "number"
+        },
+        "peak_dbfs_min": {
+          "default": -30.0,
+          "maximum": 0,
+          "title": "Peak Dbfs Min",
+          "type": "number"
+        },
+        "sibilance_ratio_max": {
+          "default": 0.12,
+          "exclusiveMinimum": 0,
+          "title": "Sibilance Ratio Max",
+          "type": "number"
+        },
+        "spectral_flatness_max": {
+          "default": 0.35,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Spectral Flatness Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "band_limit_hz_min",
+        "clipped_sample_ratio_max",
+        "dc_offset_max",
+        "noise_floor_dbfs_max",
+        "peak_dbfs_min",
+        "sibilance_ratio_max",
+        "spectral_flatness_max"
+      ],
+      "title": "AudioArtifactThresholds",
+      "type": "object"
+    },
+    "VoiceChainSpec": {
+      "additionalProperties": false,
+      "description": "The deterministic tail of the voice chain: de-esser → EQ → light compression.\n\nOne FFmpeg filter graph, no model, no randomness: the same input always produces the same\nbytes, which is what lets the restoration stage cache per beat.",
+      "properties": {
+        "air_db": {
+          "default": 0.0,
+          "maximum": 12,
+          "minimum": -12,
+          "title": "Air Db",
+          "type": "number"
+        },
+        "air_hz": {
+          "default": 10000,
+          "maximum": 16000,
+          "minimum": 4000,
+          "title": "Air Hz",
+          "type": "integer"
+        },
+        "comp_attack_ms": {
+          "default": 15.0,
+          "maximum": 2000,
+          "minimum": 0.01,
+          "title": "Comp Attack Ms",
+          "type": "number"
+        },
+        "comp_makeup_db": {
+          "default": 0.0,
+          "maximum": 24,
+          "minimum": 0,
+          "title": "Comp Makeup Db",
+          "type": "number"
+        },
+        "comp_ratio": {
+          "default": 2.5,
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Comp Ratio",
+          "type": "number"
+        },
+        "comp_release_ms": {
+          "default": 220.0,
+          "maximum": 9000,
+          "minimum": 0.01,
+          "title": "Comp Release Ms",
+          "type": "number"
+        },
+        "comp_threshold_db": {
+          "default": -18.0,
+          "maximum": 0,
+          "minimum": -60,
+          "title": "Comp Threshold Db",
+          "type": "number"
+        },
+        "compressor": {
+          "default": true,
+          "title": "Compressor",
+          "type": "boolean"
+        },
+        "de_ess": {
+          "default": true,
+          "title": "De Ess",
+          "type": "boolean"
+        },
+        "de_ess_frequency": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "De Ess Frequency",
+          "type": "number"
+        },
+        "de_ess_intensity": {
+          "default": 0.25,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "De Ess Intensity",
+          "type": "number"
+        },
+        "de_ess_max_reduction": {
+          "default": 0.5,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "De Ess Max Reduction",
+          "type": "number"
+        },
+        "high_pass_hz": {
+          "default": 85,
+          "maximum": 300,
+          "minimum": 0,
+          "title": "High Pass Hz",
+          "type": "integer"
+        },
+        "low_shelf_db": {
+          "default": -1.5,
+          "maximum": 12,
+          "minimum": -12,
+          "title": "Low Shelf Db",
+          "type": "number"
+        },
+        "low_shelf_hz": {
+          "default": 200,
+          "maximum": 500,
+          "minimum": 50,
+          "title": "Low Shelf Hz",
+          "type": "integer"
+        },
+        "presence_db": {
+          "default": 1.5,
+          "maximum": 12,
+          "minimum": -12,
+          "title": "Presence Db",
+          "type": "number"
+        },
+        "presence_hz": {
+          "default": 3000,
+          "maximum": 6000,
+          "minimum": 1000,
+          "title": "Presence Hz",
+          "type": "integer"
+        },
+        "presence_q": {
+          "default": 0.9,
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Presence Q",
+          "type": "number"
+        }
+      },
+      "required": [
+        "air_db",
+        "air_hz",
+        "comp_attack_ms",
+        "comp_makeup_db",
+        "comp_ratio",
+        "comp_release_ms",
+        "comp_threshold_db",
+        "compressor",
+        "de_ess",
+        "de_ess_frequency",
+        "de_ess_intensity",
+        "de_ess_max_reduction",
+        "high_pass_hz",
+        "low_shelf_db",
+        "low_shelf_hz",
+        "presence_db",
+        "presence_hz",
+        "presence_q"
+      ],
+      "title": "VoiceChainSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/SpeechRestorationSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One beat's trip through the voice chain, in the order the audio travels it:\n\ndetection → cleanup (ClearerVoice SE) → band extension (ClearerVoice SR) →\nrestoration (Resemble Enhance) → de-esser → EQ → light compression.\n\nThe neural steps default to ``off``: like every other model backend in this repo the mocks\nare the default and ``.env`` turns the real thing on. The FFmpeg tail needs nothing but\nFFmpeg, so it runs everywhere.",
+  "properties": {
+    "band_extension": {
+      "default": "off",
+      "enum": [
+        "off",
+        "clearervoice_sr"
+      ],
+      "title": "Band Extension",
+      "type": "string"
+    },
+    "chain": {
+      "$ref": "#/$defs/VoiceChainSpec",
+      "default": {
+        "air_db": 0.0,
+        "air_hz": 10000,
+        "comp_attack_ms": 15.0,
+        "comp_makeup_db": 0.0,
+        "comp_ratio": 2.5,
+        "comp_release_ms": 220.0,
+        "comp_threshold_db": -18.0,
+        "compressor": true,
+        "de_ess": true,
+        "de_ess_frequency": 0.5,
+        "de_ess_intensity": 0.25,
+        "de_ess_max_reduction": 0.5,
+        "high_pass_hz": 85,
+        "low_shelf_db": -1.5,
+        "low_shelf_hz": 200,
+        "presence_db": 1.5,
+        "presence_hz": 3000,
+        "presence_q": 0.9
+      }
+    },
+    "cleanup": {
+      "default": "off",
+      "enum": [
+        "off",
+        "clearervoice"
+      ],
+      "title": "Cleanup",
+      "type": "string"
+    },
+    "device": {
+      "default": "cpu",
+      "enum": [
+        "cpu",
+        "cuda"
+      ],
+      "title": "Device",
+      "type": "string"
+    },
+    "enhancer": {
+      "default": "off",
+      "enum": [
+        "off",
+        "resemble_enhance"
+      ],
+      "title": "Enhancer",
+      "type": "string"
+    },
+    "enhancer_lambd": {
+      "default": 0.5,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Enhancer Lambd",
+      "type": "number"
+    },
+    "enhancer_mode": {
+      "default": "enhance",
+      "enum": [
+        "enhance",
+        "denoise"
+      ],
+      "title": "Enhancer Mode",
+      "type": "string"
+    },
+    "enhancer_nfe": {
+      "default": 32,
+      "maximum": 128,
+      "minimum": 1,
+      "title": "Enhancer Nfe",
+      "type": "integer"
+    },
+    "enhancer_solver": {
+      "default": "midpoint",
+      "enum": [
+        "midpoint",
+        "rk4",
+        "euler"
+      ],
+      "title": "Enhancer Solver",
+      "type": "string"
+    },
+    "enhancer_tau": {
+      "default": 0.5,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Enhancer Tau",
+      "type": "number"
+    },
+    "gate": {
+      "default": "detected",
+      "enum": [
+        "detected",
+        "always"
+      ],
+      "title": "Gate",
+      "type": "string"
+    },
+    "max_duration_drift_ms": {
+      "default": 10,
+      "maximum": 200,
+      "minimum": 0,
+      "title": "Max Duration Drift Ms",
+      "type": "integer"
+    },
+    "sample_rate_hz": {
+      "default": 48000,
+      "enum": [
+        44100,
+        48000
+      ],
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "thresholds": {
+      "$ref": "#/$defs/AudioArtifactThresholds",
+      "default": {
+        "band_limit_hz_min": 14000.0,
+        "clipped_sample_ratio_max": 0.0005,
+        "dc_offset_max": 0.002,
+        "noise_floor_dbfs_max": -55.0,
+        "peak_dbfs_min": -30.0,
+        "sibilance_ratio_max": 0.12,
+        "spectral_flatness_max": 0.35
+      }
+    }
+  },
+  "required": [
+    "band_extension",
+    "chain",
+    "cleanup",
+    "device",
+    "enhancer",
+    "enhancer_lambd",
+    "enhancer_mode",
+    "enhancer_nfe",
+    "enhancer_solver",
+    "enhancer_tau",
+    "gate",
+    "max_duration_drift_ms",
+    "sample_rate_hz",
+    "thresholds"
+  ],
+  "title": "SpeechRestorationSpec",
+  "type": "object"
+}

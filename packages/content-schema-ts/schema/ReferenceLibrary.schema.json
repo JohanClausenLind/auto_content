@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "ReferenceSource": {
+      "enum": [
+        "cmu_mocap",
+        "harmony4d",
+        "sbu_kinect",
+        "ut_interaction",
+        "tv_human_interactions",
+        "motionhub_egobody",
+        "motionhub_grab",
+        "motionhub_humanml3d",
+        "pexels",
+        "operator_recording"
+      ],
+      "title": "ReferenceSource",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ReferenceLibrary.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The manifest for one built index: what went in, and what to rebuild it from.",
+  "properties": {
+    "builder_version": {
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "title": "Builder Version",
+      "type": "string"
+    },
+    "built_at": {
+      "maxLength": 32,
+      "minLength": 10,
+      "title": "Built At",
+      "type": "string"
+    },
+    "clip_count": {
+      "minimum": 0,
+      "title": "Clip Count",
+      "type": "integer"
+    },
+    "index_path": {
+      "maxLength": 400,
+      "minLength": 1,
+      "title": "Index Path",
+      "type": "string"
+    },
+    "lexicon_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Lexicon Sha256",
+      "type": "string"
+    },
+    "library_id": {
+      "maxLength": 64,
+      "minLength": 3,
+      "title": "Library Id",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "root": {
+      "maxLength": 400,
+      "minLength": 1,
+      "title": "Root",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "skipped": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Skipped",
+      "type": "array"
+    },
+    "sources": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReferenceSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "builder_version",
+    "built_at",
+    "clip_count",
+    "index_path",
+    "lexicon_sha256",
+    "library_id",
+    "manifest_sha256",
+    "root",
+    "schema_version",
+    "skipped",
+    "sources"
+  ],
+  "title": "ReferenceLibrary",
+  "type": "object"
+}

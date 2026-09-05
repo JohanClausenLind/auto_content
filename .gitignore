@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .hypothesis/
+.cache/
 *.egg-info/
 dist/
 build/
@@ -31,11 +32,31 @@ test-results/
 coverage/
 htmlcov/
 
+# Local AI stack, laid out ComfyUI-style — host-specific, never committed:
+#   external/  upstream model-code checkouts (+ their .venv)    .venvs/   hf + scenedetect tool venvs
+#   models/    category-sorted symlink index into /mnt/fast/models
+#   output/    generated media, sequence workdirs, eval runs    sandbox/  throwaway prototypes
+/external/
+/.venvs/
+/models/
+/output/
+/out/
+/sandbox/
+
+# Licensed media under assets/ — docs/licensing.md bars redistribution of these
+# ("redistribute (even for free)"), so they must never be committable. The
+# provenance manifests, READMEs and licence texts beside them stay tracked so
+# the audit trail survives a clone.
+/assets/**/*.flac
+/assets/**/*.wav
+/assets/**/*.mp3
+/assets/**/*.ogg
+/assets/**/*.m4a
+
 # Generated at build time
 apps/renderer/out/
 apps/renderer/.remotion/
 packages/content-schema-ts/generated/
-packages/sdk-ts/generated/
 
 # Secrets / keys
 *.pem
@@ -48,3 +69,11 @@ vault-master.key
 *.swp
 .DS_Store
 apps/renderer/public/fonts/
+apps/renderer/public/assets/
+
+# local GPU service handles/logs (services/local.py)
+.services/
+
+# Per-user Claude Code settings. `.claude/settings.json` (shared) and `.mcp.json` stay tracked:
+# neither holds a secret — the MCP entry sources ./.env for its token at launch.
+.claude/settings.local.json

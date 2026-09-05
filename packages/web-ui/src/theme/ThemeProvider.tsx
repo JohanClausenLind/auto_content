@@ -1,13 +1,19 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_PRESET_FOR_SCHEME, findPreset, THEME_PRESETS, type ThemePreset } from "./presets";
 import { applyTheme, resolveTheme, systemScheme, type PreviewTheme, type ResolvedTheme } from "./resolve";
-import { MAX_CUSTOM_THEMES, parseThemeImport, SCALE_MAX, SCALE_MIN, type CustomTheme, type ImportResult, type ThemeState } from "./schema";
+import { coerceThemeState, isThemeState, MAX_CUSTOM_THEMES, parseThemeImport, SCALE_MAX, SCALE_MIN, type CustomTheme, type ImportResult, type ThemeState } from "./schema";
 import { initialThemeState, saveThemeState } from "./storage";
 import type { BaseTokens, ColorTokenKey, Scheme } from "./tokens";
 
-/** Remote persistence. Failures are swallowed and surfaced as `syncError` only. */
+/**
+ * Remote persistence. Failures are swallowed and surfaced as `syncError` only.
+ *
+ * `load` returns whatever the store holds, unvalidated: the provider is the single place that
+ * decides whether it is a usable state, so a row written by an older build is repaired here rather
+ * than reaching `state` and crashing whatever reads a field it is missing.
+ */
 export interface ThemeSyncAdapter {
-  load(): Promise<ThemeState | null>;
+  load(): Promise<unknown>;
   save(state: ThemeState): Promise<void>;
 }
 
@@ -92,11 +98,14 @@ export function ThemeProvider({ children, sync = null, initialState, saveDebounc
     if (!sync) return;
     let cancelled = false;
     sync.load().then(
-      (remote) => {
+      (remote: unknown) => {
         if (cancelled) return;
-        if (remote) {
-          dirty.current = false;
-          setState(remote);
+        const repaired = coerceThemeState(remote);
+        if (repaired) {
+          // A row that had to be repaired is written back complete, so it stops being broken at
+          // the source instead of being patched over on every load.
+          dirty.current = !isThemeState(remote);
+          setState(repaired);
         } else {
           // Nothing remote yet: push what we have so other devices pick it up.
           dirty.current = true;

@@ -11,11 +11,12 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
-    "lint": "pnpm -r --if-present run lint",
+    "lint": "oxlint -c .oxlintrc.json apps packages",
     "typecheck": "pnpm -r --if-present run typecheck"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
+    "oxlint": "1.82.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   }

@@ -1867,6 +1867,56 @@
       "title": "SingleImagePostSpec",
       "type": "object"
     },
+    "StagedUpload": {
+      "additionalProperties": false,
+      "description": "A file the operator dropped into the workspace, already sniffed and stored.\n\nIt is carried on the campaign rather than fetched by the browser at run time because the\nproject directory does not exist until the run's first activity makes it: the run materialises\neach of these into ``<project>/uploads/``, which is where the ``ingest`` stage looks. The\n``asset_id`` is the content-addressed artifact key — the bytes cannot change under it, and\nnothing here is a path the caller chose.",
+      "properties": {
+        "asset_id": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "filename": {
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._ -]*$",
+          "title": "Filename",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "image",
+            "video",
+            "audio",
+            "document",
+            "data",
+            "text"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 1,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "asset_id",
+        "filename",
+        "kind",
+        "sha256",
+        "size_bytes"
+      ],
+      "title": "StagedUpload",
+      "type": "object"
+    },
     "TextPostSpec": {
       "additionalProperties": false,
       "properties": {
@@ -2207,6 +2257,14 @@
       "title": "Schema Version",
       "type": "integer"
     },
+    "staged_uploads": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/StagedUpload"
+      },
+      "title": "Staged Uploads",
+      "type": "array"
+    },
     "workspace_id": {
       "pattern": "^ws_[A-Za-z0-9_-]{8,32}$",
       "title": "Workspace Id",
@@ -2221,6 +2279,7 @@
     "execution_preset",
     "relationships",
     "schema_version",
+    "staged_uploads",
     "workspace_id"
   ],
   "title": "ContentCampaign",

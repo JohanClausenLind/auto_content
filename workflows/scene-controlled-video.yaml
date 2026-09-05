@@ -1,0 +1,125 @@
+# Cinematography decided in 3D, drawn by an image model.
+#
+# This is the lane the canvas called blender-controlled-video. The name says what it does to the
+# material rather than which program does it: the camera path, the framing and where the bodies
+# stand are settled in a 3D scene, control passes are rendered from it, and the image model only
+# supplies the look. Swap the scene compiler and nothing above or below it changes.
+#
+# The point of the lane is repeatability. A prompt-driven shot is a new guess every time; here the
+# same shot plan gives the same camera and the same blocking, and the only thing left to the model
+# is surface. That is what makes a second take of shot four match the first.
+#
+# There is no sound in this lane. picture-story is the same idea with a voice, music, foley and a
+# mix hung off it; use that one when the film has to talk.
+schema_version: 1
+id: scene-controlled-video
+name: Scene-controlled video
+description: >
+  A story becomes staged 3D shots, then control passes, then anchor images, then a film. The 3D
+  scene owns the camera and the blocking so shots stay consistent and repeatable; HiDream draws the
+  look conditioned on the passes; LTX-2.5 moves between the anchors along the staged motion. Picture
+  only, no narration or music.
+category: video
+tags: [video, 3d, controls, cinematography, consistency]
+prerequisite: >
+  A story to stage (a fixture under fixtures/story/, or a brief for plan_story to draft from) and a
+  working Blender with the scene controller's assets, since compile_controls renders the passes
+  headlessly. A shot plan can be supplied instead by setting plan_shots.planner to fixture.
+models:
+  - kind: skill
+    label: Blender scene controller
+    skill: skills/video/blender_scene
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+  - kind: path
+    label: Blender character and set assets
+    path_includes: blender-assets
+  - kind: comfy
+    label: LTX-2.5 transformer
+    folder: diffusion_models
+    filename: ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 text encoder
+    folder: text_encoders
+    filename: gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 video VAE
+    folder: vae
+    filename: ltx-2.5-video-vae-conv-bf16.safetensors
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "a place changing over one afternoon", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    note: The beats. One 3D shot is staged per beat, so the beat list is also the shot list.
+  - key: shots
+    type: plan_shots
+    note: >
+      Camera path, framing and frame count per beat. Left on the story presets so the plan follows
+      the writing; point planner at a fixture when a shot list has already been decided by hand.
+  - key: assets_gate
+    type: review_assets
+    note: The blocking is checked before any passes are rendered, because every later stage inherits it.
+  - key: controls
+    type: compile_controls
+    values: {compiler: blender}
+    note: >
+      Headless Blender renders depth, normals, segmentation, skeleton and a rough RGB. The pass set
+      is left at its default because the anchor stage wants all of it.
+  - key: anchor
+    type: generate_anchor
+    values:
+      prompt: "the scene exactly as the control passes stage it, held in one consistent look"
+      style: >
+        cinematic practical-camera photography, natural light, shallow depth of field, filmic
+        grading, physically plausible surfaces, no video-game gloss, no illustration
+    note: One anchor per shot keyframe, conditioned on the passes rather than on a described camera.
+  - key: motion
+    type: generate_video
+    values: {size: 1024x576, prompt: "camera and bodies move exactly as staged in the 3D scene"}
+    note: >
+      Anchors become the first frame and the LTX keyframe guides, so the motion the model invents is
+      bounded by the staged one. Landscape, unlike the portrait default.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: shots, to_slot: story}
+  - {from_key: shots, from_slot: shots, to_key: assets_gate, to_slot: shots}
+  - {from_key: assets_gate, from_slot: shots, to_key: controls, to_slot: shots}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: controls, from_slot: controls, to_key: anchor, to_slot: controls}
+  - {from_key: anchor, from_slot: anchor, to_key: motion, to_slot: first_frame}
+  - {from_key: controls, from_slot: controls, to_key: motion, to_slot: controls}
+  - {from_key: motion, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: motion, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - shots
+  - assets_gate
+  - controls
+  - anchor
+  - motion
+  - qc
+  - pack

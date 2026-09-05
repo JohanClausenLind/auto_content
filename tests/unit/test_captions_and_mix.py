@@ -15,7 +15,12 @@ from content_factory.audio.mix import (
 )
 from content_factory.audio.normalize import normalize_for_speech
 from content_factory.audio.tts import MockTTS
-from content_factory.schemas.audio import AudioMixSpec, NarrationRequest, VoiceIdentity
+from content_factory.schemas.audio import (
+    AudioMixSpec,
+    MasterChainSpec,
+    NarrationRequest,
+    VoiceIdentity,
+)
 from content_factory.schemas.fixtures import sample_story_plan
 from content_factory.timeline.compiler import compile_timeline
 
@@ -83,7 +88,11 @@ def test_stem_master_and_loudness(tmp_path: Path) -> None:
     assert total_ms == laid[-1].end_ms + SPEC.tail_ms
     mastered = tmp_path / "mastered.wav"
     report = master(
-        stem, mastered, target_lufs=SPEC.target_lufs, target_tp=SPEC.target_true_peak_dbtp
+        stem,
+        mastered,
+        MasterChainSpec(
+            target_lufs=SPEC.target_lufs, target_true_peak_dbtp=SPEC.target_true_peak_dbtp
+        ),
     )
     assert report.passed, (report.integrated_lufs, report.true_peak_dbtp)
     raw = measure_loudness(stem)

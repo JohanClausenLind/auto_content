@@ -1,0 +1,54 @@
+{
+  "$id": "https://content-factory.local/schema/MusicTrack.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One track in the local music library (fixtures/music by default). Attribution is part of\nthe record, not an afterthought: it travels into destination packages with the mix.",
+  "properties": {
+    "attribution": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Attribution",
+      "type": "string"
+    },
+    "duration_s": {
+      "exclusiveMinimum": 0,
+      "title": "Duration S",
+      "type": "number"
+    },
+    "filename": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Filename",
+      "type": "string"
+    },
+    "moods": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Moods",
+      "type": "array"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "track_id": {
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,63}$",
+      "title": "Track Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "attribution",
+    "duration_s",
+    "filename",
+    "moods",
+    "sha256",
+    "track_id"
+  ],
+  "title": "MusicTrack",
+  "type": "object"
+}

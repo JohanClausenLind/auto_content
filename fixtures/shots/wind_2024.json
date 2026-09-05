@@ -1,0 +1,334 @@
+{
+ "schema_version": 1,
+ "plan_id": "shots_wind2024v2",
+ "deliverable_id": "dlv_short0000001",
+ "story_plan_hash": "640ab237eceb4968559f6ee69e52dfa4a9e9702d83e3dc8c9e18aa1161cfb711",
+ "planner": "fixture",
+ "planner_version": "0.1.0",
+ "shots": [
+  {
+   "schema_version": 1,
+   "shot_id": "shot_wind2024hook",
+   "order": 0,
+   "beat_id": "beat_wind2024_01",
+   "seed": 2024,
+   "frame_count": 153,
+   "fps": 30,
+   "width": 576,
+   "height": 1024,
+   "camera": {
+    "preset": "crane_up",
+    "sensor_width_mm": 36.0,
+    "clip_start": 0.5,
+    "clip_end": 2000.0,
+    "keyframes": [
+     {
+      "frame_index": 0,
+      "position": [
+       0.0,
+       -260.0,
+       25.0
+      ],
+      "look_at": [
+       0.0,
+       0.0,
+       60.0
+      ],
+      "rotation_euler_deg": null,
+      "lens_mm": 28.0,
+      "focus_distance": 250.0,
+      "easing_to_next": "ease_in_out"
+     },
+     {
+      "frame_index": 152,
+      "position": [
+       0.0,
+       -200.0,
+       95.0
+      ],
+      "look_at": [
+       0.0,
+       40.0,
+       50.0
+      ],
+      "rotation_euler_deg": null,
+      "lens_mm": 28.0,
+      "focus_distance": 220.0,
+      "easing_to_next": "ease_in_out"
+     }
+    ]
+   },
+   "characters": [],
+   "props": [
+    {
+     "id": "turbine_1",
+     "source": {
+      "kind": "primitive",
+      "shape": "cylinder",
+      "size": [
+       4.0,
+       4.0,
+       90.0
+      ]
+     },
+     "transform": {
+      "position": [
+       -60.0,
+       0.0,
+       45.0
+      ],
+      "yaw_deg": 0.0,
+      "scale": 1.0
+     },
+     "color": [
+      0.95,
+      0.95,
+      0.95
+     ],
+     "seg": true,
+     "seg_id": null
+    },
+    {
+     "id": "turbine_2",
+     "source": {
+      "kind": "primitive",
+      "shape": "cylinder",
+      "size": [
+       4.0,
+       4.0,
+       90.0
+      ]
+     },
+     "transform": {
+      "position": [
+       30.0,
+       60.0,
+       45.0
+      ],
+      "yaw_deg": 0.0,
+      "scale": 1.0
+     },
+     "color": [
+      0.95,
+      0.95,
+      0.95
+     ],
+     "seg": true,
+     "seg_id": null
+    },
+    {
+     "id": "turbine_3",
+     "source": {
+      "kind": "primitive",
+      "shape": "cylinder",
+      "size": [
+       4.0,
+       4.0,
+       80.0
+      ]
+     },
+     "transform": {
+      "position": [
+       110.0,
+       140.0,
+       40.0
+      ],
+      "yaw_deg": 0.0,
+      "scale": 1.0
+     },
+     "color": [
+      0.95,
+      0.95,
+      0.95
+     ],
+     "seg": true,
+     "seg_id": null
+    }
+   ],
+   "environment": {
+    "ground": {
+     "enabled": true,
+     "size": 400.0,
+     "color": [
+      0.9,
+      0.92,
+      0.95
+     ],
+     "seg": false
+    },
+    "walls": null,
+    "background_color": [
+     0.55,
+     0.65,
+     0.8
+    ]
+   },
+   "lighting": {
+    "preset": "studio",
+    "key_azimuth_deg": 120.0,
+    "key_elevation_deg": 12.0,
+    "intensity": 1.0,
+    "shadows": true
+   },
+   "render": {
+    "engine": "workbench",
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "depth_exr",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ],
+    "depth_range": "auto",
+    "canny": {
+     "low": 100,
+     "high": 200
+    },
+    "frames": null
+   },
+   "anchor_frames": [
+    0
+   ],
+   "motion_prompt": "Slow aerial rise, drifting gently forward over a snow-covered Swedish wind farm at dawn. The turbine blades turn steadily and evenly. Low winter sun, long blue shadows, thin ground mist. Stable geometry, clean edges, no warping.",
+   "description": "Vertical aerial photograph at dawn of a snow-covered wind farm in northern Sweden: three tall white wind turbines rising from a snowy pine-forest clearing, low golden winter sun on the horizon, long blue shadows across the snow, thin mist between the trees, crisp cold air, cinematic, photorealistic, no people, no text.",
+   "action": "the turbine blades turn steadily and evenly, the ground mist drifting",
+   "end_state": "the view is now above the turbines, looking along the row"
+  },
+  {
+   "schema_version": 1,
+   "shot_id": "shot_wind2024outro",
+   "order": 1,
+   "beat_id": "beat_wind2024_07",
+   "seed": 2027,
+   "frame_count": 129,
+   "fps": 30,
+   "width": 576,
+   "height": 1024,
+   "camera": {
+    "preset": "orbit_right",
+    "sensor_width_mm": 36.0,
+    "clip_start": 0.5,
+    "clip_end": 2000.0,
+    "keyframes": [
+     {
+      "frame_index": 0,
+      "position": [
+       -30.0,
+       -40.0,
+       88.0
+      ],
+      "look_at": [
+       0.0,
+       0.0,
+       90.0
+      ],
+      "rotation_euler_deg": null,
+      "lens_mm": 50.0,
+      "focus_distance": 50.0,
+      "easing_to_next": "ease_in_out"
+     },
+     {
+      "frame_index": 128,
+      "position": [
+       30.0,
+       -40.0,
+       88.0
+      ],
+      "look_at": [
+       0.0,
+       0.0,
+       90.0
+      ],
+      "rotation_euler_deg": null,
+      "lens_mm": 50.0,
+      "focus_distance": 50.0,
+      "easing_to_next": "ease_in_out"
+     }
+    ]
+   },
+   "characters": [],
+   "props": [
+    {
+     "id": "turbine_1",
+     "source": {
+      "kind": "primitive",
+      "shape": "cylinder",
+      "size": [
+       4.0,
+       4.0,
+       90.0
+      ]
+     },
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       45.0
+      ],
+      "yaw_deg": 0.0,
+      "scale": 1.0
+     },
+     "color": [
+      0.95,
+      0.95,
+      0.95
+     ],
+     "seg": true,
+     "seg_id": null
+    }
+   ],
+   "environment": {
+    "ground": {
+     "enabled": true,
+     "size": 400.0,
+     "color": [
+      0.9,
+      0.92,
+      0.95
+     ],
+     "seg": false
+    },
+    "walls": null,
+    "background_color": [
+     0.55,
+     0.65,
+     0.8
+    ]
+   },
+   "lighting": {
+    "preset": "studio",
+    "key_azimuth_deg": 120.0,
+    "key_elevation_deg": 12.0,
+    "intensity": 1.0,
+    "shadows": true
+   },
+   "render": {
+    "engine": "workbench",
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "depth_exr",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ],
+    "depth_range": "auto",
+    "canny": {
+     "low": 100,
+     "high": 200
+    },
+    "frames": null
+   },
+   "anchor_frames": [
+    0
+   ],
+   "motion_prompt": "The camera orbits slowly to the right around the turbine hub. One white blade sweeps down past the lens while the sky glows orange. Warm backlight, gentle lens flare. Stable geometry, no warping.",
+   "description": "Vertical low-angle close-up of a white wind turbine hub and blade against a golden sunset sky, warm backlight and soft lens flare, high-contrast silhouette of the blade edge, a few thin clouds, cinematic photorealistic still, no people, no text.",
+   "action": "one white blade sweeps down past the lens",
+   "end_state": "the blade has cleared the frame and the hub stands against the glow"
+  }
+ ]
+}

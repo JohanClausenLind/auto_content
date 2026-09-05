@@ -10,7 +10,11 @@
         "control_edge",
         "mask_inpaint",
         "upscale",
-        "deterministic_seed"
+        "image_to_video",
+        "deterministic_seed",
+        "keyframe_guide",
+        "control_segmentation",
+        "pose_video"
       ],
       "title": "CapabilityFlag",
       "type": "string"

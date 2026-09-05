@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "DeliveryFile": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "minimum": 1,
+          "title": "Bytes",
+          "type": "integer"
+        },
+        "content_type": {
+          "maxLength": 100,
+          "minLength": 3,
+          "title": "Content Type",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 400,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "video",
+            "image",
+            "audio",
+            "caption",
+            "thumbnail",
+            "text",
+            "metadata",
+            "sequence"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bytes",
+        "content_type",
+        "path",
+        "role",
+        "sha256"
+      ],
+      "title": "DeliveryFile",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/DeliveryPackage.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One destination's worth of files, with what QC said about them.",
+  "properties": {
+    "built_at": {
+      "maxLength": 40,
+      "minLength": 4,
+      "title": "Built At",
+      "type": "string"
+    },
+    "deliverable_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Deliverable Id",
+      "type": "string"
+    },
+    "destination": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Destination",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/DeliveryFile"
+      },
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "qc_passed": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Qc Passed"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "visibility": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Visibility",
+      "type": "string"
+    }
+  },
+  "required": [
+    "built_at",
+    "deliverable_id",
+    "destination",
+    "files",
+    "qc_passed",
+    "schema_version",
+    "visibility"
+  ],
+  "title": "DeliveryPackage",
+  "type": "object"
+}

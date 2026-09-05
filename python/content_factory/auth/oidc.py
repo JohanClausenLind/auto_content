@@ -7,8 +7,6 @@ just-in-time provisioning are pure functions. SAML and SCIM are separate standar
 
 from __future__ import annotations
 
-import base64
-import hashlib
 import secrets
 import time
 from dataclasses import dataclass
@@ -20,6 +18,8 @@ from authlib.jose import (
     JsonWebToken,
 )
 from authlib.jose.errors import JoseError
+
+from content_factory.security.pkce import pkce_pair
 
 
 class OIDCError(Exception):
@@ -70,10 +70,7 @@ def begin_login(config: OIDCConfig, discovery: dict[str, Any]) -> tuple[str, dic
     """Returns (authorize_url, session_state{state,nonce,verifier}) to keep server-side."""
     state = secrets.token_urlsafe(24)
     nonce = secrets.token_urlsafe(24)
-    verifier = base64.urlsafe_b64encode(secrets.token_bytes(48)).rstrip(b"=").decode()
-    challenge = (
-        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
-    )
+    verifier, challenge = pkce_pair()
     from urllib.parse import urlencode
 
     url = (

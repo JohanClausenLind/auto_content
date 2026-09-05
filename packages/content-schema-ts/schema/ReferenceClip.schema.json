@@ -1,0 +1,639 @@
+{
+  "$defs": {
+    "Affection": {
+      "enum": [
+        "affection",
+        "neutral",
+        "aggression",
+        "staging"
+      ],
+      "title": "Affection",
+      "type": "string"
+    },
+    "ContactTag": {
+      "enum": [
+        "none",
+        "hands",
+        "arm",
+        "shoulder",
+        "torso",
+        "back",
+        "head_shoulder",
+        "head_chest",
+        "face",
+        "lap",
+        "object"
+      ],
+      "title": "ContactTag",
+      "type": "string"
+    },
+    "InteractionTag": {
+      "enum": [
+        "handshake",
+        "hug",
+        "kiss",
+        "hold_hands_walk",
+        "hand_on_shoulder",
+        "hands_on_shoulders",
+        "comfort_kneeling",
+        "shoulder_rub",
+        "shelter_child",
+        "link_arms_walk",
+        "lead_by_arm",
+        "help_up",
+        "meet_and_sit",
+        "walk_together",
+        "conversation",
+        "swing_partner",
+        "dance_novelty",
+        "ring_around",
+        "high_five",
+        "low_five",
+        "pass_object",
+        "exchange_object",
+        "throw_catch",
+        "exercise_together",
+        "march",
+        "blindfold_tag",
+        "race_for_seat",
+        "stumble_into",
+        "approach",
+        "depart",
+        "no_contact",
+        "pull_resist",
+        "pull_by_elbow",
+        "arm_wrestle",
+        "quarrel",
+        "stare_down",
+        "threaten",
+        "kick",
+        "punch",
+        "push",
+        "point",
+        "head_on_shoulder",
+        "cuddle",
+        "slow_dance",
+        "carry_child",
+        "stroke_hair",
+        "hold_face"
+      ],
+      "title": "InteractionTag",
+      "type": "string"
+    },
+    "Modality": {
+      "enum": [
+        "mocap_segments",
+        "mocap_skeleton",
+        "mocap_smpl",
+        "mocap_smplh",
+        "multiview_rgb",
+        "rgbd_skeleton",
+        "video_rgb",
+        "still_image"
+      ],
+      "title": "Modality",
+      "type": "string"
+    },
+    "Posture": {
+      "enum": [
+        "standing",
+        "sitting",
+        "kneeling",
+        "walking",
+        "running",
+        "crouching",
+        "lying",
+        "dancing",
+        "leaning"
+      ],
+      "title": "Posture",
+      "type": "string"
+    },
+    "ReferenceFile": {
+      "additionalProperties": false,
+      "description": "One file on disk that belongs to a clip, addressed relative to the reference root.",
+      "properties": {
+        "camera": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Camera"
+        },
+        "path": {
+          "maxLength": 400,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "person_index": {
+          "anyOf": [
+            {
+              "maximum": 15,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Person Index"
+        },
+        "role": {
+          "enum": [
+            "clip_json",
+            "skeleton",
+            "skeleton_def",
+            "smpl",
+            "poses3d",
+            "poses2d",
+            "bbox",
+            "annotation",
+            "calibration",
+            "video",
+            "thumbnail"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "camera",
+        "path",
+        "person_index",
+        "role",
+        "sha256",
+        "size_bytes"
+      ],
+      "title": "ReferenceFile",
+      "type": "object"
+    },
+    "ReferenceJoint": {
+      "additionalProperties": false,
+      "description": "One joint. ``x`` and ``y`` are normalised but deliberately NOT clamped.\n\nJoints leave the frame: 3.55 % of the Harmony4D joints and 13.75 % of the SBU joints fall\noutside it. Clamping would move them to the edge and invent a pose; dropping them at ingest\nwould throw away the fact that the capture saw them. They are kept as measured, and the\nconversion to a ``SkeletonPose`` is where the drop rule applies.",
+      "properties": {
+        "in_frame": {
+          "default": true,
+          "title": "In Frame",
+          "type": "boolean"
+        },
+        "visible": {
+          "default": true,
+          "title": "Visible",
+          "type": "boolean"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Z"
+        }
+      },
+      "required": [
+        "in_frame",
+        "visible",
+        "x",
+        "y",
+        "z"
+      ],
+      "title": "ReferenceJoint",
+      "type": "object"
+    },
+    "ReferenceKeyPose": {
+      "additionalProperties": false,
+      "description": "One moment worth sampling: where the hands meet, where the embrace settles.",
+      "properties": {
+        "camera": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Camera"
+        },
+        "contact": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ContactTag"
+          },
+          "title": "Contact",
+          "type": "array"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "label": {
+          "enum": [
+            "start",
+            "contact",
+            "peak",
+            "settle",
+            "release",
+            "end"
+          ],
+          "title": "Label",
+          "type": "string"
+        },
+        "people": {
+          "items": {
+            "$ref": "#/$defs/ReferencePersonPose"
+          },
+          "minItems": 1,
+          "title": "People",
+          "type": "array"
+        }
+      },
+      "required": [
+        "camera",
+        "contact",
+        "frame_index",
+        "label",
+        "people"
+      ],
+      "title": "ReferenceKeyPose",
+      "type": "object"
+    },
+    "ReferencePersonPose": {
+      "additionalProperties": false,
+      "properties": {
+        "bones": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Bones",
+          "type": "array"
+        },
+        "joints": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ReferenceJoint"
+          },
+          "minProperties": 1,
+          "title": "Joints",
+          "type": "object"
+        },
+        "person_index": {
+          "maximum": 15,
+          "minimum": 0,
+          "title": "Person Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bones",
+        "joints",
+        "person_index"
+      ],
+      "title": "ReferencePersonPose",
+      "type": "object"
+    },
+    "ReferenceSource": {
+      "enum": [
+        "cmu_mocap",
+        "harmony4d",
+        "sbu_kinect",
+        "ut_interaction",
+        "tv_human_interactions",
+        "motionhub_egobody",
+        "motionhub_grab",
+        "motionhub_humanml3d",
+        "pexels",
+        "operator_recording"
+      ],
+      "title": "ReferenceSource",
+      "type": "string"
+    },
+    "UsageClass": {
+      "description": "What the material is good for, measured rather than assumed.",
+      "enum": [
+        "reference_only",
+        "pose_derivable",
+        "pixels_usable"
+      ],
+      "title": "UsageClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ReferenceClip.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One queryable sequence: what it is, what it can drive, and where its files are.",
+  "properties": {
+    "affection": {
+      "$ref": "#/$defs/Affection"
+    },
+    "camera_angles": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Camera Angles",
+      "type": "array"
+    },
+    "caption": {
+      "default": "",
+      "maxLength": 600,
+      "title": "Caption",
+      "type": "string"
+    },
+    "caption_source": {
+      "enum": [
+        "dataset",
+        "parsed_index",
+        "operator",
+        "derived"
+      ],
+      "title": "Caption Source",
+      "type": "string"
+    },
+    "clip_id": {
+      "pattern": "^[a-z0-9][a-z0-9_]{2,63}$",
+      "title": "Clip Id",
+      "type": "string"
+    },
+    "contact_tags": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ContactTag"
+      },
+      "title": "Contact Tags",
+      "type": "array"
+    },
+    "duration_s": {
+      "exclusiveMinimum": 0.0,
+      "title": "Duration S",
+      "type": "number"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/ReferenceFile"
+      },
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "frame_count": {
+      "minimum": 1,
+      "title": "Frame Count",
+      "type": "integer"
+    },
+    "height": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Height"
+    },
+    "ingested_at": {
+      "maxLength": 32,
+      "minLength": 10,
+      "title": "Ingested At",
+      "type": "string"
+    },
+    "ingester_version": {
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "title": "Ingester Version",
+      "type": "string"
+    },
+    "interaction_tags": {
+      "items": {
+        "$ref": "#/$defs/InteractionTag"
+      },
+      "minItems": 1,
+      "title": "Interaction Tags",
+      "type": "array"
+    },
+    "key_poses": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReferenceKeyPose"
+      },
+      "title": "Key Poses",
+      "type": "array"
+    },
+    "measured": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          }
+        ]
+      },
+      "title": "Measured",
+      "type": "object"
+    },
+    "modality": {
+      "$ref": "#/$defs/Modality"
+    },
+    "native_fps": {
+      "exclusiveMinimum": 0.0,
+      "title": "Native Fps",
+      "type": "number"
+    },
+    "people_count": {
+      "maximum": 8,
+      "minimum": 1,
+      "title": "People Count",
+      "type": "integer"
+    },
+    "pose_format": {
+      "enum": [
+        "none",
+        "cf_clip_v2",
+        "asf_amc",
+        "smpl",
+        "smplh",
+        "kinect15",
+        "coco17_3d",
+        "bbox_only"
+      ],
+      "title": "Pose Format",
+      "type": "string"
+    },
+    "pose_root": {
+      "anyOf": [
+        {
+          "maxLength": 400,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose Root"
+    },
+    "postures": {
+      "items": {
+        "$ref": "#/$defs/Posture"
+      },
+      "minItems": 1,
+      "title": "Postures",
+      "type": "array"
+    },
+    "retargeted_clip": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retargeted Clip"
+    },
+    "sampled_fps": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sampled Fps"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "setting": {
+      "default": "unknown",
+      "maxLength": 64,
+      "title": "Setting",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/ReferenceSource"
+    },
+    "source_ref": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Source Ref",
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/UsageClass"
+    },
+    "view_count": {
+      "default": 1,
+      "maximum": 64,
+      "minimum": 1,
+      "title": "View Count",
+      "type": "integer"
+    },
+    "width": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Width"
+    }
+  },
+  "required": [
+    "affection",
+    "camera_angles",
+    "caption",
+    "caption_source",
+    "clip_id",
+    "contact_tags",
+    "duration_s",
+    "files",
+    "frame_count",
+    "height",
+    "ingested_at",
+    "ingester_version",
+    "interaction_tags",
+    "key_poses",
+    "measured",
+    "modality",
+    "native_fps",
+    "people_count",
+    "pose_format",
+    "pose_root",
+    "postures",
+    "retargeted_clip",
+    "sampled_fps",
+    "schema_version",
+    "setting",
+    "source",
+    "source_ref",
+    "usage",
+    "view_count",
+    "width"
+  ],
+  "title": "ReferenceClip",
+  "type": "object"
+}

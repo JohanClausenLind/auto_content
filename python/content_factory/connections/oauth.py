@@ -3,8 +3,6 @@ URIs, single-use callbacks; tokens sealed into the vault the moment they arrive.
 
 from __future__ import annotations
 
-import base64
-import hashlib
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -16,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from content_factory.db.base import new_id
 from content_factory.db.models import ConnectedAccount, OAuthState
+from content_factory.security.pkce import pkce_pair
 from content_factory.security.vault import TokenVault
 
 STATE_TTL = timedelta(minutes=10)
@@ -38,14 +37,6 @@ class ProviderApp:
     supports_pkce: bool = True
 
 
-def _pkce_pair() -> tuple[str, str]:
-    verifier = base64.urlsafe_b64encode(secrets.token_bytes(48)).rstrip(b"=").decode()
-    challenge = (
-        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
-    )
-    return verifier, challenge
-
-
 async def begin(
     db: AsyncSession, *, workspace_id: str, app: ProviderApp, redirect_uri: str
 ) -> tuple[str, str]:
@@ -53,7 +44,7 @@ async def begin(
     if not redirect_uri.startswith(("http://127.0.0.1", "http://localhost", "https://")):
         raise OAuthError("redirect URI must be loopback or https")
     state = secrets.token_urlsafe(32)
-    verifier, challenge = _pkce_pair()
+    verifier, challenge = pkce_pair()
     now = datetime.now(UTC)
     db.add(
         OAuthState(

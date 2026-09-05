@@ -1,0 +1,8 @@
+[project]
+name = "cf-skill-manim"
+version = "0.1.0"
+description = "Opt-in Manim renderer for AnimationSpec (mathematical typesetting)"
+requires-python = ">=3.12"
+dependencies = [
+    "manim==0.19.0",
+]

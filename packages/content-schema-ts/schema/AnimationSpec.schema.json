@@ -1,0 +1,97 @@
+{
+  "$id": "https://content-factory.local/schema/AnimationSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "animation_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Animation Id",
+      "type": "string"
+    },
+    "duration_ms": {
+      "maximum": 60000,
+      "minimum": 500,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "fps": {
+      "default": 30,
+      "enum": [
+        24,
+        30
+      ],
+      "title": "Fps",
+      "type": "integer"
+    },
+    "height": {
+      "default": 720,
+      "maximum": 2160,
+      "minimum": 180,
+      "title": "Height",
+      "type": "integer"
+    },
+    "kind": {
+      "enum": [
+        "count_up",
+        "equation",
+        "diagram_build"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "steps": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 12,
+      "title": "Steps",
+      "type": "array"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "unit": {
+      "default": "",
+      "maxLength": 40,
+      "title": "Unit",
+      "type": "string"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Value"
+    },
+    "width": {
+      "default": 1280,
+      "maximum": 3840,
+      "minimum": 320,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "animation_id",
+    "duration_ms",
+    "fps",
+    "height",
+    "kind",
+    "steps",
+    "title",
+    "unit",
+    "value",
+    "width"
+  ],
+  "title": "AnimationSpec",
+  "type": "object"
+}

@@ -1,0 +1,332 @@
+{
+  "$defs": {
+    "CandidateEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "billed_s": {
+          "minimum": 0,
+          "title": "Billed S",
+          "type": "integer"
+        },
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "completion_p90_s": {
+          "minimum": 0,
+          "title": "Completion P90 S",
+          "type": "integer"
+        },
+        "cost": {
+          "$ref": "#/$defs/CostBreakdown"
+        },
+        "expected_completion_s": {
+          "minimum": 0,
+          "title": "Expected Completion S",
+          "type": "integer"
+        },
+        "total_usd": {
+          "minimum": 0,
+          "title": "Total Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "billed_s",
+        "candidate_id",
+        "completion_p90_s",
+        "cost",
+        "expected_completion_s",
+        "total_usd"
+      ],
+      "title": "CandidateEstimate",
+      "type": "object"
+    },
+    "CostBreakdown": {
+      "additionalProperties": false,
+      "description": "expected_total = all-attempt compute + storage + transfers + requests + licenses.",
+      "properties": {
+        "compute_usd": {
+          "minimum": 0,
+          "title": "Compute Usd",
+          "type": "number"
+        },
+        "licenses_usd": {
+          "minimum": 0,
+          "title": "Licenses Usd",
+          "type": "number"
+        },
+        "requests_usd": {
+          "minimum": 0,
+          "title": "Requests Usd",
+          "type": "number"
+        },
+        "retry_usd": {
+          "minimum": 0,
+          "title": "Retry Usd",
+          "type": "number"
+        },
+        "storage_usd": {
+          "minimum": 0,
+          "title": "Storage Usd",
+          "type": "number"
+        },
+        "transfer_usd": {
+          "minimum": 0,
+          "title": "Transfer Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "compute_usd",
+        "licenses_usd",
+        "requests_usd",
+        "retry_usd",
+        "storage_usd",
+        "transfer_usd"
+      ],
+      "title": "CostBreakdown",
+      "type": "object"
+    },
+    "PlacementRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "budget_scope_keys": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Budget Scope Keys",
+          "type": "array"
+        },
+        "deadline_s": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deadline S"
+        },
+        "max_usd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Usd"
+        },
+        "require_reliable": {
+          "default": false,
+          "title": "Require Reliable",
+          "type": "boolean"
+        },
+        "task_fingerprint": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Task Fingerprint",
+          "type": "string"
+        },
+        "vram_gb_required": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Vram Gb Required",
+          "type": "number"
+        }
+      },
+      "required": [
+        "budget_scope_keys",
+        "deadline_s",
+        "max_usd",
+        "require_reliable",
+        "task_fingerprint",
+        "vram_gb_required"
+      ],
+      "title": "PlacementRequest",
+      "type": "object"
+    },
+    "RejectedPlacement": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "reason"
+      ],
+      "title": "RejectedPlacement",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/PlacementDecision.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "budget_reservation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Budget Reservation Id"
+    },
+    "chosen_candidate_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Chosen Candidate Id"
+    },
+    "confidence": {
+      "default": 0.5,
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "considered": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CandidateEstimate"
+      },
+      "title": "Considered",
+      "type": "array"
+    },
+    "decided_at": {
+      "minLength": 4,
+      "title": "Decided At",
+      "type": "string"
+    },
+    "decision_id": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "expected_completion_s": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Completion S"
+    },
+    "expected_total_usd": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Total Usd"
+    },
+    "explanation": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Explanation",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "dispatch",
+        "wait",
+        "pause_budget",
+        "pause_no_candidate"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "policy_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "rejected": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RejectedPlacement"
+      },
+      "title": "Rejected",
+      "type": "array"
+    },
+    "request": {
+      "$ref": "#/$defs/PlacementRequest"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "task_fingerprint": {
+      "title": "Task Fingerprint",
+      "type": "string"
+    }
+  },
+  "required": [
+    "budget_reservation_id",
+    "chosen_candidate_id",
+    "confidence",
+    "considered",
+    "decided_at",
+    "decision_id",
+    "expected_completion_s",
+    "expected_total_usd",
+    "explanation",
+    "outcome",
+    "policy_version",
+    "rejected",
+    "request",
+    "schema_version",
+    "task_fingerprint"
+  ],
+  "title": "PlacementDecision",
+  "type": "object"
+}

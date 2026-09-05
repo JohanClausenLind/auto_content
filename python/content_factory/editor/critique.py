@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from content_factory.schemas.editing import (
+    OPERATION_INVALIDATION,
     ChangeSceneVariant,
     ClarifyingQuestion,
     CritiqueCategory,
@@ -178,7 +179,6 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                     ),
                 ),
                 units=(unit.unit_id,),
-                scopes=(InvalidationScope.layout, InvalidationScope.render),
                 plain=f"Enlarge labels, cap categories at six, and move the legend inline on {unit.label}. Data is unchanged.",  # noqa: E501
                 seconds=25,
             )
@@ -203,7 +203,6 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                 ),
                 (RetimeBeat(scene_id=intro.unit_id, duration_frames=new_len),),
                 units=(intro.unit_id,),
-                scopes=(InvalidationScope.timing, InvalidationScope.render),
                 plain=f"Shorten {intro.label} from {intro.duration_frames} to {new_len} frames; narration and captions recompile from measured audio.",  # noqa: E501
                 seconds=40,
             )
@@ -231,11 +230,6 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                     ),
                 ),
                 units=(target.unit_id,),
-                scopes=(
-                    InvalidationScope.layout,
-                    InvalidationScope.render,
-                    InvalidationScope.originality,
-                ),
                 plain=f"Replace the text of {target.label} with the wording you gave; only that card re-renders.",  # noqa: E501
                 seconds=20,
             )
@@ -259,7 +253,6 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                 ),
                 (ChangeSceneVariant(scene_id=target.unit_id, variant="sibling_default"),),
                 units=(target.unit_id,),
-                scopes=(InvalidationScope.layout, InvalidationScope.render),
                 plain=f"Switch {target.label} to the same layout variant as the other cards.",
                 seconds=15,
             )
@@ -282,11 +275,6 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
                 ),
                 (ReplaceTextRange(unit_id=unit.unit_id, start=0, end=0, replacement=""),),
                 units=(unit.unit_id,),
-                scopes=(
-                    InvalidationScope.layout,
-                    InvalidationScope.render,
-                    InvalidationScope.originality,
-                ),
                 plain=f"Rewrite {unit.label} in a plainer editorial register (claim-free passage).",
                 seconds=30,
             )
@@ -302,12 +290,24 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
     )
 
 
+def _invalidation_for(ops: tuple[EditOperation, ...]) -> tuple[InvalidationScope, ...]:
+    """Scopes an edit invalidates, read off the canonical OPERATION_INVALIDATION table.
+
+    First-seen order is preserved so the tuple stays deterministic across ops.
+    """
+    scopes: list[InvalidationScope] = []
+    for op in ops:
+        for scope in OPERATION_INVALIDATION[op.op]:
+            if scope not in scopes:
+                scopes.append(scope)
+    return tuple(scopes)
+
+
 def _plan(
     finding: CritiqueFinding,
     ops: tuple[EditOperation, ...],
     *,
     units: tuple[str, ...],
-    scopes: tuple[InvalidationScope, ...],
     plain: str,
     seconds: int,
     cost_usd: float = 0.0,
@@ -315,7 +315,7 @@ def _plan(
     return FixPlan(
         findings=(finding,),
         operations=ops,
-        impact=DependencyImpact(affected_unit_ids=units, invalidates=scopes),
+        impact=DependencyImpact(affected_unit_ids=units, invalidates=_invalidation_for(ops)),
         plain_language=plain,
         estimated_cost_usd=cost_usd,
         estimated_seconds=seconds,

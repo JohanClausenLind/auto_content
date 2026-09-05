@@ -118,3 +118,15 @@ describe("number formatting and data refs", () => {
     expect(resolveDataRef({ ...layer.value, dataset_id: "ds_missing000001" }, artboardBundle.datasets)).toBeUndefined();
   });
 });
+
+
+describe("Sora widths", () => {
+  it("measures the display family from its own table, wider than Inter at the same size", () => {
+    const inter = measureText("40.8", { weight: 700, fontSize: 200 });
+    const sora = measureText("40.8", { weight: 800, fontSize: 200, family: "Sora" });
+    expect(sora).toBeGreaterThan(0);
+    expect(sora).not.toBe(inter);
+    // an unknown weight for a family falls back rather than throwing
+    expect(measureText("x", { weight: 800, fontSize: 10 })).toBeGreaterThan(0);
+  });
+});

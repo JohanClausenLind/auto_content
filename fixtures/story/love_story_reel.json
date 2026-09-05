@@ -1,0 +1,59 @@
+{
+ "beats": [
+  {
+   "beat_id": "bea_lover_take00",
+   "claim_ids": [],
+   "display_text": "I saw you before I knew you.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 0,
+   "planned_duration_ms": 6000,
+   "spoken_text": null,
+   "words": []
+  },
+  {
+   "beat_id": "bea_lover_take01",
+   "claim_ids": [],
+   "display_text": "Every evening, the same square. The same twelve steps.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 1,
+   "planned_duration_ms": 9000,
+   "spoken_text": null,
+   "words": []
+  }
+ ],
+ "deliverable_id": "dlv_love_story_reel_film",
+ "fps": 24,
+ "handle_ms": 250,
+ "height": 576,
+ "hook_text": null,
+ "min_scene_ms": 1200,
+ "plan_id": "plan_love_story_reel_v1",
+ "scenes": [
+  {
+   "alt_text": "Overhead: two people crossing a plaza towards each other at dusk.",
+   "asset_id": "ast_lover_still00",
+   "beat_id": "bea_lover_take00",
+   "caption": null,
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_lover_scene00",
+   "variant": "default"
+  },
+  {
+   "alt_text": "Overhead: two people crossing a plaza towards each other at dusk.",
+   "asset_id": "ast_lover_still01",
+   "beat_id": "bea_lover_take01",
+   "caption": null,
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_lover_scene01",
+   "variant": "default"
+  }
+ ],
+ "schema_version": 1,
+ "width": 1024
+}

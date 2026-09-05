@@ -10,19 +10,12 @@ import io
 import json
 import subprocess
 from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
 from typing import cast
 
 from PIL import Image
 
-
-class Severity(StrEnum):
-    blocker = "blocker"
-    critical = "critical"
-    major = "major"
-    minor = "minor"
-    advisory = "advisory"
+from content_factory.schemas.base import Severity
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,428 @@
+{
+  "$defs": {
+    "EncoderCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "default": "",
+          "maxLength": 300,
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "default": "encode",
+          "enum": [
+            "encode",
+            "decode"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "verified",
+            "listed",
+            "failed",
+            "unsupported"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detail",
+        "kind",
+        "name",
+        "status"
+      ],
+      "title": "EncoderCapability",
+      "type": "object"
+    },
+    "GPUInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "compute_capability": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compute Capability"
+        },
+        "driver_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Driver Version"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "vendor": {
+          "enum": [
+            "nvidia",
+            "amd",
+            "apple",
+            "intel",
+            "unknown"
+          ],
+          "title": "Vendor",
+          "type": "string"
+        },
+        "vram_bytes": {
+          "minimum": 0,
+          "title": "Vram Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "compute_capability",
+        "driver_version",
+        "model",
+        "vendor",
+        "vram_bytes"
+      ],
+      "title": "GPUInfo",
+      "type": "object"
+    },
+    "HardwareInventory": {
+      "additionalProperties": false,
+      "properties": {
+        "arch": {
+          "title": "Arch",
+          "type": "string"
+        },
+        "benchmark_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Benchmark Revision"
+        },
+        "cpu_model": {
+          "title": "Cpu Model",
+          "type": "string"
+        },
+        "cpu_threads": {
+          "minimum": 1,
+          "title": "Cpu Threads",
+          "type": "integer"
+        },
+        "disk_free_bytes": {
+          "minimum": 0,
+          "title": "Disk Free Bytes",
+          "type": "integer"
+        },
+        "gpus": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/GPUInfo"
+          },
+          "title": "Gpus",
+          "type": "array"
+        },
+        "os": {
+          "title": "Os",
+          "type": "string"
+        },
+        "os_version": {
+          "title": "Os Version",
+          "type": "string"
+        },
+        "probed_at": {
+          "title": "Probed At",
+          "type": "string"
+        },
+        "ram_bytes": {
+          "minimum": 0,
+          "title": "Ram Bytes",
+          "type": "integer"
+        },
+        "runtimes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RuntimeInfo"
+          },
+          "title": "Runtimes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arch",
+        "benchmark_revision",
+        "cpu_model",
+        "cpu_threads",
+        "disk_free_bytes",
+        "gpus",
+        "os",
+        "os_version",
+        "probed_at",
+        "ram_bytes",
+        "runtimes"
+      ],
+      "title": "HardwareInventory",
+      "type": "object"
+    },
+    "ProbeResult": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Detail",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "failed",
+            "unsupported",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detail",
+        "name",
+        "status"
+      ],
+      "title": "ProbeResult",
+      "type": "object"
+    },
+    "RuntimeInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "version"
+      ],
+      "title": "RuntimeInfo",
+      "type": "object"
+    },
+    "VolumeInfo": {
+      "additionalProperties": false,
+      "description": "One mounted volume, identified stably (filesystem UUID or device identity), never by\nfragile device-order names such as /dev/sdb.",
+      "properties": {
+        "filesystem": {
+          "default": "unknown",
+          "maxLength": 40,
+          "title": "Filesystem",
+          "type": "string"
+        },
+        "free_bytes": {
+          "minimum": 0,
+          "title": "Free Bytes",
+          "type": "integer"
+        },
+        "label": {
+          "default": "",
+          "maxLength": 120,
+          "title": "Label",
+          "type": "string"
+        },
+        "media_class": {
+          "default": "unknown",
+          "enum": [
+            "hdd",
+            "ssd",
+            "nvme",
+            "removable",
+            "network",
+            "unknown"
+          ],
+          "title": "Media Class",
+          "type": "string"
+        },
+        "mount_path": {
+          "minLength": 1,
+          "title": "Mount Path",
+          "type": "string"
+        },
+        "total_bytes": {
+          "minimum": 0,
+          "title": "Total Bytes",
+          "type": "integer"
+        },
+        "volume_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Volume Id",
+          "type": "string"
+        },
+        "writable": {
+          "title": "Writable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "filesystem",
+        "free_bytes",
+        "label",
+        "media_class",
+        "mount_path",
+        "total_bytes",
+        "volume_id",
+        "writable"
+      ],
+      "title": "VolumeInfo",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/NodeCapabilityReport.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned probe of one enrolled machine. Rechecked on enrollment, reboot, hardware or\ndriver changes, and health events; placement must refuse reports older than its policy.",
+  "properties": {
+    "admitted_roles": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Admitted Roles",
+      "type": "array"
+    },
+    "discovered_at": {
+      "minLength": 4,
+      "title": "Discovered At",
+      "type": "string"
+    },
+    "encoders": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EncoderCapability"
+      },
+      "title": "Encoders",
+      "type": "array"
+    },
+    "hostname": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Hostname",
+      "type": "string"
+    },
+    "inventory": {
+      "$ref": "#/$defs/HardwareInventory"
+    },
+    "network_path": {
+      "default": "unknown",
+      "enum": [
+        "tailscale_direct",
+        "tailscale_relay",
+        "lan",
+        "unknown"
+      ],
+      "title": "Network Path",
+      "type": "string"
+    },
+    "node_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Node Id",
+      "type": "string"
+    },
+    "probes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProbeResult"
+      },
+      "title": "Probes",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "unknown_fields": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Unknown Fields",
+      "type": "array"
+    },
+    "volumes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/VolumeInfo"
+      },
+      "title": "Volumes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "admitted_roles",
+    "discovered_at",
+    "encoders",
+    "hostname",
+    "inventory",
+    "network_path",
+    "node_id",
+    "probes",
+    "schema_version",
+    "unknown_fields",
+    "volumes"
+  ],
+  "title": "NodeCapabilityReport",
+  "type": "object"
+}

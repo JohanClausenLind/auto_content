@@ -3,14 +3,15 @@ argument arrays; verify hashes; never download from a model-generated URL."""
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
 from pydantic import Field
 
-from content_factory.schemas.base import SchemaModel, Sha256Hex
+# file_sha256 lives next to sha256_hex in schemas.base; re-exported here because install-plan
+# callers (and tests) have always imported it from this module.
+from content_factory.schemas.base import SchemaModel, Sha256Hex, file_sha256
 
 ALLOWED_MODEL_HOSTS = ("huggingface.co", "civitai.com")
 
@@ -41,25 +42,22 @@ class InstallAction:
     command: tuple[str, ...]  # argument array, never a shell string
 
 
+def validate_model_source(source_url: str, filename: str) -> None:
+    """The one rulebook for where a model may come from and what it may be called; every
+    download path (plan compare and one-click alike) goes through it."""
+    parsed = urlparse(source_url)
+    if parsed.scheme != "https":
+        raise ModelInstallError(f"{filename}: model downloads must use https")
+    host = parsed.hostname or ""
+    if not any(host == d or host.endswith("." + d) for d in ALLOWED_MODEL_HOSTS):
+        raise ModelInstallError(f"{filename}: host {host!r} is not an allowlisted model source")
+    if ".." in filename or "/" in filename:
+        raise ModelInstallError(f"{filename}: invalid filename")
+
+
 def validate_plan(plan: ModelInstallPlan) -> None:
     for f in plan.files:
-        host = urlparse(f.source_url).hostname or ""
-        if urlparse(f.source_url).scheme != "https":
-            raise ModelInstallError(f"{f.filename}: model downloads must use https")
-        if not any(host == d or host.endswith("." + d) for d in ALLOWED_MODEL_HOSTS):
-            raise ModelInstallError(
-                f"{f.filename}: host {host!r} is not an allowlisted model source"
-            )
-        if ".." in f.filename or "/" in f.filename:
-            raise ModelInstallError(f"{f.filename}: invalid filename")
-
-
-def file_sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
+        validate_model_source(f.source_url, f.filename)
 
 
 def compute_actions(plan: ModelInstallPlan, workspace: Path) -> list[InstallAction]:
@@ -93,11 +91,3 @@ def compute_actions(plan: ModelInstallPlan, workspace: Path) -> list[InstallActi
                 )
             )
     return actions
-
-
-def verify_installed(plan: ModelInstallPlan, workspace: Path) -> dict[str, bool]:
-    return {
-        f.filename: (workspace / f.relative_path / f.filename).exists()
-        and file_sha256(workspace / f.relative_path / f.filename) == f.sha256
-        for f in plan.files
-    }

@@ -181,3 +181,24 @@ async def test_server_rejects_prompt_with_unknown_node_type(server: str, tmp_pat
             await client.run_package(pkg, {}, output_dir=tmp_path, timeout_s=5)
     finally:
         await client.aclose()
+
+
+async def test_history_collection_imports_outputs_without_the_socket(
+    server: str, tmp_path: Path
+) -> None:
+    """--cache-none suppresses websocket output events; polling /history must still import."""
+    client = ComfyUIClient(server, client_id="history-test")
+    try:
+        result = await client.run_package(
+            sample_workflow_package(),
+            {"width": 32, "height": 16, "color": 0x00FF00},
+            output_dir=tmp_path / "out",
+            collect="history",
+            poll_interval_s=0.05,
+            timeout_s=20,
+        )
+    finally:
+        await client.aclose()
+    assert result.state == ExecutionState.completed, result.error
+    assert result.outputs and result.outputs[0].local_path.exists()
+    assert result.provenance is not None and result.provenance.prompt_id == result.prompt_id

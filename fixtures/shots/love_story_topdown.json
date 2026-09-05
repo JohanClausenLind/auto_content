@@ -1,0 +1,7364 @@
+{
+ "deliverable_id": "dlv_love_story_film",
+ "plan_id": "shp_love_story_plan",
+ "planner": "fixture",
+ "planner_version": "0.1.0",
+ "schema_version": 1,
+ "shots": [
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.645,
+      "frame_index": 0,
+      "lens_mm": 28.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.645
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.525,
+      "frame_index": 48,
+      "lens_mm": 28.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.525
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.5,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.5,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 3.00 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 0,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1000,
+   "shot_id": "sht_love_0000",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.695,
+      "frame_index": 0,
+      "lens_mm": 28.931,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.695
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.575,
+      "frame_index": 48,
+      "lens_mm": 28.931,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.575
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.45335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.45335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.91 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 1,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1001,
+   "shot_id": "sht_love_0001",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.739,
+      "frame_index": 0,
+      "lens_mm": 29.8621,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.739
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.619,
+      "frame_index": 48,
+      "lens_mm": 29.8621,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.619
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.40665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.40665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.81 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 2,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1002,
+   "shot_id": "sht_love_0002",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.776,
+      "frame_index": 0,
+      "lens_mm": 30.7931,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.776
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.656,
+      "frame_index": 48,
+      "lens_mm": 30.7931,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.656
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.36,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.36,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.72 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 3,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1003,
+   "shot_id": "sht_love_0003",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.806,
+      "frame_index": 0,
+      "lens_mm": 31.7241,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.806
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.686,
+      "frame_index": 48,
+      "lens_mm": 31.7241,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.686
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.31335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.31335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.63 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 4,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1004,
+   "shot_id": "sht_love_0004",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.829,
+      "frame_index": 0,
+      "lens_mm": 32.6552,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.829
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.709,
+      "frame_index": 48,
+      "lens_mm": 32.6552,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.709
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.26665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.26665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.53 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 5,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1005,
+   "shot_id": "sht_love_0005",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.846,
+      "frame_index": 0,
+      "lens_mm": 33.5862,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.846
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.726,
+      "frame_index": 48,
+      "lens_mm": 33.5862,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.726
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.22,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.22,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.44 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 6,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1006,
+   "shot_id": "sht_love_0006",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.856,
+      "frame_index": 0,
+      "lens_mm": 34.5172,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.856
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.736,
+      "frame_index": 48,
+      "lens_mm": 34.5172,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.736
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.17335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.17335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.35 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 7,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1007,
+   "shot_id": "sht_love_0007",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.86,
+      "frame_index": 0,
+      "lens_mm": 35.4483,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.86
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.74,
+      "frame_index": 48,
+      "lens_mm": 35.4483,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.74
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.12665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.12665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.25 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 8,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1008,
+   "shot_id": "sht_love_0008",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.856,
+      "frame_index": 0,
+      "lens_mm": 36.3793,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.856
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.736,
+      "frame_index": 48,
+      "lens_mm": 36.3793,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.736
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.08,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.08,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.16 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 9,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1009,
+   "shot_id": "sht_love_0009",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.846,
+      "frame_index": 0,
+      "lens_mm": 37.3103,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.846
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.726,
+      "frame_index": 48,
+      "lens_mm": 37.3103,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.726
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -1.03335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       1.03335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 2.07 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 10,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1010,
+   "shot_id": "sht_love_0010",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.829,
+      "frame_index": 0,
+      "lens_mm": 38.2414,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.829
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.709,
+      "frame_index": 48,
+      "lens_mm": 38.2414,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.709
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.98665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.98665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 1.97 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 11,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1011,
+   "shot_id": "sht_love_0011",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.806,
+      "frame_index": 0,
+      "lens_mm": 39.1724,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.806
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.686,
+      "frame_index": 48,
+      "lens_mm": 39.1724,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.686
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.94,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.94,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 1.88 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 12,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1012,
+   "shot_id": "sht_love_0012",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.776,
+      "frame_index": 0,
+      "lens_mm": 40.1034,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.776
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.656,
+      "frame_index": 48,
+      "lens_mm": 40.1034,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.656
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.89335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.89335,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 1.79 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 13,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1013,
+   "shot_id": "sht_love_0013",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.739,
+      "frame_index": 0,
+      "lens_mm": 41.0345,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.739
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.619,
+      "frame_index": 48,
+      "lens_mm": 41.0345,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.619
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.84665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.84665,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 1.69 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 14,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1014,
+   "shot_id": "sht_love_0014",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.695,
+      "frame_index": 0,
+      "lens_mm": 41.9655,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.695
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.575,
+      "frame_index": 48,
+      "lens_mm": 41.9655,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.575
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.8,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994522,
+         -0.104528,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg01.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.L": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperleg02.R": {
+        "rotation_quaternion": [
+         1.0,
+         -0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.8,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down on a rain-wet stone plaza at dusk. Two people, far apart, walking towards each other. They are 1.60 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures keep walking steadily towards each other, long shadows sliding across wet stone",
+   "order": 15,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1015,
+   "shot_id": "sht_love_0015",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.15,
+      "frame_index": 0,
+      "lens_mm": 42.8966,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       6.15
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.03,
+      "frame_index": 48,
+      "lens_mm": 42.8966,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       6.03
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.95,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.95,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down. The two have stopped an arm's length apart, facing each other. They are 1.90 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures stand still and breathe, only clothes and hair moving in the wind",
+   "order": 16,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1016,
+   "shot_id": "sht_love_0016",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.087,
+      "frame_index": 0,
+      "lens_mm": 43.8276,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       6.087
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.967,
+      "frame_index": 48,
+      "lens_mm": 43.8276,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       5.967
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.9,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.9,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down. The two have stopped an arm's length apart, facing each other. They are 1.80 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures stand still and breathe, only clothes and hair moving in the wind",
+   "order": 17,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1017,
+   "shot_id": "sht_love_0017",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.016,
+      "frame_index": 0,
+      "lens_mm": 44.7586,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       6.016
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.896,
+      "frame_index": 48,
+      "lens_mm": 44.7586,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       5.896
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.85,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.85,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down. The two have stopped an arm's length apart, facing each other. They are 1.70 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures stand still and breathe, only clothes and hair moving in the wind",
+   "order": 18,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1018,
+   "shot_id": "sht_love_0018",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.936,
+      "frame_index": 0,
+      "lens_mm": 45.6897,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       5.936
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.816,
+      "frame_index": 48,
+      "lens_mm": 45.6897,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       5.816
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.8,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.8,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down. The two have stopped an arm's length apart, facing each other. They are 1.60 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures stand still and breathe, only clothes and hair moving in the wind",
+   "order": 19,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1019,
+   "shot_id": "sht_love_0019",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.848,
+      "frame_index": 0,
+      "lens_mm": 46.6207,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       5.848
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.728,
+      "frame_index": 48,
+      "lens_mm": 46.6207,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       5.728
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.75,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.75,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down. The two have stopped an arm's length apart, facing each other. They are 1.50 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures stand still and breathe, only clothes and hair moving in the wind",
+   "order": 20,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1020,
+   "shot_id": "sht_love_0020",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.752,
+      "frame_index": 0,
+      "lens_mm": 47.5517,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       5.752
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.632,
+      "frame_index": 48,
+      "lens_mm": 47.5517,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       5.632
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.7,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.997564,
+         -0.069756,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.7,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down. The two have stopped an arm's length apart, facing each other. They are 1.40 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, both figures stand still and breathe, only clothes and hair moving in the wind",
+   "order": 21,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1021,
+   "shot_id": "sht_love_0021",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.168,
+      "frame_index": 0,
+      "lens_mm": 48.4828,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.168
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.048,
+      "frame_index": 48,
+      "lens_mm": 48.4828,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.048
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.996195,
+         -0.087156,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.996195,
+         -0.087156,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.996195,
+         -0.087156,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.996195,
+         -0.087156,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         1.0,
+         0.0,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 22,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1022,
+   "shot_id": "sht_love_0022",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.249,
+      "frame_index": 0,
+      "lens_mm": 49.4138,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.249
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.129,
+      "frame_index": 48,
+      "lens_mm": 49.4138,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.129
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.995276,
+         -0.09709,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.995276,
+         -0.09709,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.995629,
+         0.093392,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.995629,
+         0.093392,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.995276,
+         -0.09709,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.995276,
+         -0.09709,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.995629,
+         0.093392,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.995629,
+         0.093392,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 23,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1023,
+   "shot_id": "sht_love_0023",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.329,
+      "frame_index": 0,
+      "lens_mm": 50.3448,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.329
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.209,
+      "frame_index": 48,
+      "lens_mm": 50.3448,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.209
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994258,
+         -0.107007,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994258,
+         -0.107007,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.982568,
+         0.185902,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.982568,
+         0.185902,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.994258,
+         -0.107007,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.994258,
+         -0.107007,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.982568,
+         0.185902,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.982568,
+         0.185902,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 24,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1024,
+   "shot_id": "sht_love_0024",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.409,
+      "frame_index": 0,
+      "lens_mm": 51.2759,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.409
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.289,
+      "frame_index": 48,
+      "lens_mm": 51.2759,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.289
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.993141,
+         -0.11692,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.993141,
+         -0.11692,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.960912,
+         0.276853,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.960912,
+         0.276853,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.993141,
+         -0.11692,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.993141,
+         -0.11692,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.960912,
+         0.276853,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.960912,
+         0.276853,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 25,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1025,
+   "shot_id": "sht_love_0025",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.489,
+      "frame_index": 0,
+      "lens_mm": 52.2069,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.489
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.369,
+      "frame_index": 48,
+      "lens_mm": 52.2069,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.369
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.991926,
+         -0.126815,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.991926,
+         -0.126815,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.930881,
+         0.365324,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.930881,
+         0.365324,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.991926,
+         -0.126815,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.991926,
+         -0.126815,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.930881,
+         0.365324,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.930881,
+         0.365324,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 26,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1026,
+   "shot_id": "sht_love_0026",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.569,
+      "frame_index": 0,
+      "lens_mm": 53.1379,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.569
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.449,
+      "frame_index": 48,
+      "lens_mm": 53.1379,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.449
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.990612,
+         -0.136705,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.990612,
+         -0.136705,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.892694,
+         0.450663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.892694,
+         0.450663,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.990612,
+         -0.136705,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.990612,
+         -0.136705,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.892694,
+         0.450663,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.892694,
+         0.450663,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 27,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1027,
+   "shot_id": "sht_love_0027",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.649,
+      "frame_index": 0,
+      "lens_mm": 54.069,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.649
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.529,
+      "frame_index": 48,
+      "lens_mm": 54.069,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.529
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.9892,
+         -0.146573,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.9892,
+         -0.146573,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.846739,
+         0.532008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.846739,
+         0.532008,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.9892,
+         -0.146573,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.9892,
+         -0.146573,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.846739,
+         0.532008,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.846739,
+         0.532008,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 28,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1028,
+   "shot_id": "sht_love_0028",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": null,
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.729,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       -0.15,
+       4.729
+      ],
+      "rotation_euler_deg": null
+     },
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.609,
+      "frame_index": 48,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9
+      ],
+      "position": [
+       0.0,
+       0.15,
+       4.609
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.987688,
+         -0.156434,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.987688,
+         -0.156434,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.793353,
+         0.608761,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.793353,
+         0.608761,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       -0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 90.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "bones": {
+       "lowerarm01.L": {
+        "rotation_quaternion": [
+         0.987688,
+         -0.156434,
+         0.0,
+         0.0
+        ]
+       },
+       "lowerarm01.R": {
+        "rotation_quaternion": [
+         0.987688,
+         -0.156434,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.L": {
+        "rotation_quaternion": [
+         0.793353,
+         0.608761,
+         0.0,
+         0.0
+        ]
+       },
+       "upperarm01.R": {
+        "rotation_quaternion": [
+         0.793353,
+         0.608761,
+         0.0,
+         0.0
+        ]
+       }
+      },
+      "kind": "bones",
+      "rig": "mpfb.default"
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.65,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": -90.0
+     }
+    }
+   ],
+   "description": "Straight down, close. Two hands rising towards each other, then holding. They are 1.30 m apart.",
+   "environment": {
+    "background_color": [
+     0.06,
+     0.07,
+     0.1
+    ],
+    "ground": {
+     "color": [
+      0.29,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 49,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 210.0,
+    "key_elevation_deg": 18.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "seen from directly above, the two hands rise slowly towards each other and close into a hold, fingers interlacing",
+   "order": 29,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1029,
+   "shot_id": "sht_love_0029",
+   "width": 1024
+  }
+ ],
+ "story_plan_hash": null
+}

@@ -13,13 +13,17 @@ export const rendererRoot = path.resolve(here, "..", "..");
 export const repoRoot = path.resolve(rendererRoot, "..", "..");
 export const publicDir = path.join(rendererRoot, "public");
 
-const FONT_FILES = [400, 500, 600, 700].map((w) => `inter-latin-${w}-normal.woff2`);
+// Mirrors FONT_FACES in @content-factory/content-ui (this script runs in plain Node before the bundle).
+const FONT_FILES = [
+  ...[400, 500, 600, 700].map((w) => ["@fontsource/inter", `inter-latin-${w}-normal.woff2`]),
+  ...[600, 700, 800].map((w) => ["@fontsource/sora", `sora-latin-${w}-normal.woff2`]),
+];
 
-/** Copy the pinned Inter faces from node_modules into public/fonts (Remotion serves public/). */
+/** Copy the pinned faces from node_modules into public/fonts (Remotion serves public/). */
 export function ensureFonts() {
-  const fontDir = path.dirname(require.resolve("@fontsource/inter/package.json"));
   mkdirSync(path.join(publicDir, "fonts"), { recursive: true });
-  for (const file of FONT_FILES) {
+  for (const [pkg, file] of FONT_FILES) {
+    const fontDir = path.dirname(require.resolve(`${pkg}/package.json`));
     const dst = path.join(publicDir, "fonts", file);
     if (!existsSync(dst)) copyFileSync(path.join(fontDir, "files", file), dst);
   }

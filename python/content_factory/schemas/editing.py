@@ -7,7 +7,13 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from content_factory.schemas.base import OpaqueId, SchemaModel, Sha256Hex, VersionedModel
+from content_factory.schemas.base import (
+    OpaqueId,
+    SchemaModel,
+    Severity,
+    Sha256Hex,
+    VersionedModel,
+)
 
 
 class InvalidationScope(StrEnum):
@@ -114,14 +120,6 @@ class CritiqueCategory(StrEnum):
     rights = "rights"
     policy = "policy"
     unclear = "unclear"
-
-
-class Severity(StrEnum):
-    blocker = "blocker"
-    critical = "critical"
-    major = "major"
-    minor = "minor"
-    advisory = "advisory"
 
 
 class CritiqueFinding(SchemaModel):

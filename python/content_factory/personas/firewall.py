@@ -8,7 +8,7 @@ logged with evidence; a firewall hit blocks the send and opens an ActionItem."""
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 
 
@@ -198,21 +198,3 @@ def screen_outbound(
             ),
         )
     return FirewallDecision(FirewallAction.allow, None, evidence="")
-
-
-@dataclass
-class FirewallLog:
-    """Every decision is recorded with evidence (immutable append-only in the DB later)."""
-
-    entries: list[dict] = field(default_factory=list)
-
-    def record(self, direction: str, decision: FirewallDecision, *, thread_id: str) -> None:
-        self.entries.append(
-            {
-                "direction": direction,
-                "thread_id": thread_id,
-                "action": decision.action.value,
-                "rule": decision.rule.value if decision.rule else None,
-                "evidence": decision.evidence[:120],
-            }
-        )

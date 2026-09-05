@@ -29,12 +29,13 @@ if ! grep -Eq '^VAULT_MASTER_KEY=[A-Za-z0-9+/=]{40,}$' .env; then
   sed -i "s|^VAULT_MASTER_KEY=.*|VAULT_MASTER_KEY=$key|" .env
   ok "generated VAULT_MASTER_KEY (token vault envelope key). Back it up: losing it means reconnecting every account."
 fi
-if ! grep -Eq '^VAPID_KEYS=\{' .env; then
-  keys=$(uv run python -c 'import json; from content_factory.notifications.push import generate_vapid_keys; print(json.dumps(generate_vapid_keys()))' 2>/dev/null || true)
+if ! grep -Eq "^VAPID_KEYS='?\{" .env; then
+  keys=$(uv run python -c 'import json; from content_factory.notifications.push import generate_vapid_keys; print(json.dumps(generate_vapid_keys(), separators=(",", ":")))' 2>/dev/null || true)
   if [ -n "$keys" ]; then
     python3 - "$keys" <<'PYEOF'
 import sys, pathlib
-keys = sys.argv[1]
+# single-quoted so the file stays sourceable by bash (set -a; . ./.env)
+keys = "'" + sys.argv[1] + "'"
 p = pathlib.Path(".env"); lines = p.read_text().splitlines()
 out = [f"VAPID_KEYS={keys}" if ln.startswith("VAPID_KEYS=") else ln for ln in lines]
 p.write_text("\n".join(out) + "\n")

@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 set -a; . ./.env; set +a
 DEST="${1:-backups}/$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$DEST"
-docker exec content-factory-postgres-1 pg_dump -U content_factory -d content_factory -Fc > "$DEST/content_factory.dump"
+docker compose exec -T postgres pg_dump -U content_factory -d content_factory -Fc > "$DEST/content_factory.dump"
 rsync -a --delete data/artifacts/ "$DEST/artifacts/" 2>/dev/null || cp -r data/artifacts "$DEST/artifacts"
 sha256sum "$DEST/content_factory.dump" > "$DEST/SHA256SUMS"
 find "$DEST/artifacts" -type f -print0 | sort -z | xargs -0 sha256sum >> "$DEST/SHA256SUMS" 2>/dev/null || true

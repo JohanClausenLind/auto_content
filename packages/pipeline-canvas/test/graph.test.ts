@@ -61,3 +61,26 @@ describe("describeRunNode", () => {
     expect(describeRunNode(cached!)).toBe("research, shared, complete, from cache, 850 ms");
   });
 });
+
+describe("provided edges", () => {
+  it("real edges from the API replace the implicit chain heuristic", () => {
+    const nodes = [
+      { node_id: "plan_story", stage: "plan_story", deliverable_id: null, state: "complete", attempts: 1, cache_hit: false, duration_ms: 10, error: null },
+      { node_id: "generate_video:g", stage: "generate_video", deliverable_id: "dlv_x", state: "complete", attempts: 1, cache_hit: false, duration_ms: 10, error: null },
+      { node_id: "render_animation:a", stage: "render_animation", deliverable_id: "dlv_x", state: "complete", attempts: 1, cache_hit: false, duration_ms: 10, error: null },
+    ] as const;
+    const provided = [
+      { source: "plan_story", target: "generate_video:g" },
+      { source: "plan_story", target: "render_animation:a" },
+      { source: "ghost", target: "plan_story" }, // dangling: dropped, never drawn
+    ];
+    const graph = buildGraph([...nodes], provided);
+    expect(graph.edges.map((e) => e.id).sort()).toEqual([
+      "plan_story->generate_video:g",
+      "plan_story->render_animation:a",
+    ]);
+    // fan-out, not a chain: the implicit heuristic would have chained g -> a
+    const implicit = buildGraph([...nodes]);
+    expect(implicit.edges.some((e) => e.source === "generate_video:g")).toBe(true);
+  });
+});

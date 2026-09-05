@@ -12,8 +12,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import FileResponse
 
-from content_factory.api.deps import Principal, require_role
-from content_factory.config import Settings, get_settings
+from content_factory.api.deps import Principal, app_settings, require_role
 from content_factory.db.models import Role
 
 router = APIRouter(prefix="/v1/sequences", tags=["sequences"])
@@ -29,9 +28,7 @@ _MEDIA_TYPES = {
 
 
 def _root(request: Request) -> Path:
-    stored = getattr(request.app.state, "settings", None)
-    settings = stored if isinstance(stored, Settings) else get_settings()
-    return Path(settings.image_sequences.output_root).resolve()
+    return Path(app_settings(request).image_sequences.output_root).resolve()
 
 
 def _summarize(seq_dir: Path) -> dict[str, Any]:

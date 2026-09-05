@@ -1,0 +1,966 @@
+/* Workspace chrome: workflow tabs, the panels around the canvas, the queue and check popovers.
+   Chrome colours ride the app theme (--cf-*); the canvas itself uses the node-graph tokens. */
+
+.cf-workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.cf-workspace__top {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--cf-border);
+  background: var(--cf-panel);
+  padding: 0 0.5rem 0 0;
+  flex: none;
+}
+.cf-workspace__tabs {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  min-width: 0;
+}
+.cf-wstab {
+  display: inline-flex;
+  align-items: center;
+  border-right: 1px solid var(--cf-border);
+  color: var(--cf-muted);
+  max-width: 16rem;
+}
+.cf-wstab[data-active] {
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  box-shadow: inset 0 -2px 0 var(--cf-accent);
+}
+.cf-wstab__button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.55rem 0.4rem 0.55rem 0.75rem;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+}
+.cf-wstab__name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.cf-wstab__input {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font-size: 0.82rem;
+  padding: 0.1rem 0.3rem;
+  width: 10rem;
+}
+.cf-wstab__close {
+  border: none;
+  background: transparent;
+  color: var(--cf-muted);
+  font-size: 0.7rem;
+  padding: 0.3rem;
+  margin-right: 0.3rem;
+  border-radius: var(--cf-radius-sm);
+  cursor: pointer;
+  visibility: hidden;
+}
+.cf-wstab:hover .cf-wstab__close,
+.cf-wstab[data-active] .cf-wstab__close {
+  visibility: visible;
+}
+.cf-wstab__close:hover {
+  background: var(--cf-hover);
+  color: var(--cf-fg);
+}
+.cf-wstab__new {
+  border: none;
+  background: transparent;
+  color: var(--cf-muted);
+  font-size: 1rem;
+  padding: 0 0.75rem;
+  cursor: pointer;
+}
+.cf-wstab__new:hover {
+  color: var(--cf-fg);
+}
+
+.cf-workspace__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+}
+.cf-wsbtn {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel-2);
+  color: var(--cf-fg);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+.cf-wsbtn:hover:not(:disabled) {
+  background: var(--cf-hover);
+}
+.cf-wsbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.cf-wsbtn[aria-pressed="true"] {
+  background: var(--cf-accent-soft);
+  border-color: var(--cf-accent);
+}
+.cf-wsbtn--run {
+  background: var(--cf-accent);
+  color: var(--cf-accent-fg);
+  border-color: transparent;
+  font-weight: 600;
+}
+.cf-wsbtn--run:hover:not(:disabled) {
+  background: var(--cf-accent-hover);
+}
+.cf-wsbtn__tri {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 0 4px 6px;
+  border-color: transparent transparent transparent currentColor;
+  margin-right: 2px;
+}
+
+.cf-workspace__body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.cf-workspace__library {
+  width: 15rem;
+  flex: none;
+  border-right: 1px solid var(--cf-border);
+  background: var(--cf-panel);
+  min-height: 0;
+}
+.cf-workspace__canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.cf-workspace__overview {
+  width: 17rem;
+  flex: none;
+  border-left: 1px solid var(--cf-border);
+  background: var(--cf-panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.cf-workspace__overview-head {
+  padding: 0.6rem 0.75rem 0;
+}
+.cf-workspace__overview-head h2 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Job queue: floats over the canvas like the reference editor's queue. */
+.cf-queue {
+  position: absolute;
+  top: 0.75rem;
+  right: 18rem;
+  z-index: 20;
+  width: 20rem;
+  max-width: calc(100% - 2rem);
+  background: var(--cf-panel);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  box-shadow: var(--cf-shadow-lg);
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+.cf-queue__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cf-queue__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.cf-queue__close {
+  border: none;
+  background: transparent;
+  color: var(--cf-muted);
+  cursor: pointer;
+  border-radius: var(--cf-radius-sm);
+  padding: 0.2rem 0.4rem;
+}
+.cf-queue__close:hover {
+  background: var(--cf-hover);
+  color: var(--cf-fg);
+}
+.cf-queue__hint {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--cf-muted);
+  font-size: 0.75rem;
+}
+.cf-queue__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 18rem;
+  overflow-y: auto;
+}
+.cf-queue__empty {
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+.cf-queue__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--cf-radius-md);
+  color: var(--cf-fg);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.cf-queue__row:hover {
+  background: var(--cf-hover);
+}
+.cf-queue__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cf-queue__state {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.05rem 0.5rem;
+  border-radius: var(--cf-radius-full);
+  border: 1px solid var(--cf-border);
+  color: var(--cf-muted);
+}
+.cf-queue__state[data-tone="ok"] {
+  color: var(--cf-success);
+  border-color: var(--cf-success);
+}
+.cf-queue__state[data-tone="busy"] {
+  color: var(--cf-accent);
+  border-color: var(--cf-accent);
+}
+.cf-queue__state[data-tone="bad"] {
+  color: var(--cf-danger);
+  border-color: var(--cf-danger);
+}
+
+/* Check-graph result panel. */
+.cf-check {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: 26rem;
+  max-width: calc(100% - 2rem);
+  background: var(--cf-panel);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  box-shadow: var(--cf-shadow-lg);
+  padding: 0.6rem 0.85rem 0.75rem;
+  font-size: 0.85rem;
+}
+.cf-check__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.cf-check__head button {
+  border: none;
+  background: transparent;
+  color: var(--cf-muted);
+  cursor: pointer;
+  border-radius: var(--cf-radius-sm);
+  padding: 0.15rem 0.35rem;
+}
+.cf-check__head button:hover {
+  background: var(--cf-hover);
+  color: var(--cf-fg);
+}
+.cf-check__list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--cf-danger);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.cf-check__order {
+  margin: 0.4rem 0 0;
+  color: var(--cf-muted);
+  font-size: 0.78rem;
+}
+.cf-check__warnings {
+  margin: 0.3rem 0 0;
+  color: var(--cf-warn);
+  font-size: 0.78rem;
+}
+.cf-check__honest {
+  margin: 0.5rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--cf-border);
+  color: var(--cf-muted);
+  font-size: 0.78rem;
+}
+
+/* Template browser — ComfyUI's dialog layout: category rail, header with search, card grid. */
+.cf-templates {
+  position: absolute;
+  inset: 0.75rem;
+  z-index: 25;
+  display: flex;
+  background: var(--cf-panel);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  box-shadow: var(--cf-shadow-lg);
+  overflow: hidden;
+}
+.cf-templates__nav {
+  width: 13rem;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-right: 1px solid var(--cf-border);
+  background: var(--cf-panel-2);
+  padding: 0.85rem 0.6rem;
+  min-height: 0;
+}
+/* The category list scrolls; the title above and the hint below stay put. */
+.cf-templates__catnav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.cf-templates__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.4rem;
+}
+.cf-templates__cats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cf-templates__cats button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  border: none;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: var(--cf-fg);
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  text-align: left;
+  text-transform: capitalize;
+}
+.cf-templates__cats button:hover {
+  background: var(--cf-hover);
+}
+.cf-templates__cats button[aria-pressed="true"] {
+  background: var(--cf-accent-soft);
+  font-weight: 600;
+}
+.cf-templates__count {
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+}
+.cf-templates__hint {
+  margin: auto 0 0;
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+  padding: 0 0.4rem;
+}
+.cf-templates__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cf-templates__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--cf-border);
+  flex: none;
+}
+.cf-templates__page {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.cf-templates__search {
+  flex: 1;
+  min-width: 0;
+  max-width: 24rem;
+  margin-left: auto;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font: 0.85rem var(--cf-font-sans);
+  padding: 0.45rem 0.7rem;
+  outline: none;
+}
+.cf-templates__search:focus-visible {
+  border-color: var(--cf-accent);
+}
+.cf-templates__close {
+  border: none;
+  background: transparent;
+  color: var(--cf-muted);
+  cursor: pointer;
+  border-radius: var(--cf-radius-sm);
+  padding: 0.25rem 0.5rem;
+}
+.cf-templates__close:hover {
+  background: var(--cf-hover);
+  color: var(--cf-fg);
+}
+.cf-templates__grid {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  /*
+   * Rows must be sized by their content, never divided up to fill the panel. Left as implicit
+   * `auto` tracks they collapsed to (panel - padding - gaps) / rows: measured in Firefox and
+   * Chromium alike, five cards per column came out 144px tall instead of 620px, which squashed
+   * each thumbnail to 1px and clipped 330px off every card — the Models expander and the "Use
+   * template" button among it — while `.cf-tpl { overflow: hidden }` hid that it had happened.
+   * The grid then had nothing left to overflow, so it could not scroll either.
+   */
+  grid-auto-rows: max-content;
+  gap: 1rem;
+  padding: 1rem;
+  align-content: start;
+}
+.cf-templates__empty {
+  color: var(--cf-muted);
+  padding: 1rem;
+}
+
+/* One template card: live graph thumbnail on top, name + models below. */
+.cf-tpl {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-bg);
+  overflow: hidden;
+}
+.cf-tpl__thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 9;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--cf-border);
+  cursor: pointer;
+  overflow: hidden;
+  background: transparent;
+}
+.cf-tpl__thumb .ng-thumb {
+  width: 100%;
+  height: 100%;
+  transition: transform 400ms ease-out;
+}
+.cf-tpl__thumb:hover .ng-thumb {
+  transform: scale(1.05);
+}
+.cf-tpl__badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--cf-radius-full);
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--cf-warn-soft);
+  color: var(--cf-warn);
+  border: 1px solid var(--cf-warn);
+}
+.cf-tpl__badge[data-ready] {
+  background: var(--cf-success-soft);
+  color: var(--cf-success);
+  border-color: var(--cf-success);
+}
+.cf-tpl__meta {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.5rem;
+  color: var(--cf-muted);
+  font-size: 0.68rem;
+}
+.cf-tpl__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.8rem 0.75rem;
+  flex: 1;
+}
+.cf-tpl__name {
+  margin: 0;
+  font-size: 0.92rem;
+}
+.cf-tpl__desc {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.78rem;
+}
+.cf-tpl__caveat {
+  margin: 0;
+  color: var(--cf-warn);
+  font-size: 0.74rem;
+}
+/* A precondition, not a limitation: the graph runs once the operator has supplied its inputs. */
+.cf-tpl__prereq {
+  margin: 0;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--cf-accent);
+  color: var(--cf-fg);
+  font-size: 0.74rem;
+}
+.cf-tpl__models {
+  font-size: 0.78rem;
+}
+.cf-tpl__models > summary {
+  cursor: pointer;
+  color: var(--cf-muted);
+  font-weight: 600;
+}
+.cf-tpl__models-count {
+  font-weight: 400;
+  margin-left: 0.35rem;
+}
+.cf-tpl__reqs {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.cf-tpl__req {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+}
+.cf-tpl__req-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cf-muted);
+  flex: none;
+}
+.cf-tpl__req[data-status="present"] .cf-tpl__req-dot {
+  background: var(--cf-success);
+}
+.cf-tpl__req[data-status="missing"] .cf-tpl__req-dot {
+  background: var(--cf-warn);
+}
+.cf-tpl__req-label {
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  min-width: 0;
+}
+.cf-tpl__req-status {
+  color: var(--cf-muted);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.cf-tpl__req-error {
+  flex-basis: 100%;
+  color: var(--cf-danger);
+  font-size: 0.72rem;
+  padding-left: 1rem;
+}
+.cf-tpl__req-setup {
+  flex-basis: 100%;
+  color: var(--cf-muted);
+  font-size: 0.7rem;
+  padding-left: 1rem;
+}
+.cf-tpl__download {
+  margin-left: auto;
+  border: 1px solid var(--cf-accent);
+  border-radius: var(--cf-radius-full);
+  background: var(--cf-accent-soft);
+  color: var(--cf-fg);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.6rem;
+  cursor: pointer;
+}
+.cf-tpl__download:hover:not(:disabled) {
+  background: var(--cf-accent);
+  color: var(--cf-accent-fg);
+}
+.cf-tpl__command {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: 1rem;
+  min-width: 0;
+}
+.cf-tpl__command code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: var(--cf-panel-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  padding: 0.2rem 0.4rem;
+  font-size: 0.68rem;
+}
+.cf-tpl__copy {
+  flex: none;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm);
+  background: var(--cf-panel-2);
+  color: var(--cf-fg);
+  font-size: 0.66rem;
+  padding: 0.15rem 0.45rem;
+  cursor: pointer;
+}
+.cf-tpl__copy:hover {
+  background: var(--cf-hover);
+}
+.cf-tpl__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-top: 0.4rem;
+}
+.cf-tpl__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.cf-tpl__tag {
+  font-size: 0.66rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--cf-radius-full);
+  border: 1px solid var(--cf-border);
+  color: var(--cf-muted);
+  white-space: nowrap;
+}
+
+/* Models panel (left library tab): installed groups, downloads, wanted, add-from-URL. */
+.cf-models {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.cf-models__scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.cf-models__heading {
+  margin: 0.5rem 0 0.3rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cf-fg);
+}
+.cf-models__sub {
+  color: var(--cf-muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.cf-models__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cf-models__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: var(--cf-radius-sm);
+  font-size: 0.78rem;
+  color: var(--cf-fg);
+}
+.cf-models__row:hover {
+  background: var(--cf-hover);
+}
+.cf-models__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cf-success);
+  flex: none;
+}
+.cf-models__row[data-state="running"] .cf-models__dot {
+  background: var(--cf-accent);
+}
+.cf-models__row[data-state="failed"] .cf-models__dot {
+  background: var(--cf-danger);
+}
+.cf-models__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cf-models__size {
+  color: var(--cf-muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.cf-models__empty {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.75rem;
+}
+.cf-models__group {
+  display: flex;
+  flex-direction: column;
+}
+.cf-models__add {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cf-models__add input,
+.cf-models__add select {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font: 0.78rem var(--cf-font-sans);
+  padding: 0.4rem 0.55rem;
+  min-width: 0;
+}
+.cf-models__add-row {
+  display: flex;
+  gap: 0.4rem;
+}
+.cf-models__add-row select {
+  flex: 1;
+}
+.cf-models__add-name {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cf-models__error {
+  margin: 0;
+  color: var(--cf-danger);
+  font-size: 0.72rem;
+}
+.cf-check__started {
+  margin: 0.4rem 0 0;
+  color: var(--cf-success);
+  font-size: 0.82rem;
+}
+.cf-check__started a {
+  color: inherit;
+  font-weight: 600;
+}
+
+/* Floating run bar, top-centre over the canvas like the reference editor. */
+.cf-runbar {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--cf-panel);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  box-shadow: var(--cf-shadow-md);
+  padding: 3px;
+}
+.cf-runbar__run {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  border-radius: calc(var(--cf-radius-lg) - 3px);
+  background: var(--cf-accent);
+  color: var(--cf-accent-fg);
+  font-size: 0.82rem;
+  font-weight: 650;
+  padding: 0.38rem 0.9rem;
+  cursor: pointer;
+}
+.cf-runbar__run:hover:not(:disabled) {
+  background: var(--cf-accent-hover);
+}
+.cf-runbar__run:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.cf-runbar__btn {
+  border: none;
+  border-radius: calc(var(--cf-radius-lg) - 3px);
+  background: transparent;
+  color: var(--cf-muted);
+  font-size: 0.78rem;
+  padding: 0.38rem 0.6rem;
+  cursor: pointer;
+}
+.cf-runbar__btn:hover {
+  background: var(--cf-hover);
+  color: var(--cf-fg);
+}
+.cf-runbar__btn[aria-pressed="true"] {
+  background: var(--cf-accent-soft);
+  color: var(--cf-fg);
+}
+
+
+/* Dropped files: what arrived, and what is worth doing with it. Sits over the canvas, bottom
+   left, so it never covers the run bar. */
+.cf-drop {
+  position: absolute;
+  left: 12px;
+  bottom: 64px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 24rem;
+}
+
+.cf-drop__card {
+  border: 1px solid var(--cf-border);
+  border-radius: 8px;
+  background: var(--cf-panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+  padding: 8px 10px;
+}
+
+.cf-drop__head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cf-drop__name {
+  font-weight: 600;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.cf-drop__what {
+  color: var(--cf-muted);
+  font-size: 11px;
+}
+
+.cf-drop__close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--cf-muted);
+  cursor: pointer;
+}
+
+.cf-drop__list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cf-drop__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cf-drop__why {
+  color: var(--cf-muted);
+  font-size: 11px;
+}
+
+.cf-drop__busy,
+.cf-drop__error {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--cf-muted);
+}
+
+.cf-drop__error {
+  color: var(--cf-danger);
+}
+
+.cf-drop__converted {
+  color: var(--cf-warn);
+  font-size: 11px;
+}

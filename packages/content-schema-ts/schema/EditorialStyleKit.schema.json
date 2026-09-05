@@ -1,0 +1,289 @@
+{
+  "$defs": {
+    "IntRange": {
+      "additionalProperties": false,
+      "properties": {
+        "hi": {
+          "minimum": 0,
+          "title": "Hi",
+          "type": "integer"
+        },
+        "lo": {
+          "minimum": 0,
+          "title": "Lo",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "hi",
+        "lo"
+      ],
+      "title": "IntRange",
+      "type": "object"
+    },
+    "MotionRules": {
+      "additionalProperties": false,
+      "description": "Timing grammar: animate to explain causality, never to add activity.",
+      "properties": {
+        "easing": {
+          "const": "cubic_ease_in_out",
+          "default": "cubic_ease_in_out",
+          "title": "Easing",
+          "type": "string"
+        },
+        "generated_clip_seconds": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 8,
+            "lo": 2
+          }
+        },
+        "label_hold_after_ms": {
+          "default": 500,
+          "minimum": 0,
+          "title": "Label Hold After Ms",
+          "type": "integer"
+        },
+        "label_lead_frames": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 8,
+            "lo": 4
+          }
+        },
+        "music_duck_below_voice_db": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 18,
+            "lo": 10
+          }
+        },
+        "narration_handle_ms": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 250,
+            "lo": 100
+          }
+        },
+        "narration_time_stretch_max_pct": {
+          "default": 3.0,
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Narration Time Stretch Max Pct",
+          "type": "number"
+        },
+        "photosensitive_safe": {
+          "const": true,
+          "default": true,
+          "title": "Photosensitive Safe",
+          "type": "boolean"
+        },
+        "scene_length_s": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 45,
+            "lo": 20
+          }
+        },
+        "shot_length_s": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 8,
+            "lo": 3
+          }
+        },
+        "title_max_s": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "maximum": 3,
+          "title": "Title Max S",
+          "type": "number"
+        },
+        "transition_overlap_frames": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 12,
+            "lo": 6
+          }
+        },
+        "visual_change_interval_s": {
+          "$ref": "#/$defs/IntRange",
+          "default": {
+            "hi": 5,
+            "lo": 2
+          }
+        }
+      },
+      "required": [
+        "easing",
+        "generated_clip_seconds",
+        "label_hold_after_ms",
+        "label_lead_frames",
+        "music_duck_below_voice_db",
+        "narration_handle_ms",
+        "narration_time_stretch_max_pct",
+        "photosensitive_safe",
+        "scene_length_s",
+        "shot_length_s",
+        "title_max_s",
+        "transition_overlap_frames",
+        "visual_change_interval_s"
+      ],
+      "title": "MotionRules",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/EditorialStyleKit.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Colors carry meaning: cyan explains, amber highlights, green confirms, coral fails.",
+  "properties": {
+    "accent": {
+      "default": "#47D7FF",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "title": "Accent",
+      "type": "string"
+    },
+    "accent_warm": {
+      "default": "#FFB547",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "title": "Accent Warm",
+      "type": "string"
+    },
+    "background": {
+      "default": "#08111F",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "title": "Background",
+      "type": "string"
+    },
+    "danger": {
+      "default": "#FF5C6C",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "title": "Danger",
+      "type": "string"
+    },
+    "font_math": {
+      "default": "STIX Two Math",
+      "maxLength": 64,
+      "title": "Font Math",
+      "type": "string"
+    },
+    "font_mono": {
+      "default": "IBM Plex Mono",
+      "maxLength": 64,
+      "title": "Font Mono",
+      "type": "string"
+    },
+    "font_sans": {
+      "default": "IBM Plex Sans",
+      "maxLength": 64,
+      "title": "Font Sans",
+      "type": "string"
+    },
+    "grid_columns": {
+      "default": 12,
+      "maximum": 24,
+      "minimum": 1,
+      "title": "Grid Columns",
+      "type": "integer"
+    },
+    "image_style_suffix": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Image Style Suffix",
+      "type": "string"
+    },
+    "ink": {
+      "default": "#F4F1E8",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "title": "Ink",
+      "type": "string"
+    },
+    "kit_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Kit Id",
+      "type": "string"
+    },
+    "motion": {
+      "$ref": "#/$defs/MotionRules",
+      "default": {
+        "easing": "cubic_ease_in_out",
+        "generated_clip_seconds": {
+          "hi": 8,
+          "lo": 2
+        },
+        "label_hold_after_ms": 500,
+        "label_lead_frames": {
+          "hi": 8,
+          "lo": 4
+        },
+        "music_duck_below_voice_db": {
+          "hi": 18,
+          "lo": 10
+        },
+        "narration_handle_ms": {
+          "hi": 250,
+          "lo": 100
+        },
+        "narration_time_stretch_max_pct": 3.0,
+        "photosensitive_safe": true,
+        "scene_length_s": {
+          "hi": 45,
+          "lo": 20
+        },
+        "shot_length_s": {
+          "hi": 8,
+          "lo": 3
+        },
+        "title_max_s": 1.0,
+        "transition_overlap_frames": {
+          "hi": 12,
+          "lo": 6
+        },
+        "visual_change_interval_s": {
+          "hi": 5,
+          "lo": 2
+        }
+      }
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "spacing_px": {
+      "default": 8,
+      "maximum": 64,
+      "minimum": 1,
+      "title": "Spacing Px",
+      "type": "integer"
+    },
+    "success": {
+      "default": "#66E39A",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "title": "Success",
+      "type": "string"
+    }
+  },
+  "required": [
+    "accent",
+    "accent_warm",
+    "background",
+    "danger",
+    "font_math",
+    "font_mono",
+    "font_sans",
+    "grid_columns",
+    "image_style_suffix",
+    "ink",
+    "kit_id",
+    "motion",
+    "schema_version",
+    "spacing_px",
+    "success"
+  ],
+  "title": "EditorialStyleKit",
+  "type": "object"
+}

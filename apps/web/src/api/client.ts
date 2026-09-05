@@ -31,19 +31,33 @@ import type {
   Session,
   ThemePrefs,
   Workspace,
+  ComfyModelsInventory,
+  DownloadJob,
+  GraphCompileResult,
+  GraphRunStarted,
+  GraphSummary,
+  ModelDownloadBody,
+  ModelCatalog,
+  InstallJob,
+  RelinkReport,
+  UploadedDrop,
+  HuggingFaceAccess,
 } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
   readonly detail: string;
+  /** The parsed response body, when the server sent JSON (structured 422s live here). */
+  readonly data: unknown;
   /** True when the server answered 403 with `X-Step-Up: required` (re-auth needed). */
   readonly stepUpRequired: boolean;
-  constructor(status: number, detail: string, stepUpRequired = false) {
+  constructor(status: number, detail: string, stepUpRequired = false, data: unknown = null) {
     super(detail);
     this.name = "ApiError";
     this.status = status;
     this.detail = detail;
     this.stepUpRequired = stepUpRequired;
+    this.data = data;
   }
 }
 
@@ -79,13 +93,17 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     }
   }
   if (!res.ok) {
+    const rawDetail =
+      data && typeof data === "object" && "detail" in data ? (data as { detail: unknown }).detail : null;
     const detail =
-      data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string"
-        ? (data as { detail: string }).detail
-        : res.status === 401
-          ? "You're signed out."
-          : `Request failed (${res.status}).`;
-    throw new ApiError(res.status, detail, res.headers.get("X-Step-Up") === "required");
+      typeof rawDetail === "string"
+        ? rawDetail
+        : rawDetail && typeof rawDetail === "object" && typeof (rawDetail as { message?: unknown }).message === "string"
+          ? (rawDetail as { message: string }).message
+          : res.status === 401
+            ? "You're signed out."
+            : `Request failed (${res.status}).`;
+    throw new ApiError(res.status, detail, res.headers.get("X-Step-Up") === "required", data);
   }
   return { status: res.status, data: data as T };
 }
@@ -104,6 +122,56 @@ export const api = {
     passkeyVerify: (challenge_id: string, credential: unknown) => request<Session>("POST", "/session/passkey/verify", { challenge_id, credential }).then((r) => r.data),
     switchWorkspace: (workspace_id: string) => request<Session>("POST", "/session/workspace", { workspace_id }).then((r) => r.data),
     stepUp: (password: string) => request<unknown>("POST", "/session/step-up", { password }).then(() => undefined),
+  },
+  graphs: {
+    list: () => request<GraphSummary[]>("GET", "/graphs").then((r) => r.data),
+    get: (graphId: string) => request<unknown>("GET", `/graphs/${encodeURIComponent(graphId)}`).then((r) => r.data),
+    put: (graphId: string, doc: unknown) => request<{ graph_id: string }>("PUT", `/graphs/${encodeURIComponent(graphId)}`, doc).then((r) => r.data),
+    delete: (graphId: string) => request<void>("DELETE", `/graphs/${encodeURIComponent(graphId)}`).then(() => undefined),
+    compile: (graphId: string) => request<GraphCompileResult>("POST", `/graphs/${encodeURIComponent(graphId)}/compile`).then((r) => r.data),
+    run: (graphId: string, quality: "smoke" | "demo") =>
+      request<GraphRunStarted>("POST", `/graphs/${encodeURIComponent(graphId)}/runs`, { quality }).then((r) => r.data),
+  },
+  comfy: {
+    models: () => request<ComfyModelsInventory>("GET", "/comfy/models").then((r) => r.data),
+    download: (body: ModelDownloadBody) => request<DownloadJob>("POST", "/comfy/models/download", body).then((r) => r.data),
+    downloads: () => request<DownloadJob[]>("GET", "/comfy/models/downloads").then((r) => r.data),
+  },
+  uploads: {
+    /**
+     * One file, multipart. The server sniffs it, stores it and answers with the node to spawn —
+     * the browser never decides what a file is (a name is not evidence) and never picks a path.
+     */
+    create: async (file: File): Promise<UploadedDrop> => {
+      const body = new FormData();
+      body.append("file", file, file.name);
+      let res: Response;
+      try {
+        res = await fetch(url("/uploads"), { method: "POST", credentials: "include", body });
+      } catch {
+        throw new ApiError(0, "Can't reach the server. Check that the API is running.");
+      }
+      const text = await res.text();
+      const data: unknown = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        const detail =
+          data && typeof data === "object" && typeof (data as { detail?: unknown }).detail === "string"
+            ? (data as { detail: string }).detail
+            : `Upload failed (${res.status}).`;
+        throw new ApiError(res.status, detail, false, data);
+      }
+      return data as UploadedDrop;
+    },
+  },
+  models: {
+    catalog: () => request<ModelCatalog>("GET", "/models/catalog").then((r) => r.data),
+    install: (key: string) => request<InstallJob>("POST", "/models/install", { key }).then((r) => r.data),
+    jobs: () => request<InstallJob[]>("GET", "/models/jobs").then((r) => r.data),
+    relink: () => request<RelinkReport>("POST", "/models/relink").then((r) => r.data),
+    hfAccess: () => request<HuggingFaceAccess>("GET", "/models/hf-access").then((r) => r.data),
+    /** Stores the token gated repositories need. The value is never read back. */
+    putHfAccess: (token: string) => request<void>("PUT", "/models/hf-access", { token }).then(() => undefined),
+    forgetHfAccess: () => request<void>("DELETE", "/models/hf-access").then(() => undefined),
   },
   runs: {
     list: () => request<RunSummary[]>("GET", "/runs").then((r) => r.data),

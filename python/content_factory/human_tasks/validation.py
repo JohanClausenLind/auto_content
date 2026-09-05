@@ -10,7 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from content_factory.audio.normalize import tokenize_words
+from content_factory.audio.normalize import NUMBER_TOKEN, spoken_word_shape
 
 Transcriber = Callable[[Path], str]
 """ASR: audio file → transcript text. Production uses faster-whisper; tests inject a mock."""
@@ -28,8 +28,21 @@ class TakeValidation:
 
 
 def _script_similarity(script: str, transcript: str) -> tuple[float, tuple[str, ...]]:
-    a = tokenize_words(script.lower())
-    b = tokenize_words(transcript.lower())
+    """How closely a transcript matches the script, with numbers compared as numbers.
+
+    Every run of digits or number words on **both** sides collapses to one sentinel first. Two
+    systems render a figure differently and neither is wrong: measured on this repo's own
+    fixtures, a script saying "40.8 terawatt-hours" transcribed as "40 8 terawatt hours" scored
+    0.73, and "twelve hundred"/"four fifty" came back as "1200"/"450" for the same 0.73. Both are
+    correct reads, and comparing the renderings measured the aligner's formatting rather than
+    whether the model said the script.
+
+    A beat that **drops** a figure still fails: the sentinel is per run, so a missing number is a
+    missing token in the sequence. What this no longer claims to check is *which* figure was
+    spoken — see `spoken_word_shape` for why an ASR transcript is not evidence of that.
+    """
+    a, script_runs = spoken_word_shape(script)
+    b, heard_runs = spoken_word_shape(transcript)
     matcher = difflib.SequenceMatcher(a=a, b=b, autojunk=False)
     ratio = matcher.ratio()
     diff: list[str] = []
@@ -40,7 +53,11 @@ def _script_similarity(script: str, transcript: str) -> tuple[float, tuple[str, 
             diff.append(f"- {' '.join(a[i1:i2])}")
         if op in {"replace", "insert"} and j2 > j1:
             diff.append(f"+ {' '.join(b[j1:j2])}")
-    return ratio, tuple(diff)
+    if script_runs != heard_runs:
+        diff.append(f"~ {script_runs} figure(s) in the script, {heard_runs} heard")
+    # The sentinel is unreadable in a diff a person reads, so it is spelled out there.
+    readable = tuple(line.replace(NUMBER_TOKEN, "<number>") for line in diff)
+    return ratio, readable
 
 
 def validate_take(

@@ -7,7 +7,13 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
-from content_factory.schemas.base import OpaqueId, SchemaModel, VersionedModel, WorkspaceId
+from content_factory.schemas.base import (
+    OpaqueId,
+    SchemaModel,
+    Sha256Hex,
+    VersionedModel,
+    WorkspaceId,
+)
 
 
 class InputMode(StrEnum):
@@ -191,15 +197,32 @@ ContentDeliverable = Annotated[
     Field(discriminator="type"),
 ]
 
-TEMPORAL_TYPES = frozenset({"long_video", "short_video", "audiogram"})
-AUDIO_TYPES = frozenset({"long_video", "short_video", "audio_clip", "audiogram"})
-STATIC_TYPES = frozenset({"single_image_post", "infographic", "cover"})
-
 
 class DeliverableRelationship(SchemaModel):
     from_id: OpaqueId
     to_id: OpaqueId
     kind: Literal["adaptation_of", "companion_to", "cover_for", "excerpt_of"]
+
+
+class StagedUpload(SchemaModel):
+    """A file the operator dropped into the workspace, already sniffed and stored.
+
+    It is carried on the campaign rather than fetched by the browser at run time because the
+    project directory does not exist until the run's first activity makes it: the run materialises
+    each of these into ``<project>/uploads/``, which is where the ``ingest`` stage looks. The
+    ``asset_id`` is the content-addressed artifact key — the bytes cannot change under it, and
+    nothing here is a path the caller chose.
+    """
+
+    asset_id: str = Field(min_length=1, max_length=300)
+    filename: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9][A-Za-z0-9._ -]*$")
+    """The operator's own name for it, sanitised. Never used to decide what the file is."""
+    kind: Literal["image", "video", "audio", "document", "data", "text"]
+    """Sniffed from the bytes by ``ingest.uploads`` when the file arrived, never from its name.
+    The sniff that decides what the run does with it happens again in the ``ingest`` stage, on
+    the bytes in the project folder, so this field is a label rather than a licence."""
+    size_bytes: int = Field(ge=1)
+    sha256: Sha256Hex
 
 
 class ContentCampaign(VersionedModel):
@@ -210,6 +233,9 @@ class ContentCampaign(VersionedModel):
     relationships: tuple[DeliverableRelationship, ...] = ()
     channel_brain_revision: str | None = None
     execution_preset: str = "balanced"
+    staged_uploads: tuple[StagedUpload, ...] = ()
+    """Files dropped on the canvas that this run should start from; materialised into the
+    project's uploads folder before any stage runs."""
 
     @model_validator(mode="after")
     def _unique_ids_and_relationships(self) -> ContentCampaign:

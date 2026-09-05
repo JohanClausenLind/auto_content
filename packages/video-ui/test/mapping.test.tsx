@@ -47,11 +47,15 @@ describe("timeline mapping", () => {
   });
 
   it("classifies every SceneSpec kind and titles them", () => {
-    expect(IMPLEMENTED_KINDS).toHaveLength(10);
+    // Named, not counted: a count goes stale the moment a kind is implemented and says nothing
+    // about which one moved. The complement below is the list that actually matters.
+    expect(IMPLEMENTED_KINDS).toHaveLength(new Set(IMPLEMENTED_KINDS).size);
+    expect(isImplementedKind("map")).toBe(true);
+    expect(isImplementedKind("screenshot")).toBe(true);
     const unknown = ALL_KINDS.filter((k) => !isImplementedKind(k));
-    expect(unknown).toEqual(expect.arrayContaining(["chart", "map", "image", "manim_asset"]));
+    expect([...unknown].sort()).toEqual(["data_table", "manim_asset", "ranking", "relationship_diagram"]);
     for (const scene of bundle.plan?.scenes ?? []) expect(sceneTitle(scene).length).toBeGreaterThan(0);
-    const chart = { beat_id: "b", caption: null, chart: "line", data: { claim_id: null, column: null, dataset_id: "ds_x", row_key: null }, dual_axis: false, emphasis: [], encoding: {}, kind: "chart", scene_id: "scn_chart000001", title: { claim_ids: [], text: "Wind share" }, truncation_disclosure: null, variant: "default", x: "year", y: ["share_pct"], zero_baseline: true } satisfies SceneSpec;
+    const chart = { beat_id: "b", caption: null, chart: "line", data: { claim_id: null, column: null, dataset_id: "ds_x", row_key: null }, dual_axis: false, emphasis: [], encoding: {}, kind: "chart", scene_id: "scn_chart000001", source_ids: [], title: { claim_ids: [], text: "Wind share" }, truncation_disclosure: null, variant: "default", x: "year", y: ["share_pct"], zero_baseline: true } satisfies SceneSpec;
     expect(sceneTitle(chart)).toBe("Wind share");
   });
 

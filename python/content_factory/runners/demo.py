@@ -13,7 +13,7 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
-from content_factory.artifacts import FilesystemArtifactStore
+from content_factory.artifacts import open_store
 from content_factory.audio.alignment import validate_alignment
 from content_factory.audio.captions import compile_captions, to_srt, to_webvtt
 from content_factory.audio.mix import apply_measurements, build_narration_stem, lay_out, master, mux
@@ -23,7 +23,12 @@ from content_factory.deliverables.dag_compiler import compile_dag
 from content_factory.qc.audio import check_audio_in_video
 from content_factory.research.citations import export_research, script_claim_gate
 from content_factory.research.claims import build_claim
-from content_factory.schemas.audio import AudioMixSpec, NarrationRequest, VoiceIdentity
+from content_factory.schemas.audio import (
+    AudioMixSpec,
+    MasterChainSpec,
+    NarrationRequest,
+    VoiceIdentity,
+)
 from content_factory.schemas.fixtures import (
     WS,
     sample_artboard_bundle,
@@ -144,7 +149,7 @@ def run_demo(
 ) -> dict:
     t0 = time.monotonic()
     projects_dir = projects_dir or REPO_ROOT / "projects"
-    store = FilesystemArtifactStore(artifacts_dir or REPO_ROOT / "data" / "artifacts")
+    store = open_store(artifacts_dir or REPO_ROOT / "data" / "artifacts")
     campaign = sample_campaign()
     project_id = "prj_demo00000001"
     root = projects_dir / project_id
@@ -294,8 +299,11 @@ def run_demo(
         loudness = master(
             stem,
             mastered,
-            target_lufs=mix_spec.target_lufs,
-            target_tp=mix_spec.target_true_peak_dbtp,
+            MasterChainSpec(
+                target_lufs=mix_spec.target_lufs,
+                target_true_peak_dbtp=mix_spec.target_true_peak_dbtp,
+                sample_rate_hz=mix_spec.sample_rate_hz,
+            ),
         )
         video_entry["stem_ms"] = total_ms
         video_entry["loudness"] = loudness.model_dump(mode="json")

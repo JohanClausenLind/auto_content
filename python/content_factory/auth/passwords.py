@@ -11,9 +11,15 @@ _hasher = PasswordHasher(
 )
 
 
-def hash_password(password: str) -> str:
-    if len(password) < 12:
-        msg = "password must be at least 12 characters"
+def hash_password(password: str, min_length: int | None = None) -> str:
+    """Hash a password, enforcing the configured minimum length (settings.auth.password_min_length,
+    default 12; the settings schema floors it at 4)."""
+    if min_length is None:
+        from content_factory.config import get_settings
+
+        min_length = get_settings().auth.password_min_length
+    if len(password) < min_length:
+        msg = f"password must be at least {min_length} characters"
         raise ValueError(msg)
     return _hasher.hash(password)
 

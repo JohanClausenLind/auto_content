@@ -19,7 +19,12 @@ from content_factory.schemas.sequences import (
     SubjectKeyframe,
     TrackedSubject,
 )
-from content_factory.sequences.engine import MockReferenceEditBackend, build_sequence
+from content_factory.sequences.engine import (
+    ControlConditioning,
+    MockReferenceEditBackend,
+    ReferenceEditBackend,
+    build_sequence,
+)
 from content_factory.sequences.instructions import PRESERVE_LIST, compile_edit_instruction
 
 LOCK = GenerationLock(
@@ -150,3 +155,37 @@ def test_single_frame_revision_rebuilds_only_that_frame(tmp_path: Path) -> None:
     assert rebuilt["cache_hit"] is False
     assert all(f.get("cache_hit") for f in cached)
     del first
+
+
+def test_conditioning_changes_the_marker_and_reaches_the_backend(tmp_path: Path) -> None:
+    class Recording(MockReferenceEditBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.conditioned: list[ControlConditioning] = []
+
+        def edit_conditioned(self, anchor_png, conditioning, instruction, lock, *, attempt):
+            self.conditioned.append(conditioning)
+            return ReferenceEditBackend.edit_conditioned(
+                self, anchor_png, conditioning, instruction, lock, attempt=attempt
+            )
+
+    plain = build_sequence(six_keyframe_plan(), LOCK, MockReferenceEditBackend(), tmp_path / "a")
+    backend = Recording()
+    refs = ControlConditioning(
+        reference_pngs=(b"identity-ref",), layout_boxes=(Box(x=0.1, y=0.4, w=0.2, h=0.3),)
+    )
+    conditioned = build_sequence(
+        six_keyframe_plan(), LOCK, backend, tmp_path / "b", conditioning_for=lambda _idx: refs
+    )
+    assert not plain.failed and not conditioned.failed
+    assert len(backend.conditioned) == 6
+    assert all(
+        c.control_png and c.reference_pngs == (b"identity-ref",) for c in backend.conditioned
+    )
+    # same frames, different cache keys: conditioning is part of the marker
+    assert [f["input_hash"] for f in plain.frames] != [f["input_hash"] for f in conditioned.frames]
+    # and a rerun with identical conditioning is a full cache hit
+    again = build_sequence(
+        six_keyframe_plan(), LOCK, Recording(), tmp_path / "b", conditioning_for=lambda _idx: refs
+    )
+    assert all(f["cache_hit"] for f in again.frames)

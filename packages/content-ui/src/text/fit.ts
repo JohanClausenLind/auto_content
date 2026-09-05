@@ -1,7 +1,19 @@
 // Deterministic text fitting. Widths come from the pinned Inter advance table (no canvas, no DOM),
 // so Node, the headless browser and tests agree byte-for-byte. Kerning is ignored, which only
 // makes the estimate wider than reality; a small safety factor covers hinting/rounding.
-import { INTER_WIDTHS, type InterWeight } from "../fonts/inter-widths";
+import { INTER_WIDTHS } from "../fonts/inter-widths";
+import { SORA_WIDTHS } from "../fonts/sora-widths";
+import type { FontFamily, FontWeight } from "../fonts";
+
+/** Advance-width table for a family/weight; unknown combinations fall back to the nearest Inter weight. */
+function widthTable(family: FontFamily | undefined, weight: FontWeight): Readonly<Record<string, number>> {
+  if (family === "Sora") {
+    const t = (SORA_WIDTHS as Record<number, Readonly<Record<string, number>>>)[weight];
+    if (t) return t;
+  }
+  const inter = INTER_WIDTHS as Record<number, Readonly<Record<string, number>>>;
+  return inter[weight] ?? inter[Math.min(700, Math.max(400, weight))] ?? INTER_WIDTHS[700];
+}
 
 /** Multiplier applied to measured widths so a line that "fits" never touches the frame edge. */
 export const FIT_SAFETY = 1.015;
@@ -10,15 +22,17 @@ const FALLBACK_ADVANCE = 1000;
 const ELLIPSIS = "…";
 
 export interface MeasureOptions {
-  weight: InterWeight;
+  weight: FontWeight;
+  /** Pinned family the text is set in; Inter when omitted. */
+  family?: FontFamily;
   fontSize: number;
   /** In em. */
   letterSpacing?: number;
 }
 
 /** Estimated advance width of `text` in px (without safety factor). */
-export function measureText(text: string, { weight, fontSize, letterSpacing = 0 }: MeasureOptions): number {
-  const table = INTER_WIDTHS[weight];
+export function measureText(text: string, { weight, fontSize, letterSpacing = 0, family }: MeasureOptions): number {
+  const table = widthTable(family, weight);
   let units = 0;
   let count = 0;
   for (const ch of text) {
@@ -83,7 +97,9 @@ export function wrapText(text: string, opts: WrapOptions): string[] {
 
 export interface FitOptions {
   text: string;
-  weight: InterWeight;
+  weight: FontWeight;
+  /** Pinned family the text is set in; Inter when omitted. */
+  family?: FontFamily;
   maxWidth: number;
   maxHeight: number;
   maxLines: number;
@@ -117,7 +133,7 @@ export function fitText(opts: FitOptions): FitResult {
   const start = Math.max(1, Math.floor(opts.preferredSize));
   const min = Math.max(1, Math.min(start, Math.floor(opts.minSize)));
   const attempt = (fontSize: number): FitResult => {
-    const measure: MeasureOptions = { weight: opts.weight, fontSize, letterSpacing: opts.letterSpacing ?? 0 };
+    const measure: MeasureOptions = { weight: opts.weight, fontSize, letterSpacing: opts.letterSpacing ?? 0, ...(opts.family ? { family: opts.family } : {}) };
     const lines = wrapText(opts.text, { ...measure, maxWidth: opts.maxWidth });
     const lineHeightPx = fontSize * opts.lineHeight;
     return {
@@ -144,7 +160,7 @@ export function fitText(opts: FitOptions): FitResult {
 }
 
 function truncate(r: FitResult, opts: FitOptions): FitResult {
-  const measure: MeasureOptions = { weight: opts.weight, fontSize: r.fontSize, letterSpacing: opts.letterSpacing ?? 0 };
+  const measure: MeasureOptions = { weight: opts.weight, fontSize: r.fontSize, letterSpacing: opts.letterSpacing ?? 0, ...(opts.family ? { family: opts.family } : {}) };
   const width = (s: string) => measureText(s, measure) * FIT_SAFETY;
   const roomLines = Math.max(1, Math.min(opts.maxLines, Math.floor(opts.maxHeight / r.lineHeightPx)));
   const lines = r.lines.slice(0, roomLines);
@@ -169,7 +185,9 @@ function truncate(r: FitResult, opts: FitOptions): FitResult {
 export interface FitNumberOptions {
   numeral: string;
   unit: string;
-  weight: InterWeight;
+  weight: FontWeight;
+  /** Pinned family the text is set in; Inter when omitted. */
+  family?: FontFamily;
   maxWidth: number;
   maxHeight: number;
   preferredSize: number;
@@ -198,8 +216,8 @@ export function fitNumber(opts: FitNumberOptions): FitNumberResult {
   const start = Math.max(1, Math.floor(opts.preferredSize));
   const min = Math.max(1, Math.min(start, Math.floor(opts.minSize)));
   const widthAt = (size: number) => {
-    const n = measureText(opts.numeral, { weight: opts.weight, fontSize: size, letterSpacing: opts.letterSpacing ?? 0 });
-    const u = opts.unit.length === 0 ? 0 : measureText(opts.unit, { weight: opts.weight, fontSize: size * unitScale }) + size * unitGap;
+    const n = measureText(opts.numeral, { weight: opts.weight, fontSize: size, letterSpacing: opts.letterSpacing ?? 0, ...(opts.family ? { family: opts.family } : {}) });
+    const u = opts.unit.length === 0 ? 0 : measureText(opts.unit, { weight: opts.weight, fontSize: size * unitScale, ...(opts.family ? { family: opts.family } : {}) }) + size * unitGap;
     return (n + u) * FIT_SAFETY;
   };
   // Width and height are monotone in size: solve directly, then snap to an integer.

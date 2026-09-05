@@ -1,0 +1,9 @@
+[project]
+name = "cf-skill-music"
+version = "0.1.0"
+description = "Isolated environment for the MiniMax-Music3 background-music library builder. Generation runs in the HOT-Step CPP engine (MIT) at external/HOT-Step-CPP over HTTP, so this environment needs no torch; weights are models/music/MiniMax-Music3-GGUF under the MiniMax-Music3 Community License. Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "numpy>=2.2.6",
+    "soundfile>=0.13.1",
+]

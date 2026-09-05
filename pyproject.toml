@@ -33,6 +33,7 @@ dependencies = [
     "pywebpush==2.5.0",
     "pyyaml==6.0.3",
     "rich==14.3.4",
+    "scenedetect==0.7.1",
     "sqlalchemy[asyncio]==2.0.52",
     "structlog==26.1.0",
     "temporalio==1.32.0",
@@ -65,12 +66,24 @@ select = ["E", "F", "I", "B", "UP", "N", "S", "ASYNC", "T20", "RUF"]
 ignore = ["S101", "RUF012"]
 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "typer.Option", "typer.Argument"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.File", "typer.Option", "typer.Argument"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "T20"]
 "python/content_factory/qc/media.py" = ["S607"]  # ffmpeg/ffprobe resolved from PATH by design
 "python/content_factory/audio/mix.py" = ["S603", "S607"]  # typed ffmpeg wrapper, argument arrays only
+"python/content_factory/audio/detect.py" = ["S603", "S607"]  # ffprobe/ffmpeg decode, argument arrays only
+"python/content_factory/audio/restore.py" = ["S603", "S607"]  # ffmpeg + uv from PATH, argument arrays only
+"python/content_factory/audio/condition.py" = ["S603", "S607"]  # ffmpeg/ebur128, argument arrays only
+"python/content_factory/media/video_generate.py" = ["S607"]  # ffmpeg/ffprobe from PATH by design
+"python/content_factory/workflows/stages.py" = ["S607"]  # ffmpeg + uv from PATH by design
+"skills/video/manim/render.py" = ["S607"]  # ffmpeg from PATH inside the opt-in skill env
+"skills/video/blender_scene/**" = ["S603", "S607", "T20", "E501", "N813"]  # blender via argv array; JSON summary on stdout; OpenImageIO as oiio
+"skills/video/postchain/**" = ["S603", "S607", "T20", "E501"]  # tool interpreters via argv arrays; JSON summary on stdout
+"skills/audio/sfx/**" = ["S603", "S607", "T20", "E501"]
+"skills/audio/music/**" = ["S603", "S607", "T20", "E501"]
+"skills/audio/resemble_enhance/**" = ["S603", "S607", "T20", "E501"]
+"skills/audio/clearervoice/**" = ["S603", "S607", "T20", "E501"]
 "python/content_factory/qc/audio.py" = ["S603", "S607"]
 "python/content_factory/qc/delivery.py" = ["S607"]
 "python/content_factory/qc/accessibility.py" = ["S607"]
@@ -82,19 +95,24 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
-include = ["python", "apps", "tests"]
+include = ["python", "apps", "tests", "scripts"]
 venvPath = "."
 venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "python"]
 pythonpath = ["."]
+# The core suite, defined ONCE. `just test`, CI and scripts/gate-clean-checkout.sh all rely on
+# this default; an explicit -m on the command line overrides it (that is how `just
+# test-integration` and the CI integration step select their own subsets).
+addopts = '-m "not integration and not gpu and not live and not blender"' 
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
   "integration: needs compose services (postgres, temporal)",
   "gpu: needs a local GPU",
   "live: needs live provider credentials (never in core CI)",
+  "blender: needs the system Blender (skills/video/blender_scene integration)",
 ]
 filterwarnings = ["error::DeprecationWarning:content_factory.*"]
 

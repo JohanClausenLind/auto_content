@@ -1,0 +1,155 @@
+# A film with no voice in it: pictures or clips carried by music and effects, or by nothing at all.
+#
+# Every other video lane here assumes narration and builds the sound around it. This one is for the
+# cuts where speech would be wrong: an ambient piece, a product loop, a title sequence, a montage.
+# Because nothing on screen is timed to a spoken line, the drawings and the motion are the whole
+# performance, so the lane spends its budget on picture and treats sound as a layer on top.
+#
+# The sound is optional in both directions. Drop select_music and sound_design and compose_video
+# still cuts, with a picture track and no audio: a genuinely silent film. Keep one of them and the
+# cut has a bed. There is no captions branch, since there is nothing said to caption.
+schema_version: 1
+id: silent-video
+name: Silent video
+description: >
+  A story plan becomes shots, drawings and motion, and the finished cut carries music and sound
+  effects but no speech. Nothing in the picture is timed to a spoken line, so the lane can also be
+  run with the sound stages removed, which delivers a silent cut. It cannot make narration, and it
+  writes no captions.
+category: video
+tags: [video, silent, music, sfx, no-voice]
+prerequisite: >
+  A brief, or a written script in fixtures/story/<name>.json set on plan_story.story. For music,
+  a local music library manifest under the music library dir; select_music picks nothing when it
+  is empty rather than failing.
+models:
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+  - kind: comfy
+    label: LTX-2.5 transformer
+    folder: diffusion_models
+    filename: ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 text encoder
+    folder: text_encoders
+    filename: gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 video VAE
+    folder: vae
+    filename: ltx-2.5-video-vae-conv-bf16.safetensors
+  # Sound is a layer, not the spine, so both sound weights are optional: without them the lane
+  # still delivers picture.
+  - kind: path
+    label: MMAudio weights
+    path_includes: mmaudio
+    optional: true
+  - kind: skill
+    label: SFX skill env
+    skill: skills/audio/sfx
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "a place, shown without commentary", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    note: The beats exist to order the pictures, not to be spoken.
+  - key: shots
+    type: plan_shots
+  - key: controls
+    type: compile_controls
+    note: >
+      The default 2D motion plan, not Blender. No dialogue means no repeated speaking characters to
+      keep consistent, which is the one thing that earns the 3D staging cost. Set compiler to
+      blender when the material does need staged bodies.
+  - key: anchor
+    type: generate_anchor
+    values:
+      prompt: "the scene as the shot plan frames it, no text and no on-screen words"
+      style: >
+        one consistent look across every shot, composed to read without narration, strong silhouette
+        and clear subject, no captions, no lettering
+    note: With nothing said, the frame has to carry the meaning on its own.
+  - key: motion
+    type: generate_video
+    values:
+      prompt: "unhurried motion that reads on its own, camera and subject as the shot plan stages them"
+      size: 1024x576
+    note: 'motion: hold instead cuts the drawings as held stills, which suits a slower silent piece.'
+  - key: smooth
+    type: interpolate
+  - key: music
+    type: select_music
+    values: {mood: calm}
+    note: >
+      The bed is the only thing under the picture, so it is chosen to sit there for the whole cut
+      rather than to fill gaps between lines.
+  - key: foley
+    type: sound_design
+    values: {backend: mmaudio, gain_db: -14.0}
+    note: >
+      Louder than the -22 dB default: that default keeps effects under narration, and here there is
+      no narration to stay under.
+  - key: mix
+    type: mix_audio
+    note: >
+      With no voice the music is the base and the effects bed on top of it, both looped to the
+      picture's length and mastered to the delivery level. Nothing ducks, because there is nothing
+      to duck under.
+  - key: cut
+    type: compose_video
+    note: >
+      No captions input: nothing is said, so there is nothing to caption. Drop music and foley too
+      and this writes a video-only cut with no audio stream at all.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: shots, to_slot: story}
+  - {from_key: shots, from_slot: shots, to_key: controls, to_slot: shots}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: controls, from_slot: controls, to_key: anchor, to_slot: controls}
+  - {from_key: anchor, from_slot: anchor, to_key: motion, to_slot: first_frame}
+  - {from_key: controls, from_slot: controls, to_key: motion, to_slot: controls}
+  - {from_key: motion, from_slot: video, to_key: smooth, to_slot: frames}
+  - {from_key: story, from_slot: story, to_key: music, to_slot: story}
+  - {from_key: smooth, from_slot: frames, to_key: foley, to_slot: frames}
+  - {from_key: music, from_slot: music, to_key: mix, to_slot: audio}
+  - {from_key: foley, from_slot: sfx, to_key: mix, to_slot: sfx}
+  - {from_key: smooth, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - shots
+  - controls
+  - anchor
+  - motion
+  - smooth
+  - music
+  - foley
+  - mix
+  - cut
+  - qc
+  - pack

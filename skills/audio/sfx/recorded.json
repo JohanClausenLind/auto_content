@@ -1,0 +1,362 @@
+{
+  "$comment": "Recipe for the recorded half of assets/sfx: excerpts cut from the #GameAudioGDC bundle the operator holds locally (royalty-free, commercial use, modification permitted, no attribution required). Selection rationale and the taxonomy these ids fill are in docs/research/2026-09-07-video-sfx-and-ambience-library.md; the ids are the same ones the generated recipe defines, because the point of this file is to put a real recording behind an id wherever the bundle holds one that is better than a generation. 27 ids here replace a generated sound of the same name and 11 are new. What is deliberately NOT here: every id the bundle cannot serve honestly. There is no stream in it, no night-only cricket bed, and its nearest office room tone is a fridge; those three stay generated rather than be filled with something that is nearly the sound. A ticking-clock BED was cut for the same reason and then dropped: a metronomic event inside a loop announces the wrap on every cycle, which is exactly what qc.event_prominence_db exists to catch, so the clock is here as a single tick instead. No timestamps are written by hand. Beds name a length and the builder sweeps the whole recording for the evenest window of it; one-shots name which event they want and the builder gates the file to find it.",
+  "sample_rate": 44100,
+  "channels": 2,
+  "defaults": {
+    "highpass_hz": 25,
+    "crossfade_law": "equal_power",
+    "search": { "hop_s": 1.0, "finalists": 6 },
+    "oneshot": { "event": -1, "min_gap_s": 0.15, "gate_db": -35.0 }
+  },
+  "targets": {
+    "oneshot": { "metric": "max_momentary_lufs", "value": -16.0, "true_peak_dbtp": -3.0 },
+    "bed": { "metric": "integrated_lufs", "value": -23.0, "true_peak_dbtp": -1.0 }
+  },
+  "sounds": [
+    {
+      "id": "rain_light_loop",
+      "category": "weather",
+      "replaces": "generated",
+      "tags": ["rain", "wet", "weather", "bed"],
+      "use": "General wet-weather bed. The safest rain: real garden rainfall, no thunder to clash with narration and no traffic to place it in a city.",
+      "src": { "pack": "InMotionAudio - Back Garden Storm", "file": "STORM_StormAmbience13_InMotionAudio_BackGardenStorm.wav" },
+      "loop": { "length_s": 24.0, "crossfade_s": 2.0 }
+    },
+    {
+      "id": "rain_window_loop",
+      "category": "weather",
+      "replaces": "generated",
+      "tags": ["rain", "window", "interior", "bed"],
+      "use": "Interior scene with weather outside. Heavy rain on real glass, so it is muffled where a synthesised rain is only quiet — dialogue sits over it easily.",
+      "src": { "pack": "Jake Fielding - Interior Wind Rain and Storms", "file": "RAINInt_Heavy Rain on Window,  Constant _JF_INT Storm.wav" },
+      "loop": { "length_s": 22.0, "crossfade_s": 2.0 }
+    },
+    {
+      "id": "rain_city_loop",
+      "category": "weather",
+      "tags": ["rain", "city", "street", "traffic", "bed"],
+      "use": "Rain over a street: splatter on concrete with a distant traffic wash under it. Use where the shot is urban and rain_light_loop would sound like open country.",
+      "src": { "pack": "The Noisery - City Rain", "file": "RAINConc_Rain Medium Exterior Splatter City Traffic 6_The Noisery_City Rain.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "storm_bed_loop",
+      "category": "weather",
+      "replaces": "generated",
+      "tags": ["storm", "rain", "wind", "bed"],
+      "use": "Heavy-weather bed. Continuous by design — the window was chosen for evenness, so no thunder clap is baked in; add thunder_distant on top where you want one.",
+      "src": { "pack": "InMotionAudio - Back Garden Storm", "file": "STORM_StormAmbience11_InMotionAudio_BackGardenStorm.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "hail_window_loop",
+      "category": "weather",
+      "tags": ["hail", "window", "interior", "bed"],
+      "use": "Interior under hail. Harder and more granular than rain_window_loop; good for a turn in a story that rain is too gentle for.",
+      "src": { "pack": "Jake Fielding - Interior Wind Rain and Storms", "file": "HAIL_Hail on Door Window, UVPC_JF_INT Storm.wav" },
+      "loop": { "length_s": 24.0, "crossfade_s": 2.0 }
+    },
+    {
+      "id": "wind_open_loop",
+      "category": "weather",
+      "replaces": "generated",
+      "tags": ["wind", "exterior", "landscape", "bed"],
+      "use": "Exteriors, landscapes, aerials. A real storm-force wind recorded in the open; gust swells are slow enough to read as one movement.",
+      "src": { "pack": "344 Audio - Extreme Winds Vol. 1", "file": "WINDDsgn_EXT, Eye Of The Storm_344 Audio_Extreme Winds Vol 1.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "thunder_distant",
+      "category": "weather",
+      "replaces": "generated",
+      "tags": ["thunder", "rumble", "storm", "one-shot"],
+      "use": "Drop over storm_bed_loop wherever you want a thunder roll. Kept separate on purpose: a clap baked into a loop announces the repeat every cycle.",
+      "src": { "pack": "Jake Fielding - Interior Wind Rain and Storms", "file": "THUN_Interior Thunder Rumble_JF_INT Storm_01.wav" },
+      "oneshot": { "max_s": 20.0, "min_gap_s": 1.0, "event": -1 },
+      "peak_band_hz": [30, 200]
+    },
+
+    {
+      "id": "ocean_waves_loop",
+      "category": "place",
+      "replaces": "generated",
+      "tags": ["ocean", "sea", "waves", "coast", "bed"],
+      "use": "Coastal establishing shots and calm reflective passages. Soft waves against cliffs on the Norwegian coast; the loop is long because a wave set is long.",
+      "src": { "pack": "Just Sound Effects - Rocky Coast of Norway", "file": "WATRWave_Soft Waves Cliffs_JSE_RCoN_Stereo.wav" },
+      "loop": { "length_s": 40.0, "crossfade_s": 4.0 }
+    },
+    {
+      "id": "city_distant_loop",
+      "category": "place",
+      "replaces": "generated",
+      "tags": ["city", "urban", "traffic", "bed"],
+      "use": "Urban interiors and skyline shots. A calm courtyard with the traffic a street away, so there are no sirens or horns to date a shot.",
+      "src": { "pack": "Epic Stock Media - Public Spaces - Urban Life Exteriors", "file": "AMBTown_City Courtyard Calm Street Distant Traffic Children Playing 03_ESM_CPS.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "crowd_murmur_loop",
+      "category": "place",
+      "replaces": "generated",
+      "tags": ["crowd", "walla", "murmur", "lobby", "bed"],
+      "use": "Conferences, museums, lobbies. A large hall's worth of voices at distance — the window was picked for the lowest event prominence, which is what keeps a single foreground sentence out of it.",
+      "src": { "pack": "Sonic Bat - Bars & Restaurants Ambience", "file": "SBbra_Shopping Mall Food Court B 001.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "pub_walla_loop",
+      "category": "place",
+      "tags": ["pub", "bar", "restaurant", "walla", "bed"],
+      "use": "Bar and restaurant interiors. Closer and warmer than crowd_murmur_loop, with glass and room in it; individual voices are audible, so keep it under narration rather than beside it.",
+      "src": { "pack": "Jake Fielding - British Walla and Crowd", "file": "CRWDWalla_Pub Walla Atmos, Restaurant, Liverpool, Scouse,_Jake Fielding_11.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "station_hall_loop",
+      "category": "place",
+      "tags": ["station", "hall", "transit", "reverb", "bed"],
+      "use": "Transit and institutional interiors: a big reverberant concourse. The long tail on every footstep is what sells the size of a room a shot only implies.",
+      "src": { "pack": "InMotionAudio - Grand Central Station", "file": "AMBTran_MainHallAmbience03B_InMotionAudio_GrandCentralStation.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "fireplace_loop",
+      "category": "place",
+      "replaces": "generated",
+      "tags": ["fire", "campfire", "crackle", "warm", "bed"],
+      "use": "Interior warmth, historical pieces, cosy segments. A real close-miked fire; the crackles are sparse, which is why the loop is long.",
+      "src": { "pack": "Ivo Vicic - Campfire - Bonfire FX", "file": "24 Campfire, Dropping Fresh Pine Branches in Fire, Crackling, Sizzling Strong, Close 02.wav" },
+      "loop": { "length_s": 24.0, "crossfade_s": 2.0 }
+    },
+    {
+      "id": "forest_day_loop",
+      "category": "place",
+      "replaces": "generated",
+      "tags": ["forest", "birds", "nature", "day", "bed"],
+      "use": "Nature documentary bed. Deciduous forest with birds and insects; the loop is long to hide the sparse calls.",
+      "src": { "pack": "344 Audio - East Coast America Vol. 1", "file": "AMBSubn_Ambience, Forest Crickets, Birds, Connecticut 02_344 Audio_East Coast America.wav" },
+      "loop": { "length_s": 28.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "meadow_day_loop",
+      "category": "place",
+      "tags": ["meadow", "grass", "insects", "upland", "bed"],
+      "use": "Open country rather than woodland: pipits, humming insects and wind through grass. The neutral outdoor bed for a map or a landscape hold.",
+      "src": { "pack": "Just Sound Effects - Highlands of Norway", "file": "AMBSwmp_Meadow Pipits calling many Insects humming Wind blowing through Grass_JSE_HoN_Stereo.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "lake_shore_loop",
+      "category": "place",
+      "tags": ["lake", "water", "ripples", "calm", "bed"],
+      "use": "Still water: ripples against a dock. The quiet water bed — use it under maps and reflective passages where ocean_waves_loop would be too much movement.",
+      "src": { "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors", "file": "WATRLap_Summer Tennessee Lake Dock Water Ripples Wake Wave Gentle 05 Distant_ESM_CPS.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+    {
+      "id": "park_wind_trees_loop",
+      "category": "place",
+      "tags": ["park", "wind", "trees", "foliage", "bed"],
+      "use": "Wind in foliage with a city wash behind it. The bed for an urban park or a tree-lined street — motion without weather.",
+      "src": { "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors", "file": "AMBPark_Berlin City Humboldthain Park Strong Wind On Trees Foliage Traffic Wash 03_ESM_CPS.wav" },
+      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
+    },
+
+    {
+      "id": "room_tone_hum_loop",
+      "category": "room-tone",
+      "tags": ["room-tone", "hum", "electrical", "interior", "bed"],
+      "use": "Domestic and small-room interiors: a deep appliance hum, which is most of what an indoor room tone actually is. Patch silence between takes with it and keep it very low.",
+      "src": { "pack": "Jake Fielding - Fridge Hums Vol.2", "file": "MACHAppl_Deep Fridge Hum, Buzz, Electric Tone, Deep_Jake Fielding_Fridge Hums Pt2.wav" },
+      "loop": { "length_s": 20.0, "crossfade_s": 2.0 },
+      "crossfade_law": "linear"
+    },
+
+    {
+      "id": "drone_low_loop",
+      "category": "drone",
+      "replaces": "generated",
+      "tags": ["drone", "tension", "tonal", "dark", "bed"],
+      "use": "Tension under a serious passage where music would be too much. A steady dark tonal layer, designed as a loop by its author.",
+      "src": { "pack": "Epic Stock Media - Strange Game Ambient Loops 3", "file": "DSGNSynth_Dark Loop Mystic Forest Tonal Steady Synth_ESM_SGA3.wav" },
+      "loop": { "length_s": 28.0, "crossfade_s": 3.0 },
+      "crossfade_law": "linear"
+    },
+
+    {
+      "id": "impact_soft",
+      "category": "impact",
+      "replaces": "generated",
+      "tags": ["impact", "thud", "low", "one-shot"],
+      "use": "Weight under a lower third or a card landing. The everyday impact: a real metal thud with a short low ring, no trailer tail.",
+      "src": { "pack": "The Noisery - Moaning Metal", "file": "DSGNImpt_Metal Hit Thud Thump Low Ring Geofon 1_The Noisery_Moaning Metal.wav" },
+      "oneshot": { "max_s": 5.5, "min_gap_s": 0.4, "event": -1 },
+      "peak_band_hz": [40, 250]
+    },
+    {
+      "id": "impact_cinematic",
+      "category": "impact",
+      "replaces": "generated",
+      "tags": ["impact", "boom", "cinematic", "title", "one-shot"],
+      "use": "Title cards and act breaks. A trailer boom with a long tail: leave it room, do not cut it short.",
+      "src": { "pack": "Federico Soler - Effective Trailer Booms Vol. 2", "file": "EffectiveTrailer_Booms_Vol2_011.wav" },
+      "oneshot": { "max_s": 14.0, "min_gap_s": 1.0, "event": -1 },
+      "peak_band_hz": [30, 200]
+    },
+    {
+      "id": "sub_drop",
+      "category": "impact",
+      "replaces": "generated",
+      "tags": ["sub", "drop", "downer", "section", "one-shot"],
+      "use": "Section change or a hard stop. A designed bass downer — check it on speakers that can reproduce 40 Hz.",
+      "src": { "pack": "344 Audio - Bass Drops & Downers Vol. 1", "file": "DSGNBass_Bass Drop & Downer Slow 10_344 Audio_Bass Drops & Downers.wav" },
+      "oneshot": { "max_s": 8.0, "min_gap_s": 1.0, "event": 0 },
+      "peak_band_hz": [25, 150]
+    },
+    {
+      "id": "braam_horn",
+      "category": "impact",
+      "tags": ["braam", "horn", "brass", "cinematic", "one-shot"],
+      "use": "The big version of braam_soft: a real horn section, dark and wide. For a title or a single gravest point — one per film, not one per chapter.",
+      "src": { "pack": "Jake Fielding - Cinematic Horn Braams", "file": "DSGNBram____Cinematic Horn Braam, Epic, Cinematic, Dark, Instrument, Huge-32.wav" },
+      "oneshot": { "max_s": 14.0, "min_gap_s": 1.0, "event": -1 },
+      "peak_band_hz": [60, 600]
+    },
+
+    {
+      "id": "whoosh_soft",
+      "category": "transition",
+      "replaces": "generated",
+      "tags": ["whoosh", "swoosh", "cut", "scene-change", "one-shot"],
+      "use": "Default cut-masker. A recorded air rush rather than filtered noise. Land the cut ~60% through the whoosh.",
+      "src": { "pack": "344 Audio - Elemental Palette Designed Vol. 1", "file": "WINDDsgn_Wind, Rush, Whoosh, Long x5 01_344 Audio_Elemental Palette Designed Vol 1.wav" },
+      "oneshot": { "max_s": 1.6, "min_gap_s": 0.2, "event": -1 },
+      "peak_band_hz": [250, 4000]
+    },
+    {
+      "id": "whoosh_reverse",
+      "category": "transition",
+      "replaces": "generated",
+      "tags": ["reverse", "riser", "sweep", "cut", "one-shot"],
+      "use": "Swell into a hard cut; align the stop exactly on the cut frame. A sweep that arrives rather than departs.",
+      "src": { "pack": "Cinematic Sound Design - Colossal Impacts", "file": "Impact Cut Sweep.wav" },
+      "oneshot": { "max_s": 2.8, "min_gap_s": 1.0, "event": 0, "gate_db": -60.0 }
+    },
+
+    {
+      "id": "click_soft",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["click", "button", "cursor", "one-shot"],
+      "use": "Cursor clicks in a screen recording or a product demo. A real light switch: mid-focused, so it reads over speech without the 4 kHz spike a bright UI click puts there.",
+      "src": { "pack": "InMotionAudio - USA Hotel", "file": "MECHClik_USALightSwitch_On05_InMotionAudio_USAHotel.wav" },
+      "oneshot": { "max_s": 0.35, "min_gap_s": 0.15, "event": -1 }
+    },
+    {
+      "id": "pop_in",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["pop", "appear", "icon", "callout", "one-shot"],
+      "use": "Something pops onto screen: an icon, a callout, a pin dropping on a map.",
+      "src": { "pack": "Cinematic Sound Design - Interface & Infographics", "file": "Interface Pop High Short.wav" },
+      "oneshot": { "max_s": 0.8, "min_gap_s": 0.2, "event": -1 }
+    },
+    {
+      "id": "tick_light",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["tick", "clock", "counter", "step", "one-shot"],
+      "use": "Step-by-step counters and timelines. One tick of a real mechanical clock — retrigger it; do not use data_ticks for slow counts.",
+      "src": { "pack": "344 Audio - Antique Clocks", "file": "CLOCKTick_Crooked Antique Clock_344 Audio_Antique Clocks.wav" },
+      "oneshot": { "max_s": 0.5, "min_gap_s": 0.15, "event": 2 }
+    },
+    {
+      "id": "counter_tick",
+      "category": "ui",
+      "tags": ["tick", "mechanism", "counter", "one-shot"],
+      "use": "The mechanical sibling of tick_light: a counting-machine detent, drier and shorter. For fast count-ups where a clock tick would ring.",
+      "src": { "pack": "Epic Stock Media - HD Lock And Mechanism Sound Design Kit", "file": "MACHMech_Mechanism Counting Machine Interact Loose Container Short 01_ESM_HDLM.wav" },
+      "oneshot": { "max_s": 0.4, "min_gap_s": 0.05, "event": 0 }
+    },
+    {
+      "id": "type_key",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["typewriter", "key", "text", "reveal", "one-shot"],
+      "use": "Typewriter text reveals. An actual typewriter key. Retrigger per character at low level.",
+      "src": { "pack": "344 Audio - Antique Typewriter", "file": "COMType_Typewriter Space Key, Typewriter 05_344 Audio_Antiques - Typewriter.wav" },
+      "oneshot": { "max_s": 0.6, "min_gap_s": 0.1, "event": 0 }
+    },
+    {
+      "id": "page_change",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["page", "turn", "paper", "slide", "one-shot"],
+      "use": "Turning to a new page, slide or chapter — a real page turn, which is the literal cue and reads instantly.",
+      "src": { "pack": "Cinematic Sound Design - Paper Foley", "file": "Encyclopedia Glossy Page Turn Muted.wav" },
+      "oneshot": { "max_s": 0.8, "min_gap_s": 0.3, "event": -1 }
+    },
+    {
+      "id": "notify_soft",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["notify", "message", "arp", "one-shot"],
+      "use": "A message or notification arriving on screen. A short bright pluck — kept whole, because the gesture is the sound.",
+      "src": { "pack": "Cinematic Sound Design - User Interface", "file": "Interface Plucks Happy.wav" },
+      "oneshot": { "max_s": 1.2, "min_gap_s": 0.6, "event": 0 }
+    },
+    {
+      "id": "success_chime",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["success", "chime", "kalimba", "complete", "one-shot"],
+      "use": "A step completing or a checkmark landing. Three ascending kalimba notes: tuned, warm, and over in under a second.",
+      "src": { "pack": "CB_Sounddesign - Applicable Sounds - Organic UI and Building Games SFX", "file": "UIMisc_Kalimba 3 Up_CB Sounddesign_APPlicable Sounds.wav" },
+      "oneshot": { "max_s": 1.2, "min_gap_s": 0.6, "event": 0 }
+    },
+    {
+      "id": "error_soft",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["error", "deny", "fail", "one-shot"],
+      "use": "Something did not work. A muted deny — deliberately matter-of-fact, not a buzzer.",
+      "src": { "pack": "Cinematic Sound Design - UI Interaction Elements", "file": "Deny Muted.wav" },
+      "oneshot": { "max_s": 1.2, "min_gap_s": 0.4, "event": -1 }
+    },
+    {
+      "id": "glitch_data",
+      "category": "ui",
+      "tags": ["glitch", "corrupt", "data", "error", "one-shot"],
+      "use": "Data corrupting, a feed dropping out, a system failing. The hard version of error_soft, for the beat where something breaks rather than merely refuses.",
+      "src": { "pack": "The Noisery - Rich Glitch", "file": "UIGlitch_Designed_Glitch_Corrupted_Data Error_The Noisery_Rich Glitch_06.wav" },
+      "oneshot": { "max_s": 5.5, "min_gap_s": 1.5, "event": 0 }
+    },
+    {
+      "id": "data_ticks",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["data", "readout", "stream", "count-up", "one-shot"],
+      "use": "Number count-ups and data streaming in. A continuous readout — fade it under narration rather than cutting it.",
+      "src": { "pack": "Cinematic Sound Design - User Interface", "file": "Readout Thin Long.wav" },
+      "oneshot": { "max_s": 4.5, "min_gap_s": 1.5, "event": 0 }
+    },
+    {
+      "id": "chart_reveal",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["chart", "reveal", "arp", "figure", "one-shot"],
+      "use": "A bar chart drawing in or a figure resolving. Time the last note of the arpeggio to the final frame of the animation.",
+      "src": { "pack": "Cinematic Sound Design - System & UI Feedback Elements", "file": "Interface Arp Reveal Down Long.wav" },
+      "oneshot": { "max_s": 2.0, "min_gap_s": 0.6, "event": 0 }
+    },
+    {
+      "id": "slide_transition",
+      "category": "ui",
+      "replaces": "generated",
+      "tags": ["slide", "sweep", "infographic", "panel", "one-shot"],
+      "use": "A graph, panel or dashboard view sliding to the next state. Short, dry and made for infographics.",
+      "src": { "pack": "Cinematic Sound Design - Ultra Transitions & Impacts", "file": "Woosh Sweep Slide Infographics Basic.wav" },
+      "oneshot": { "max_s": 0.8, "min_gap_s": 0.3, "event": -1 }
+    }
+  ]
+}

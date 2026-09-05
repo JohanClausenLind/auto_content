@@ -1,0 +1,181 @@
+# One clip, finished for posting.
+#
+# This replaces video-to-social, which described a lane that took an existing video and cut it down.
+# The material here is made rather than found: one picture, one motion pass over it, its own voice,
+# its own sound design, its own captions, then a package per destination. Named for what it does to
+# the material, not for a subject: the same lane makes a product teaser, a field note or a joke,
+# depending only on the brief.
+#
+# The lane is deliberately one clip long. There is no shot planner and no 3D staging, because a
+# single generation does not need a continuity apparatus; use picture-story when the film has beats
+# that must look like the same place shot after shot.
+schema_version: 1
+id: single-clip-post
+name: Single clip post
+description: >
+  A brief becomes one short vertical clip that is ready to post. The image model draws the frame,
+  LTX moves it, the narration is synthesized and cleaned, word timings drive the captions, MMAudio
+  writes the sound under the voice, and the mixed cut is checked and packaged per destination.
+category: social
+tags: [clip, vertical, voice, captions, sound, delivery]
+caveat: >
+  compose_video's frames input is left unwired on purpose: this lane makes a clip, not a frame
+  sequence, so the picture arrives on clips and the composer picks it up from the run directory.
+  The publish node is the canvas terminal; the runner stops after the destination packages.
+prerequisite: >
+  A topic on the brief, or a written script as fixtures/story/<name>.json set on plan_story's story
+  widget. Nothing needs recording: the voice is synthesized. Posting needs a distribution profile.
+models:
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+  - kind: comfy
+    label: LTX-2.5 transformer
+    folder: diffusion_models
+    filename: ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 text encoder
+    folder: text_encoders
+    filename: gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 video VAE
+    folder: vae
+    filename: ltx-2.5-video-vae-conv-bf16.safetensors
+  - kind: path
+    label: Qwen3-TTS CustomVoice weights
+    path_includes: qwen3-tts-1.7b-customvoice
+    filename: model.safetensors
+  - kind: skill
+    label: Qwen3-TTS skill env
+    skill: skills/audio/qwen3tts
+  - kind: path
+    label: MMAudio large 44k v2
+    path_includes: mmaudio
+    filename: mmaudio_large_44k_v2.pth
+  # Only loaded when the artifact detector fires, because restore_speech's gate stays on "detected".
+  - kind: path
+    label: Resemble Enhance weights
+    path_includes: resemble-enhance
+    optional: true
+  - kind: skill
+    label: Resemble Enhance skill env
+    skill: skills/audio/resemble_enhance
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "one thing worth watching for eight seconds", audience: general}
+  - key: story
+    type: plan_story
+    values: {beats: 3}
+    note: Three beats, because one clip cannot carry five and still land.
+  - key: script
+    type: lock_script
+    note: The script is frozen here so the word timings the captions use stay valid.
+  - key: narration
+    type: synthesize_narration
+    values:
+      voice: qwen3tts
+      instruct: "close, level delivery, no announcer lift at the end of a line"
+    note: No recording in this lane, so the voice is generated from the locked script.
+  - key: clean
+    type: restore_speech
+    values: {enhancer: resemble_enhance, device: cuda}
+    note: >
+      Synthesized speech is clean until it is not. The gate stays on "detected", so restoration
+      only runs on beats where the detector hears an artifact.
+  - key: timings
+    type: align_words
+  - key: captions
+    type: compile_captions
+    note: SRT, which compose_video burns in. Posted clips are watched with the sound off.
+  - key: anchor
+    type: generate_anchor
+    values:
+      prompt: "the subject of the brief, one clear vertical frame, nothing else competing for the eye"
+      style: >
+        photographic, single strong light, shallow depth of field, muted palette, vertical framing
+        with the subject off centre, no text, no logo, no collage
+    note: The one frame the motion pass grows from, so the whole clip inherits its look.
+  - key: motion
+    type: generate_video
+    values:
+      prompt: "slow push in on the subject, small real movement in the frame, no camera shake"
+      size: 576x1024
+      duration: 6.0
+    note: 9:16 at six seconds. One generation is the whole picture; there is nothing to cut to.
+  - key: foley
+    type: sound_design
+    values: {backend: mmaudio, negative_prompt: "music, speech"}
+    note: MMAudio watches the clip. Speech and music are excluded so the bed stays under the voice.
+  - key: mix
+    type: mix_audio
+    note: Narration with the sound bed ducked under it, mastered to the -14 LUFS the platforms want.
+  - key: cut
+    type: compose_video
+  - key: originality
+    type: originality_gate
+    note: Checked against the archive before anything is packaged. A block here is not overridable.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+  - key: publish
+    type: publish.social
+    note: >
+      Destination and profile are chosen per run, and the post is approval gated. The runner skips
+      this node: it marks where the packages go.
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: narration, to_slot: script}
+  - {from_key: narration, from_slot: audio, to_key: clean, to_slot: audio}
+  - {from_key: clean, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: anchor, from_slot: anchor, to_key: motion, to_slot: first_frame}
+  - {from_key: motion, from_slot: video, to_key: foley, to_slot: video}
+  - {from_key: clean, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: foley, from_slot: sfx, to_key: mix, to_slot: sfx}
+  - {from_key: motion, from_slot: video, to_key: cut, to_slot: clips}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: captions, from_slot: captions, to_key: cut, to_slot: captions}
+  - {from_key: cut, from_slot: video, to_key: originality, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+  - {from_key: pack, from_slot: packages, to_key: publish, to_slot: packages}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+  - {from_key: originality, from_slot: verdict, to_key: deliver, to_slot: files}
+
+order:
+  - story
+  - script
+  - narration
+  - clean
+  - timings
+  - captions
+  - anchor
+  - motion
+  - foley
+  - mix
+  - cut
+  - originality
+  - qc
+  - pack
+  - publish

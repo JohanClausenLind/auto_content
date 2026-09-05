@@ -5,7 +5,8 @@
         "provider",
         "forced_alignment",
         "asr",
-        "synthetic"
+        "synthetic",
+        "estimated"
       ],
       "title": "TimingSource",
       "type": "string"
@@ -28,9 +29,11 @@
         "provider": {
           "enum": [
             "mock",
+            "qwen3tts",
             "kokoro",
             "elevenlabs",
-            "azure"
+            "azure",
+            "human"
           ],
           "title": "Provider",
           "type": "string"

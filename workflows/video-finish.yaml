@@ -1,0 +1,110 @@
+# The finishing chain, on its own.
+#
+# Every lane that ends in a picture borrows these four steps: remove what should not be in frame,
+# restore and upscale, interpolate to a higher frame rate, then QC. picture-story runs a subset of
+# them inline. It is also a workflow in its own right because footage arrives that this repo did
+# not generate: a render from elsewhere, a camera file, a clip from a run whose earlier stages have
+# already been thrown away. Having the chain as one definition means that footage goes through the
+# same steps in the same order as everything else, instead of through a hand-typed postchain call.
+#
+# It generates nothing. There is no picture stage and no sound stage here on purpose: whatever went
+# in comes out cleaner, larger and smoother, and nothing else about it changes.
+schema_version: 1
+id: video-finish
+name: Video finishing
+description: >
+  A video or frame sequence that already exists, finished: tracked objects inpainted out of every
+  frame, SeedVR2 restore and upscale, interpolation to a higher frame rate, then QC and the
+  destination packages. Nothing in the lane invents picture or sound, so it is the one to run on
+  footage from another lane, from a camera, or from a render made outside this repo.
+category: utility
+tags: [postchain, cleanup, upscale, interpolate, delivery]
+prerequisite: >
+  The material to finish, already in the run directory: exports/generated.mp4, per-shot
+  video/<shot>/clip.mp4, or a frame sequence at sequence/frames. Removal ids come from
+  settings.postchain.remove_seg_ids.
+caveat: >
+  Nothing loads an existing video, so the entry frames are not a wire: fix_video reads whatever the
+  run directory already holds. Removal is also a no-op on its own, because Cutie needs a Blender
+  segmentation seed mask under controls/, which only a lane that ran compile_controls writes.
+  Upscale, interpolation and QC do run standalone.
+models:
+  - kind: skill
+    label: Post chain tools (Cutie, ProPainter, SeedVR2, GIMM-VFI)
+    skill: skills/video/postchain
+  # The tool refuses to start unless ProPainter.pth, raft-things.pth and
+  # recurrent_flow_completion.pth are all in the directory; the first one stands for the set.
+  - kind: path
+    label: ProPainter weights
+    path_includes: propainter
+    filename: ProPainter.pth
+  - kind: path
+    label: Cutie tracker
+    path_includes: cutie
+    filename: cutie-base-mega.pth
+  - kind: path
+    label: SeedVR2 7B transformer
+    path_includes: seedvr2-7b
+    filename: seedvr2_7b_int8_convrot.safetensors
+  - kind: path
+    label: SeedVR2 VAE
+    path_includes: seedvr2-7b
+    filename: seedvr2_ema_vae_fp16.safetensors
+  # gimmvfi_r_arb is the default checkpoint; the flow estimator it needs sits in the same directory.
+  - kind: path
+    label: GIMM-VFI checkpoint
+    path_includes: gimm-vfi
+    filename: gimmvfi_r_arb.pt
+  # VFIMamba is the other interpolator on this machine, kept as an alternative rather than a
+  # requirement: the engine widget offers rife and gimm_vfi only, and no post chain tool drives it.
+  - kind: path
+    label: VFIMamba weights
+    path_includes: vfimamba
+    filename: model.pkl
+    optional: true
+
+nodes:
+  - key: fix
+    type: fix_video
+    note: >
+      The entry. Its frames come from the run directory, not from a wire. remove_ids and
+      mask_dilation are read from settings.postchain today, not from these widgets, so setting them
+      here would not change the run.
+  - key: upscale
+    type: upscale_video
+    note: >
+      Resolution comes from settings.postchain.upscale_resolution, default 1080. 1440 and 2160 are
+      offered but the 7B model at that size is tight on a 24GB card.
+  - key: smooth
+    type: interpolate
+    values: {engine: gimm_vfi}
+    note: >
+      The quality tier, not the fast one: this lane exists to finish a picture, and the frames are
+      already final, so the slower interpolator is worth the wait. rife is the fast tier and none
+      leaves the cadence alone, which is what a held-drawing cut wants.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: fix, from_slot: frames, to_key: upscale, to_slot: frames}
+  - {from_key: upscale, from_slot: frames, to_key: smooth, to_slot: frames}
+  - {from_key: smooth, from_slot: frames, to_key: qc, to_slot: deliverable}
+  - {from_key: smooth, from_slot: frames, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - fix
+  - upscale
+  - smooth
+  - qc
+  - pack

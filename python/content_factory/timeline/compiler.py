@@ -15,7 +15,7 @@ from content_factory.schemas.scenes import (
     VisualBeat,
 )
 
-COMPILER_VERSION = "0.1.0"
+COMPILER_VERSION = "0.2.0"  # 0.2.0: narrated boundaries at absolute frames (no cumulative drift)
 
 
 class TimelineError(Exception):
@@ -56,27 +56,37 @@ def compile_timeline(plan: StoryPlan, *, timeline_id: OpaqueId, narrated: bool) 
     compiled: list[CompiledScene] = []
     audio: list[AudioCue] = []
     cursor = 0
+    t0: int | None = None
     for i, beat in enumerate(beats):
         start_ms, end_ms = _beat_span_ms(beat, require_measured=narrated)
         if narrated:
             # Measured: the scene holds until the next beat's speech starts (plus a handle at the
-            # end of the last beat), so cuts land on speech boundaries, never mid-word.
+            # end of the last beat), so cuts land on speech boundaries, never mid-word. Boundaries
+            # are placed at ABSOLUTE frame indices (round(measured_ms - t0)) rather than by
+            # accumulating per-span round-ups: the narration stem sits at absolute milliseconds,
+            # so accumulated rounding would drift the cues off the voice by ~1 frame per beat.
+            if t0 is None:
+                t0 = start_ms
             nxt = beats[i + 1] if i + 1 < len(beats) else None
-            if nxt is not None and nxt.measured_start_ms is not None:
-                span_ms = nxt.measured_start_ms - start_ms
-            else:
-                span_ms = (end_ms - start_ms) + plan.handle_ms
             speech_frames = ms_to_frames(end_ms - start_ms, fps, round_up=True)
             audio.append(
                 AudioCue(
                     beat_id=beat.beat_id, start_frame=cursor, duration_frames=max(1, speech_frames)
                 )
             )
+            if nxt is not None and nxt.measured_start_ms is not None:
+                boundary = ms_to_frames(nxt.measured_start_ms - t0, fps)
+            else:
+                boundary = ms_to_frames(end_ms - t0, fps) + handle_f
+            # The narration audio is the clock: never clamp to min_scene_ms here, or the
+            # cursor overshoots the absolute boundary and every later cue (and cut) lands
+            # off the voice — which the av_drift QC then fails as a blocker. min_scene_ms
+            # remains a planning guard for the silent path below.
+            duration = max(1, boundary - cursor)
         else:
-            span_ms = end_ms
-        duration = max(min_f, ms_to_frames(span_ms, fps, round_up=True))
-        if not narrated and i == len(beats) - 1:
-            duration += handle_f
+            duration = max(min_f, ms_to_frames(end_ms, fps, round_up=True))
+            if i == len(beats) - 1:
+                duration += handle_f
         scene_list = scenes_by_beat.get(beat.beat_id, [])
         if not scene_list:
             raise TimelineError(f"beat {beat.beat_id} has no scene")

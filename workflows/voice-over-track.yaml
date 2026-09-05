@@ -1,0 +1,120 @@
+# A script becomes a finished narration track, with nothing on screen.
+#
+# This is the audio spine of the picture lanes on its own: lock the words, record them, clean the
+# voice, measure where each word actually lands, write the caption file. Anything that draws,
+# renders or cuts a picture is absent on purpose, so the operator can hear and approve the voice
+# before a single frame is generated, and so a podcast, an audiobook chapter or a dub can ship
+# without a film around it.
+#
+# The takes are the operator's own: voice_over reads one recording per beat and force-aligns it. To
+# make the same lane synthetic, swap the voice node's type for synthesize_narration - it has the
+# same script input and the same audio output, so nothing downstream changes, and the takes
+# prerequisite disappears with it.
+schema_version: 1
+id: voice-over-track
+name: Narration track
+description: >
+  A written script becomes a clean spoken track with measured word timings and a caption file. The
+  voice is a real recording, restored rather than generated: cleanup and band extension where the
+  take needs them, then Resemble Enhance. No picture is made at any point, and the chain cannot
+  change a word's timing, so the captions describe the audio that actually exists.
+category: audio
+tags: [audio, narration, voice, captions, timings, restoration]
+prerequisite: >
+  A written script for plan_story to freeze, and one recording per beat under takes/, named by beat
+  id. A missing take fails voice_over and names the beat rather than filling the gap.
+models:
+  - kind: path
+    label: Resemble Enhance weights
+    path_includes: resemble-enhance
+    filename: enhancer_stage2/hparams.yaml
+  - kind: skill
+    label: Resemble Enhance skill env
+    skill: skills/audio/resemble_enhance
+  # The ClearerVoice pair is gated on the artifact measurements, so a clean take never loads it.
+  # Optional for that reason: the lane finishes on a good recording without these three present.
+  - kind: path
+    label: ClearerVoice MossFormer2 enhancement (48 kHz)
+    path_includes: mossformer2-se-48k
+    filename: last_best_checkpoint.pt
+    optional: true
+  - kind: path
+    label: ClearerVoice MossFormer2 band extension (48 kHz)
+    path_includes: mossformer2-sr-48k
+    filename: last_best_checkpoint_g.pt
+    optional: true
+  - kind: skill
+    label: ClearerVoice skill env
+    skill: skills/audio/clearervoice
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "a spoken piece, read aloud", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    note: The written script, frozen into beats. Beats are what a take and a caption are keyed by.
+  - key: script
+    type: lock_script
+    note: The words stop moving here, so alignment and captions measure one fixed text.
+  - key: voice
+    type: voice_over
+    values: {aligner: faster_whisper}
+    note: >
+      Measured timings, not apportioned ones. even_split spreads a beat's duration across its words,
+      which is fine under pictures and wrong when the timings are part of the deliverable.
+  - key: clean_voice
+    type: restore_speech
+    values:
+      cleanup: clearervoice
+      band_extension: clearervoice_sr
+      enhancer: resemble_enhance
+      device: cuda
+    note: >
+      voice_over normalises every take to 16 kHz mono for alignment, so band extension is what puts
+      the top octaves back before delivery. The gate stays on detected, unlike the repair lane: a
+      take recorded for this script is usually clean. cuda because nothing else wants the GPU here
+      and the enhancer is about 19x realtime on CPU.
+  - key: timings
+    type: align_words
+  - key: captions
+    type: compile_captions
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: voice, to_slot: script}
+  - {from_key: voice, from_slot: audio, to_key: clean_voice, to_slot: audio}
+  # Alignment reads the restored audio, not the raw take: the chain preserves length to the sample,
+  # so the words it measures are the words the delivered file contains.
+  - {from_key: clean_voice, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  # The restored voice is what ships, so it is what QC measures and what gets packaged.
+  - {from_key: clean_voice, from_slot: audio, to_key: qc, to_slot: deliverable}
+  - {from_key: clean_voice, from_slot: audio, to_key: pack, to_slot: deliverable}
+  - {from_key: captions, from_slot: captions, to_key: deliver, to_slot: files}
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - script
+  - voice
+  - clean_voice
+  - timings
+  - captions
+  - qc
+  - pack

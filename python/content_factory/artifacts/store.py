@@ -312,12 +312,18 @@ class S3ArtifactStore(ArtifactStore):
         return len(keys)
 
 
-def open_store() -> ArtifactStore:
+def open_store(root: Path | None = None) -> ArtifactStore:
+    """The artifact store `object_store.backend` selects.
+
+    Every caller must come through here, or the backend setting is a lie. `root` overrides the
+    filesystem location for callers that own a per-run directory (stage contexts, the demo
+    runner); it is meaningless for object storage and ignored when the backend is s3.
+    """
     from content_factory.config import get_settings
 
     s = get_settings().object_store
     if s.backend == "filesystem":
-        return FilesystemArtifactStore(Path(s.bucket))
+        return FilesystemArtifactStore(root or Path(s.bucket))
     return S3ArtifactStore(
         s.bucket,
         endpoint_url=s.endpoint_url,

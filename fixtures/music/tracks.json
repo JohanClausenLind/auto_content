@@ -1,0 +1,10 @@
+[
+  {
+    "track_id": "calm_bed_a",
+    "filename": "calm_bed_a.wav",
+    "sha256": "1a1c4ff33ff2e4c5d9adb1e2128affb289361db9f1129dc767ae1d38c45039c1",
+    "duration_s": 4.000000,
+    "moods": ["calm", "neutral", "documentary"],
+    "attribution": "Content Factory fixture bed (synthesised sine chord, generated in-repo)"
+  }
+]

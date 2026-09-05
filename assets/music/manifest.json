@@ -1,0 +1,1368 @@
+{
+  "generated_utc": "2026-09-07T12:59:03Z",
+  "generator": "skills/audio/music/build_library.py",
+  "recipe": "skills/audio/music/library.json",
+  "research": "docs/research/2026-09-07-background-music-library.md",
+  "model": "MiniMax-Music3-GGUF",
+  "model_id": "MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc)",
+  "runtime": "external/HOT-Step-CPP engine, POST /mm3/synth",
+  "licence": "MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "format": {
+    "container": "flac",
+    "sample_rate": 44100,
+    "channels": 2,
+    "bit_depth": 24
+  },
+  "targets": {
+    "bed": {
+      "metric": "integrated_lufs",
+      "value": -23.0,
+      "true_peak_dbtp": -1.0
+    }
+  },
+  "count": 22,
+  "sounds": [
+    {
+      "id": "doc_strings_reflective",
+      "category": "documentary",
+      "file": "documentary/doc_strings_reflective.flac",
+      "tags": [
+        "strings",
+        "classical",
+        "reflective",
+        "calm",
+        "underscore"
+      ],
+      "use": "The default documentary bed. Reflective interview and observational footage.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 32.391837,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "b41f659d21908ae1e4cbb98bc2dfe605a461a2e928de5eb44c58155eb8d0a635",
+      "bytes": 4787170,
+      "caption": "Global Metadata: contemporary classical underscore for documentary film; slow tempo; a calm, steady emotional level that neither builds nor fades; warm intimate chamber recording with a soft natural room. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a section of warm sustained strings carries the lead texture. Arrangement: [0:00-0:20] warm sustained violins and violas enter alone on a long slow chord. [0:20-0:50] a cello joins underneath moving in whole notes; the harmony changes once, simply. [0:50-1:20] a short gentle motif appears high in the violins and recedes. [1:20-1:50] the motif returns once, quieter, over the same slow harmony. [1:50-2:00] the strings sustain and settle on the opening chord. No percussion anywhere, no melody in the foreground, even dynamics throughout.",
+      "seed": 3003,
+      "seed_base": 3001,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        29.2,
+        31.0,
+        32.4
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        14
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -15.6,
+        "true_peak_dbtp": -7.6,
+        "loudness_range_lu": 13.0,
+        "gain_applied_db": -5.6,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0025,
+        "hf_tilt_db": -25.51,
+        "spectral_centroid_hz": 590.0,
+        "harsh_band_ratio": 0.0168,
+        "low_band_ratio": 0.1505,
+        "air_band_ratio": 0.0002,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.2319,
+        "dynamic_span_db": 23.25,
+        "slow_envelope_range_db": 5.99
+      },
+      "flags": [],
+      "generate_s": 185.3,
+      "prompt_tokens": 226
+    },
+    {
+      "id": "doc_piano_felt",
+      "category": "documentary",
+      "file": "documentary/doc_piano_felt.flac",
+      "tags": [
+        "piano",
+        "felt",
+        "sparse",
+        "intimate",
+        "underscore"
+      ],
+      "use": "Intimate close-up interviews and quiet personal moments.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 42.678277,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "3611766085a1c4f801357be50d09df8a12fc25785ee9384b18c6ec5353d1d97a",
+      "bytes": 4780183,
+      "caption": "Global Metadata: minimal neoclassical underscore; slow tempo; quiet, tender and unchanging; very close intimate recording with audible felt and soft room tone. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a felt-muted upright piano carries the lead texture. Arrangement: [0:00-0:20] a felt piano alone, slow widely spaced chords with long gaps of near silence between them. [0:20-0:50] a faint low string pad enters far underneath and holds. [0:50-1:20] a second piano voice adds sparse single notes in the gaps. [1:20-1:50] the second voice thins out and the piano returns to its opening chords. [1:50-2:00] the piano holds a final chord and lets it decay. No percussion, no melody that could be hummed, soft throughout.",
+      "seed": 3002,
+      "seed_base": 3002,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        42.7,
+        24.4,
+        17.8
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -13.1,
+        "true_peak_dbtp": -5.8,
+        "loudness_range_lu": 25.7,
+        "gain_applied_db": -6.4,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0208,
+        "hf_tilt_db": 4.53,
+        "spectral_centroid_hz": 1151.6,
+        "harsh_band_ratio": 0.0056,
+        "low_band_ratio": 0.0862,
+        "air_band_ratio": 0.0827,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.0162,
+        "dynamic_span_db": 39.08,
+        "slow_envelope_range_db": 17.53
+      },
+      "flags": [],
+      "generate_s": 185.1,
+      "prompt_tokens": 220
+    },
+    {
+      "id": "doc_strings_piano_arc",
+      "category": "documentary",
+      "file": "documentary/doc_strings_piano_arc.flac",
+      "tags": [
+        "arc",
+        "build",
+        "strings",
+        "piano",
+        "pacing"
+      ],
+      "use": "A segment that needs to move: gathers pace in the middle, then settles again. The 'quicker then slower' bed.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 44.849342,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "aa570bb0849b1ffd76ac3d2c94c1bfd99e712e778961e08ea647217699cbb859",
+      "bytes": 6319440,
+      "caption": "Global Metadata: contemporary classical documentary underscore with a clear pacing arc; begins slow, quickens through the middle, then slows and settles again; the emotional progression rises and resolves; warm cinematic chamber production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; felt piano and warm strings share the lead texture. Arrangement: Opening third: a felt piano holds slow sparse chords over a low string drone, very quiet. Middle third: the pulse gathers, quicker repeating piano figures and a light staccato string ostinato lift the energy and the strings swell broader, still restrained and never bombastic. Final third: the ostinato thins out, the tempo eases back, the strings sustain and fade, and the piece ends on the solo piano holding one soft chord. No drum kit anywhere; any percussion is a soft low pulse.",
+      "seed": 3008,
+      "seed_base": 3003,
+      "candidates_auditioned": 6,
+      "candidate_raw_lengths_s": [
+        23.9,
+        21.8,
+        22.5,
+        26.7,
+        37.5,
+        44.8
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        5,
+        24
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -14.8,
+        "true_peak_dbtp": -7.0,
+        "loudness_range_lu": 14.3,
+        "gain_applied_db": -7.0,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0094,
+        "hf_tilt_db": -15.3,
+        "spectral_centroid_hz": 611.8,
+        "harsh_band_ratio": 0.0193,
+        "low_band_ratio": 0.1252,
+        "air_band_ratio": 0.0033,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1197,
+        "dynamic_span_db": 22.92,
+        "slow_envelope_range_db": 4.76
+      },
+      "flags": [
+        "too_flat"
+      ],
+      "generate_s": 355.3,
+      "prompt_tokens": 197
+    },
+    {
+      "id": "doc_solemn_low",
+      "category": "documentary",
+      "file": "documentary/doc_solemn_low.flac",
+      "tags": [
+        "solemn",
+        "cello",
+        "historical",
+        "grave",
+        "underscore"
+      ],
+      "use": "Grave subject matter, archive footage, historical segments.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 45.812971,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "633ecc8a4f20394ff23709eb74abe82fac6b741e38f6b092f7788a9f75e4df69",
+      "bytes": 5609419,
+      "caption": "Global Metadata: solemn classical underscore; very slow tempo; grave and weighty, holding one serious mood; dark warm orchestral recording in a large hall. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; low cellos and double basses carry the lead texture. Arrangement: [0:00-0:25] low cellos and double basses sustain a long dark chord in a large hall. [0:25-0:55] a distant viola line moves very slowly above them. [0:55-1:25] the harmony shifts down once, heavier. [1:25-1:50] the viola falls away and the low strings hold alone. [1:50-2:00] the chord decays into the hall's reverb tail. No percussion, no melody in the foreground, no lift.",
+      "seed": 3006,
+      "seed_base": 3004,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        42.7,
+        31.9,
+        45.8
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -16.1,
+        "true_peak_dbtp": -7.8,
+        "loudness_range_lu": 12.0,
+        "gain_applied_db": -7.6,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0003,
+        "hf_tilt_db": -34.69,
+        "spectral_centroid_hz": 354.9,
+        "harsh_band_ratio": 0.022,
+        "low_band_ratio": 0.3643,
+        "air_band_ratio": 0.0,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1219,
+        "dynamic_span_db": 32.37,
+        "slow_envelope_range_db": 10.33
+      },
+      "flags": [],
+      "generate_s": 240.2,
+      "prompt_tokens": 212
+    },
+    {
+      "id": "doc_hopeful_resolve",
+      "category": "documentary",
+      "file": "documentary/doc_hopeful_resolve.flac",
+      "tags": [
+        "hopeful",
+        "resolve",
+        "ending",
+        "warm",
+        "strings"
+      ],
+      "use": "Closing sequences and end cards. Resolves without becoming triumphant.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 37.279637,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "3fd9ee9ed9b8baa17814f25bac10e174da8d3c05905206fc46be0cd4121a61fa",
+      "bytes": 5495062,
+      "caption": "Global Metadata: warm contemporary classical underscore; slow tempo; a gentle emotional lift that resolves and settles; warm open cinematic production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; warm strings and a soft piano share the lead texture. Arrangement: [0:00-0:20] a soft piano and a warm string pad hold quiet open chords. [0:20-0:45] the harmony begins to move upward, still very quiet. [0:45-1:10] a high sustained violin line joins and the strings open out, warm and hopeful but restrained. [1:10-1:30] the strings thin back to pad and piano. [1:30-1:40] the piece settles on a held major chord. No percussion, never triumphant, never loud.",
+      "seed": 3007,
+      "seed_base": 3005,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        26.7,
+        36.0,
+        37.3
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        5,
+        24
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -15.8,
+        "true_peak_dbtp": -8.6,
+        "loudness_range_lu": 10.9,
+        "gain_applied_db": -7.2,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0047,
+        "hf_tilt_db": -18.21,
+        "spectral_centroid_hz": 506.3,
+        "harsh_band_ratio": 0.02,
+        "low_band_ratio": 0.1632,
+        "air_band_ratio": 0.0008,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1255,
+        "dynamic_span_db": 25.38,
+        "slow_envelope_range_db": 5.82
+      },
+      "flags": [],
+      "generate_s": 185.1,
+      "prompt_tokens": 203
+    },
+    {
+      "id": "doc_tension_slow_build",
+      "category": "tension",
+      "file": "tension/doc_tension_slow_build.flac",
+      "tags": [
+        "tension",
+        "build",
+        "suspense",
+        "science",
+        "underscore"
+      ],
+      "use": "Soft suspense under a science explainer or an unfolding investigation.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 82.941678,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "56c89be0269b52327445e34ac405c3d72198dc22000d6c6c7266d3edf6a49841",
+      "bytes": 9889560,
+      "caption": "Global Metadata: orchestral underscore with soft tension; slow tempo; a quiet unease that gradually tightens and then holds; dark restrained cinematic production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; sustained low strings carry the lead texture. Arrangement: [0:00-0:25] low sustained strings hold one unresolved chord with a faint high shimmer above. [0:25-0:55] a very soft low pulse enters, marking slow time. [0:55-1:25] a second string layer enters a tone apart and tightens the harmony. [1:25-1:55] the low pulse grows slightly more present; the tension holds. [1:55-2:10] the layers sustain without resolving and fade. No drum kit, no melody, no crescendo to a hit.",
+      "seed": 3007,
+      "seed_base": 3006,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        29.2,
+        82.9,
+        37.5
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        3,
+        24
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -14.8,
+        "true_peak_dbtp": -6.9,
+        "loudness_range_lu": 15.4,
+        "gain_applied_db": -3.7,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0005,
+        "hf_tilt_db": -22.53,
+        "spectral_centroid_hz": 613.2,
+        "harsh_band_ratio": 0.014,
+        "low_band_ratio": 0.017,
+        "air_band_ratio": 0.0001,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1504,
+        "dynamic_span_db": 33.46,
+        "slow_envelope_range_db": 6.18
+      },
+      "flags": [],
+      "generate_s": 280.3,
+      "prompt_tokens": 208
+    },
+    {
+      "id": "doc_investigative_pulse",
+      "category": "tension",
+      "file": "tension/doc_investigative_pulse.flac",
+      "tags": [
+        "pulse",
+        "investigative",
+        "ticking",
+        "steady",
+        "underscore"
+      ],
+      "use": "Procedural or investigative narration that needs forward motion without drama.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 25.82059,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "0fcf079e4102d8ed989bf33dad22eb9bad96828d5926e242bd0121feada81341",
+      "bytes": 3959082,
+      "caption": "Global Metadata: minimal electronic underscore with a quiet steady pulse; moderate tempo; focused and level, faintly restless; clean modern production with a dry close sound. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a deep muted synth bass pulse carries the lead texture. Arrangement: [0:00-0:20] a quiet muted pulse begins, steady like a clock. [0:20-0:50] a low synth bass enters holding simple slow harmony underneath. [0:50-1:20] faint low muted plucks in the bass register mark the offbeats; nothing sits in the midrange. [1:20-1:50] the harmony changes once; everything else continues unchanged. [1:50-2:00] the plucks drop away and the pulse continues alone. No drum kit, no snare, no melody in the foreground, one level throughout.",
+      "seed": 3009,
+      "seed_base": 3007,
+      "candidates_auditioned": 5,
+      "candidate_raw_lengths_s": [
+        8.8,
+        20.1,
+        25.8,
+        20.8,
+        9.6
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        14
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -13.7,
+        "true_peak_dbtp": -7.2,
+        "loudness_range_lu": 9.2,
+        "gain_applied_db": -7.2,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.054,
+        "hf_tilt_db": -9.38,
+        "spectral_centroid_hz": 817.6,
+        "harsh_band_ratio": 0.112,
+        "low_band_ratio": 0.4885,
+        "air_band_ratio": 0.0167,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.223,
+        "dynamic_span_db": 12.97,
+        "slow_envelope_range_db": 6.12
+      },
+      "flags": [
+        "short"
+      ],
+      "generate_s": 170.1,
+      "prompt_tokens": 223
+    },
+    {
+      "id": "doc_unease_drone",
+      "category": "tension",
+      "file": "tension/doc_unease_drone.flac",
+      "tags": [
+        "drone",
+        "unease",
+        "dark",
+        "texture",
+        "underscore"
+      ],
+      "use": "Dread and uncertainty. Almost textural \u2014 use where music would be too much.",
+      "loopable": true,
+      "instrumental": true,
+      "duration_s": 22.915102,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "4ec5ef6f84b002f68af89cbc883d83d8dbf20b417f8a91755e3fc89d31f57f59",
+      "bytes": 3464987,
+      "caption": "Global Metadata: dark ambient underscore; no clear tempo; uneasy and static, holding one unresolved mood; wide dark production with a long tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a low sustained synthesiser drone carries the lead texture. Arrangement: [0:00-0:30] a dark low drone establishes and holds. [0:30-1:00] faint metallic overtones drift far in the background. [1:00-1:30] a distant string-like layer swells almost imperceptibly and recedes. [1:30-2:00] the drone continues unchanged, unresolved. No percussion, no rhythm, no melody, no resolution.",
+      "seed": 3010,
+      "seed_base": 3008,
+      "candidates_auditioned": 5,
+      "candidate_raw_lengths_s": [
+        35.7,
+        59.6,
+        39.9,
+        39.6,
+        38.4
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        6
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -16.2,
+        "true_peak_dbtp": -5.2,
+        "loudness_range_lu": 8.8,
+        "gain_applied_db": -3.5,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0045,
+        "hf_tilt_db": -19.77,
+        "spectral_centroid_hz": 669.1,
+        "harsh_band_ratio": 0.0284,
+        "low_band_ratio": 0.3458,
+        "air_band_ratio": 0.0006,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.3228,
+        "dynamic_span_db": 15.13,
+        "slow_envelope_range_db": 4.11,
+        "seam_rms_delta_db": -0.94,
+        "event_prominence_db": 9.43,
+        "bed_evenness_db": 8.86
+      },
+      "flags": [
+        "crowds_the_voice"
+      ],
+      "generate_s": 466.8,
+      "prompt_tokens": 177
+    },
+    {
+      "id": "nature_open_wide",
+      "category": "nature",
+      "file": "nature/nature_open_wide.flac",
+      "tags": [
+        "nature",
+        "landscape",
+        "open",
+        "airy",
+        "strings"
+      ],
+      "use": "Aerials, landscapes, wide establishing shots.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 32.426667,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "1652cfa4c5a9948faabc532ffc14192e96445b804725d68cc8ad77e3ae3a7290",
+      "bytes": 3769369,
+      "caption": "Global Metadata: cinematic pastoral underscore; slow tempo; open, calm and quietly awed; wide airy orchestral production with generous natural reverb. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; high sustained strings and harp carry the lead texture. Arrangement: [0:00-0:25] high sustained strings hold wide open chords. [0:25-0:55] a harp adds a slow rising arpeggio gesture; a soft low pad supports underneath. [0:55-1:25] the harmony changes slowly and simply; a second harp gesture answers the first. [1:25-1:55] the strings widen further, still calm. [1:55-2:10] everything sustains and settles. No percussion, no melody in the foreground, spacious and unhurried.",
+      "seed": 3009,
+      "seed_base": 3009,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        32.4,
+        18.4,
+        33.1
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -17.9,
+        "true_peak_dbtp": -8.4,
+        "loudness_range_lu": 17.8,
+        "gain_applied_db": -2.4,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0015,
+        "hf_tilt_db": -22.67,
+        "spectral_centroid_hz": 313.6,
+        "harsh_band_ratio": 0.0055,
+        "low_band_ratio": 0.5003,
+        "air_band_ratio": 0.0019,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.0899,
+        "dynamic_span_db": 27.36,
+        "slow_envelope_range_db": 13.65
+      },
+      "flags": [],
+      "generate_s": 150.1,
+      "prompt_tokens": 209
+    },
+    {
+      "id": "nature_gentle_curious",
+      "category": "nature",
+      "file": "nature/nature_gentle_curious.flac",
+      "tags": [
+        "nature",
+        "curious",
+        "light",
+        "woodwind",
+        "gentle"
+      ],
+      "use": "Wildlife and small-scale nature: something being examined up close.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 76.61424,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "a0095dcc672fe02474cb76be42197e411f398d976b8e6068ca23563147251c68",
+      "bytes": 9317498,
+      "caption": "Global Metadata: light pastoral chamber underscore; gently moving tempo; curious, warm and unhurried; natural close chamber recording. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft clarinet and pizzicato strings share the lead texture. Arrangement: [0:00-0:20] soft pizzicato strings step gently and evenly. [0:20-0:45] a warm clarinet holds long simple phrases above them. [0:45-1:10] a light harp figure appears in the gaps. [1:10-1:35] the clarinet rests; the pizzicato and harp continue. [1:35-1:50] the clarinet returns for one last phrase and the piece settles. No drums, no build, no big melody, gentle throughout.",
+      "seed": 3013,
+      "seed_base": 3010,
+      "candidates_auditioned": 6,
+      "candidate_raw_lengths_s": [
+        32.6,
+        22.9,
+        17.4,
+        76.6,
+        25.1,
+        39.0
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        14
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -15.2,
+        "true_peak_dbtp": -9.5,
+        "loudness_range_lu": 12.2,
+        "gain_applied_db": -9.4,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0006,
+        "hf_tilt_db": -22.92,
+        "spectral_centroid_hz": 805.6,
+        "harsh_band_ratio": 0.025,
+        "low_band_ratio": 0.0243,
+        "air_band_ratio": 0.0001,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.2979,
+        "dynamic_span_db": 23.97,
+        "slow_envelope_range_db": 4.83
+      },
+      "flags": [],
+      "generate_s": 455.3,
+      "prompt_tokens": 210
+    },
+    {
+      "id": "nature_vast_slow",
+      "category": "nature",
+      "file": "nature/nature_vast_slow.flac",
+      "tags": [
+        "vast",
+        "slow",
+        "cinematic",
+        "wide",
+        "restrained"
+      ],
+      "use": "Very slow wide shots: ice, ocean, desert, deep time.",
+      "loopable": true,
+      "instrumental": true,
+      "duration_s": 17.957642,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "07892bdc0cfb6b7795bdda76df3343a3b3d95056ae80815b752d0e53968db6a1",
+      "bytes": 2410008,
+      "caption": "Global Metadata: slow cinematic ambient orchestral underscore; very slow tempo; vast, still and patient; extremely wide production with a long reverb tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a broad string and synthesiser pad carries the lead texture. Arrangement: [0:00-0:35] a very broad pad of strings and warm synthesiser sustains one enormous slow chord. [0:35-1:10] a distant low swell rises underneath and falls away. [1:10-1:45] the harmony changes once, slowly. [1:45-2:20] the pad holds, vast and still. No percussion, no rhythm, no melodic line, texture and space rather than music.",
+      "seed": 3012,
+      "seed_base": 3011,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        31.7,
+        35.0,
+        32.5
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        8
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -17.5,
+        "true_peak_dbtp": -8.8,
+        "loudness_range_lu": 11.6,
+        "gain_applied_db": -6.5,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0004,
+        "hf_tilt_db": -30.89,
+        "spectral_centroid_hz": 420.9,
+        "harsh_band_ratio": 0.0236,
+        "low_band_ratio": 0.3116,
+        "air_band_ratio": 0.0,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1338,
+        "dynamic_span_db": 13.86,
+        "slow_envelope_range_db": 4.37,
+        "seam_rms_delta_db": -0.55,
+        "event_prominence_db": 8.29,
+        "bed_evenness_db": 7.18
+      },
+      "flags": [],
+      "generate_s": 190.1,
+      "prompt_tokens": 188
+    },
+    {
+      "id": "explainer_light_pulse",
+      "category": "explainer",
+      "file": "explainer/explainer_light_pulse.flac",
+      "tags": [
+        "explainer",
+        "light",
+        "positive",
+        "pulse",
+        "corporate"
+      ],
+      "use": "General explainer and how-to narration. Light, uncomplicated, non-distracting.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 43.200726,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "c4989dd4eb63b84153d28d6124b52944aaf54cf15ff0f47246435536baf93da5",
+      "bytes": 6527250,
+      "caption": "Global Metadata: light modern underscore for explainer video; moderate easy tempo; positive, clear and even; clean bright modern production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft marimba and warm synth pad share the lead texture. Arrangement: [0:00-0:20] a soft marimba plays a simple even repeating figure. [0:20-0:45] a warm synth pad and a gentle bass enter holding simple chords. [0:45-1:10] a very light shaker joins, keeping time softly. [1:10-1:35] the harmony changes once; the figure continues unchanged. [1:35-1:50] the shaker drops away and the marimba settles. No drum kit, no snare, no melody that pulls focus, constant energy.",
+      "seed": 3013,
+      "seed_base": 3012,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        38.5,
+        43.2,
+        16.8
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -18.8,
+        "true_peak_dbtp": -10.1,
+        "loudness_range_lu": 13.8,
+        "gain_applied_db": -10.1,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0035,
+        "hf_tilt_db": -19.4,
+        "spectral_centroid_hz": 555.2,
+        "harsh_band_ratio": 0.0007,
+        "low_band_ratio": 0.0712,
+        "air_band_ratio": 0.004,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.0741,
+        "dynamic_span_db": 18.69,
+        "slow_envelope_range_db": 5.42
+      },
+      "flags": [],
+      "generate_s": 185.1,
+      "prompt_tokens": 212
+    },
+    {
+      "id": "explainer_neutral_marimba",
+      "category": "explainer",
+      "file": "explainer/explainer_neutral_marimba.flac",
+      "tags": [
+        "neutral",
+        "marimba",
+        "steady",
+        "unobtrusive"
+      ],
+      "use": "The most neutral bed here. Use when the content, not the mood, should carry.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 77.217959,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "3a18ca19df810af7d16ddf26bc18f5b6e64fa70b0b8794256282c156de03fd17",
+      "bytes": 10065572,
+      "caption": "Global Metadata: minimal neutral underscore; moderate tempo; emotionally neutral and completely even; dry clean close production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a muted marimba carries the lead texture. Arrangement: [0:00-0:20] a muted marimba begins a simple two-chord pattern. [0:20-0:45] a quiet sustained pad joins underneath. [0:45-1:10] a soft low bass note per bar is added. [1:10-1:35] everything continues, unchanged and deliberately plain. [1:35-1:45] the pattern settles and stops. No development, no build, no melody, one level from start to finish.",
+      "seed": 3014,
+      "seed_base": 3013,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        36.7,
+        77.2,
+        14.6
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -16.0,
+        "true_peak_dbtp": -6.7,
+        "loudness_range_lu": 14.1,
+        "gain_applied_db": -6.8,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0081,
+        "hf_tilt_db": -15.26,
+        "spectral_centroid_hz": 425.3,
+        "harsh_band_ratio": 0.0125,
+        "low_band_ratio": 0.4531,
+        "air_band_ratio": 0.0006,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.0279,
+        "dynamic_span_db": 17.94,
+        "slow_envelope_range_db": 6.94
+      },
+      "flags": [],
+      "generate_s": 235.2,
+      "prompt_tokens": 188
+    },
+    {
+      "id": "corporate_uplift_soft",
+      "category": "explainer",
+      "file": "explainer/corporate_uplift_soft.flac",
+      "tags": [
+        "corporate",
+        "uplifting",
+        "inspirational",
+        "warm",
+        "restrained"
+      ],
+      "use": "Company and promotional pieces that need warmth without a hard sell.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 32.751746,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "067be5fdd29d3fe834dc05e2a93745df0d85a80828f34f12e4ce841eaebe4887",
+      "bytes": 3610842,
+      "caption": "Global Metadata: warm inspirational corporate underscore; moderate tempo; comforting and gently uplifting, rising slightly and settling; polished warm modern production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a clean electric piano and warm strings share the lead texture. Arrangement: [0:00-0:20] a clean electric piano plays a simple even chord pattern. [0:20-0:45] a soft pad and gentle bass join underneath. [0:45-1:15] warm strings enter and the harmony lifts a little; a soft light pulse keeps time. [1:15-1:40] the strings hold their lift, quietly optimistic. [1:40-2:00] the strings recede and the electric piano settles back where it began. No drum kit, no big melody, no anthem.",
+      "seed": 3015,
+      "seed_base": 3014,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        24.1,
+        32.8,
+        23.0
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        3,
+        24
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -13.9,
+        "true_peak_dbtp": -6.4,
+        "loudness_range_lu": 17.9,
+        "gain_applied_db": -5.4,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0,
+        "hf_tilt_db": -36.95,
+        "spectral_centroid_hz": 742.6,
+        "harsh_band_ratio": 0.0164,
+        "low_band_ratio": 0.0746,
+        "air_band_ratio": 0.0,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1982,
+        "dynamic_span_db": 29.64,
+        "slow_envelope_range_db": 10.84
+      },
+      "flags": [],
+      "generate_s": 180.1,
+      "prompt_tokens": 206
+    },
+    {
+      "id": "tech_minimal_grid",
+      "category": "explainer",
+      "file": "explainer/tech_minimal_grid.flac",
+      "tags": [
+        "tech",
+        "minimal",
+        "electronic",
+        "clean",
+        "product"
+      ],
+      "use": "Product, software and technical demos. Clean and modern without being cold.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 33.668934,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "507afe968740fb8dd5e5800872d631c56ce420e740fbefed183b750d240cea4d",
+      "bytes": 5081979,
+      "caption": "Global Metadata: minimal electronic underscore; moderate steady tempo; clean, focused and even; precise modern production with a dry close sound. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft plucked synthesiser carries the lead texture. Arrangement: [0:00-0:20] a soft plucked synthesiser begins an even quiet pattern. [0:20-0:45] a warm sustained pad holds simple slow harmony underneath. [0:45-1:10] a gentle low bass marks the chord changes; a faint soft tick keeps time. [1:10-1:35] the harmony changes once; the pattern continues. [1:35-1:50] the pluck thins out and the pad holds. No snare, no melody in the foreground, no build.",
+      "seed": 3015,
+      "seed_base": 3015,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        33.7,
+        25.5,
+        19.9
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -16.6,
+        "true_peak_dbtp": -7.3,
+        "loudness_range_lu": 11.2,
+        "gain_applied_db": -8.7,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0836,
+        "hf_tilt_db": -6.46,
+        "spectral_centroid_hz": 910.5,
+        "harsh_band_ratio": 0.0078,
+        "low_band_ratio": 0.3688,
+        "air_band_ratio": 0.0277,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1214,
+        "dynamic_span_db": 35.37,
+        "slow_envelope_range_db": 8.33
+      },
+      "flags": [],
+      "generate_s": 140.1,
+      "prompt_tokens": 205
+    },
+    {
+      "id": "data_calm_pulse",
+      "category": "explainer",
+      "file": "explainer/data_calm_pulse.flac",
+      "tags": [
+        "data",
+        "charts",
+        "quiet",
+        "pulse",
+        "focus"
+      ],
+      "use": "Charts, figures and data segments where the narration carries the detail.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 72.840998,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "e6f132a75cc434c6721a2b7c8a3274abc99f3d4126383fdb3883beb79716d1af",
+      "bytes": 11039217,
+      "caption": "Global Metadata: very quiet minimal underscore; slow steady tempo; calm, focused and unchanging; clean dry production sitting well back. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft sine-like synthesiser pulse carries the lead texture. Arrangement: [0:00-0:20] a soft rounded synthesiser pulse repeats slowly and quietly. [0:20-0:45] a low pad enters holding one chord. [0:45-1:10] faint high tones appear occasionally like distant markers. [1:10-1:35] one slow chord change; everything else unchanged. [1:35-1:45] the high tones stop and the pulse continues alone. Deliberately almost empty. No percussion, no melody.",
+      "seed": 3018,
+      "seed_base": 3016,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        26.5,
+        26.7,
+        72.8
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -17.9,
+        "true_peak_dbtp": -9.0,
+        "loudness_range_lu": 5.7,
+        "gain_applied_db": -9.2,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.013,
+        "hf_tilt_db": -15.89,
+        "spectral_centroid_hz": 488.7,
+        "harsh_band_ratio": 0.0057,
+        "low_band_ratio": 0.4115,
+        "air_band_ratio": 0.002,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1148,
+        "dynamic_span_db": 12.38,
+        "slow_envelope_range_db": 6.35
+      },
+      "flags": [],
+      "generate_s": 240.2,
+      "prompt_tokens": 194
+    },
+    {
+      "id": "human_warm_piano",
+      "category": "human",
+      "file": "human/human_warm_piano.flac",
+      "tags": [
+        "piano",
+        "warm",
+        "human",
+        "personal",
+        "gentle"
+      ],
+      "use": "Personal stories and human-interest segments.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 37.883356,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "34be40d08edc8a92b2eb0433d85967f9c58cd936118b74585eaebd064f7d04d3",
+      "bytes": 4604484,
+      "caption": "Global Metadata: warm intimate neoclassical underscore; slow tempo; tender, kind and steady; close warm piano recording with a soft natural room. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a warm upright piano carries the lead texture. Arrangement: [0:00-0:20] a warm upright piano plays slow simple chords. [0:20-0:45] a gentle repeating inner motif appears between the chords. [0:45-1:15] a soft string pad enters quietly and stays. [1:15-1:40] the motif returns once more over the pad. [1:40-1:50] the piano holds its last chord. No percussion, no build to a peak, nothing that pulls attention from a speaking voice.",
+      "seed": 3017,
+      "seed_base": 3017,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        37.9,
+        30.5,
+        31.2
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -14.5,
+        "true_peak_dbtp": -5.4,
+        "loudness_range_lu": 23.9,
+        "gain_applied_db": -5.1,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0011,
+        "hf_tilt_db": -16.63,
+        "spectral_centroid_hz": 612.6,
+        "harsh_band_ratio": 0.0091,
+        "low_band_ratio": 0.0476,
+        "air_band_ratio": 0.0001,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.1239,
+        "dynamic_span_db": 33.92,
+        "slow_envelope_range_db": 10.78
+      },
+      "flags": [],
+      "generate_s": 195.1,
+      "prompt_tokens": 198
+    },
+    {
+      "id": "human_bittersweet_strings",
+      "category": "human",
+      "file": "human/human_bittersweet_strings.flac",
+      "tags": [
+        "bittersweet",
+        "strings",
+        "melancholy",
+        "restrained"
+      ],
+      "use": "Loss, memory and reflection. Sad without being sentimental.",
+      "loopable": false,
+      "instrumental": true,
+      "duration_s": 51.21161,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "0f01440b1e4652d27187990e4cc785e4e5cb5ee862b4b8b41c30ac324d5a2b1f",
+      "bytes": 6359440,
+      "caption": "Global Metadata: bittersweet contemporary classical underscore; slow tempo; melancholy held at one level, neither lifting nor collapsing; warm intimate chamber production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a solo cello and a string pad share the lead texture. Arrangement: [0:00-0:25] a solo cello holds a long slow phrase over a quiet string pad. [0:25-0:55] a felt piano adds sparse single notes underneath. [0:55-1:25] the cello's second phrase sits a little lower, minor and unresolved. [1:25-1:50] the piano falls silent; the cello and pad hold. [1:50-2:00] the phrase ends unresolved and fades. No percussion, no swell to a climax, restrained throughout.",
+      "seed": 3019,
+      "seed_base": 3018,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        36.6,
+        51.2,
+        46.7
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        22
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -15.6,
+        "true_peak_dbtp": -8.0,
+        "loudness_range_lu": 13.9,
+        "gain_applied_db": -7.1,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0005,
+        "hf_tilt_db": -30.25,
+        "spectral_centroid_hz": 830.6,
+        "harsh_band_ratio": 0.0897,
+        "low_band_ratio": 0.0532,
+        "air_band_ratio": 0.0,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.2218,
+        "dynamic_span_db": 26.65,
+        "slow_envelope_range_db": 8.61
+      },
+      "flags": [],
+      "generate_s": 270.2,
+      "prompt_tokens": 210
+    },
+    {
+      "id": "calm_texture_warm",
+      "category": "texture",
+      "file": "texture/calm_texture_warm.flac",
+      "tags": [
+        "texture",
+        "drone",
+        "warm",
+        "ambient",
+        "loop",
+        "barely-music"
+      ],
+      "use": "Barely music. A warm presence under narration where a tune would be too much. Loopable.",
+      "loopable": true,
+      "instrumental": true,
+      "duration_s": 23.600091,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "b297c95a167d76f4d982933021ccfb091a3c3cd9edd2f8e878057527fbedef62",
+      "bytes": 3427286,
+      "caption": "Global Metadata: warm ambient texture; no tempo and no rhythm; still, warm and completely unchanging; soft analogue production with gentle tape warmth. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a warm sustained synthesiser pad is the whole texture. Arrangement: There are no sections. A warm sustained pad holds one soft consonant chord for the entire duration with very slow internal movement, like breathing. No percussion, no rhythm, no melody, no chord change, no build. It is a texture, not a piece of music.",
+      "seed": 3021,
+      "seed_base": 3019,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        21.3,
+        23.1,
+        40.6
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        8
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -16.8,
+        "true_peak_dbtp": -7.6,
+        "loudness_range_lu": 8.3,
+        "gain_applied_db": -7.6,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0014,
+        "hf_tilt_db": -21.28,
+        "spectral_centroid_hz": 406.2,
+        "harsh_band_ratio": 0.0032,
+        "low_band_ratio": 0.2103,
+        "air_band_ratio": 0.0012,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.0151,
+        "dynamic_span_db": 15.27,
+        "slow_envelope_range_db": 2.39,
+        "seam_rms_delta_db": -1.42,
+        "event_prominence_db": 8.68,
+        "bed_evenness_db": 7.59
+      },
+      "flags": [],
+      "generate_s": 165.1,
+      "prompt_tokens": 137
+    },
+    {
+      "id": "calm_texture_air",
+      "category": "texture",
+      "file": "texture/calm_texture_air.flac",
+      "tags": [
+        "texture",
+        "airy",
+        "shimmer",
+        "light",
+        "loop",
+        "barely-music"
+      ],
+      "use": "A light airy presence. Sits above the voice rather than under it. Loopable.",
+      "loopable": true,
+      "instrumental": true,
+      "duration_s": 20.953016,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "85bb2d7a9cd56cc24591e5a4037d8fd6f3c5a0519df07f768c761b9c217a6de4",
+      "bytes": 3527991,
+      "caption": "Global Metadata: light ambient texture; no tempo and no rhythm; airy, open and static; spacious production with a long soft tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a high shimmering synthesiser pad is the whole texture. Arrangement: There are no sections. A high soft shimmer sustains for the whole duration with faint slow movement inside it and a very quiet low pad far underneath for support. No percussion, no rhythm, no melody, no change. Pure texture.",
+      "seed": 3022,
+      "seed_base": 3020,
+      "candidates_auditioned": 3,
+      "candidate_raw_lengths_s": [
+        28.5,
+        32.8,
+        38.0
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        8
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -19.2,
+        "true_peak_dbtp": -7.4,
+        "loudness_range_lu": 2.6,
+        "gain_applied_db": -7.7,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0167,
+        "hf_tilt_db": -15.42,
+        "spectral_centroid_hz": 707.3,
+        "harsh_band_ratio": 0.0754,
+        "low_band_ratio": 0.4436,
+        "air_band_ratio": 0.0019,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.2515,
+        "dynamic_span_db": 4.48,
+        "slow_envelope_range_db": 0.77,
+        "seam_rms_delta_db": 0.84,
+        "event_prominence_db": 4.45,
+        "bed_evenness_db": 3.96
+      },
+      "flags": [],
+      "generate_s": 190.1,
+      "prompt_tokens": 128
+    },
+    {
+      "id": "calm_texture_deep",
+      "category": "texture",
+      "file": "texture/calm_texture_deep.flac",
+      "tags": [
+        "texture",
+        "deep",
+        "low",
+        "weight",
+        "loop",
+        "barely-music"
+      ],
+      "use": "Low weight and seriousness with almost no musical content. Loopable.",
+      "loopable": true,
+      "instrumental": true,
+      "duration_s": 9.0,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "9930bd8a59bbc0d712a6d65fe4f11ae79a830e63a1b09f9f9dfe50788202a532",
+      "bytes": 1471540,
+      "caption": "Global Metadata: deep ambient texture; no tempo and no rhythm; heavy, still and unchanging; dark wide production, felt more than heard. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a deep low synthesiser drone is the whole texture. Arrangement: There are no sections. A deep low drone sustains for the entire duration with very slow gentle swells and almost no content above the low midrange. No percussion, no rhythm, no melody, no change.",
+      "seed": 3023,
+      "seed_base": 3021,
+      "candidates_auditioned": 5,
+      "candidate_raw_lengths_s": [
+        35.0,
+        24.8,
+        25.0,
+        18.0,
+        20.7
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        6
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -17.7,
+        "true_peak_dbtp": -11.6,
+        "loudness_range_lu": 8.1,
+        "gain_applied_db": -8.1,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0068,
+        "hf_tilt_db": -18.5,
+        "spectral_centroid_hz": 1224.3,
+        "harsh_band_ratio": 0.2399,
+        "low_band_ratio": 0.1539,
+        "air_band_ratio": 0.0024,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.2289,
+        "dynamic_span_db": 7.96,
+        "slow_envelope_range_db": 0.0,
+        "seam_rms_delta_db": -1.24,
+        "event_prominence_db": 3.86,
+        "bed_evenness_db": 3.68
+      },
+      "flags": [
+        "short"
+      ],
+      "generate_s": 245.3,
+      "prompt_tokens": 125
+    },
+    {
+      "id": "calm_texture_glass",
+      "category": "texture",
+      "file": "texture/calm_texture_glass.flac",
+      "tags": [
+        "texture",
+        "glass",
+        "sparse",
+        "delicate",
+        "loop",
+        "barely-music"
+      ],
+      "use": "Sparse delicate tones for reflective pauses. Loopable.",
+      "loopable": true,
+      "instrumental": true,
+      "duration_s": 12.106213,
+      "sample_rate": 44100,
+      "channels": 2,
+      "bit_depth": 24,
+      "sha256": "38ae6f8cf6f9fb81e1899971ad20931ccec41609621581de74dc6eea8599f5c3",
+      "bytes": 1927957,
+      "caption": "Global Metadata: sparse ambient texture; no steady tempo; delicate, quiet and reflective; clean intimate production with a soft tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; low soft wooden marimba tones and a dark warm pad are the whole texture. Arrangement: There are no sections. Low soft wooden marimba notes in the bottom two octaves appear at long irregular intervals, each decaying slowly into a dark warm pad underneath. Everything sits low; there is no bright top end and no bell-like shimmer. No percussion, no rhythm, no melody, no development, no build.",
+      "seed": 3022,
+      "seed_base": 3022,
+      "candidates_auditioned": 5,
+      "candidate_raw_lengths_s": [
+        29.1,
+        23.2,
+        19.1,
+        38.9,
+        19.9
+      ],
+      "steps": 30,
+      "cfg_flow": 1.7,
+      "arc_band_db": [
+        0,
+        6
+      ],
+      "loudness": {
+        "integrated_lufs": -23.0,
+        "max_momentary_lufs": -17.9,
+        "true_peak_dbtp": -9.6,
+        "loudness_range_lu": 3.5,
+        "gain_applied_db": -9.8,
+        "gain_limited_by": "loudness"
+      },
+      "qc": {
+        "spectral_flatness": 0.0131,
+        "hf_tilt_db": 24.02,
+        "spectral_centroid_hz": 1131.5,
+        "harsh_band_ratio": 0.0654,
+        "low_band_ratio": 0.0,
+        "air_band_ratio": 0.0019,
+        "dc_offset": 0.0,
+        "presence_band_ratio": 0.3364,
+        "dynamic_span_db": 13.62,
+        "slow_envelope_range_db": 0.74,
+        "seam_rms_delta_db": -2.3,
+        "event_prominence_db": 5.34,
+        "bed_evenness_db": 4.79
+      },
+      "flags": [
+        "crowds_the_voice"
+      ],
+      "generate_s": 235.2,
+      "prompt_tokens": 150
+    }
+  ]
+}

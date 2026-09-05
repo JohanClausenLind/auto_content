@@ -1,0 +1,12 @@
+[project]
+name = "cf-skill-clearervoice"
+version = "0.1.0"
+description = "Isolated environment for ClearerVoice-Studio (Apache-2.0 code and weights, modelscope/ClearerVoice-Studio): MossFormer2_SE_48K speech enhancement and MossFormer2_SR_48K 48 kHz speech super-resolution. Runs before Resemble Enhance as the optional cleanup / band-extension stage. Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # The published wheel of the upstream inference package; it pins librosa/soundfile/opencv and
+    # caps numpy below 2.0 itself, so torch is the only pin worth making here.
+    "clearvoice==0.1.2",
+    "torch==2.9.1",
+    "torchaudio==2.9.1",
+]

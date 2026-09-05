@@ -1,8 +1,8 @@
-/* Shell layout: top bar + side nav + main. All colours come from --cf-* tokens. */
+/* Shell layout: top bar + icon rail + main, the node-editor chrome. Colours are --cf-* tokens. */
 .cf-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
-  grid-template-columns: 15rem 1fr;
+  grid-template-columns: auto 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas: "top top" "nav main";
 }
@@ -46,19 +46,25 @@
 }
 
 .cf-sidenav {
-  grid-area: nav; border-right: 1px solid var(--cf-border); padding: var(--cf-space-4) var(--cf-space-3);
-  background: var(--cf-panel); display: flex; flex-direction: column; gap: var(--cf-space-5); overflow-y: auto;
+  grid-area: nav; border-right: 1px solid var(--cf-border); padding: var(--cf-space-2) 4px;
+  background: var(--cf-panel); display: flex; flex-direction: column; gap: var(--cf-space-2);
+  overflow-y: auto; width: 3.5rem; scrollbar-width: none;
 }
-.cf-sidenav__heading { margin: 0 0 var(--cf-space-2) var(--cf-space-3); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--cf-muted); }
+.cf-sidenav::-webkit-scrollbar { display: none; }
+.cf-sidenav__section + .cf-sidenav__section { border-top: 1px solid var(--cf-border); padding-top: var(--cf-space-2); }
 .cf-sidenav__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .cf-sidenav__link {
-  display: block; padding: var(--cf-space-2) var(--cf-space-3); border-radius: var(--cf-radius-md);
-  color: var(--cf-fg); text-decoration: none; transition: background-color var(--cf-duration);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: var(--cf-space-2) 0; border-radius: var(--cf-radius-md);
+  color: var(--cf-muted); text-decoration: none; transition: background-color var(--cf-duration), color var(--cf-duration);
 }
+.cf-sidenav__icon { font-size: 1.05rem; line-height: 1; }
+.cf-sidenav__label { font-size: 0.55rem; letter-spacing: 0.02em; max-width: 3.3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cf-sidenav__link:hover { background: var(--cf-hover); color: var(--cf-fg); }
-.cf-sidenav__link--active { background: var(--cf-accent-soft); font-weight: 600; }
+.cf-sidenav__link--active { background: var(--cf-accent-soft); color: var(--cf-fg); font-weight: 600; box-shadow: inset 2px 0 0 var(--cf-accent); }
 
-.cf-main { grid-area: main; padding: var(--cf-space-6) var(--cf-space-6) var(--cf-space-8); min-width: 0; outline: none; }
+.cf-main { grid-area: main; padding: var(--cf-space-6) var(--cf-space-6) var(--cf-space-8); min-width: 0; min-height: 0; outline: none; overflow-y: auto; }
+.cf-main--flush { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 .cf-page { max-width: 64rem; margin: 0 auto; display: flex; flex-direction: column; gap: var(--cf-space-5); }
 .cf-page__header { display: flex; flex-direction: column; gap: var(--cf-space-1); }
 .cf-page__title { margin: 0; font-size: 1.6rem; font-weight: 650; letter-spacing: -0.01em; }
@@ -106,7 +112,7 @@
   .cf-nav-toggle { display: inline-flex; }
   .cf-brand-name { display: none; }
   .cf-budget, .cf-palette-trigger kbd { display: none; }
-  .cf-sidenav { display: none; position: fixed; top: 3.25rem; left: 0; bottom: 0; width: 15rem; z-index: 60; box-shadow: var(--cf-shadow-lg); }
+  .cf-sidenav { display: none; position: fixed; top: 3.25rem; left: 0; bottom: 0; z-index: 60; box-shadow: var(--cf-shadow-lg); }
   .cf-shell[data-nav-open] .cf-sidenav { display: flex; }
   .cf-main { padding: var(--cf-space-4); }
 }
@@ -114,3 +120,39 @@
 /* Right-side drawer variant for the assistant panel (overrides the centered overlay). */
 .cf-overlay--right { align-items: stretch; justify-content: flex-end; padding: 0; }
 .cf-overlay--right .cf-modal { height: 100%; max-height: none; border-radius: 0; border-top: none; border-right: none; border-bottom: none; }
+
+/* Appearance preferences (Settings ▸ Appearance), painted onto <html> by PrefsProvider. */
+
+/* Icons-only rail: the label is dropped but stays reachable as the link's title/aria name. */
+.cf-shell[data-rail="icons"] .cf-sidenav { width: 2.75rem; }
+.cf-shell[data-rail="icons"] .cf-sidenav__label { display: none; }
+
+/* Compact density tightens the page rhythm without touching the type scale. */
+:root[data-density="compact"] {
+  --cf-space-5: 0.75rem;
+  --cf-space-6: 1rem;
+  --cf-space-8: 1.5rem;
+}
+:root[data-density="compact"] .cf-page { gap: var(--cf-space-3); }
+:root[data-density="compact"] .cf-main { padding: var(--cf-space-4) var(--cf-space-4) var(--cf-space-6); }
+:root[data-density="compact"] .cf-sidenav__link { padding: var(--cf-space-1) 0; }
+
+/* Motion: "reduced" opts in regardless of the OS setting, "full" opts out of it. */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

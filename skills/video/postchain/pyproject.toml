@@ -1,0 +1,18 @@
+[project]
+name = "cf-skill-postchain"
+version = "0.1.0"
+description = "Thin runners for the video post-processing chain: Cutie (mask tracking), ProPainter (inpainting), SeedVR2 (upscale/restore), GIMM-VFI and Practical-RIFE (frame interpolation). Each tool runs in its own upstream checkout environment under external/<repo>/.venv; this env only carries the runner (numpy, Pillow)."
+requires-python = ">=3.12"
+dependencies = [
+    "numpy==2.5.2",
+    "pillow==12.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

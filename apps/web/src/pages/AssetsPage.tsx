@@ -45,7 +45,7 @@ function SequenceCard({ seq }: { seq: SequenceSummary }) {
       <div className="cf-seq__strip">
         {seq.anchor && (
           <figure className="cf-seq__thumb cf-seq__thumb--anchor">
-            <img src={api.sequences.fileUrl(seq.name, "anchor.png")} alt={`${seq.name} anchor image`} loading="lazy" />
+            <img src={api.sequences.fileUrl(seq.name, "anchor.png")} alt={`${seq.name} anchor frame`} loading="lazy" />
             <figcaption>anchor</figcaption>
           </figure>
         )}

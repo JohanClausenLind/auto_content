@@ -1,0 +1,488 @@
+{
+  "$comment": "Recipe for the background-music library. Rationale and sources: docs/research/2026-09-07-background-music-library.md. Captions follow MiniMax's Structured Caption format (Global Metadata / Vocal Details / Arrangement, in that order) and every one of them states that the piece is fully instrumental -- the `instrumental` request flag is also set, which substitutes the [instrumental] structure tag for the lyrics in the model's own prompt assembly. Everything here is written as underscore: simple slow harmony, motifs rather than melodies, texture rather than arrangement, and no drum kit anywhere.",
+  "model": "MiniMax-Music3-GGUF",
+  "runtime": "external/HOT-Step-CPP engine, POST /mm3/synth",
+  "sample_rate": 44100,
+  "channels": 2,
+  "steps": 30,
+  "cfg_flow": 1.7,
+  "wav_bits": 24,
+  "defaults": {
+    "highpass_hz": 25,
+    "fade_in_s": 0.75,
+    "fade_out_s": 4.0,
+    "lead_in_s": 2.0,
+    "tail_pad_s": 2.0
+  },
+  "targets": {
+    "bed": {
+      "metric": "integrated_lufs",
+      "value": -23.0,
+      "true_peak_dbtp": -1.0
+    }
+  },
+  "qc": {
+    "max_presence_ratio": 0.3,
+    "max_harsh_ratio": 0.3
+  },
+  "sounds": [
+    {
+      "id": "doc_strings_reflective",
+      "category": "documentary",
+      "tags": [
+        "strings",
+        "classical",
+        "reflective",
+        "calm",
+        "underscore"
+      ],
+      "use": "The default documentary bed. Reflective interview and observational footage.",
+      "caption": "Global Metadata: contemporary classical underscore for documentary film; slow tempo; a calm, steady emotional level that neither builds nor fades; warm intimate chamber recording with a soft natural room. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a section of warm sustained strings carries the lead texture. Arrangement: [0:00-0:20] warm sustained violins and violas enter alone on a long slow chord. [0:20-0:50] a cello joins underneath moving in whole notes; the harmony changes once, simply. [0:50-1:20] a short gentle motif appears high in the violins and recedes. [1:20-1:50] the motif returns once, quieter, over the same slow harmony. [1:50-2:00] the strings sustain and settle on the opening chord. No percussion anywhere, no melody in the foreground, even dynamics throughout.",
+      "seed": 3001,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "doc_piano_felt",
+      "category": "documentary",
+      "tags": [
+        "piano",
+        "felt",
+        "sparse",
+        "intimate",
+        "underscore"
+      ],
+      "use": "Intimate close-up interviews and quiet personal moments.",
+      "caption": "Global Metadata: minimal neoclassical underscore; slow tempo; quiet, tender and unchanging; very close intimate recording with audible felt and soft room tone. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a felt-muted upright piano carries the lead texture. Arrangement: [0:00-0:20] a felt piano alone, slow widely spaced chords with long gaps of near silence between them. [0:20-0:50] a faint low string pad enters far underneath and holds. [0:50-1:20] a second piano voice adds sparse single notes in the gaps. [1:20-1:50] the second voice thins out and the piano returns to its opening chords. [1:50-2:00] the piano holds a final chord and lets it decay. No percussion, no melody that could be hummed, soft throughout.",
+      "seed": 3002,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "doc_strings_piano_arc",
+      "category": "documentary",
+      "tags": [
+        "arc",
+        "build",
+        "strings",
+        "piano",
+        "pacing"
+      ],
+      "use": "A segment that needs to move: gathers pace in the middle, then settles again. The 'quicker then slower' bed.",
+      "caption": "Global Metadata: contemporary classical documentary underscore with a clear pacing arc; begins slow, quickens through the middle, then slows and settles again; the emotional progression rises and resolves; warm cinematic chamber production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; felt piano and warm strings share the lead texture. Arrangement: Opening third: a felt piano holds slow sparse chords over a low string drone, very quiet. Middle third: the pulse gathers, quicker repeating piano figures and a light staccato string ostinato lift the energy and the strings swell broader, still restrained and never bombastic. Final third: the ostinato thins out, the tempo eases back, the strings sustain and fade, and the piece ends on the solo piano holding one soft chord. No drum kit anywhere; any percussion is a soft low pulse.",
+      "seed": 3003,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        5,
+        24
+      ],
+      "candidates": 6
+    },
+    {
+      "id": "doc_solemn_low",
+      "category": "documentary",
+      "tags": [
+        "solemn",
+        "cello",
+        "historical",
+        "grave",
+        "underscore"
+      ],
+      "use": "Grave subject matter, archive footage, historical segments.",
+      "caption": "Global Metadata: solemn classical underscore; very slow tempo; grave and weighty, holding one serious mood; dark warm orchestral recording in a large hall. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; low cellos and double basses carry the lead texture. Arrangement: [0:00-0:25] low cellos and double basses sustain a long dark chord in a large hall. [0:25-0:55] a distant viola line moves very slowly above them. [0:55-1:25] the harmony shifts down once, heavier. [1:25-1:50] the viola falls away and the low strings hold alone. [1:50-2:00] the chord decays into the hall's reverb tail. No percussion, no melody in the foreground, no lift.",
+      "seed": 3004,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "doc_hopeful_resolve",
+      "category": "documentary",
+      "tags": [
+        "hopeful",
+        "resolve",
+        "ending",
+        "warm",
+        "strings"
+      ],
+      "use": "Closing sequences and end cards. Resolves without becoming triumphant.",
+      "caption": "Global Metadata: warm contemporary classical underscore; slow tempo; a gentle emotional lift that resolves and settles; warm open cinematic production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; warm strings and a soft piano share the lead texture. Arrangement: [0:00-0:20] a soft piano and a warm string pad hold quiet open chords. [0:20-0:45] the harmony begins to move upward, still very quiet. [0:45-1:10] a high sustained violin line joins and the strings open out, warm and hopeful but restrained. [1:10-1:30] the strings thin back to pad and piano. [1:30-1:40] the piece settles on a held major chord. No percussion, never triumphant, never loud.",
+      "seed": 3005,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        5,
+        24
+      ]
+    },
+    {
+      "id": "doc_tension_slow_build",
+      "category": "tension",
+      "tags": [
+        "tension",
+        "build",
+        "suspense",
+        "science",
+        "underscore"
+      ],
+      "use": "Soft suspense under a science explainer or an unfolding investigation.",
+      "caption": "Global Metadata: orchestral underscore with soft tension; slow tempo; a quiet unease that gradually tightens and then holds; dark restrained cinematic production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; sustained low strings carry the lead texture. Arrangement: [0:00-0:25] low sustained strings hold one unresolved chord with a faint high shimmer above. [0:25-0:55] a very soft low pulse enters, marking slow time. [0:55-1:25] a second string layer enters a tone apart and tightens the harmony. [1:25-1:55] the low pulse grows slightly more present; the tension holds. [1:55-2:10] the layers sustain without resolving and fade. No drum kit, no melody, no crescendo to a hit.",
+      "seed": 3006,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        5,
+        24
+      ]
+    },
+    {
+      "id": "doc_investigative_pulse",
+      "category": "tension",
+      "tags": [
+        "pulse",
+        "investigative",
+        "ticking",
+        "steady",
+        "underscore"
+      ],
+      "use": "Procedural or investigative narration that needs forward motion without drama.",
+      "caption": "Global Metadata: minimal electronic underscore with a quiet steady pulse; moderate tempo; focused and level, faintly restless; clean modern production with a dry close sound. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a deep muted synth bass pulse carries the lead texture. Arrangement: [0:00-0:20] a quiet muted pulse begins, steady like a clock. [0:20-0:50] a low synth bass enters holding simple slow harmony underneath. [0:50-1:20] faint low muted plucks in the bass register mark the offbeats; nothing sits in the midrange. [1:20-1:50] the harmony changes once; everything else continues unchanged. [1:50-2:00] the plucks drop away and the pulse continues alone. No drum kit, no snare, no melody in the foreground, one level throughout.",
+      "seed": 3007,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ],
+      "candidates": 5
+    },
+    {
+      "id": "doc_unease_drone",
+      "category": "tension",
+      "tags": [
+        "drone",
+        "unease",
+        "dark",
+        "texture",
+        "underscore"
+      ],
+      "use": "Dread and uncertainty. Almost textural — use where music would be too much.",
+      "caption": "Global Metadata: dark ambient underscore; no clear tempo; uneasy and static, holding one unresolved mood; wide dark production with a long tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a low sustained synthesiser drone carries the lead texture. Arrangement: [0:00-0:30] a dark low drone establishes and holds. [0:30-1:00] faint metallic overtones drift far in the background. [1:00-1:30] a distant string-like layer swells almost imperceptibly and recedes. [1:30-2:00] the drone continues unchanged, unresolved. No percussion, no rhythm, no melody, no resolution.",
+      "seed": 3008,
+      "min_length_s": 12.0,
+      "loop": {
+        "max_length_s": 45,
+        "min_length_s": 9.0,
+        "crossfade_s": 5.0
+      },
+      "arc_band_db": [
+        0,
+        6
+      ],
+      "candidates": 5
+    },
+    {
+      "id": "nature_open_wide",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "landscape",
+        "open",
+        "airy",
+        "strings"
+      ],
+      "use": "Aerials, landscapes, wide establishing shots.",
+      "caption": "Global Metadata: cinematic pastoral underscore; slow tempo; open, calm and quietly awed; wide airy orchestral production with generous natural reverb. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; high sustained strings and harp carry the lead texture. Arrangement: [0:00-0:25] high sustained strings hold wide open chords. [0:25-0:55] a harp adds a slow rising arpeggio gesture; a soft low pad supports underneath. [0:55-1:25] the harmony changes slowly and simply; a second harp gesture answers the first. [1:25-1:55] the strings widen further, still calm. [1:55-2:10] everything sustains and settles. No percussion, no melody in the foreground, spacious and unhurried.",
+      "seed": 3009,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "nature_gentle_curious",
+      "category": "nature",
+      "tags": [
+        "nature",
+        "curious",
+        "light",
+        "woodwind",
+        "gentle"
+      ],
+      "use": "Wildlife and small-scale nature: something being examined up close.",
+      "caption": "Global Metadata: light pastoral chamber underscore; gently moving tempo; curious, warm and unhurried; natural close chamber recording. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft clarinet and pizzicato strings share the lead texture. Arrangement: [0:00-0:20] soft pizzicato strings step gently and evenly. [0:20-0:45] a warm clarinet holds long simple phrases above them. [0:45-1:10] a light harp figure appears in the gaps. [1:10-1:35] the clarinet rests; the pizzicato and harp continue. [1:35-1:50] the clarinet returns for one last phrase and the piece settles. No drums, no build, no big melody, gentle throughout.",
+      "seed": 3010,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ],
+      "candidates": 6
+    },
+    {
+      "id": "nature_vast_slow",
+      "category": "nature",
+      "tags": [
+        "vast",
+        "slow",
+        "cinematic",
+        "wide",
+        "restrained"
+      ],
+      "use": "Very slow wide shots: ice, ocean, desert, deep time.",
+      "caption": "Global Metadata: slow cinematic ambient orchestral underscore; very slow tempo; vast, still and patient; extremely wide production with a long reverb tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a broad string and synthesiser pad carries the lead texture. Arrangement: [0:00-0:35] a very broad pad of strings and warm synthesiser sustains one enormous slow chord. [0:35-1:10] a distant low swell rises underneath and falls away. [1:10-1:45] the harmony changes once, slowly. [1:45-2:20] the pad holds, vast and still. No percussion, no rhythm, no melodic line, texture and space rather than music.",
+      "seed": 3011,
+      "min_length_s": 12.0,
+      "loop": {
+        "max_length_s": 45,
+        "min_length_s": 9.0,
+        "crossfade_s": 5.0
+      },
+      "arc_band_db": [
+        0,
+        6
+      ]
+    },
+    {
+      "id": "explainer_light_pulse",
+      "category": "explainer",
+      "tags": [
+        "explainer",
+        "light",
+        "positive",
+        "pulse",
+        "corporate"
+      ],
+      "use": "General explainer and how-to narration. Light, uncomplicated, non-distracting.",
+      "caption": "Global Metadata: light modern underscore for explainer video; moderate easy tempo; positive, clear and even; clean bright modern production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft marimba and warm synth pad share the lead texture. Arrangement: [0:00-0:20] a soft marimba plays a simple even repeating figure. [0:20-0:45] a warm synth pad and a gentle bass enter holding simple chords. [0:45-1:10] a very light shaker joins, keeping time softly. [1:10-1:35] the harmony changes once; the figure continues unchanged. [1:35-1:50] the shaker drops away and the marimba settles. No drum kit, no snare, no melody that pulls focus, constant energy.",
+      "seed": 3012,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "explainer_neutral_marimba",
+      "category": "explainer",
+      "tags": [
+        "neutral",
+        "marimba",
+        "steady",
+        "unobtrusive"
+      ],
+      "use": "The most neutral bed here. Use when the content, not the mood, should carry.",
+      "caption": "Global Metadata: minimal neutral underscore; moderate tempo; emotionally neutral and completely even; dry clean close production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a muted marimba carries the lead texture. Arrangement: [0:00-0:20] a muted marimba begins a simple two-chord pattern. [0:20-0:45] a quiet sustained pad joins underneath. [0:45-1:10] a soft low bass note per bar is added. [1:10-1:35] everything continues, unchanged and deliberately plain. [1:35-1:45] the pattern settles and stops. No development, no build, no melody, one level from start to finish.",
+      "seed": 3013,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "corporate_uplift_soft",
+      "category": "explainer",
+      "tags": [
+        "corporate",
+        "uplifting",
+        "inspirational",
+        "warm",
+        "restrained"
+      ],
+      "use": "Company and promotional pieces that need warmth without a hard sell.",
+      "caption": "Global Metadata: warm inspirational corporate underscore; moderate tempo; comforting and gently uplifting, rising slightly and settling; polished warm modern production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a clean electric piano and warm strings share the lead texture. Arrangement: [0:00-0:20] a clean electric piano plays a simple even chord pattern. [0:20-0:45] a soft pad and gentle bass join underneath. [0:45-1:15] warm strings enter and the harmony lifts a little; a soft light pulse keeps time. [1:15-1:40] the strings hold their lift, quietly optimistic. [1:40-2:00] the strings recede and the electric piano settles back where it began. No drum kit, no big melody, no anthem.",
+      "seed": 3014,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        5,
+        24
+      ]
+    },
+    {
+      "id": "tech_minimal_grid",
+      "category": "explainer",
+      "tags": [
+        "tech",
+        "minimal",
+        "electronic",
+        "clean",
+        "product"
+      ],
+      "use": "Product, software and technical demos. Clean and modern without being cold.",
+      "caption": "Global Metadata: minimal electronic underscore; moderate steady tempo; clean, focused and even; precise modern production with a dry close sound. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft plucked synthesiser carries the lead texture. Arrangement: [0:00-0:20] a soft plucked synthesiser begins an even quiet pattern. [0:20-0:45] a warm sustained pad holds simple slow harmony underneath. [0:45-1:10] a gentle low bass marks the chord changes; a faint soft tick keeps time. [1:10-1:35] the harmony changes once; the pattern continues. [1:35-1:50] the pluck thins out and the pad holds. No snare, no melody in the foreground, no build.",
+      "seed": 3015,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "data_calm_pulse",
+      "category": "explainer",
+      "tags": [
+        "data",
+        "charts",
+        "quiet",
+        "pulse",
+        "focus"
+      ],
+      "use": "Charts, figures and data segments where the narration carries the detail.",
+      "caption": "Global Metadata: very quiet minimal underscore; slow steady tempo; calm, focused and unchanging; clean dry production sitting well back. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a soft sine-like synthesiser pulse carries the lead texture. Arrangement: [0:00-0:20] a soft rounded synthesiser pulse repeats slowly and quietly. [0:20-0:45] a low pad enters holding one chord. [0:45-1:10] faint high tones appear occasionally like distant markers. [1:10-1:35] one slow chord change; everything else unchanged. [1:35-1:45] the high tones stop and the pulse continues alone. Deliberately almost empty. No percussion, no melody.",
+      "seed": 3016,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "human_warm_piano",
+      "category": "human",
+      "tags": [
+        "piano",
+        "warm",
+        "human",
+        "personal",
+        "gentle"
+      ],
+      "use": "Personal stories and human-interest segments.",
+      "caption": "Global Metadata: warm intimate neoclassical underscore; slow tempo; tender, kind and steady; close warm piano recording with a soft natural room. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a warm upright piano carries the lead texture. Arrangement: [0:00-0:20] a warm upright piano plays slow simple chords. [0:20-0:45] a gentle repeating inner motif appears between the chords. [0:45-1:15] a soft string pad enters quietly and stays. [1:15-1:40] the motif returns once more over the pad. [1:40-1:50] the piano holds its last chord. No percussion, no build to a peak, nothing that pulls attention from a speaking voice.",
+      "seed": 3017,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "human_bittersweet_strings",
+      "category": "human",
+      "tags": [
+        "bittersweet",
+        "strings",
+        "melancholy",
+        "restrained"
+      ],
+      "use": "Loss, memory and reflection. Sad without being sentimental.",
+      "caption": "Global Metadata: bittersweet contemporary classical underscore; slow tempo; melancholy held at one level, neither lifting nor collapsing; warm intimate chamber production. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a solo cello and a string pad share the lead texture. Arrangement: [0:00-0:25] a solo cello holds a long slow phrase over a quiet string pad. [0:25-0:55] a felt piano adds sparse single notes underneath. [0:55-1:25] the cello's second phrase sits a little lower, minor and unresolved. [1:25-1:50] the piano falls silent; the cello and pad hold. [1:50-2:00] the phrase ends unresolved and fades. No percussion, no swell to a climax, restrained throughout.",
+      "seed": 3018,
+      "min_length_s": 28.0,
+      "arc_band_db": [
+        0,
+        14
+      ]
+    },
+    {
+      "id": "calm_texture_warm",
+      "category": "texture",
+      "tags": [
+        "texture",
+        "drone",
+        "warm",
+        "ambient",
+        "loop",
+        "barely-music"
+      ],
+      "use": "Barely music. A warm presence under narration where a tune would be too much. Loopable.",
+      "caption": "Global Metadata: warm ambient texture; no tempo and no rhythm; still, warm and completely unchanging; soft analogue production with gentle tape warmth. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a warm sustained synthesiser pad is the whole texture. Arrangement: There are no sections. A warm sustained pad holds one soft consonant chord for the entire duration with very slow internal movement, like breathing. No percussion, no rhythm, no melody, no chord change, no build. It is a texture, not a piece of music.",
+      "seed": 3019,
+      "loop": {
+        "max_length_s": 40,
+        "min_length_s": 9.0,
+        "crossfade_s": 5.0
+      },
+      "min_length_s": 12.0,
+      "arc_band_db": [
+        0,
+        6
+      ]
+    },
+    {
+      "id": "calm_texture_air",
+      "category": "texture",
+      "tags": [
+        "texture",
+        "airy",
+        "shimmer",
+        "light",
+        "loop",
+        "barely-music"
+      ],
+      "use": "A light airy presence. Sits above the voice rather than under it. Loopable.",
+      "caption": "Global Metadata: light ambient texture; no tempo and no rhythm; airy, open and static; spacious production with a long soft tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a high shimmering synthesiser pad is the whole texture. Arrangement: There are no sections. A high soft shimmer sustains for the whole duration with faint slow movement inside it and a very quiet low pad far underneath for support. No percussion, no rhythm, no melody, no change. Pure texture.",
+      "seed": 3020,
+      "loop": {
+        "max_length_s": 40,
+        "min_length_s": 9.0,
+        "crossfade_s": 5.0
+      },
+      "min_length_s": 12.0,
+      "arc_band_db": [
+        0,
+        6
+      ]
+    },
+    {
+      "id": "calm_texture_deep",
+      "category": "texture",
+      "tags": [
+        "texture",
+        "deep",
+        "low",
+        "weight",
+        "loop",
+        "barely-music"
+      ],
+      "use": "Low weight and seriousness with almost no musical content. Loopable.",
+      "caption": "Global Metadata: deep ambient texture; no tempo and no rhythm; heavy, still and unchanging; dark wide production, felt more than heard. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; a deep low synthesiser drone is the whole texture. Arrangement: There are no sections. A deep low drone sustains for the entire duration with very slow gentle swells and almost no content above the low midrange. No percussion, no rhythm, no melody, no change.",
+      "seed": 3021,
+      "loop": {
+        "max_length_s": 40,
+        "min_length_s": 9.0,
+        "crossfade_s": 5.0
+      },
+      "min_length_s": 12.0,
+      "arc_band_db": [
+        0,
+        6
+      ],
+      "candidates": 5
+    },
+    {
+      "id": "calm_texture_glass",
+      "category": "texture",
+      "tags": [
+        "texture",
+        "glass",
+        "sparse",
+        "delicate",
+        "loop",
+        "barely-music"
+      ],
+      "use": "Sparse delicate tones for reflective pauses. Loopable.",
+      "caption": "Global Metadata: sparse ambient texture; no steady tempo; delicate, quiet and reflective; clean intimate production with a soft tail. Vocal Details: This piece is fully instrumental with no vocals of any kind, no singing, no spoken word and no vocal samples; low soft wooden marimba tones and a dark warm pad are the whole texture. Arrangement: There are no sections. Low soft wooden marimba notes in the bottom two octaves appear at long irregular intervals, each decaying slowly into a dark warm pad underneath. Everything sits low; there is no bright top end and no bell-like shimmer. No percussion, no rhythm, no melody, no development, no build.",
+      "seed": 3022,
+      "loop": {
+        "max_length_s": 40,
+        "min_length_s": 9.0,
+        "crossfade_s": 5.0
+      },
+      "min_length_s": 12.0,
+      "arc_band_db": [
+        0,
+        6
+      ],
+      "candidates": 5
+    }
+  ],
+  "candidates": 3,
+  "cap_s": 120.0
+}

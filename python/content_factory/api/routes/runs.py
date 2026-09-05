@@ -111,6 +111,46 @@ async def approve(
     return {"run_id": run_id, "decision": body.decision}
 
 
+class StopBody(BaseModel):
+    reason: str = Field(default="", max_length=1000)
+    graceful: bool = Field(
+        default=False,
+        description="Stop at the next node boundary instead of cancelling the node in flight.",
+    )
+
+
+@router.post("/runs/{run_id}/stop")
+async def stop(
+    run_id: str,
+    body: StopBody,
+    p: Principal = Depends(EDITOR),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Stop a run that is executing. Editor, like starting one: this destroys no artifact — the
+    stages already finished keep their cache entries, so a later run reuses them."""
+    view = await svc.run_view(db, p.workspace_id, run_id)
+    if view is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+    try:
+        result = await svc.stop_run(
+            run_id, actor=p.account.username, reason=body.reason, graceful=body.graceful
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, f"workflow engine unavailable: {exc}"
+        ) from exc
+    await audit.record(
+        db,
+        "run.stop",
+        actor_account_id=p.account.id,
+        workspace_id=p.workspace_id,
+        target_type="run",
+        target_id=run_id,
+        detail={"outcome": result.get("outcome", ""), "reason": body.reason},
+    )
+    return result
+
+
 @router.get("/action-items")
 async def action_items(
     status_filter: str = "open", p: Principal = Depends(VIEWER), db: AsyncSession = Depends(get_db)

@@ -253,8 +253,11 @@
           "title": "Accent"
         },
         "font_family": {
-          "const": "Inter",
           "default": "Inter",
+          "enum": [
+            "Inter",
+            "Sora"
+          ],
           "title": "Font Family",
           "type": "string"
         },
@@ -369,6 +372,19 @@
     "CalloutScene": {
       "additionalProperties": false,
       "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Beat Id",
@@ -414,6 +430,7 @@
         }
       },
       "required": [
+        "background_asset_id",
         "beat_id",
         "emphasis",
         "kind",
@@ -484,7 +501,8 @@
         "bubble",
         "histogram",
         "waterfall",
-        "donut"
+        "donut",
+        "step"
       ],
       "title": "ChartKind",
       "type": "string"
@@ -602,6 +620,15 @@
           "title": "Scene Id",
           "type": "string"
         },
+        "source_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
         "title": {
           "$ref": "#/$defs/TextRef"
         },
@@ -651,6 +678,7 @@
         "encoding",
         "kind",
         "scene_id",
+        "source_ids",
         "title",
         "truncation_disclosure",
         "variant",
@@ -1619,6 +1647,19 @@
     "OutroScene": {
       "additionalProperties": false,
       "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Beat Id",
@@ -1665,6 +1706,7 @@
         }
       },
       "required": [
+        "background_asset_id",
         "beat_id",
         "cta",
         "emphasis",
@@ -1681,6 +1723,19 @@
       "properties": {
         "attribution": {
           "$ref": "#/$defs/TextRef"
+        },
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
         },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
@@ -1723,6 +1778,7 @@
       },
       "required": [
         "attribution",
+        "background_asset_id",
         "beat_id",
         "emphasis",
         "kind",
@@ -2313,6 +2369,20 @@
           "title": "Height",
           "type": "integer"
         },
+        "hook_text": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hook Text"
+        },
         "min_scene_ms": {
           "default": 1200,
           "minimum": 200,
@@ -2406,6 +2476,20 @@
           "title": "Schema Version",
           "type": "integer"
         },
+        "visual_subject": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Visual Subject"
+        },
         "width": {
           "minimum": 16,
           "title": "Width",
@@ -2418,10 +2502,12 @@
         "fps",
         "handle_ms",
         "height",
+        "hook_text",
         "min_scene_ms",
         "plan_id",
         "scenes",
         "schema_version",
+        "visual_subject",
         "width"
       ],
       "title": "StoryPlan",
@@ -2610,6 +2696,19 @@
     "TitleScene": {
       "additionalProperties": false,
       "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Beat Id",
@@ -2656,6 +2755,7 @@
         }
       },
       "required": [
+        "background_asset_id",
         "beat_id",
         "emphasis",
         "kind",
@@ -2735,6 +2835,19 @@
           "default": null,
           "title": "Planned Duration Ms"
         },
+        "section": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
         "spoken_text": {
           "anyOf": [
             {
@@ -2764,6 +2877,7 @@
         "measured_start_ms",
         "order",
         "planned_duration_ms",
+        "section",
         "spoken_text",
         "words"
       ],

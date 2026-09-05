@@ -69,9 +69,11 @@
         "provider": {
           "enum": [
             "mock",
+            "qwen3tts",
             "kokoro",
             "elevenlabs",
-            "azure"
+            "azure",
+            "human"
           ],
           "title": "Provider",
           "type": "string"

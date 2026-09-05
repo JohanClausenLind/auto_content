@@ -36,7 +36,8 @@ export function makeRun(overrides: Partial<RunSummary> = {}): RunSummary {
 export function makeRunDetail(overrides: Partial<RunDetail> = {}): RunDetail {
   return {
     ...makeRun(),
-    preflight_revision_hash: "rev_abc123",
+    edges: null,
+  preflight_revision_hash: "rev_abc123",
     approved_by: null,
     error: null,
     report: null,

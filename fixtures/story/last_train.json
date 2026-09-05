@@ -1,0 +1,128 @@
+{
+ "beats": [
+  {
+   "beat_id": "bea_train_take00",
+   "claim_ids": [],
+   "display_text": "The last train was at eleven.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 0,
+   "planned_duration_ms": 5000,
+   "spoken_text": null,
+   "words": []
+  },
+  {
+   "beat_id": "bea_train_take01",
+   "claim_ids": [],
+   "display_text": "I told myself I would not wait.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 1,
+   "planned_duration_ms": 6000,
+   "spoken_text": null,
+   "words": []
+  },
+  {
+   "beat_id": "bea_train_take02",
+   "claim_ids": [],
+   "display_text": "I waited.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 2,
+   "planned_duration_ms": 4000,
+   "spoken_text": null,
+   "words": []
+  },
+  {
+   "beat_id": "bea_train_take03",
+   "claim_ids": [],
+   "display_text": "You came up the platform without hurrying.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 3,
+   "planned_duration_ms": 7000,
+   "spoken_text": null,
+   "words": []
+  },
+  {
+   "beat_id": "bea_train_take04",
+   "claim_ids": [],
+   "display_text": "Like you already knew I would still be there.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 4,
+   "planned_duration_ms": 7000,
+   "spoken_text": null,
+   "words": []
+  }
+ ],
+ "deliverable_id": "dlv_last_train_film",
+ "fps": 24,
+ "handle_ms": 250,
+ "height": 576,
+ "hook_text": null,
+ "min_scene_ms": 1200,
+ "plan_id": "plan_last_train_v1",
+ "scenes": [
+  {
+   "alt_text": "Overhead: an empty station platform, one person waiting, one walking towards them.",
+   "asset_id": "ast_train_still00",
+   "beat_id": "bea_train_take00",
+   "caption": null,
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_train_scene00",
+   "variant": "default"
+  },
+  {
+   "alt_text": "Overhead: an empty station platform, one person waiting, one walking towards them.",
+   "asset_id": "ast_train_still01",
+   "beat_id": "bea_train_take01",
+   "caption": null,
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_train_scene01",
+   "variant": "default"
+  },
+  {
+   "alt_text": "Overhead: an empty station platform, one person waiting, one walking towards them.",
+   "asset_id": "ast_train_still02",
+   "beat_id": "bea_train_take02",
+   "caption": {
+    "claim_ids": [],
+    "text": "I waited."
+   },
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_train_scene02",
+   "variant": "default"
+  },
+  {
+   "alt_text": "Overhead: an empty station platform, one person waiting, one walking towards them.",
+   "asset_id": "ast_train_still03",
+   "beat_id": "bea_train_take03",
+   "caption": null,
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_train_scene03",
+   "variant": "default"
+  },
+  {
+   "alt_text": "Overhead: an empty station platform, one person waiting, one walking towards them.",
+   "asset_id": "ast_train_still04",
+   "beat_id": "bea_train_take04",
+   "caption": null,
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_train_scene04",
+   "variant": "default"
+  }
+ ],
+ "schema_version": 1,
+ "width": 1024
+}

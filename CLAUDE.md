@@ -9,16 +9,27 @@ Read `STATUS.md` first: it holds the current phase, what passed, and the next sm
   truth. Never edit `generated/` or `schema/` by hand: run `just schemas`.
 - `packages/editor-core` — typed reversible edit operations (TS, shared browser/server).
 - `apps/renderer` — Remotion compositions and the render scripts.
-- `docs/adr/` — ten ADRs; do not add more without a real decision. `docs/research/` — dated
+- `external/`, `models/`, `output/`, `.venvs/`, `sandbox/` — the git-ignored local AI stack, laid
+  out ComfyUI-style (upstream checkouts, category-sorted weight index, generated media, tool venvs,
+  scratch). See docs/setup.md "Local AI stack".
+- `docs/adr/` — twelve ADRs; do not add more without a real decision. `docs/research/` — dated
   official-doc research with URLs.
 
 ## Commands
 - `./setup.sh` (idempotent) · `just doctor` · `just up` / `just down`
+- `just stop` — one button: the active run (local and durable), the worker, API/web, the GPU
+  servers, compose. `just stop-run` stops only the run; `--dry-run` explains without touching.
 - `just schemas` (regenerate contracts) · `just schemas-check` (drift)
-- `just fmt` · `just lint` · `just typecheck` (ruff, pyright, tsc)
+- `just fmt` · `just lint` · `just typecheck` (ruff, oxlint, pyright, tsc). The JS/TS half is
+  oxlint over `.oxlintrc.json`: `correctness` is an error, and every demoted rule carries its
+  reason in that file. Add rules there, not per package — `pnpm -r run lint` cannot reach the
+  workspace root and matched nothing for the repo's first 28k lines of TypeScript.
 - `just test` — core suites: no internet, keys, GPU, or live accounts
-  (`uv run pytest -m "not integration and not gpu and not live"` + `pnpm -r test`)
-- `just test-integration` — needs compose (postgres, temporal)
+  (`uv run pytest` + `pnpm -r test`; the marker expression is defined once in
+  `pyproject.toml` `[tool.pytest.ini_options] addopts`)
+- `just test-integration` — needs compose (postgres, temporal). **Run this before closing any
+  phase that touches a stage executor or a contract a stage writes.** The core suite cannot reach
+  `ProductionWorkflow`, so a stage that no longer finds its own output stays green in `just test`.
 - `just render-smoke` — Remotion clip + ffprobe assertions
 
 ## Rules that are not negotiable

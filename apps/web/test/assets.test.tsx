@@ -36,7 +36,7 @@ describe("assets page", () => {
     // The final clip is preferred over the raw preview.
     const video = card.querySelector("video");
     expect(video?.getAttribute("src")).toContain("/v1/sequences/holding-hands/files/holding-hands.mp4");
-    expect(within(card).getByAltText("holding-hands anchor image")).toBeInTheDocument();
+    expect(within(card).getByAltText("holding-hands anchor frame")).toBeInTheDocument();
     expect(within(card).getByAltText("frame 1")).toBeInTheDocument();
     expect(within(card).getByText("1 · lock 0.91")).toBeInTheDocument();
     expect(within(card).getByRole("link", { name: "Contact sheet" })).toHaveAttribute(

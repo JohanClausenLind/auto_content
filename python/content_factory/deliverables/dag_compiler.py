@@ -16,7 +16,7 @@ from content_factory.schemas.dag import (
     StageNode,
 )
 
-COMPILER_VERSION = "0.1.0"
+COMPILER_VERSION = "0.2.0"
 
 _SHARED_CHAIN: tuple[tuple[Stage, ResourceClass], ...] = (
     (Stage.ingest, "control"),
@@ -55,9 +55,15 @@ _BRANCHES: dict[str, tuple[tuple[Stage, ResourceClass, Executor], ...]] = {
         (Stage.email_preview_qc, "render-cpu", Executor.deterministic),
     ),
     "sequence": (
+        # Shots and controls come first: the anchor is conditioned on the rendered control passes
+        # (rough RGB, layout boxes, skeleton) and neither compiler needs the generation lock.
+        # Retrieval first: a shot can name the mocap clip it was staged from, so the choice has
+        # to be made before the shots are planned.
+        (Stage.find_reference, "control", Executor.deterministic),
+        (Stage.plan_shots, "control", Executor.deterministic),
+        (Stage.compile_controls, "render-cpu", Executor.deterministic),
         (Stage.generate_anchor, "inference-image", Executor.ai),
         (Stage.lock_generation, "control", Executor.deterministic),
-        (Stage.compile_controls, "control", Executor.deterministic),
         (Stage.generate_keyframes, "inference-image", Executor.ai),
         (Stage.drift_qc, "render-cpu", Executor.deterministic),
         (Stage.interpolate, "inference-image", Executor.deterministic),
@@ -67,8 +73,10 @@ _BRANCHES: dict[str, tuple[tuple[Stage, ResourceClass, Executor], ...]] = {
         (Stage.write_copy, "inference-llm", Executor.ai),
         (Stage.lock_script, "control", Executor.deterministic),
         (Stage.synthesize_narration, "inference-audio", Executor.ai),
+        (Stage.restore_speech, "inference-audio", Executor.deterministic),
         (Stage.align_words, "inference-audio", Executor.deterministic),
         (Stage.compile_captions, "control", Executor.deterministic),
+        (Stage.select_music, "control", Executor.deterministic),
         (Stage.mix_audio, "render-cpu", Executor.deterministic),
     ),
     "video": (
@@ -100,6 +108,37 @@ _TAIL: tuple[tuple[Stage, ResourceClass], ...] = (
     (Stage.compile_destination_packages, "control"),
     (Stage.package_qc, "render-cpu"),
 )
+
+
+# Stages available to hand-drawn workspace graphs but not part of any standard branch.
+_EXTRA_STAGES: dict[Stage, tuple[ResourceClass, Executor]] = {
+    Stage.route_shots: ("control", Executor.deterministic),
+    Stage.find_reference: ("control", Executor.deterministic),
+    Stage.generate_video: ("inference-video", Executor.ai),
+    Stage.render_animation: ("render-cpu", Executor.deterministic),
+    Stage.fix_video: ("render-gpu", Executor.deterministic),
+    Stage.upscale_video: ("render-gpu", Executor.deterministic),
+    # Both reviews park on a human: passing measurements is necessary and never sufficient.
+    Stage.review_assets: ("control", Executor.human),
+    Stage.review_frames: ("control", Executor.human),
+    Stage.voice_over: ("inference-audio", Executor.deterministic),
+    Stage.sound_design: ("inference-audio", Executor.ai),
+}
+
+
+def stage_defaults() -> dict[Stage, tuple[ResourceClass, Executor]]:
+    """Default (resource class, executor) per stage — the same values compile_dag assigns,
+    consumed by the workspace-graph compiler so a hand-drawn node runs identically."""
+    defaults: dict[Stage, tuple[ResourceClass, Executor]] = {}
+    for stage, rc in _SHARED_CHAIN:
+        defaults[stage] = (rc, Executor.deterministic)
+    for chain in _BRANCHES.values():
+        for stage, rc, executor in chain:
+            defaults.setdefault(stage, (rc, executor))
+    for stage, rc in _TAIL:
+        defaults[stage] = (rc, Executor.deterministic)
+    defaults.update(_EXTRA_STAGES)
+    return defaults
 
 
 def compile_dag(

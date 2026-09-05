@@ -1,38 +1,29 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll, vi } from "vitest";
-import { themePuts } from "./msw/handlers";
+import { installJsdomShims } from "@content-factory/test-support";
+import {afterAll, afterEach, beforeAll} from "vitest";
+import { appearancePuts, graphRunPosts, graphStore, hfTokenStore, installPosts, keymapPuts, relinkPosts, themePuts, uploadPosts } from "./msw/handlers";
 import { server } from "./msw/server";
 
-if (typeof window.matchMedia !== "function") {
-  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }));
-}
-if (typeof globalThis.ResizeObserver === "undefined") {
-  class RO {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-  globalThis.ResizeObserver = RO as unknown as typeof ResizeObserver;
-}
-if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
-window.scrollTo = () => {};
+installJsdomShims();
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
   themePuts.length = 0;
+  keymapPuts.length = 0;
+  appearancePuts.length = 0;
+  graphStore.clear();
+  graphRunPosts.length = 0;
+  installPosts.length = 0;
+  relinkPosts.length = 0;
+  uploadPosts.length = 0;
+  hfTokenStore.token = null;
   window.localStorage.clear();
   document.documentElement.removeAttribute("style");
+  // PrefsProvider paints these onto <html>; they would otherwise leak into the next test.
+  document.documentElement.removeAttribute("data-density");
+  document.documentElement.removeAttribute("data-motion");
 });
 afterAll(() => server.close());

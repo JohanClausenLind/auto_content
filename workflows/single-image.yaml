@@ -1,0 +1,94 @@
+# One still image from a brief, and nothing else.
+#
+# This replaces single-image-hidream and single-image-krea2, which were the same four nodes twice
+# over and differed only in which model drew the picture. That difference belongs on the node: set
+# generate_anchor.model to hidream-o1 or krea2-turbo and one definition covers both. Consolidating
+# them is the point of this file, because a catalogue that grows a workflow per backend stops being
+# a menu of things the factory does.
+#
+# The lane is deliberately short. No shot planning, no controls, no review gate: a single frame is
+# cheap enough to look at yourself and run again. If you need the same character across several
+# images, that is picture-story's Blender pass, not this.
+schema_version: 1
+id: single-image
+name: Single image
+description: >
+  A brief becomes one finished still. plan_story turns the topic into a single beat, the image model
+  draws it, and the delivery pair checks the file and writes the per-destination crops. There is no
+  motion, no audio and no consistency machinery here, so nothing carries over to a second image.
+category: image
+tags: [image, still, anchor, delivery]
+prerequisite: >
+  Only the brief: a topic on the brief node and a prompt on generate_anchor. Drawing with Krea2
+  instead of HiDream also needs the optional ComfyUI weights below.
+models:
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+  # Only read when generate_anchor.model is krea2-turbo, which is why all three are optional. Krea2
+  # runs through ComfyUI, so it needs its text encoder and VAE as well as the transformer.
+  - kind: comfy
+    label: Krea2 transformer
+    folder: diffusion_models
+    filename: krea2_turbo_fp8_scaled.safetensors
+    optional: true
+  - kind: comfy
+    label: Krea2 text encoder
+    folder: text_encoders
+    filename: qwen3vl_4b_fp8_scaled.safetensors
+    optional: true
+  - kind: comfy
+    label: Krea2 VAE
+    folder: vae
+    filename: qwen_image_vae.safetensors
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "one image, one subject", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    values: {beats: 1}
+    note: One beat, because one beat is one image. More beats would plan frames nothing draws.
+  - key: anchor
+    type: generate_anchor
+    values:
+      model: hidream-o1
+      prompt: "the subject of the brief, framed as a single finished picture"
+      style: >
+        one clear subject, deliberate composition, even readable lighting, no collage, no panels,
+        no text overlay
+    note: >
+      model is the only thing that used to fork this lane into two workflows. krea2-turbo draws the
+      same graph; megapixels is left at its default because hidream-o1 ignores it.
+  - key: qc
+    type: qc_deliverable
+    note: The image itself is the deliverable, so QC reads it rather than a cut.
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: anchor, from_slot: anchor, to_key: qc, to_slot: deliverable}
+  - {from_key: anchor, from_slot: anchor, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - anchor
+  - qc
+  - pack

@@ -1,0 +1,233 @@
+{
+  "$defs": {
+    "AudioArtifactFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "level",
+            "clipping",
+            "dc_offset",
+            "noise_floor",
+            "sibilance",
+            "harsh_band",
+            "band_limited",
+            "spectral_flatness",
+            "silence"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "blocker",
+            "critical",
+            "major",
+            "minor",
+            "advisory"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "check",
+        "message",
+        "severity",
+        "value"
+      ],
+      "title": "AudioArtifactFinding",
+      "type": "object"
+    },
+    "AudioArtifactThresholds": {
+      "additionalProperties": false,
+      "description": "Where \"this asset has a problem\" begins. One place, so the detector, the QC gate and the\nprocessing chains all agree on the same numbers.\n\nUse :meth:`for_profile` rather than the bare defaults: the defaults are the speech ones, and\napplying them to a sound effect would flag rain as hiss and a whoosh as harsh.",
+      "properties": {
+        "band_limit_hz_min": {
+          "default": 14000.0,
+          "exclusiveMinimum": 0,
+          "title": "Band Limit Hz Min",
+          "type": "number"
+        },
+        "clipped_sample_ratio_max": {
+          "default": 0.0005,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clipped Sample Ratio Max",
+          "type": "number"
+        },
+        "dc_offset_max": {
+          "default": 0.002,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Dc Offset Max",
+          "type": "number"
+        },
+        "noise_floor_dbfs_max": {
+          "default": -55.0,
+          "maximum": 0,
+          "title": "Noise Floor Dbfs Max",
+          "type": "number"
+        },
+        "peak_dbfs_min": {
+          "default": -30.0,
+          "maximum": 0,
+          "title": "Peak Dbfs Min",
+          "type": "number"
+        },
+        "sibilance_ratio_max": {
+          "default": 0.12,
+          "exclusiveMinimum": 0,
+          "title": "Sibilance Ratio Max",
+          "type": "number"
+        },
+        "spectral_flatness_max": {
+          "default": 0.35,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Spectral Flatness Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "band_limit_hz_min",
+        "clipped_sample_ratio_max",
+        "dc_offset_max",
+        "noise_floor_dbfs_max",
+        "peak_dbfs_min",
+        "sibilance_ratio_max",
+        "spectral_flatness_max"
+      ],
+      "title": "AudioArtifactThresholds",
+      "type": "object"
+    },
+    "AudioProfile": {
+      "description": "What kind of material this is, which decides what counts as a defect.\n\nThe same numbers mean different things: a flat spectrum is hiss in a narration take and it is\nthe entire point of a rain bed. Nothing here is cosmetic — the profile selects which checks run\nand at what limits, and (in :mod:`content_factory.audio.condition`) which processing is even\nallowed to touch the audio.",
+      "enum": [
+        "speech",
+        "sound_effect",
+        "music"
+      ],
+      "title": "AudioProfile",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/AudioArtifactReport.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "What one audio asset measurably *is*, before anything is done to it.\n\nThe \"artifact / noise detection\" step shared by every generated-audio chain in this repo. For a\nnarration beat it decides whether the optional cleanup and band-extension passes are worth\nrunning, rather than denoising takes that were already clean. For a generated sound effect it\ndecides whether anything needs repairing at all — and the measurements are what keep the\nspeech models away from material they would destroy.",
+  "properties": {
+    "asset_id": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "band_limit_hz": {
+      "minimum": 0,
+      "title": "Band Limit Hz",
+      "type": "number"
+    },
+    "clipped_sample_ratio": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Clipped Sample Ratio",
+      "type": "number"
+    },
+    "dc_offset": {
+      "title": "Dc Offset",
+      "type": "number"
+    },
+    "duration_ms": {
+      "minimum": 1,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "findings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AudioArtifactFinding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "noise_floor_dbfs": {
+      "title": "Noise Floor Dbfs",
+      "type": "number"
+    },
+    "peak_dbfs": {
+      "title": "Peak Dbfs",
+      "type": "number"
+    },
+    "profile": {
+      "$ref": "#/$defs/AudioProfile",
+      "default": "speech"
+    },
+    "rms_dbfs": {
+      "title": "Rms Dbfs",
+      "type": "number"
+    },
+    "sample_rate_hz": {
+      "maximum": 192000,
+      "minimum": 8000,
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "sibilance_ratio": {
+      "minimum": 0,
+      "title": "Sibilance Ratio",
+      "type": "number"
+    },
+    "spectral_flatness": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Spectral Flatness",
+      "type": "number"
+    },
+    "thresholds": {
+      "$ref": "#/$defs/AudioArtifactThresholds",
+      "default": {
+        "band_limit_hz_min": 14000.0,
+        "clipped_sample_ratio_max": 0.0005,
+        "dc_offset_max": 0.002,
+        "noise_floor_dbfs_max": -55.0,
+        "peak_dbfs_min": -30.0,
+        "sibilance_ratio_max": 0.12,
+        "spectral_flatness_max": 0.35
+      }
+    }
+  },
+  "required": [
+    "asset_id",
+    "band_limit_hz",
+    "clipped_sample_ratio",
+    "dc_offset",
+    "duration_ms",
+    "findings",
+    "noise_floor_dbfs",
+    "peak_dbfs",
+    "profile",
+    "rms_dbfs",
+    "sample_rate_hz",
+    "schema_version",
+    "sibilance_ratio",
+    "spectral_flatness",
+    "thresholds"
+  ],
+  "title": "AudioArtifactReport",
+  "type": "object"
+}

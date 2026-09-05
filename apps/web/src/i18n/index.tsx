@@ -35,15 +35,16 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     onSuccess: () => void client.invalidateQueries({ queryKey: LOCALE_PREF_KEY }),
   });
   const locale: LocaleId = session && isLocaleId(pref.data?.value) ? pref.data.value : localOnly;
+  const saveLocale = save.mutate;
   const setLocale = useCallback(
     (next: LocaleId) => {
       setLocalOnly(next);
       if (session) {
         client.setQueryData(LOCALE_PREF_KEY, { value: next });
-        save.mutate(next);
+        saveLocale(next);
       }
     },
-    [session, client, save.mutate],
+    [session, client, saveLocale],
   );
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;

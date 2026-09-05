@@ -1,0 +1,726 @@
+{
+  "$comment": "Recipe for the video SFX + ambience library. Rationale and sources: docs/research/2026-09-07-video-sfx-and-ambience-library.md. Prompts follow the small-sfx recipe (TrackType: SFX, then source / action / production) and are written warm-and-dark on purpose: small-sfx is a post-trained checkpoint, so negative_prompt and cfg_scale do nothing and every constraint has to live in the positive prompt. Each sound is auditioned over `candidates` seeds (base seed + 0..n-1) and the best-scoring take is kept; the winning seed is recorded in the manifest, so the library stays exactly reproducible. Auditioning is not a luxury: at these short durations a large fraction of takes come back as broadband hiss, and which ones do is a property of the draw, not of the prompt or the duration. Prompts are phrased positively throughout: with no CFG on a post-trained checkpoint there is nothing to steer away from a negation, and naming an artefact in order to forbid it measurably made the click worse.",
+  "model": "StableAudio3-Small-SFX",
+  "sample_rate": 44100,
+  "channels": 2,
+  "steps": 8,
+  "defaults": {
+    "highpass_hz": 25,
+    "lead_in_s": 1.5,
+    "tail_pad_s": 1.5
+  },
+  "targets": {
+    "oneshot": {
+      "metric": "max_momentary_lufs",
+      "value": -16.0,
+      "true_peak_dbtp": -3.0
+    },
+    "bed": {
+      "metric": "integrated_lufs",
+      "value": -23.0,
+      "true_peak_dbtp": -1.0
+    }
+  },
+  "sounds": [
+    {
+      "id": "whoosh_soft",
+      "category": "transition",
+      "tags": [
+        "whoosh",
+        "swoosh",
+        "cut",
+        "scene-change"
+      ],
+      "use": "Default cut-masker. Land the cut ~60% through the whoosh.",
+      "prompt": "TrackType: SFX, a soft low-passed air whoosh, a heavy velvet curtain sweeping past the microphone in a dead room. Warm and muffled with the top end rolled off, more body than air, swelling in and falling away.",
+      "duration_s": 1.5,
+      "seed": 1001,
+      "peak_band_hz": [
+        250,
+        2000
+      ],
+      "candidates": 8,
+      "max_flatness": 0.3
+    },
+    {
+      "id": "whoosh_deep",
+      "category": "transition",
+      "tags": [
+        "whoosh",
+        "cinematic",
+        "sub",
+        "title"
+      ],
+      "use": "Bigger scene or chapter change; pair with impact_cinematic on the landing.",
+      "prompt": "TrackType: SFX, a deep cinematic whoosh built from filtered rushing air and a low sub sweep. It rushes past from left to right and settles into a short round low-end tail. Wide stereo, dark and smooth.",
+      "duration_s": 2.5,
+      "seed": 1002,
+      "peak_band_hz": [
+        40,
+        200
+      ]
+    },
+    {
+      "id": "whoosh_reverse",
+      "category": "transition",
+      "tags": [
+        "reverse",
+        "riser",
+        "build",
+        "cut"
+      ],
+      "use": "Swell into a hard cut; align the stop exactly on the cut frame.",
+      "prompt": "TrackType: SFX, a reverse whoosh that swells up out of silence into a clean cut-off point. Smooth rising air with a soft rounded top, stopping dead on the peak. Dry and close.",
+      "duration_s": 2.0,
+      "seed": 1003,
+      "peak_band_hz": [
+        200,
+        1200
+      ]
+    },
+    {
+      "id": "swish_fast",
+      "category": "transition",
+      "tags": [
+        "swish",
+        "swoosh",
+        "fast",
+        "short"
+      ],
+      "use": "Quick wipes and fast-paced social edits where whoosh_soft is too long.",
+      "prompt": "TrackType: SFX, a very short fabric swish of a jacket sleeve moving quickly past the microphone. One quick pass with a fast decay. Close-mic'd in a dead room, soft and muffled.",
+      "duration_s": 0.8,
+      "seed": 1004,
+      "peak_band_hz": [
+        800,
+        5000
+      ],
+      "max_flatness": 0.3,
+      "max_tilt_db": 6.0
+    },
+    {
+      "id": "riser_short",
+      "category": "transition",
+      "tags": [
+        "riser",
+        "build",
+        "reveal",
+        "tension"
+      ],
+      "use": "Three-second build into a reveal or a statistic.",
+      "prompt": "TrackType: SFX, a short warm riser of filtered noise and a low hum rising steadily in pitch and volume over three seconds, stopping cleanly at the peak. Smooth and round throughout.",
+      "duration_s": 3.0,
+      "seed": 1005,
+      "peak_band_hz": [
+        100,
+        1200
+      ],
+      "max_tilt_db": 3.0
+    },
+    {
+      "id": "sweep_documentary",
+      "category": "transition",
+      "tags": [
+        "sweep",
+        "neutral",
+        "documentary",
+        "under-narration"
+      ],
+      "use": "Restrained transition for factual pieces; sits under voiceover without pulling focus.",
+      "prompt": "TrackType: SFX, a slow band-passed noise sweep like wind moving through a narrow gap, drifting up and then away again. Restrained and neutral with a warm midrange.",
+      "duration_s": 3.0,
+      "seed": 1006,
+      "peak_band_hz": [
+        200,
+        1200
+      ]
+    },
+    {
+      "id": "impact_soft",
+      "category": "impact",
+      "tags": [
+        "thud",
+        "hit",
+        "land",
+        "lower-third"
+      ],
+      "use": "Weight under a lower third or a card landing. The everyday impact.",
+      "prompt": "TrackType: SFX, a blunt soft thud made by dropping a heavy padded case onto a carpeted floor. It has a pronounced low-mid body that feels heavy, with a very fast damped decay. Close-mic'd in a small dead room.",
+      "duration_s": 1.2,
+      "seed": 1007,
+      "peak_band_hz": [
+        80,
+        400
+      ]
+    },
+    {
+      "id": "impact_cinematic",
+      "category": "impact",
+      "tags": [
+        "boom",
+        "hit",
+        "title",
+        "cinematic"
+      ],
+      "use": "Title cards and act breaks. Long tail: leave it room, do not cut it short.",
+      "prompt": "TrackType: SFX, a deep cinematic boom for a title card, a large soft mallet striking a huge low drum with a long round decaying tail in a wide dark hall. Weighty and clean at the bottom.",
+      "duration_s": 4.0,
+      "seed": 1008,
+      "peak_band_hz": [
+        35,
+        200
+      ]
+    },
+    {
+      "id": "sub_drop",
+      "category": "impact",
+      "tags": [
+        "sub",
+        "drop",
+        "bass",
+        "section-change"
+      ],
+      "use": "Section change or a hard stop. Check on speakers that can reproduce 40 Hz.",
+      "prompt": "TrackType: SFX, a massive sub-bass drop falling smoothly in pitch and fading out, like a tape machine being switched off. Pure round low end, smooth all the way down.",
+      "duration_s": 2.5,
+      "seed": 1009,
+      "peak_band_hz": [
+        25,
+        100
+      ]
+    },
+    {
+      "id": "braam_soft",
+      "category": "impact",
+      "tags": [
+        "braam",
+        "brass",
+        "swell",
+        "documentary"
+      ],
+      "use": "Documentary accent for a grave point. A restrained braam, not a trailer hit.",
+      "prompt": "TrackType: SFX, a low brass-like swell that grows and falls back, warm and muted, played softly in a large hall. Dark and restrained, a documentary accent rather than a trailer hit.",
+      "duration_s": 3.5,
+      "seed": 1010,
+      "peak_band_hz": [
+        70,
+        400
+      ]
+    },
+    {
+      "id": "thunder_distant",
+      "category": "weather",
+      "tags": [
+        "thunder",
+        "storm",
+        "rumble",
+        "one-shot"
+      ],
+      "use": "Drop over storm_bed_loop wherever you want a thunder roll. Kept separate on purpose: a thunder clap baked into a loop announces the repeat every cycle.",
+      "prompt": "TrackType: SFX, a long low roll of distant thunder, rumbling in from far away and fading slowly. Deep and soft-edged, heard across open country.",
+      "duration_s": 6.0,
+      "seed": 1024,
+      "peak_band_hz": [
+        25,
+        250
+      ]
+    },
+    {
+      "id": "pop_in",
+      "category": "ui",
+      "tags": [
+        "pop",
+        "bubble",
+        "appear",
+        "reveal"
+      ],
+      "use": "Something pops onto screen: an icon, a callout, a pin dropping on a map.",
+      "prompt": "TrackType: SFX, a soft round bubble pop, one water droplet released underwater and popping at the surface. Very short and gentle, centred in the low mids. Close-mic'd and dry.",
+      "duration_s": 0.5,
+      "seed": 1011,
+      "peak_band_hz": [
+        300,
+        1600
+      ]
+    },
+    {
+      "id": "pop_small",
+      "category": "ui",
+      "tags": [
+        "plop",
+        "bullet",
+        "list",
+        "tiny"
+      ],
+      "use": "Bullet points appearing one by one. Quieter sibling of pop_in.",
+      "prompt": "TrackType: SFX, a tiny wooden plop, a fingertip flicked off the rim of a small hollow wooden box. Extremely short with a soft rounded attack and a dry damped decay.",
+      "duration_s": 0.4,
+      "seed": 1012,
+      "peak_band_hz": [
+        300,
+        1600
+      ]
+    },
+    {
+      "id": "click_soft",
+      "category": "ui",
+      "tags": [
+        "click",
+        "button",
+        "tap",
+        "cursor"
+      ],
+      "use": "Cursor clicks in a screen recording or a product demo.",
+      "prompt": "TrackType: SFX, a soft muted click from a well-damped rubber keycap pressed once. A single quiet low-mid tap with an immediate damped decay. Close-mic'd in a dead room.",
+      "duration_s": 0.3,
+      "seed": 1013,
+      "peak_band_hz": [
+        600,
+        3000
+      ]
+    },
+    {
+      "id": "tick_light",
+      "category": "ui",
+      "tags": [
+        "tick",
+        "counter",
+        "timer",
+        "step"
+      ],
+      "use": "Step-by-step counters and timelines. Repeat it; do not use data_ticks for slow counts.",
+      "prompt": "TrackType: SFX, a light wooden tick, one small clock escapement step. Very quiet and soft with a short warm decay.",
+      "duration_s": 0.25,
+      "seed": 1014,
+      "peak_band_hz": [
+        600,
+        3000
+      ]
+    },
+    {
+      "id": "page_change",
+      "category": "ui",
+      "tags": [
+        "page",
+        "paper",
+        "slide",
+        "chapter"
+      ],
+      "use": "Turning to a new page, slide or chapter — the literal page-change cue.",
+      "prompt": "TrackType: SFX, a single sheet of soft paper turned over on a desk, one smooth slide and settle. Close-mic'd and quiet, gentle throughout.",
+      "duration_s": 1.0,
+      "seed": 1015,
+      "peak_band_hz": [
+        600,
+        3000
+      ],
+      "max_flatness": 0.3,
+      "max_tilt_db": 6.0
+    },
+    {
+      "id": "slide_transition",
+      "category": "ui",
+      "tags": [
+        "slide",
+        "panel",
+        "drawer",
+        "graph-change"
+      ],
+      "use": "A graph, panel or dashboard view sliding to the next state.",
+      "prompt": "TrackType: SFX, a smooth felt-lined drawer gliding open across a wooden desk and stopping. A soft sustained slide with a gentle settle at the end, close-mic'd and quiet.",
+      "duration_s": 1.0,
+      "seed": 1016,
+      "peak_band_hz": [
+        200,
+        2000
+      ],
+      "candidates": 8
+    },
+    {
+      "id": "chart_reveal",
+      "category": "ui",
+      "tags": [
+        "chart",
+        "graph",
+        "reveal",
+        "data",
+        "shimmer"
+      ],
+      "use": "A bar chart drawing in or a figure resolving. Time the last note to the final frame.",
+      "prompt": "TrackType: SFX, a short soft ascending shimmer of glass marimba notes rising quickly and ending on a held note that fades away. Gentle mallets, rounded and warm at the top.",
+      "duration_s": 2.0,
+      "seed": 1017,
+      "peak_band_hz": [
+        600,
+        3000
+      ],
+      "max_tilt_db": 3.0
+    },
+    {
+      "id": "data_ticks",
+      "category": "ui",
+      "tags": [
+        "data",
+        "count-up",
+        "numbers",
+        "telemetry"
+      ],
+      "use": "Number count-ups and data streaming in. Fade under narration.",
+      "prompt": "TrackType: SFX, a rapid run of tiny soft data blips, quiet muted electronic ticks in an even stream that slows down and stops. Low level and warm.",
+      "duration_s": 2.0,
+      "seed": 1018,
+      "peak_band_hz": [
+        500,
+        3000
+      ]
+    },
+    {
+      "id": "notify_soft",
+      "category": "ui",
+      "tags": [
+        "notification",
+        "message",
+        "alert",
+        "chime"
+      ],
+      "use": "A message or notification arriving on screen.",
+      "prompt": "TrackType: SFX, a gentle two-note notification chime on a soft mallet instrument, a low note followed by a slightly higher one, both warm and rounded with a short natural decay.",
+      "duration_s": 1.5,
+      "seed": 1019,
+      "peak_band_hz": [
+        300,
+        1600
+      ]
+    },
+    {
+      "id": "success_chime",
+      "category": "ui",
+      "tags": [
+        "success",
+        "confirm",
+        "complete",
+        "positive"
+      ],
+      "use": "A step completing or a checkmark landing.",
+      "prompt": "TrackType: SFX, a warm three-note ascending phrase played on a wooden marimba with soft mallets. Evenly spaced and gently struck, each note decaying naturally in a small dry room.",
+      "duration_s": 1.8,
+      "seed": 1020,
+      "peak_band_hz": [
+        300,
+        1600
+      ]
+    },
+    {
+      "id": "error_soft",
+      "category": "ui",
+      "tags": [
+        "error",
+        "negative",
+        "decline",
+        "gentle"
+      ],
+      "use": "Something did not work. Deliberately matter-of-fact, not a buzzer.",
+      "prompt": "TrackType: SFX, a gentle two-note descending cue on a muted low mallet instrument, soft and matter-of-fact. Warm and rounded with a short natural decay.",
+      "duration_s": 1.5,
+      "seed": 1021,
+      "peak_band_hz": [
+        150,
+        800
+      ]
+    },
+    {
+      "id": "type_key",
+      "category": "ui",
+      "tags": [
+        "typing",
+        "keyboard",
+        "text",
+        "typewriter"
+      ],
+      "use": "Typewriter text reveals. Retrigger per character at low level.",
+      "prompt": "TrackType: SFX, a single soft keystroke on a quiet membrane keyboard. Muted, low and immediate, damped as soon as it sounds.",
+      "duration_s": 0.3,
+      "seed": 1022,
+      "peak_band_hz": [
+        600,
+        3000
+      ]
+    },
+    {
+      "id": "whoosh_ui_short",
+      "category": "ui",
+      "tags": [
+        "whoosh",
+        "ui",
+        "panel",
+        "short"
+      ],
+      "use": "Interface panels sliding in. Sub-second whoosh for motion graphics.",
+      "prompt": "TrackType: SFX, a short breathy air whoosh, a sheet of paper flicked quickly past the microphone. A light quick rush, smooth and dry, over in half a second.",
+      "duration_s": 0.7,
+      "seed": 1023,
+      "peak_band_hz": [
+        400,
+        4000
+      ],
+      "candidates": 8,
+      "max_flatness": 0.3
+    },
+    {
+      "id": "rain_light_loop",
+      "category": "weather",
+      "tags": [
+        "rain",
+        "light",
+        "bed",
+        "loop"
+      ],
+      "use": "General wet-weather bed. The safest rain: no thunder to clash with narration.",
+      "prompt": "TrackType: SFX, steady light rain falling on soft ground and leaves, recorded from a sheltered doorway. Even and continuous throughout, warm and soft with a natural stereo field.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2001
+    },
+    {
+      "id": "rain_window_loop",
+      "category": "weather",
+      "tags": [
+        "rain",
+        "window",
+        "interior",
+        "cosy",
+        "loop"
+      ],
+      "use": "Interior scene with weather outside. Muffled, so dialogue sits over it easily.",
+      "prompt": "TrackType: SFX, rain falling against a window pane heard from inside a quiet room, an even soft patter held at one steady intensity. Muffled by the glass, warm and cosy.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2002
+    },
+    {
+      "id": "storm_bed_loop",
+      "category": "weather",
+      "tags": [
+        "storm",
+        "rain",
+        "wind",
+        "heavy",
+        "loop"
+      ],
+      "use": "Heavy-weather bed. Continuous by design; add thunder_distant on top where you want it.",
+      "prompt": "TrackType: SFX, heavy rain driving down outdoors with a low continuous wind roar underneath and a faint far-off rumble on the horizon. Dark, wide and unbroken.",
+      "loop": {
+        "length_s": 28.0,
+        "crossfade_s": 4.0
+      },
+      "seed": 2003
+    },
+    {
+      "id": "wind_open_loop",
+      "category": "weather",
+      "tags": [
+        "wind",
+        "gusts",
+        "open",
+        "landscape",
+        "loop"
+      ],
+      "use": "Exteriors, landscapes, aerials. Gust swells are slow so they read as one movement.",
+      "prompt": "TrackType: SFX, steady wind moving across open grassland, slow swelling gusts over a low continuous rush. Recorded with a windshield, smooth and warm end to end.",
+      "loop": {
+        "length_s": 24.0,
+        "crossfade_s": 4.0
+      },
+      "seed": 2004
+    },
+    {
+      "id": "forest_day_loop",
+      "category": "place",
+      "tags": [
+        "forest",
+        "birds",
+        "nature",
+        "day",
+        "loop"
+      ],
+      "use": "Nature documentary bed. Sparse birds, so the loop is long to hide repeats.",
+      "prompt": "TrackType: SFX, a calm daytime forest heard from a clearing, a soft continuous wash of wind through leaves with faint birdsong far away in the canopy. Distant, mellow and even.",
+      "loop": {
+        "length_s": 28.0,
+        "crossfade_s": 4.0
+      },
+      "seed": 2005
+    },
+    {
+      "id": "ocean_waves_loop",
+      "category": "place",
+      "tags": [
+        "ocean",
+        "sea",
+        "waves",
+        "shore",
+        "loop"
+      ],
+      "use": "Coastal establishing shots and calm reflective passages.",
+      "prompt": "TrackType: SFX, small even wavelets running up a sandy shore in a steady rhythm, recorded a few metres back from the waterline. Soft continuous foam hiss, distant and warm, one wash blending into the next.",
+      "loop": {
+        "length_s": 40.0,
+        "crossfade_s": 5.0
+      },
+      "seed": 2006
+    },
+    {
+      "id": "stream_loop",
+      "category": "place",
+      "tags": [
+        "stream",
+        "river",
+        "water",
+        "brook",
+        "loop"
+      ],
+      "use": "Woodland and countryside scenes; also a neutral water bed under maps.",
+      "prompt": "TrackType: SFX, a small stream running over stones in a quiet wood, a steady even burble held at one level. Close but soft, with a warm midrange.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2007
+    },
+    {
+      "id": "fireplace_loop",
+      "category": "place",
+      "tags": [
+        "fire",
+        "fireplace",
+        "crackle",
+        "interior",
+        "loop"
+      ],
+      "use": "Interior warmth, historical pieces, cosy segments.",
+      "prompt": "TrackType: SFX, a small wood fire burning in a hearth, a steady soft crackle over an underlying low roar. Warm and close, even throughout.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2008
+    },
+    {
+      "id": "room_tone_office_loop",
+      "category": "room-tone",
+      "tags": [
+        "room-tone",
+        "office",
+        "interior",
+        "hum",
+        "loop"
+      ],
+      "use": "Patch silence between interview takes so cuts do not go dead. Keep it very low.",
+      "prompt": "TrackType: SFX, the quiet interior room tone of an empty modern office at night, a low steady ventilation hum with faint air movement. Almost silent and completely even.",
+      "loop": {
+        "length_s": 20.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2009
+    },
+    {
+      "id": "city_distant_loop",
+      "category": "place",
+      "tags": [
+        "city",
+        "traffic",
+        "urban",
+        "distant",
+        "loop"
+      ],
+      "use": "Urban interiors and skyline shots. No sirens or horns, so it never dates a shot.",
+      "prompt": "TrackType: SFX, distant city traffic heard from a high window, a continuous low hum of cars blended together by distance. Soft, far away and even.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2010
+    },
+    {
+      "id": "crowd_murmur_loop",
+      "category": "place",
+      "tags": [
+        "crowd",
+        "walla",
+        "murmur",
+        "hall",
+        "loop"
+      ],
+      "use": "Conferences, museums, lobbies. Unintelligible on purpose — no words to lip-read against.",
+      "prompt": "TrackType: SFX, a distant indistinct crowd murmur in a large hall, a continuous even wash of low conversation blurred by the room. Soft and steady.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2011
+    },
+    {
+      "id": "night_crickets_loop",
+      "category": "place",
+      "tags": [
+        "night",
+        "crickets",
+        "countryside",
+        "loop"
+      ],
+      "use": "Night exteriors. The crickets are even, so the loop point is invisible.",
+      "prompt": "TrackType: SFX, a calm summer night across open countryside, an even wash of crickets heard from far away with a faint low movement of air. Soft, distant and continuous, the top end already rolled off by the distance.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 3.0
+      },
+      "seed": 2012
+    },
+    {
+      "id": "drone_low_loop",
+      "category": "drone",
+      "tags": [
+        "drone",
+        "tension",
+        "underscore",
+        "dark",
+        "loop"
+      ],
+      "use": "Tension under a serious passage where music would be too much.",
+      "prompt": "TrackType: SFX, a low sustained cinematic drone, warm and dark, holding a steady bass tone with only the faintest slow movement inside it. Even in level from beginning to end.",
+      "loop": {
+        "length_s": 28.0,
+        "crossfade_s": 4.0
+      },
+      "seed": 2013,
+      "crossfade_law": "linear"
+    },
+    {
+      "id": "sub_bed_loop",
+      "category": "drone",
+      "tags": [
+        "sub",
+        "bass",
+        "bed",
+        "weight",
+        "loop"
+      ],
+      "use": "Adds weight under any other bed. Felt more than heard; check on a full-range system.",
+      "prompt": "TrackType: SFX, a very low sustained sub-bass bed, almost felt rather than heard, perfectly steady with slow gentle swells. Pure low end throughout.",
+      "loop": {
+        "length_s": 22.0,
+        "crossfade_s": 4.0
+      },
+      "seed": 2014,
+      "crossfade_law": "linear"
+    }
+  ],
+  "candidates": {
+    "oneshot": 5,
+    "bed": 3
+  }
+}

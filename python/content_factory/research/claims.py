@@ -1,12 +1,21 @@
 """Deterministic claim machinery (2.14, section 10): classification, numeric verification against
-evidence and datasets, evidence-requirement compilation, staleness. No model decides a pass."""
+evidence and datasets, evidence-requirement compilation, staleness. No model decides a pass.
+
+``independence_findings`` is the part that was computed and never read.
+``compile_requirements`` has set ``requires_independent_sources=2`` on high-stakes claims since it
+was written, and nothing enforced it — so a claim about a dosage or an election could be "supported"
+by two outlets that had both reprinted one press release, and the count said two. Independence is
+not "two source ids": it is two *publishers* that are not each other's syndication.
+"""
 
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
+from content_factory.qc.media import Finding, Severity
 from content_factory.schemas.render import DatasetTable
 from content_factory.schemas.research import (
     ClaimKind,
@@ -145,6 +154,104 @@ def compile_requirements(
             )
         )
     return out
+
+
+_SYNDICATION_MARKERS = (
+    "reuters",
+    "associated press",
+    " ap ",
+    "afp",
+    "pa media",
+    "press association",
+    "tt nyhetsbyran",
+    "tt nyhetsbyrån",
+)
+"""Wire services. A claim carried by two outlets that both credit the same wire has one source.
+
+This is not a judgement about the wire's quality — a Reuters report is often the best available
+evidence. It is that counting it twice is counting one thing twice, which is exactly what
+``requires_independent_sources=2`` exists to prevent."""
+
+
+def _publisher_key(source: SourceRecord) -> str:
+    """What counts as "the same publisher" for independence.
+
+    The publisher name when there is one, else the registrable part of the host. Both are needed:
+    a fixture source has a publisher and no meaningful URL, and a fetched page often has the
+    reverse.
+    """
+    if source.publisher.strip():
+        return source.publisher.strip().casefold()
+    host = source.canonical_url.split("//", 1)[-1].split("/", 1)[0].casefold()
+    host = host.removeprefix("www.")
+    parts = host.split(".")
+    return ".".join(parts[-2:]) if len(parts) > 2 else host
+
+
+def independent_publishers(
+    claim: ClaimRecord,
+    evidence: Sequence[EvidenceRecord],
+    sources: Mapping[str, SourceRecord],
+) -> tuple[str, ...]:
+    """The distinct publishers behind one claim's evidence, after syndication dedupe.
+
+    Two outlets reprinting one wire report collapse to the wire. An excerpt that credits a wire is
+    attributed to that wire rather than to the outlet that ran it, because that is whose reporting
+    it is.
+    """
+    by_id = {e.evidence_id: e for e in evidence}
+    seen: dict[str, None] = {}
+    for evidence_id in claim.evidence_ids:
+        record = by_id.get(evidence_id)
+        if record is None:
+            continue
+        source = sources.get(record.source_id)
+        excerpt = f" {record.excerpt.casefold()} "
+        wire = next((m.strip() for m in _SYNDICATION_MARKERS if m in excerpt), "")
+        key = wire or (_publisher_key(source) if source else f"unknown:{record.source_id}")
+        seen.setdefault(key, None)
+    return tuple(seen)
+
+
+def independence_findings(
+    claims: Sequence[ClaimRecord],
+    evidence: Sequence[EvidenceRecord],
+    sources: Mapping[str, SourceRecord],
+    *,
+    operator_assertions: tuple[str, ...] = (),
+) -> list[Finding]:
+    """Enforce ``EvidenceRequirement.requires_independent_sources``, at last.
+
+    Only for claims the requirement compiler actually asks it of, and only for ones that came back
+    supported: an unsupported claim already fails on its own, and adding a second finding to it
+    would bury the first. A high-stakes claim supported by one publisher is a **blocker**; one
+    supported by two outlets that both credit the same wire is the same blocker, because the
+    dedupe has already decided they are one publisher.
+    """
+    findings: list[Finding] = []
+    supported = {VerificationStatus.supported, VerificationStatus.supported_with_caveat}
+    for claim in claims:
+        if claim.status not in supported:
+            continue
+        requirement = compile_requirements(
+            [claim.statement], operator_assertions=operator_assertions
+        )[0]
+        needed = requirement.requires_independent_sources
+        if needed < 2:
+            continue
+        publishers = independent_publishers(claim, evidence, sources)
+        if len(publishers) >= needed:
+            continue
+        findings.append(
+            Finding(
+                "independent_sources",
+                Severity.blocker if claim.criticality == Criticality.high else Severity.critical,
+                f"claim {claim.claim_id} needs {needed} independent publishers and has"
+                f" {len(publishers)} ({', '.join(publishers) or 'none'}):"
+                f" {claim.statement[:80]!r}",
+            )
+        )
+    return findings
 
 
 _REL_TOL = 0.005  # exact within rounding

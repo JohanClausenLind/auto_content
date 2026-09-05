@@ -2,9 +2,9 @@ import { TimelineComposition as VideoTimeline } from "@content-factory/video-ui"
 import type { CalculateMetadataFunction } from "remotion";
 
 import "../fonts";
-import type { BundleProps } from "./ArtboardComposition";
+import { assetUrl, type BundleProps } from "./ArtboardComposition";
 
-export const TimelineComposition: React.FC<BundleProps> = ({ bundle }) => <VideoTimeline bundle={bundle} />;
+export const TimelineComposition: React.FC<BundleProps> = ({ bundle }) => <VideoTimeline bundle={bundle} assetUrl={assetUrl} />;
 
 export const calculateTimelineMetadata: CalculateMetadataFunction<BundleProps> = ({ props }) => {
   const timeline = props.bundle.timeline;

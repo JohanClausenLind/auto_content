@@ -16,7 +16,7 @@ export function QuoteScene({ scene }: SceneProps<Spec>): ReactElement {
   const attribution = useFittedText(`— ${scene.attribution.text}`, "subhead", safe.width, Math.round(safe.height * 0.12), 2, "ink", theme.color.onInk.muted);
   const source = useFittedText(card ? `${theme.citation.prefix}: ${citationLine(card)}` : `${theme.citation.prefix}: ${scene.source_id}`, "source", safe.width, Math.round(safe.height * 0.08), 2, "ink");
   return (
-    <SceneFrame testId="quote" background="ink">
+    <SceneFrame testId="quote" backgroundAssetId={scene.background_asset_id} background="ink">
       <Rule width={Math.round(120 * scale)} thickness={Math.max(2, Math.round(6 * scale))} color={theme.color.onInk.accent} />
       <Spacer size={Math.round(theme.space[6]! * scale)} />
       <Lines block={quote} style={enter(frame, 0, f.base, theme, 20 * scale)} />

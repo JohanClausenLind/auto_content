@@ -110,12 +110,42 @@ def test_password_hashing_roundtrip_and_policy() -> None:
     assert passwords.verify_password(h, "correct horse battery staple")
     assert not passwords.verify_password(h, "wrong password entirely")
     assert not passwords.verify_password("not-a-hash", "x")
+    # Explicit minimums keep this test independent of the host's configured policy.
     try:
-        passwords.hash_password("short")
+        passwords.hash_password("short", min_length=12)
     except ValueError:
         pass
     else:
         raise AssertionError("short passwords must be rejected")
+
+
+def test_password_min_length_is_configurable_with_a_hard_floor() -> None:
+    from content_factory.config import load_settings
+
+    h = passwords.hash_password("ab12", min_length=4)
+    assert passwords.verify_password(h, "ab12")
+    try:
+        passwords.hash_password("abc", min_length=4)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("3 characters must be rejected even at the relaxed minimum")
+    # The schema floors the setting at 4: nobody can configure it to nothing.
+    try:
+        load_settings(auth={"password_min_length": 1})
+    except Exception:
+        pass
+    else:
+        raise AssertionError("password_min_length below 4 must be rejected")
+    # And the SHIPPED default stays 12 (OWASP): relaxing it must be a deliberate config edit,
+    # never a silent default change.
+    assert load_settings().auth.password_min_length == 12
+    try:
+        passwords.hash_password("elevenchars")  # 11 chars, no explicit min -> default policy
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("the default policy must reject passwords under 12 characters")
 
 
 def test_totp_accepts_current_code_once_and_refuses_replay() -> None:

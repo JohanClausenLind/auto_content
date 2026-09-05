@@ -3,9 +3,11 @@
 Anchor (text-to-image) + hub-and-spoke reference edits via the local HiDream-O1 server, then the
 keyframes are blended into a slow 30 fps clip with ffmpeg.
 
-    1. terminal A:  CF_HIDREAM_MODEL_PATH=~/models/HiDream-O1-Image-Dev \
-                    uv run --project skills/image/hidream python skills/image/hidream/server.py
-    2. terminal B:  uv run python scripts/generate_holding_hands.py --workdir out/holding-hands
+    1. terminal A:  uv run --project skills/image/hidream python skills/image/hidream/server.py
+                    (weights default to <repo>/models/image_generation/HiDream-O1-Image-Dev;
+                    CF_HIDREAM_MODEL_PATH
+                    overrides)
+    2. terminal B:  uv run python scripts/generate_holding_hands.py --workdir output/holding-hands
 
 Requires only loopback HTTP; nothing leaves the machine.
 """
@@ -25,6 +27,7 @@ from content_factory.schemas.sequences import (
     SubjectKeyframe,
     TrackedSubject,
 )
+from content_factory.sequences.drift import UNCALIBRATED
 from content_factory.sequences.engine import build_sequence
 from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
@@ -69,7 +72,7 @@ def _lerp_boxes(count: int) -> list[SubjectKeyframe]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--workdir", type=Path, default=Path("out/holding-hands"))
+    ap.add_argument("--workdir", type=Path, default=Path("output/holding-hands"))
     ap.add_argument("--frames", type=int, default=8)
     ap.add_argument("--size", type=int, default=1024)
     ap.add_argument("--seed", type=int, default=32)
@@ -134,9 +137,11 @@ def main() -> int:
         args.workdir,
         frame_instructions=instructions,
         # First real-model run: drift QC observes but barely gates; calibrate before tightening.
+        # The pair is named in sequences/drift.py rather than written out here, so there is one
+        # uncalibrated profile in the repo instead of a different pair of floats per script.
         max_regen_attempts=1,
-        locked_region_similarity_min=0.30,
-        style_delta_max=0.60,
+        locked_region_similarity_min=UNCALIBRATED[0],
+        style_delta_max=UNCALIBRATED[1],
     )
     print(
         json.dumps(

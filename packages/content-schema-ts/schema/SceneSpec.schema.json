@@ -132,6 +132,19 @@
     "CalloutScene": {
       "additionalProperties": false,
       "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Beat Id",
@@ -177,6 +190,7 @@
         }
       },
       "required": [
+        "background_asset_id",
         "beat_id",
         "emphasis",
         "kind",
@@ -247,7 +261,8 @@
         "bubble",
         "histogram",
         "waterfall",
-        "donut"
+        "donut",
+        "step"
       ],
       "title": "ChartKind",
       "type": "string"
@@ -321,6 +336,15 @@
           "title": "Scene Id",
           "type": "string"
         },
+        "source_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
         "title": {
           "$ref": "#/$defs/TextRef"
         },
@@ -370,6 +394,7 @@
         "encoding",
         "kind",
         "scene_id",
+        "source_ids",
         "title",
         "truncation_disclosure",
         "variant",
@@ -976,6 +1001,19 @@
     "OutroScene": {
       "additionalProperties": false,
       "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Beat Id",
@@ -1022,6 +1060,7 @@
         }
       },
       "required": [
+        "background_asset_id",
         "beat_id",
         "cta",
         "emphasis",
@@ -1038,6 +1077,19 @@
       "properties": {
         "attribution": {
           "$ref": "#/$defs/TextRef"
+        },
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
         },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
@@ -1080,6 +1132,7 @@
       },
       "required": [
         "attribution",
+        "background_asset_id",
         "beat_id",
         "emphasis",
         "kind",
@@ -1534,6 +1587,19 @@
     "TitleScene": {
       "additionalProperties": false,
       "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
         "beat_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Beat Id",
@@ -1580,6 +1646,7 @@
         }
       },
       "required": [
+        "background_asset_id",
         "beat_id",
         "emphasis",
         "kind",

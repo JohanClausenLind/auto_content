@@ -1,0 +1,1302 @@
+{
+  "$defs": {
+    "BlendSource": {
+      "additionalProperties": false,
+      "properties": {
+        "collection": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Collection",
+          "type": "string"
+        },
+        "kind": {
+          "const": "blend",
+          "default": "blend",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "collection",
+        "kind",
+        "path"
+      ],
+      "title": "BlendSource",
+      "type": "object"
+    },
+    "BonePose": {
+      "additionalProperties": false,
+      "properties": {
+        "bones": {
+          "additionalProperties": {
+            "$ref": "#/$defs/BoneRotation"
+          },
+          "minProperties": 1,
+          "title": "Bones",
+          "type": "object"
+        },
+        "kind": {
+          "const": "bones",
+          "default": "bones",
+          "title": "Kind",
+          "type": "string"
+        },
+        "rig": {
+          "default": "mpfb.default",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Rig",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bones",
+        "kind",
+        "rig"
+      ],
+      "title": "BonePose",
+      "type": "object"
+    },
+    "BoneRotation": {
+      "additionalProperties": false,
+      "properties": {
+        "rotation_quaternion": {
+          "default": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Rotation Quaternion",
+          "type": "array"
+        }
+      },
+      "required": [
+        "rotation_quaternion"
+      ],
+      "title": "BoneRotation",
+      "type": "object"
+    },
+    "CameraKeyframe": {
+      "additionalProperties": false,
+      "description": "Camera state at one frame. Exactly one of ``look_at`` / ``rotation_euler_deg`` is set.",
+      "properties": {
+        "easing_to_next": {
+          "$ref": "#/$defs/Easing",
+          "default": "ease_in_out"
+        },
+        "focus_distance": {
+          "default": 5.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Focus Distance",
+          "type": "number"
+        },
+        "frame_index": {
+          "minimum": 0,
+          "title": "Frame Index",
+          "type": "integer"
+        },
+        "lens_mm": {
+          "default": 35.0,
+          "maximum": 400.0,
+          "minimum": 8.0,
+          "title": "Lens Mm",
+          "type": "number"
+        },
+        "look_at": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Look At"
+        },
+        "position": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "rotation_euler_deg": {
+          "anyOf": [
+            {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rotation Euler Deg"
+        }
+      },
+      "required": [
+        "easing_to_next",
+        "focus_distance",
+        "frame_index",
+        "lens_mm",
+        "look_at",
+        "position",
+        "rotation_euler_deg"
+      ],
+      "title": "CameraKeyframe",
+      "type": "object"
+    },
+    "CameraPreset": {
+      "enum": [
+        "static",
+        "slow_push_in",
+        "slow_pull_out",
+        "pan_left",
+        "pan_right",
+        "orbit_left",
+        "orbit_right",
+        "crane_up",
+        "crane_down"
+      ],
+      "title": "CameraPreset",
+      "type": "string"
+    },
+    "CameraSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "clip_end": {
+          "default": 100.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Clip End",
+          "type": "number"
+        },
+        "clip_start": {
+          "default": 0.05,
+          "exclusiveMinimum": 0.0,
+          "title": "Clip Start",
+          "type": "number"
+        },
+        "keyframes": {
+          "items": {
+            "$ref": "#/$defs/CameraKeyframe"
+          },
+          "minItems": 1,
+          "title": "Keyframes",
+          "type": "array"
+        },
+        "preset": {
+          "$ref": "#/$defs/CameraPreset",
+          "default": "static"
+        },
+        "sensor_width_mm": {
+          "default": 36.0,
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Sensor Width Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "clip_end",
+        "clip_start",
+        "keyframes",
+        "preset",
+        "sensor_width_mm"
+      ],
+      "title": "CameraSpec",
+      "type": "object"
+    },
+    "CannySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "high": {
+          "default": 200,
+          "maximum": 255,
+          "minimum": 0,
+          "title": "High",
+          "type": "integer"
+        },
+        "low": {
+          "default": 100,
+          "maximum": 255,
+          "minimum": 0,
+          "title": "Low",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "high",
+        "low"
+      ],
+      "title": "CannySpec",
+      "type": "object"
+    },
+    "CharacterSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "appearance": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Appearance"
+        },
+        "asset": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Asset",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "pose": {
+          "default": {
+            "kind": "library",
+            "name": "idle"
+          },
+          "discriminator": {
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/LibraryPose"
+            },
+            {
+              "$ref": "#/$defs/ClipPose"
+            },
+            {
+              "$ref": "#/$defs/SegmentClipPose"
+            },
+            {
+              "$ref": "#/$defs/BonePose"
+            }
+          ],
+          "title": "Pose",
+          "type": "object"
+        },
+        "reference_image_sha256": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "title": "Reference Image Sha256",
+          "type": "array"
+        },
+        "seg_id": {
+          "anyOf": [
+            {
+              "maximum": 254,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seg Id"
+        },
+        "transform": {
+          "$ref": "#/$defs/Transform",
+          "default": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": 1.0,
+            "yaw_deg": 0.0
+          }
+        }
+      },
+      "required": [
+        "appearance",
+        "asset",
+        "id",
+        "pose",
+        "reference_image_sha256",
+        "seg_id",
+        "transform"
+      ],
+      "title": "CharacterSpec",
+      "type": "object"
+    },
+    "ClipPose": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "clip",
+          "default": "clip",
+          "title": "Kind",
+          "type": "string"
+        },
+        "loop": {
+          "default": true,
+          "title": "Loop",
+          "type": "boolean"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "offset_frames": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset Frames",
+          "type": "integer"
+        },
+        "speed": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "maximum": 10.0,
+          "title": "Speed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "loop",
+        "name",
+        "offset_frames",
+        "speed"
+      ],
+      "title": "ClipPose",
+      "type": "object"
+    },
+    "ControlKind": {
+      "description": "Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest\nare rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec.",
+      "enum": [
+        "pose_skeleton",
+        "layout_boxes",
+        "rough_rgb",
+        "depth",
+        "depth16",
+        "depth_exr",
+        "normals",
+        "segmentation",
+        "canny"
+      ],
+      "title": "ControlKind",
+      "type": "string"
+    },
+    "DepthRange": {
+      "additionalProperties": false,
+      "properties": {
+        "far": {
+          "exclusiveMinimum": 0.0,
+          "title": "Far",
+          "type": "number"
+        },
+        "near": {
+          "exclusiveMinimum": 0.0,
+          "title": "Near",
+          "type": "number"
+        }
+      },
+      "required": [
+        "far",
+        "near"
+      ],
+      "title": "DepthRange",
+      "type": "object"
+    },
+    "Easing": {
+      "enum": [
+        "linear",
+        "ease_in",
+        "ease_out",
+        "ease_in_out"
+      ],
+      "title": "Easing",
+      "type": "string"
+    },
+    "EnvironmentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "background_color": {
+          "default": [
+            0.05,
+            0.05,
+            0.06
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Background Color",
+          "type": "array"
+        },
+        "ground": {
+          "$ref": "#/$defs/GroundSpec",
+          "default": {
+            "color": [
+              0.35,
+              0.35,
+              0.35
+            ],
+            "enabled": true,
+            "seg": false,
+            "size": 40.0
+          }
+        },
+        "walls": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WallsSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "background_color",
+        "ground",
+        "walls"
+      ],
+      "title": "EnvironmentSpec",
+      "type": "object"
+    },
+    "GlbSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "glb",
+          "default": "glb",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "title": "GlbSource",
+      "type": "object"
+    },
+    "GroundSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": [
+            0.35,
+            0.35,
+            0.35
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "seg": {
+          "default": false,
+          "title": "Seg",
+          "type": "boolean"
+        },
+        "size": {
+          "default": 40.0,
+          "exclusiveMinimum": 0.0,
+          "title": "Size",
+          "type": "number"
+        }
+      },
+      "required": [
+        "color",
+        "enabled",
+        "seg",
+        "size"
+      ],
+      "title": "GroundSpec",
+      "type": "object"
+    },
+    "LibraryPose": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "library",
+          "default": "library",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "default": "idle",
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "LibraryPose",
+      "type": "object"
+    },
+    "LightingSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "intensity": {
+          "default": 1.0,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Intensity",
+          "type": "number"
+        },
+        "key_azimuth_deg": {
+          "default": 35.0,
+          "maximum": 360.0,
+          "minimum": -360.0,
+          "title": "Key Azimuth Deg",
+          "type": "number"
+        },
+        "key_elevation_deg": {
+          "default": 45.0,
+          "maximum": 90.0,
+          "minimum": -90.0,
+          "title": "Key Elevation Deg",
+          "type": "number"
+        },
+        "preset": {
+          "default": "studio",
+          "enum": [
+            "studio",
+            "exterior_day",
+            "exterior_dusk",
+            "interior_warm"
+          ],
+          "title": "Preset",
+          "type": "string"
+        },
+        "shadows": {
+          "default": true,
+          "title": "Shadows",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "intensity",
+        "key_azimuth_deg",
+        "key_elevation_deg",
+        "preset",
+        "shadows"
+      ],
+      "title": "LightingSpec",
+      "type": "object"
+    },
+    "PrimitiveSource": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "primitive",
+          "default": "primitive",
+          "title": "Kind",
+          "type": "string"
+        },
+        "shape": {
+          "default": "cube",
+          "enum": [
+            "cube",
+            "plane",
+            "sphere",
+            "cylinder"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "size": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Size",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "shape",
+        "size"
+      ],
+      "title": "PrimitiveSource",
+      "type": "object"
+    },
+    "PropSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "seg": {
+          "default": true,
+          "title": "Seg",
+          "type": "boolean"
+        },
+        "seg_id": {
+          "anyOf": [
+            {
+              "maximum": 254,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seg Id"
+        },
+        "source": {
+          "default": {
+            "kind": "primitive",
+            "shape": "cube",
+            "size": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "discriminator": {
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PrimitiveSource"
+            },
+            {
+              "$ref": "#/$defs/GlbSource"
+            },
+            {
+              "$ref": "#/$defs/BlendSource"
+            }
+          ],
+          "title": "Source",
+          "type": "object"
+        },
+        "transform": {
+          "$ref": "#/$defs/Transform",
+          "default": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": 1.0,
+            "yaw_deg": 0.0
+          }
+        }
+      },
+      "required": [
+        "color",
+        "id",
+        "seg",
+        "seg_id",
+        "source",
+        "transform"
+      ],
+      "title": "PropSpec",
+      "type": "object"
+    },
+    "RenderEngine": {
+      "enum": [
+        "workbench",
+        "eevee",
+        "cycles_cpu"
+      ],
+      "title": "RenderEngine",
+      "type": "string"
+    },
+    "RenderSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "canny": {
+          "$ref": "#/$defs/CannySpec",
+          "default": {
+            "high": 200,
+            "low": 100
+          }
+        },
+        "depth_range": {
+          "anyOf": [
+            {
+              "const": "auto",
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/DepthRange"
+            }
+          ],
+          "default": "auto",
+          "title": "Depth Range"
+        },
+        "engine": {
+          "$ref": "#/$defs/RenderEngine",
+          "default": "workbench"
+        },
+        "frames": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frames"
+        },
+        "passes": {
+          "default": [
+            "rough_rgb",
+            "depth",
+            "depth_exr",
+            "normals",
+            "segmentation",
+            "pose_skeleton",
+            "layout_boxes"
+          ],
+          "items": {
+            "$ref": "#/$defs/ControlKind"
+          },
+          "title": "Passes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "canny",
+        "depth_range",
+        "engine",
+        "frames",
+        "passes"
+      ],
+      "title": "RenderSpec",
+      "type": "object"
+    },
+    "SegmentClipPose": {
+      "additionalProperties": false,
+      "description": "A ``cf.clip.v2`` motion clip: captured world segment directions, aimed onto whatever rig is\nloaded at render time.\n\n``ClipPose`` stores a quaternion per bone, which makes a clip specific to the body it was\nsolved on: MPFB fits its rig to each character mesh, so the same quaternions land up to 22.6\ndegrees wrong on a different character (measured across the four built assets). Directions are\na property of the motion, so one clip is exact on every body.\n\n``actor`` selects which performer of a multi-person clip this character plays. A two-person\ncapture is one clip with both actors on one timeline, so two ``CharacterSpec`` entries pointing\nat the same clip with different actors reproduce the captured contact instead of staging two\nsolo clips near each other.",
+      "properties": {
+        "actor": {
+          "default": "a",
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "const": "segments",
+          "default": "segments",
+          "title": "Kind",
+          "type": "string"
+        },
+        "loop": {
+          "default": false,
+          "title": "Loop",
+          "type": "boolean"
+        },
+        "name": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "offset_frames": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset Frames",
+          "type": "integer"
+        },
+        "speed": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "maximum": 10.0,
+          "title": "Speed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "actor",
+        "kind",
+        "loop",
+        "name",
+        "offset_frames",
+        "speed"
+      ],
+      "title": "SegmentClipPose",
+      "type": "object"
+    },
+    "Transform": {
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Position",
+          "type": "array"
+        },
+        "scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "yaw_deg": {
+          "default": 0.0,
+          "maximum": 360.0,
+          "minimum": -360.0,
+          "title": "Yaw Deg",
+          "type": "number"
+        }
+      },
+      "required": [
+        "position",
+        "scale",
+        "yaw_deg"
+      ],
+      "title": "Transform",
+      "type": "object"
+    },
+    "WallsSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "default": [
+            0.6,
+            0.6,
+            0.6
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Color",
+          "type": "array"
+        },
+        "size": {
+          "default": [
+            8.0,
+            8.0,
+            3.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Size",
+          "type": "array"
+        }
+      },
+      "required": [
+        "color",
+        "size"
+      ],
+      "title": "WallsSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ShotSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One shot: everything the Blender scene controller needs to render its control passes.",
+  "properties": {
+    "action": {
+      "default": "",
+      "maxLength": 600,
+      "title": "Action",
+      "type": "string"
+    },
+    "anchor_frames": {
+      "default": [
+        0
+      ],
+      "items": {
+        "type": "integer"
+      },
+      "title": "Anchor Frames",
+      "type": "array"
+    },
+    "beat_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Beat Id"
+    },
+    "camera": {
+      "$ref": "#/$defs/CameraSpec"
+    },
+    "characters": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CharacterSpec"
+      },
+      "title": "Characters",
+      "type": "array"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "end_state": {
+      "anyOf": [
+        {
+          "maxLength": 600,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End State"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentSpec",
+      "default": {
+        "background_color": [
+          0.05,
+          0.05,
+          0.06
+        ],
+        "ground": {
+          "color": [
+            0.35,
+            0.35,
+            0.35
+          ],
+          "enabled": true,
+          "seg": false,
+          "size": 40.0
+        },
+        "walls": null
+      }
+    },
+    "fps": {
+      "default": 24,
+      "enum": [
+        24,
+        25,
+        30,
+        60
+      ],
+      "title": "Fps",
+      "type": "integer"
+    },
+    "frame_count": {
+      "maximum": 600,
+      "minimum": 1,
+      "title": "Frame Count",
+      "type": "integer"
+    },
+    "height": {
+      "maximum": 8192,
+      "minimum": 64,
+      "multipleOf": 32,
+      "title": "Height",
+      "type": "integer"
+    },
+    "lighting": {
+      "$ref": "#/$defs/LightingSpec",
+      "default": {
+        "intensity": 1.0,
+        "key_azimuth_deg": 35.0,
+        "key_elevation_deg": 45.0,
+        "preset": "studio",
+        "shadows": true
+      }
+    },
+    "motion_prompt": {
+      "default": "",
+      "maxLength": 2000,
+      "title": "Motion Prompt",
+      "type": "string"
+    },
+    "order": {
+      "minimum": 0,
+      "title": "Order",
+      "type": "integer"
+    },
+    "props": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PropSpec"
+      },
+      "title": "Props",
+      "type": "array"
+    },
+    "render": {
+      "$ref": "#/$defs/RenderSpec",
+      "default": {
+        "canny": {
+          "high": 200,
+          "low": 100
+        },
+        "depth_range": "auto",
+        "engine": "workbench",
+        "frames": null,
+        "passes": [
+          "rough_rgb",
+          "depth",
+          "depth_exr",
+          "normals",
+          "segmentation",
+          "pose_skeleton",
+          "layout_boxes"
+        ]
+      }
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "seed": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "shot_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Shot Id",
+      "type": "string"
+    },
+    "staging_note": {
+      "anyOf": [
+        {
+          "maxLength": 600,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Staging Note"
+    },
+    "width": {
+      "maximum": 8192,
+      "minimum": 64,
+      "multipleOf": 32,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "action",
+    "anchor_frames",
+    "beat_id",
+    "camera",
+    "characters",
+    "description",
+    "end_state",
+    "environment",
+    "fps",
+    "frame_count",
+    "height",
+    "lighting",
+    "motion_prompt",
+    "order",
+    "props",
+    "render",
+    "schema_version",
+    "seed",
+    "shot_id",
+    "staging_note",
+    "width"
+  ],
+  "title": "ShotSpec",
+  "type": "object"
+}

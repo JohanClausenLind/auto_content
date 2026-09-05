@@ -20,6 +20,13 @@ export const IMPLEMENTED_KINDS = [
   "quote",
   "definition",
   "chapter_transition",
+  "chart",
+  "timeline",
+  "map",
+  "screenshot",
+  "image",
+  "comparison",
+  "flow_diagram",
 ] as const satisfies readonly SceneSpec["kind"][];
 
 export type ImplementedKind = (typeof IMPLEMENTED_KINDS)[number];

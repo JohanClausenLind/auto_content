@@ -1,0 +1,17 @@
+[project]
+name = "cf-skill-breeze"
+version = "0.1.0"
+description = "Isolated environment for the Breeze TTS 2 local executor (BreezeBlue/Breeze-TTS-2; weights + self-hosted outputs are research/non-commercial — operator-accepted 2026-09-05 for local testing). Inference code (Apache-2.0) is the breeze-tts checkout under external/ inside this repo (git-ignored); never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # pins copied verbatim from breeze-tts/requirements.txt @ 43e2ea1 (2026-09-04)
+    "torch==2.9.1",
+    "torchaudio==2.9.1",
+    "qwen-tts==0.1.1",
+    "transformers==4.57.3",
+    "numpy>=2.0",
+    "soundfile>=0.13",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "python-multipart>=0.0.18",
+]

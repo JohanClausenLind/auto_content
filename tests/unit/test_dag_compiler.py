@@ -112,3 +112,23 @@ def test_approved_copy_transform_prunes_research() -> None:
     dag = compile_dag(camp)
     assert Stage.research not in dag.stages() and Stage.verify_claims not in dag.stages()
     assert any(p.stage == Stage.research for p in dag.pruned)
+
+
+def test_sequence_branch_orders_shots_controls_anchor() -> None:
+    dag = compile_dag(
+        _campaign(content.ImageSequenceSpec(deliverable_id="dlv_seq00000001", title="seq"))
+    )
+    order = [n.stage for n in dag.topological()]
+    seq = [
+        Stage.plan_shots,
+        Stage.compile_controls,
+        Stage.generate_anchor,
+        Stage.lock_generation,
+        Stage.generate_keyframes,
+    ]
+    positions = [order.index(s) for s in seq]
+    assert positions == sorted(positions)
+    controls = next(n for n in dag.nodes if n.stage == Stage.compile_controls)
+    assert controls.resource_class == "render-cpu"
+    assert controls.executor == Executor.deterministic
+    assert dag.compiler_version == "0.2.0"

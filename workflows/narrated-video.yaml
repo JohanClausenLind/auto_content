@@ -1,0 +1,143 @@
+# A script becomes a narrated video of typeset cards.
+#
+# Nothing here is generated as a picture: the frames are laid out from the story plan and rendered
+# by Remotion, so the same script always produces the same film. That makes this the cheapest and
+# most reliable lane in the catalogue, and the one to reach for when the words are the content -
+# an explainer, a changelog, a briefing, a set of numbers read out loud.
+#
+# The picture lanes (picture-story and its relatives) are the ones to use when the words need
+# images. This lane deliberately has no image or video model in it at all: no anchor, no keyframes,
+# no drift QC, nothing to review by eye between stages.
+schema_version: 1
+id: narrated-video
+name: Narrated video
+description: >
+  A written script becomes a narrated video of typeset cards. Text to speech reads the beats, the
+  measured beat lengths set the card timings and the captions so both follow the real voice, and
+  the timeline is rendered deterministically. There is no generative imagery, so a rerun of the
+  same script produces the same film.
+category: video
+tags: [script, narration, cards, captions, deterministic]
+prerequisite: >
+  A written script as a StoryPlan fixture (fixtures/story/<name>.json), named on the story node's
+  story widget. Left empty, plan_story falls back to the built-in sample plan, which is useful for
+  a smoke run and nothing else. Real narration needs the TTS skill env and weights below; the
+  default mock voice runs offline.
+models:
+  - kind: skill
+    label: Qwen3-TTS skill env
+    skill: skills/audio/qwen3tts
+  - kind: path
+    label: Qwen3-TTS CustomVoice weights
+    path_includes: qwen3-tts-1.7b-customvoice
+    filename: model.safetensors
+  - kind: skill
+    label: Kokoro skill env, for the lighter alternative voice
+    skill: skills/audio/kokoro
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "a written script read aloud over typeset cards", audience: general, quality: demo}
+  - key: uploads
+    type: ingest
+    note: >
+      Optional, and the only way a picture gets into this lane. Files in <project>/uploads are
+      sniffed by magic number, stored immutably, recorded as operator_upload sources and carried
+      into the render bundle as assets - which is what an image, screenshot, map or background
+      still resolves against. With an empty uploads dir this is a no-op and the film is cards only.
+  - key: story
+    type: plan_story
+    note: >
+      The script. Set the story widget to the fixture path; plan_story freezes a written plan here
+      rather than drafting one.
+  - key: script
+    type: lock_script
+    note: One spoken sentence per beat, frozen before anything is voiced or timed.
+  - key: narrate
+    type: synthesize_narration
+    values: {voice: qwen3tts}
+    note: >
+      Synthetic voice, because this lane exists for scripts nobody has recorded. Swap voice for
+      kokoro-82m for a faster read, or use the voice_over stage instead if takes exist.
+  - key: clean_voice
+    type: restore_speech
+    note: >
+      The FFmpeg tail only: de-esser, EQ and light compression. The neural cleanup and enhancer
+      steps stay off, since a TTS take has no room noise or band loss to repair.
+  - key: timings
+    type: align_words
+    note: >
+      A gate, not the aligner: the word timings are written by synthesize_narration (its aligner
+      widget), and this stage validates them - coverage, overlaps, drift - and fails the run before
+      captions or card timings are built on a bad take. Card duration comes from the measured beat
+      lengths, so the voice sets it either way; this is what stops a silently mistimed one.
+  - key: captions
+    type: compile_captions
+    note: Cues ship as a sidecar even when the cards already carry the text.
+  - key: music
+    type: select_music
+    note: >
+      Nothing is set: stage_select_music reads no widget values, so both mood and gain_db are inert
+      here and the bed always lands at its built-in -18 dB under the voice. An empty music library
+      selects nothing, which is the usual state of this lane - the words are the whole content.
+  - key: mix
+    type: mix_audio
+  - key: timeline
+    type: compile_timeline
+    note: Measured beats become scenes, so card duration comes from the voice and not from a guess.
+  - key: cards
+    type: render_scenes
+    note: Remotion renders the typeset cards from the compiled timeline.
+  - key: cut
+    type: compose_video
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: narrate, to_slot: script}
+  - {from_key: narrate, from_slot: audio, to_key: clean_voice, to_slot: audio}
+  - {from_key: clean_voice, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: story, from_slot: story, to_key: music, to_slot: story}
+  - {from_key: clean_voice, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: music, from_slot: music, to_key: mix, to_slot: music}
+  - {from_key: story, from_slot: story, to_key: timeline, to_slot: story}
+  - {from_key: timings, from_slot: timings, to_key: timeline, to_slot: timings}
+  - {from_key: timeline, from_slot: timeline, to_key: cards, to_slot: timeline}
+  - {from_key: cards, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: captions, from_slot: captions, to_key: cut, to_slot: captions}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - uploads
+  - story
+  - script
+  - narrate
+  - clean_voice
+  - timings
+  - captions
+  - music
+  - mix
+  - timeline
+  - cards
+  - cut
+  - qc
+  - pack

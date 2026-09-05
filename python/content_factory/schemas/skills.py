@@ -10,6 +10,10 @@ from pydantic import Field, model_validator
 from content_factory.schemas.base import SchemaModel, SemVer, VersionedModel
 
 
+# Governs a signed SKILL MANIFEST in the operator's trust store (see skills/registry.py).
+# Deliberately distinct from comfyui.LifecycleStatus, which governs ComfyUI node packages: the
+# two vocabularies coincide today but are separate published contracts and are free to diverge.
+# Do not merge them — each is generated as its own type for its own consumers.
 class Lifecycle(StrEnum):
     draft = "draft"
     canary = "canary"

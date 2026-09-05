@@ -13,7 +13,7 @@ export function CalloutScene({ scene }: SceneProps<Spec>): ReactElement {
   const gap = Math.round(theme.space[6]! * scale);
   const text = useFittedText(scene.text.text, "headline", safe.width - bar - gap, Math.round(safe.height * 0.6), 6, "surface");
   return (
-    <SceneFrame testId="callout" background="surface">
+    <SceneFrame testId="callout" backgroundAssetId={scene.background_asset_id} background="surface">
       <div style={{ display: "flex", alignItems: "stretch", ...enter(frame, 0, f.base, theme, 16 * scale) }}>
         <div data-tone={scene.tone} style={{ width: bar, background: theme.color.tone[scene.tone], marginRight: gap, flex: "0 0 auto" }} />
         <Lines block={text} />

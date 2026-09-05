@@ -51,6 +51,7 @@
     "measured_start_ms": null,
     "order": 0,
     "planned_duration_ms": 4200,
+    "section": null,
     "spoken_text": null,
     "words": []
    },
@@ -64,6 +65,7 @@
     "measured_start_ms": null,
     "order": 1,
     "planned_duration_ms": 3800,
+    "section": null,
     "spoken_text": null,
     "words": []
    },
@@ -75,6 +77,7 @@
     "measured_start_ms": null,
     "order": 2,
     "planned_duration_ms": 6000,
+    "section": null,
     "spoken_text": null,
     "words": []
    },
@@ -86,6 +89,7 @@
     "measured_start_ms": null,
     "order": 3,
     "planned_duration_ms": 3000,
+    "section": null,
     "spoken_text": null,
     "words": []
    }
@@ -94,10 +98,12 @@
   "fps": 30,
   "handle_ms": 250,
   "height": 1920,
+  "hook_text": null,
   "min_scene_ms": 1200,
   "plan_id": "plan_demo0000001",
   "scenes": [
    {
+    "background_asset_id": null,
     "beat_id": "beat_000000001",
     "emphasis": [],
     "kind": "title",
@@ -171,7 +177,8 @@
    }
   ],
   "schema_version": 1,
-  "width": 1080
+  "width": 1080,
+  "visual_subject": "a Swedish coastal wind farm under a flat overcast sky"
  },
  "schema_version": 1,
  "seed": "content-factory",

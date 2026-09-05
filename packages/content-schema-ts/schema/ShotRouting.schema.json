@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "BeatRoute": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "order": {
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "reason": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "route": {
+          "enum": [
+            "render",
+            "generate"
+          ],
+          "title": "Route",
+          "type": "string"
+        },
+        "scene_kind": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Scene Kind",
+          "type": "string"
+        },
+        "shot_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shot Id"
+        }
+      },
+      "required": [
+        "beat_id",
+        "order",
+        "reason",
+        "route",
+        "scene_kind",
+        "shot_id"
+      ],
+      "title": "BeatRoute",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ShotRouting.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Owned by the shot router; consumed by ``compile_controls`` (renders only generate-routed\nshots) and ``compose_video`` (interleaves Remotion segments and generated clips).",
+  "properties": {
+    "beats": {
+      "items": {
+        "$ref": "#/$defs/BeatRoute"
+      },
+      "minItems": 1,
+      "title": "Beats",
+      "type": "array"
+    },
+    "default_route": {
+      "default": "render",
+      "enum": [
+        "render",
+        "generate"
+      ],
+      "title": "Default Route",
+      "type": "string"
+    },
+    "deliverable_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Deliverable Id",
+      "type": "string"
+    },
+    "router": {
+      "const": "kind_table",
+      "default": "kind_table",
+      "title": "Router",
+      "type": "string"
+    },
+    "router_version": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Router Version",
+      "type": "string"
+    },
+    "routing_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Routing Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "shot_plan_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Shot Plan Hash",
+      "type": "string"
+    },
+    "story_plan_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Story Plan Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "beats",
+    "default_route",
+    "deliverable_id",
+    "router",
+    "router_version",
+    "routing_id",
+    "schema_version",
+    "shot_plan_hash",
+    "story_plan_hash"
+  ],
+  "title": "ShotRouting",
+  "type": "object"
+}

@@ -83,6 +83,9 @@ async def test_tools_listed_and_capabilities_are_honest() -> None:
             "approve_preflight",
             "submit_revision_feedback",
             "apply_approved_edit_batch",
+            "list_graphs",
+            "run_graph",
+            "get_run_outputs",
         } <= names
         result = await client.call_tool("list_capabilities", {})
         caps = json.loads(_text(result))

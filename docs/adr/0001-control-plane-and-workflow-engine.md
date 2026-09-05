@@ -31,6 +31,14 @@ duplicating side effects.
 - Celery/RQ/Dramatiq: queues, not durable workflows; no replay, signals, or long timers.
 - Prefect/Dagster: batch-data oriented; weak on multi-day human-in-the-loop waits.
 - Hand-rolled state machines in Postgres: exactly the code Temporal removes; error-prone.
+- Hatchet (evaluated 2026-09-03, after acceptance): MIT, Postgres-backed engine with built-in
+  per-key concurrency/rate limits — the lighter choice for stateless fan-out job queues, and the
+  credible re-evaluation if a self-hosted Temporal *cluster* ever feels too heavy. Rejected here
+  because the core workload is signal-driven multi-day runs whose invariants are proven by
+  deterministic replay of recorded histories and by Temporal Schedule policies (overlap SKIP,
+  catch-up); Hatchet's durable execution (v1, ~2025) is younger, has no offline replay-test
+  story, and migrating would re-prove exactly-once publishing and stale-approval handling to
+  save roughly one container.
 
 ## Consequences
 - Operators run one extra container (Temporal dev server). Its UI is the low-level ops view; the

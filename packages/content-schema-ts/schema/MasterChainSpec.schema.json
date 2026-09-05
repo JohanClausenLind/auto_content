@@ -1,0 +1,76 @@
+{
+  "$id": "https://content-factory.local/schema/MasterChainSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The programme master: true-peak limiter → two-pass EBU R128 normalization → 48 kHz WAV.",
+  "properties": {
+    "limiter": {
+      "default": true,
+      "title": "Limiter",
+      "type": "boolean"
+    },
+    "limiter_attack_ms": {
+      "default": 5.0,
+      "maximum": 80,
+      "minimum": 0.1,
+      "title": "Limiter Attack Ms",
+      "type": "number"
+    },
+    "limiter_ceiling_dbtp": {
+      "default": -1.5,
+      "maximum": 0,
+      "minimum": -12,
+      "title": "Limiter Ceiling Dbtp",
+      "type": "number"
+    },
+    "limiter_release_ms": {
+      "default": 50.0,
+      "maximum": 8000,
+      "minimum": 1,
+      "title": "Limiter Release Ms",
+      "type": "number"
+    },
+    "loudness_range_lu": {
+      "default": 11.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Loudness Range Lu",
+      "type": "number"
+    },
+    "sample_rate_hz": {
+      "default": 48000,
+      "enum": [
+        44100,
+        48000
+      ],
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "target_lufs": {
+      "default": -14.0,
+      "maximum": 0,
+      "minimum": -40,
+      "title": "Target Lufs",
+      "type": "number"
+    },
+    "target_true_peak_dbtp": {
+      "default": -1.0,
+      "maximum": 0,
+      "minimum": -12,
+      "title": "Target True Peak Dbtp",
+      "type": "number"
+    }
+  },
+  "required": [
+    "limiter",
+    "limiter_attack_ms",
+    "limiter_ceiling_dbtp",
+    "limiter_release_ms",
+    "loudness_range_lu",
+    "sample_rate_hz",
+    "target_lufs",
+    "target_true_peak_dbtp"
+  ],
+  "title": "MasterChainSpec",
+  "type": "object"
+}

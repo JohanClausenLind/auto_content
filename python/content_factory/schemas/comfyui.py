@@ -10,6 +10,9 @@ from pydantic import Field, model_validator
 from content_factory.schemas.base import SchemaModel, SemVer, Sha256Hex, VersionedModel
 
 
+# Governs a ComfyUI NODE PACKAGE. Deliberately distinct from skills.Lifecycle, which governs
+# signed skill manifests: the two vocabularies coincide today but are separate published
+# contracts and are free to diverge. Do not merge them.
 class LifecycleStatus(StrEnum):
     draft = "draft"
     canary = "canary"
@@ -28,7 +31,11 @@ class CapabilityFlag(StrEnum):
     control_edge = "control_edge"
     mask_inpaint = "mask_inpaint"
     upscale = "upscale"
+    image_to_video = "image_to_video"
     deterministic_seed = "deterministic_seed"
+    keyframe_guide = "keyframe_guide"  # extra conditioning frames at given indices (LTXVAddGuide)
+    control_segmentation = "control_segmentation"
+    pose_video = "pose_video"
 
 
 class ParameterBinding(SchemaModel):

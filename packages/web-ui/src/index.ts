@@ -14,6 +14,8 @@ export {
   baseTokensSchema,
   themeImportSchema,
   parseThemeImport,
+  coerceThemeState,
+  isThemeState,
   DEFAULT_THEME_STATE,
   MAX_CUSTOM_THEMES,
   SCALE_MIN,
@@ -23,6 +25,32 @@ export type { ThemeState, CustomTheme, ImportResult } from "./theme/schema";
 export { deriveTokens, schemeOf, BASE_TOKEN_KEYS, DERIVED_TOKEN_KEYS, STATIC_TOKENS } from "./theme/tokens";
 export type { BaseTokens, ColorTokenKey, DerivedTokenKey, Scheme } from "./theme/tokens";
 export { contrastRatio, relativeLuminance, mix, lighten, darken, isHexColor, bestForeground } from "./theme/color";
+
+// Keymap engine
+export { KeymapProvider, useKeymap, useOptionalKeymap } from "./keys/KeymapProvider";
+export type { KeymapContextValue, KeymapProviderProps, KeymapSyncAdapter } from "./keys/KeymapProvider";
+export { KeymapEditor } from "./keys/KeymapEditor";
+export type { KeymapEditorProps } from "./keys/KeymapEditor";
+export { ShortcutSheet } from "./keys/ShortcutSheet";
+export { SequenceHint } from "./keys/SequenceHint";
+export type { ShortcutSheetProps } from "./keys/ShortcutSheet";
+export {
+  eventToChord,
+  formatChord,
+  formatBinding,
+  bindingsEqual,
+  isPrefixOf,
+  isEditableTarget,
+  isTypingContext,
+  chordHasModifier,
+  isApplePlatform,
+  MAX_CHORDS_PER_BINDING,
+} from "./keys/chord";
+export { resolveKeymap, findConflicts, conflictsByAction, matchSequence } from "./keys/resolve";
+export type { KeyAction, ResolvedAction, KeymapConflict, ConflictKind, SequenceMatch } from "./keys/resolve";
+export { keymapStateSchema, bindingSchema, chordSchema, parseKeymapState, DEFAULT_KEYMAP_STATE, KEYMAP_VERSION } from "./keys/schema";
+export type { KeymapState, Binding } from "./keys/schema";
+export { loadKeymapState, saveKeymapState, clearKeymapState, initialKeymapState, KEYMAP_STORAGE_KEY } from "./keys/storage";
 
 // Components
 export { Button } from "./components/Button";

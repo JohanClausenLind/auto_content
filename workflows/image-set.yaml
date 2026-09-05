@@ -1,0 +1,149 @@
+# A set of images that have to look like each other.
+#
+# A character sheet, a run of variations, one product in several poses: the deliverable is not any
+# single image, it is the agreement between them. So the lane is built around the consistency
+# machinery rather than around generation. One anchor is drawn, a generation lock freezes the model,
+# seed, sampler and style prompts around it, every later image is edited from that anchor under that
+# lock, and drift_qc measures how far each one moved before a person is asked to look.
+#
+# Nothing here is specific to characters. The same lane makes packshots, prop sheets or a set of
+# variations on one illustration; the subject lives in the brief and in generate_anchor's prompt.
+#
+# The lane next door is photo-sequence-video, which shares this spine exactly and then cuts the
+# frames into a silent film instead of sheeting them. Pick that one when the deliverable is a
+# video file; pick this one when the deliverable is the images themselves. The difference is the
+# terminal stage, so do not add a compose_video node here - that lane already exists.
+#
+# Two sequencing facts drive the shape of the graph, and both are easy to get wrong:
+#
+#  1. compile_controls runs AFTER generate_anchor. generate_anchor looks for a control manifest on
+#     disk and, when it finds one, draws one anchor per control bundle. This lane wants exactly one
+#     hub anchor, so the controls are compiled once the anchor exists. The lock -> controls wire
+#     carries no data the motion_plan compiler reads; it is there so the graph, not just the order
+#     list, forces that sequence.
+#  2. compile_controls stays on the builtin motion_plan compiler. The blender compiler makes
+#     per-shot bundles that keyframe through generate_video, and generate_keyframes, drift_qc and
+#     package_sequence all skip themselves when they see it. Switching the compiler here would
+#     silently empty the lane of its three most important stages.
+schema_version: 1
+id: image-set
+name: Image set
+description: >
+  Several images of one subject that have to match. An anchor image fixes the look, a generation
+  lock freezes the model, seed, sampler and style prompts around it, and every later image is
+  edited from the anchor under that lock rather than generated fresh. Drift QC measures how far
+  each image moved from the anchor, a person signs off the sheet, and the set is packaged as one
+  deliverable.
+category: image
+tags: [images, set, consistency, drift, review]
+prerequisite: >
+  A brief naming the subject, and the look written out on generate_anchor (prompt plus style).
+  The set is only as consistent as that anchor, so draft the anchor prompt before running. What
+  each later image shows is not yet yours to choose - see the caveat. For real images
+  image_sequences.backend must be hidream; the default mock backend draws placeholders.
+caveat: >
+  The set is fixed at the 8 frames of the builtin control plan, and its per-image layout is that
+  plan's hand-gesture fixture, not the views the brief asks for. generate_keyframes declares a
+  frames widget the runner does not read, so you cannot yet ask for a number of images or say what
+  each shows.
+models:
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "one subject, several matching views", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    note: >
+      The list of views, as beats. Point its story widget at a written fixture when the views are
+      decided in advance rather than drafted.
+  - key: anchor
+    type: generate_anchor
+    values:
+      seed: 424242
+      prompt: "the subject alone, centred, plain background, the reference view of the set"
+      style: >
+        consistent character and material design, even flat lighting, no dramatic shadow, plain
+        neutral background, same rendering idiom in every image
+    note: >
+      The one image the rest of the set is measured against. The seed is pinned because the lock
+      freezes it and every later image reuses it; which number does not matter, that it holds
+      between runs does. No model value: _reference_backend() reads the image_sequences.backend
+      setting and never this node, so a model here would name a weight it does not pick.
+  - key: lock
+    type: lock_generation
+    note: Model, seed, sampler and the style, camera and lighting prompts, frozen around the anchor.
+  - key: controls
+    type: compile_controls
+    values: {compiler: motion_plan}
+    note: >
+      Per-image layout, from the builtin 2D plan. The compiler is set explicitly rather than left
+      to its widget default because the stage falls back to the controls.compiler setting when the
+      node is silent, and a settings change would otherwise reroute this lane through video.
+  - key: spokes
+    type: generate_keyframes
+    note: >
+      Hub and spoke: every image is an edit of the anchor under the lock, never an independent
+      generation. Frames that fail the drift thresholds are regenerated here before drift_qc sees
+      them.
+  - key: drift
+    type: drift_qc
+    note: >
+      Reads the per-image drift records: how much of the locked region survived and how far the
+      style moved. This is the stage that answers whether the set actually matches.
+  - key: frames_gate
+    type: review_frames
+    note: Drift is a number. Whether the set looks like one set is a judgement, so a person makes it.
+  - key: package
+    type: package_sequence
+    note: >
+      The readable form of a set: every image at thumbnail size, judged as one sheet. There is no
+      format value to set: contact sheet, mp4 flip-through and flipbook PDF are all written every
+      time, and the widget that looked like a choice has been removed from the node rather than
+      left on the canvas doing nothing.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: anchor, from_slot: anchor, to_key: lock, to_slot: anchor}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: lock, from_slot: lock, to_key: controls, to_slot: lock}
+  - {from_key: lock, from_slot: lock, to_key: spokes, to_slot: lock}
+  - {from_key: controls, from_slot: controls, to_key: spokes, to_slot: controls}
+  - {from_key: spokes, from_slot: frames, to_key: drift, to_slot: frames}
+  - {from_key: drift, from_slot: frames, to_key: frames_gate, to_slot: frames}
+  - {from_key: frames_gate, from_slot: frames, to_key: package, to_slot: frames}
+  - {from_key: package, from_slot: package, to_key: qc, to_slot: deliverable}
+  - {from_key: package, from_slot: package, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - anchor
+  - lock
+  - controls
+  - spokes
+  - drift
+  - frames_gate
+  - package
+  - qc
+  - pack

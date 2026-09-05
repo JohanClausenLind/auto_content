@@ -6,12 +6,15 @@ import { useState, type FormEvent } from "react";
 import { api, isApiError } from "../api/client";
 import { setSession } from "../api/queries";
 import type { Session } from "../api/types";
+import { useOptionalPrefs } from "../prefs/PrefsProvider";
 
 type Step = { kind: "password" } | { kind: "totp"; methods: ("totp" | "passkey")[] };
 
 export function LoginPage() {
   const client = useQueryClient();
   const navigate = useNavigate();
+  // The login page renders inside the provider, but tests mount it bare; treat prefs as optional.
+  const prefs = useOptionalPrefs()?.prefs ?? null;
   const [step, setStep] = useState<Step>({ kind: "password" });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +24,17 @@ export function LoginPage() {
 
   const finish = (session: Session) => {
     setSession(client, session);
-    void navigate({ to: "/" });
+    // Preferred workspace first, so the landing area renders with the right data already selected.
+    const wanted = prefs?.defaultWorkspaceId ?? null;
+    const known = wanted !== null && session.workspaces.some((w) => w.id === wanted);
+    const done = known && wanted !== session.current_workspace_id
+      ? api.session.switchWorkspace(wanted).then(
+          (next) => setSession(client, next),
+          // A workspace that has since gone away must not strand the operator on the login page.
+          () => undefined,
+        )
+      : Promise.resolve();
+    void done.then(() => navigate({ to: prefs?.landingArea ?? "/" }));
   };
 
   const fail = (e: unknown, fallback: string) => setError(isApiError(e) ? e.detail : e instanceof Error ? e.message : fallback);

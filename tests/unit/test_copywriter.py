@@ -25,7 +25,7 @@ def _campaign() -> ContentCampaign:
 def _wire_fake(monkeypatch, reply: dict) -> list[dict]:
     calls: list[dict] = []
 
-    def fake_completion(**kwargs):  # noqa: ANN003
+    def fake_completion(**kwargs):
         calls.append(kwargs)
         return {
             "choices": [{"message": {"content": json.dumps(reply)}}],
@@ -51,7 +51,24 @@ def test_draft_caption_routes_local_and_carries_writer(monkeypatch) -> None:
     assert out["writer"] == "local_structured"
     assert out["caption"].startswith("Wind now covers")
     assert str(calls[0]["model"]).startswith("ollama_chat/")
-    assert "Topic:" in calls[0]["messages"][1]["content"]
+
+    sent = calls[0]
+    # Two messages: the shared system instruction the gateway attaches to every role, and the
+    # brief. The schema is a decoding constraint, not a JSON Schema pasted in front of the prompt.
+    assert [m["role"] for m in sent["messages"]] == ["system", "user"]
+    assert "Never invent a figure" in sent["messages"][0]["content"]
+    assert "Topic:" in sent["messages"][1]["content"]
+    assert "JSON Schema" not in " ".join(m["content"] for m in sent["messages"])
+    assert sent["response_format"]["type"] == "json_schema"
+    assert sent["response_format"]["json_schema"]["schema"]["properties"].keys() >= {
+        "caption",
+        "alt_text",
+    }
+    # And the four settings that were never passed at all.
+    assert sent["think"] is False  # reasoning tokens do not come out of the answer's budget
+    assert sent["num_ctx"] == 16384  # Ollama's own default is 4096, whatever the model declares
+    assert sent["keep_alive"] == 0  # 12 GB released before the next stage loads the image model
+    assert out["model"]["schema_enforced"] is True and out["model"]["num_ctx"] == 16384
 
 
 def test_draft_carousel_always_honours_card_count(monkeypatch) -> None:

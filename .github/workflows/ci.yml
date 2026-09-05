@@ -43,20 +43,19 @@ jobs:
       - name: format
         run: uv run ruff format --check .
       - name: lint
-        run: uv run ruff check .
+        run: |
+          uv run ruff check .
+          pnpm run lint
       - name: type checks
         run: |
-          uv run pyright python tests scripts
+          uv run pyright
           pnpm -r --if-present run typecheck
       - name: schema drift
-        run: |
-          uv run python scripts/export_schemas.py --check
-          pnpm --filter @content-factory/content-schema-ts run generate
-          git diff --exit-code -- packages/content-schema-ts/generated fixtures/schema
+        run: scripts/schemas.sh --check
       - name: migrations apply cleanly
         run: uv run alembic upgrade head && uv run alembic check
       - name: unit
-        run: uv run pytest -q -m "not integration and not gpu and not live"
+        run: uv run pytest -q
       - name: node tests
         run: pnpm -r --if-present run test
       - name: integration (postgres)

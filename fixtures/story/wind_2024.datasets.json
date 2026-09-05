@@ -1,0 +1,73 @@
+[
+ {
+  "dataset_id": "ds_wind2024_share1",
+  "classification": "SOURCE_DATA",
+  "columns": [
+   "year",
+   "share_pct"
+  ],
+  "rows": [
+   {
+    "year": "2018",
+    "share_pct": 10.2
+   },
+   {
+    "year": "2019",
+    "share_pct": 11.8
+   },
+   {
+    "year": "2020",
+    "share_pct": 16.8
+   },
+   {
+    "year": "2021",
+    "share_pct": 15.9
+   },
+   {
+    "year": "2022",
+    "share_pct": 19.4
+   },
+   {
+    "year": "2023",
+    "share_pct": 20.9
+   }
+  ],
+  "unit": "%",
+  "source_ids": [
+   "src_wikiwindse01"
+  ],
+  "label": "Wind share of Swedish electricity generation"
+ },
+ {
+  "dataset_id": "ds_wind2024_key01",
+  "classification": "SOURCE_DATA",
+  "columns": [
+   "metric",
+   "value"
+  ],
+  "rows": [
+   {
+    "metric": "generation_2024_twh",
+    "value": 40.8
+   },
+   {
+    "metric": "orders_2023_mw",
+    "value": 1244
+   },
+   {
+    "metric": "orders_2024_mw",
+    "value": 446
+   },
+   {
+    "metric": "permitted_waiting_mw",
+    "value": 500
+   }
+  ],
+  "unit": "",
+  "source_ids": [
+   "src_swea0000001",
+   "src_balticwind01"
+  ],
+  "label": "Swedish wind 2024 key figures (Svensk Vindenergi)"
+ }
+]

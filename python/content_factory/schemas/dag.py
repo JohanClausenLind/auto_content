@@ -38,22 +38,36 @@ class Stage(StrEnum):
     compile_email = "compile_email"
     email_preview_qc = "email_preview_qc"
     # image-sequence branch
+    review_assets = "review_assets"
+    find_reference = "find_reference"
+    plan_shots = "plan_shots"
+    route_shots = "route_shots"
     generate_anchor = "generate_anchor"
     lock_generation = "lock_generation"
     compile_controls = "compile_controls"
     generate_keyframes = "generate_keyframes"
     drift_qc = "drift_qc"
+    review_frames = "review_frames"
     interpolate = "interpolate"
     package_sequence = "package_sequence"
     # audio branch
     lock_script = "lock_script"
     synthesize_narration = "synthesize_narration"
+    voice_over = "voice_over"
+    restore_speech = "restore_speech"
+    sound_design = "sound_design"
     align_words = "align_words"
     compile_captions = "compile_captions"
+    select_music = "select_music"
     mix_audio = "mix_audio"
+    # post-processing chain (scene-control layer)
+    fix_video = "fix_video"
+    upscale_video = "upscale_video"
     # video branch
     compile_timeline = "compile_timeline"
+    render_animation = "render_animation"
     render_scenes = "render_scenes"
+    generate_video = "generate_video"
     compose_video = "compose_video"
     # per deliverable / destination
     qc_deliverable = "qc_deliverable"
@@ -76,6 +90,7 @@ ResourceClass = Literal[
     "render-gpu",
     "inference-llm",
     "inference-image",
+    "inference-video",
     "inference-audio",
     "publish",
 ]
@@ -89,6 +104,10 @@ class StageNode(SchemaModel):
     executor: Executor = Executor.deterministic
     resource_class: ResourceClass = "control"
     optional: bool = False
+    # Node parameters frozen at compile time (a workspace graph's widget values). Values are
+    # strings because they come from form controls; each stage parses what it knows and ignores
+    # the rest. They are part of the node input hash, so changing a widget invalidates its cache.
+    params: dict[str, str] = Field(default_factory=dict)
 
 
 class NotRequired(SchemaModel):

@@ -32,7 +32,13 @@ export interface CommandPaletteProps {
   placeholder?: string;
 }
 
-/** Register ⌘K / Ctrl+K and return controlled open state. */
+/**
+ * Register ⌘K / Ctrl+K and return controlled open state, for a palette used on its own.
+ *
+ * Do not combine this with `KeymapProvider`: the operator shell binds the palette through the
+ * keymap so there is one dispatcher, and using both would register two listeners for the same
+ * chord and toggle the dialog twice per press.
+ */
 export function useCommandPaletteHotkey(): [boolean, (open: boolean) => void] {
   const [open, setOpen] = useState(false);
   useEffect(() => {

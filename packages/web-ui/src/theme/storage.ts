@@ -1,5 +1,5 @@
 import { resolveTheme } from "./resolve";
-import { DEFAULT_THEME_STATE, themeStateSchema, type ThemeState } from "./schema";
+import { coerceThemeState, DEFAULT_THEME_STATE, type ThemeState } from "./schema";
 
 import { THEME_PAINT_KEY, THEME_STORAGE_KEY, themeBootScript } from "./boot";
 
@@ -28,8 +28,7 @@ export function loadThemeState(): ThemeState | null {
   const raw = store.getItem(THEME_STORAGE_KEY);
   if (!raw) return null;
   try {
-    const parsed = themeStateSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : null;
+    return coerceThemeState(JSON.parse(raw));
   } catch {
     return null;
   }

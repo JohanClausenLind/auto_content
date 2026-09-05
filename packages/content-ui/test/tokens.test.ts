@@ -44,3 +44,32 @@ describe("editorial tokens", () => {
     expect(new Set(editorialTheme.series.map((s) => s.dash)).size).toBe(6);
   });
 });
+
+
+describe("dark-paper brands", () => {
+  it("derive readable on-paper colours instead of vanishing text", () => {
+    const dark = applyBrand(editorialTheme, { accent: "#4CC3FF", paper: "#0B0F14", ink: "#F2F5F9", font_family: "Inter", logo_asset_id: null });
+    const body = textColor(dark, "body", "paper");
+    const label = textColor(dark, "label", "paper");
+    const muted = textColor(dark, "caption", "paper");
+    expect(contrastRatio(body, dark.color.paper)).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(label, dark.color.paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(muted, dark.color.paper)).toBeGreaterThanOrEqual(4.5);
+    expect(body.toUpperCase()).toBe("#F2F5F9");
+    // the surface used by callouts is a slightly lifted dark, and text on it stays light
+    expect(contrastRatio(textColor(dark, "headline", "surface"), dark.color.surface)).toBeGreaterThanOrEqual(7);
+  });
+});
+
+
+describe("display family", () => {
+  it("a Sora brand sets the display roles in Sora 800/700 and leaves body text in Inter", () => {
+    const t = applyBrand(editorialTheme, { accent: null, paper: null, ink: null, font_family: "Sora", logo_asset_id: null });
+    expect(t.type.number.family).toBe("Sora");
+    expect(t.type.number.weight).toBe(800);
+    expect(t.type.headline.family).toBe("Sora");
+    expect(t.type.body.family).toBe("Inter");
+    expect(t.type.label.family).toBe("Inter");
+    expect(editorialTheme.type.number.family).toBe("Inter"); // untouched
+  });
+});

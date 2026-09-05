@@ -1,0 +1,288 @@
+/* The model store: rows that carry a state, a size and one button that changes it. */
+
+.cf-store__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cf-space-4, 1rem);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--cf-space-3, 0.75rem) var(--cf-space-4, 1rem);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md, 8px);
+  background: var(--cf-panel);
+  margin-bottom: var(--cf-space-4, 1rem);
+}
+
+.cf-store__barfacts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.cf-store__barfacts dt {
+  color: var(--cf-muted);
+}
+
+.cf-store__barfacts dd {
+  margin: 0;
+}
+
+.cf-store__baractions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.cf-store__section {
+  margin-bottom: var(--cf-space-5, 1.5rem);
+}
+
+.cf-store__sectionhead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.cf-store__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cf-store__count {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--cf-panel-2));
+  border: 1px solid var(--cf-border);
+  font-size: 0.75rem;
+  color: var(--cf-muted);
+}
+
+.cf-store__search {
+  margin-left: auto;
+  max-width: 16rem;
+}
+
+.cf-store__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cf-store__row {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md, 8px);
+  background: var(--cf-panel);
+  padding: 0.5rem 0.75rem;
+}
+
+.cf-store__main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.cf-store__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.4rem; /* on the name's line, which is what the colour is about */
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--cf-muted);
+}
+
+.cf-store__row[data-state="ready"] .cf-store__dot {
+  background: var(--cf-success);
+}
+
+.cf-store__row[data-state="partial"] .cf-store__dot,
+.cf-store__row[data-unlinked] .cf-store__dot {
+  background: var(--cf-warn);
+}
+
+.cf-store__row[data-state="absent"] .cf-store__dot {
+  background: var(--cf-danger);
+}
+
+.cf-store__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.cf-store__name {
+  font-weight: 600;
+}
+
+.cf-store__purpose {
+  color: var(--cf-muted);
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
+.cf-store__meta {
+  font-size: 0.75rem;
+  color: var(--cf-muted);
+}
+
+.cf-store__state {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+}
+
+.cf-store__gated {
+  color: var(--cf-warn);
+}
+
+.cf-store__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  min-height: 1.6rem;
+}
+
+.cf-store__manualtag {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cf-muted);
+  border: 1px dashed var(--cf-border);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.cf-store__manual,
+.cf-store__warn,
+.cf-store__caveat {
+  margin: 0.35rem 0 0 1.1rem; /* aligned with the row's text, past the state dot */
+  font-size: 0.8125rem;
+  color: var(--cf-muted);
+}
+
+.cf-store__warn {
+  color: var(--cf-warn);
+}
+
+.cf-store__job {
+  margin: 0.4rem 0 0 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cf-store__bar[role="progressbar"],
+.cf-store__bar {
+  flex: 0 0 auto;
+}
+
+span.cf-store__bar {
+  display: block;
+  width: 10rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--cf-border);
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+
+.cf-store__barfill {
+  display: block;
+  height: 100%;
+  background: var(--cf-accent);
+  transition: width 400ms linear;
+}
+
+.cf-store__jobtext {
+  font-size: 0.75rem;
+  color: var(--cf-muted);
+}
+
+.cf-store__jobtext--warn {
+  color: var(--cf-warn);
+}
+
+.cf-store__jobtext--bad {
+  color: var(--cf-danger);
+}
+
+.cf-store__details {
+  margin: 0.5rem 0 0 1.1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--cf-border);
+  font-size: 0.8125rem;
+}
+
+.cf-store__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0.35rem 0;
+}
+
+.cf-store__facts dt {
+  color: var(--cf-muted);
+}
+
+.cf-store__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cf-store__sources,
+.cf-store__files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cf-store__files li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.1rem 0;
+  color: var(--cf-muted);
+  overflow-wrap: anywhere;
+}
+
+.cf-store__files li[data-state="present"] code {
+  color: var(--cf-fg);
+}
+
+.cf-store__rev,
+.cf-store__note {
+  color: var(--cf-muted);
+}
+
+.cf-store__empty {
+  font-size: 0.8125rem;
+  color: var(--cf-muted);
+  margin: 0.25rem 0;
+}
+
+.cf-store__hf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 26rem;
+}
+
+.cf-store__hf .cf-input {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+}

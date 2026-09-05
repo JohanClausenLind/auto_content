@@ -1,0 +1,90 @@
+# Repair a recording somebody already made.
+#
+# This is the audio half of a voice lane with the writing and the synthesis taken out. Nothing here
+# invents material: no brief, no script, no picture, no generated voice. The operator drops a
+# recording in the run directory and the lane denoises it, extends the band back to 48 kHz, runs the
+# restoration pass, then masters the result to a fixed loudness and packages it.
+#
+# It is named for what it does to the material rather than for what the material is. A lecture, an
+# interview, a narration take and a salvaged phone memo all go through the same four steps, so there
+# is no reason for four lanes.
+schema_version: 1
+id: audio-restore
+name: Audio restoration
+description: >
+  A recording the operator already has is cleaned up and mastered: cleanup, band extension back to
+  48 kHz, restoration, then a loudness pass and a packaged deliverable. No script is written, no
+  voice is synthesised and no picture is made, so what comes out is the same performance, repaired.
+category: audio
+tags: [audio, restoration, denoise, loudness, delivery]
+prerequisite: >
+  The recording. restore_speech reads it from the run directory, so the file must be in place before
+  the run starts; nothing upstream in this lane produces audio.
+caveat: >
+  One input is unwired: restore_speech reads the recording from the run directory rather than from
+  a wire, so the lane opens on an unconnected required input. Everything after it is wired,
+  delivery included - the mastered WAV is what QC measures and what gets packaged.
+models:
+  - kind: path
+    label: ClearerVoice MossFormer2 enhancement (48 kHz)
+    path_includes: mossformer2-se-48k
+    filename: last_best_checkpoint.pt
+  - kind: path
+    label: ClearerVoice MossFormer2 band extension (48 kHz)
+    path_includes: mossformer2-sr-48k
+    filename: last_best_checkpoint_g.pt
+  - kind: skill
+    label: ClearerVoice skill env
+    skill: skills/audio/clearervoice
+  - kind: path
+    label: Resemble Enhance weights
+    path_includes: resemble-enhance
+    filename: enhancer_stage2/hparams.yaml
+  - kind: skill
+    label: Resemble Enhance skill env
+    skill: skills/audio/resemble_enhance
+
+nodes:
+  - key: restore
+    type: restore_speech
+    values:
+      cleanup: clearervoice
+      band_extension: clearervoice_sr
+      enhancer: resemble_enhance
+      gate: always
+      device: cuda
+    note: >
+      The whole point of the lane, so every step is on and the gate is always rather than detected:
+      the operator asked for repair, not for the chain to decide the take sounded fine.
+  - key: mix
+    type: mix_audio
+    values: {target_lufs: -16.0}
+    note: >
+      Loudness only. There is no music and no sound design to bed under anything, so the music and
+      sfx inputs stay empty and -16 LUFS is the spoken-word target rather than the video default.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: restore, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  # An audio master is a deliverable: qc_deliverable measures the delivered WAV (loudness,
+  # true peak, dead air) and compile_destination_packages already ships it.
+  - {from_key: mix, from_slot: audio, to_key: qc, to_slot: deliverable}
+  - {from_key: mix, from_slot: audio, to_key: pack, to_slot: deliverable}
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - restore
+  - mix
+  - qc
+  - pack

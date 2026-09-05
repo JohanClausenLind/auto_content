@@ -1,0 +1,832 @@
+{
+ "deliverable_id": "dlv_two_hander_mocap",
+ "plan_id": "shp_two_hander_mocap",
+ "planner": "fixture",
+ "planner_version": "0.1.0",
+ "schema_version": 1,
+ "shots": [
+  {
+   "anchor_frames": [
+    0,
+    30
+   ],
+   "beat_id": "bea_mocap_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.9373,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0569,
+       0.0,
+       0.9318
+      ],
+      "position": [
+       4.8938,
+       3.3868,
+       1.5524
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_18_19_01",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "actor": "b",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_18_19_01",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "they meet and shake hands (mocap cmu_18_19_01)",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.3,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 61,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 175.0,
+    "key_elevation_deg": 22.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "they meet and shake hands",
+   "order": 0,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0,
+     30,
+     60
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1000,
+   "shot_id": "sht_mocap_0000",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0,
+    23
+   ],
+   "beat_id": "bea_mocap_take01",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 8.2057,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       -0.0101,
+       -1.1154,
+       0.9139
+      ],
+      "position": [
+       -3.4732,
+       6.3113,
+       1.3434
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_20_21_02",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "actor": "b",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_20_21_02",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "arms linked, walking together (mocap cmu_20_21_02)",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.3,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 46,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 255.0,
+    "key_elevation_deg": 22.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "arms linked, walking together",
+   "order": 1,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0,
+     23,
+     45
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1001,
+   "shot_id": "sht_mocap_0001",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0,
+    52
+   ],
+   "beat_id": "bea_mocap_take02",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 7.5217,
+      "frame_index": 0,
+      "lens_mm": 65.0,
+      "look_at": [
+       -0.0443,
+       -0.0,
+       0.9139
+      ],
+      "position": [
+       3.68,
+       -6.4506,
+       1.9607
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "actor": "b",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_04",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_04",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "one hand on her shoulder, comforting her (mocap cmu_22_23_04)",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.3,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 104,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 80.0,
+    "key_elevation_deg": 22.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "one hand on her shoulder, comforting her",
+   "order": 2,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0,
+     52,
+     103
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1002,
+   "shot_id": "sht_mocap_0002",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0,
+    81
+   ],
+   "beat_id": "bea_mocap_take03",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.9086,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       -0.3705,
+       0.0043,
+       0.9157
+      ],
+      "position": [
+       -6.1758,
+       3.356,
+       2.5871
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "actor": "b",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_03",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_03",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "she sits with her face in her hands; he kneels to comfort her (mocap cmu_22_23_03)",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.3,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 163,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 290.0,
+    "key_elevation_deg": 22.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "she sits with her face in her hands; he kneels to comfort her",
+   "order": 3,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0,
+     81,
+     162
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1003,
+   "shot_id": "sht_mocap_0003",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0,
+    23
+   ],
+   "beat_id": "bea_mocap_take04",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.2157,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0018,
+       1.0249,
+       0.923
+      ],
+      "position": [
+       5.6214,
+       -1.5956,
+       1.3566
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_08",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    },
+    {
+     "asset": "woman_01",
+     "id": "woman",
+     "pose": {
+      "actor": "b",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_08",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "holding hands, swinging their arms as they walk (mocap cmu_22_23_08)",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.3,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 46,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 115.0,
+    "key_elevation_deg": 22.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "holding hands, swinging their arms as they walk",
+   "order": 4,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0,
+     23,
+     45
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1004,
+   "shot_id": "sht_mocap_0004",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0,
+    52
+   ],
+   "beat_id": "bea_mocap_take05",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 8.022,
+      "frame_index": 0,
+      "lens_mm": 70.0,
+      "look_at": [
+       -0.0867,
+       0.5916,
+       0.9283
+      ],
+      "position": [
+       1.958,
+       8.2225,
+       2.3213
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "man",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_10",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    },
+    {
+     "asset": "woman_02",
+     "id": "woman",
+     "pose": {
+      "actor": "b",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_22_23_10",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 2,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "he shelters her from something out of frame (mocap cmu_22_23_10)",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.3,
+      0.3,
+      0.33
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 104,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 215.0,
+    "key_elevation_deg": 22.0,
+    "preset": "exterior_dusk",
+    "shadows": true
+   },
+   "motion_prompt": "he shelters her from something out of frame",
+   "order": 5,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0,
+     52,
+     103
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 1005,
+   "shot_id": "sht_mocap_0005",
+   "width": 1024
+  }
+ ],
+ "story_plan_hash": null
+}

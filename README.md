@@ -4,6 +4,7 @@ Self-hosted, local-first, single-operator content production and distribution pl
 Private project — no billing, no SaaS surfaces. See `STATUS.md` for the current phase.
 
 ## What works now (phases 0–9 core + 10/11 foundations, verified on this machine)
+
 - Typed contracts: Pydantic → JSON Schema 2020-12 → TypeScript + Ajv, with drift check.
 - EditorCore: typed edit operations applied and undone to identical revision hashes.
 - Remotion renderer: 3 s 1080p clip with a pinned local font, verified by ffprobe.
@@ -42,31 +43,39 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
 - MCP server (`content-factory mcp`) as the only external-agent surface.
 
 ## Not implemented yet
+
 Phases 3–13: narration/audio, research/claims, production pipeline,
 editor/QC/Revision Box UI, distribution, analytics, personas, engagement. Nothing publishes anywhere.
 
 ## Prerequisites
+
 Linux (tested on Ubuntu 24.04), Docker Engine + Compose plugin, Node 22/24 LTS, Python 3.12,
 FFmpeg 6+, optional NVIDIA GPU (tested: RTX 3090, driver 595). `uv`, `pnpm`, `just` are
 installed by `./setup.sh` if missing.
 
 ## Quick start
+
 ```bash
 ./setup.sh          # prerequisites, .env, deps, compose services, contracts, headless browser
 just doctor         # plain-language health check
 just test           # offline suites (no internet, keys, GPU, or accounts)
 just render-smoke   # apps/renderer/out/smoke-title.mp4 + ffprobe assertions
+just stop           # stop everything: the run, the worker, API/web, the GPU servers, compose
 ```
 
 ## Tailscale access
+
 The app binds loopback. This machine already serves another app on 443, so use a separate port:
+
 ```bash
 sudo tailscale set --operator=$USER          # once
 tailscale serve --bg --https=8443 8000       # https://<host>.<tailnet>.ts.net:8443
 tailscale serve --https=8443 off             # remove
 ```
+
 Funnel (public) refuses to start unless password auth + MFA are enabled.
 
 ## Documentation
+
 `docs/adr/` (10 decisions), `docs/research/` (dated official-doc research), `docs/licensing.md`,
 `docs/scale-later.md`.

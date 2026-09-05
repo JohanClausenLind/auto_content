@@ -16,6 +16,7 @@
     "@content-factory/content-ui": "workspace:*",
     "@content-factory/video-ui": "workspace:*",
     "@fontsource/inter": "5.3.0",
+    "@fontsource/sora": "5.3.0",
     "@remotion/bundler": "4.0.518",
     "@remotion/cli": "4.0.518",
     "@remotion/fonts": "4.0.518",
@@ -25,10 +26,11 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "remotion": "4.0.518",
-    "zod": "^4.4.3"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.5"
+    "@types/react-dom": "19.2.5",
+    "playwright": "1.63.0"
   }
 }

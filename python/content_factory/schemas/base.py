@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from enum import StrEnum
+from pathlib import Path
 from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -16,6 +18,16 @@ SemVer = Annotated[
         pattern=r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$"
     ),
 ]
+
+
+# Shared 5-level finding severity — one vocabulary for QC, critique and review.
+# Kept docstring-free: a class docstring would surface as `description` in the generated schema.
+class Severity(StrEnum):
+    blocker = "blocker"
+    critical = "critical"
+    major = "major"
+    minor = "minor"
+    advisory = "advisory"
 
 
 class SchemaModel(BaseModel):
@@ -57,3 +69,13 @@ def canonical_dumps(value: Any) -> str:
 
 def sha256_hex(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def file_sha256(path: Path) -> str:
+    """Streaming file digest (1 MiB chunks) — the on-disk twin of sha256_hex, so large media
+    never has to be read whole into memory just to be hashed."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()

@@ -17,9 +17,11 @@ import { RequestsPage } from "./pages/RequestsPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { CreatePage } from "./pages/CreatePage";
 import { LoginPage } from "./pages/LoginPage";
+import { ModelsPage } from "./pages/ModelsPage";
 import { OperationsPage } from "./pages/OperationsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
+import { WorkspacePage } from "./workspace/WorkspacePage";
 import { parseSettingsSearch, SettingsPage } from "./pages/SettingsPage";
 import { Shell } from "./shell/Shell";
 
@@ -83,6 +85,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   authedRoute.addChildren([
     page("/", HomePage),
+    page("/workspace", WorkspacePage),
     page("/create", CreatePage),
     page("/inbox", InboxPage),
     page("/personas", PersonasPage),
@@ -90,6 +93,7 @@ const routeTree = rootRoute.addChildren([
     page("/calendar", CalendarPage),
     page("/projects", ProjectsPage),
     runDetailRoute,
+    page("/models", ModelsPage),
     page("/assets", AssetsPage),
     page("/brand", BrandPage),
     page("/sources", SourcesPage),

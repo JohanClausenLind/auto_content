@@ -47,7 +47,9 @@ class BrandTokens(SchemaModel):
     accent: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
     paper: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
     ink: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
-    font_family: Literal["Inter"] = "Inter"  # pinned local fonts only
+    # Pinned local fonts only. Inter is the body face everywhere; "Sora" swaps the display roles
+    # (display, headline, number) to the Sora face for a brand that wants more character.
+    font_family: Literal["Inter", "Sora"] = "Inter"
     logo_asset_id: OpaqueId | None = None
 
 
@@ -79,7 +81,11 @@ class RenderBundle(VersionedModel):
                     refs.add(ds.dataset_id)
         if self.plan:
             for scene in self.plan.scenes:
-                for attr in ("value", "data"):
+                # `left_value`/`right_value` are the comparison scene's two figures. They were
+                # missing from this list for as long as nothing drew a comparison; a bundle could
+                # promise a side-by-side against a dataset it did not carry, and the scene would
+                # render two em dashes rather than fail.
+                for attr in ("value", "data", "left_value", "right_value"):
                     ds = getattr(scene, attr, None)
                     if ds is not None:
                         refs.add(ds.dataset_id)

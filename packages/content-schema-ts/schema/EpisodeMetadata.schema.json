@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "ChapterMarker": {
+      "additionalProperties": false,
+      "properties": {
+        "at_s": {
+          "minimum": 0,
+          "title": "At S",
+          "type": "integer"
+        },
+        "title": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "at_s",
+        "title"
+      ],
+      "title": "ChapterMarker",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/EpisodeMetadata.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Publishing metadata for a long-form episode. Generating this never publishes anything:\nupload stays behind the existing distribution gates and explicit operator approval.",
+  "properties": {
+    "attribution": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Attribution",
+      "type": "array"
+    },
+    "chapters": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ChapterMarker"
+      },
+      "title": "Chapters",
+      "type": "array"
+    },
+    "deliverable_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Deliverable Id",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 5000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "disclosure_text": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Disclosure Text",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "synthetic_media_disclosure": {
+      "default": true,
+      "title": "Synthetic Media Disclosure",
+      "type": "boolean"
+    },
+    "tags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Tags",
+      "type": "array"
+    },
+    "title_candidates": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "title": "Title Candidates",
+      "type": "array"
+    }
+  },
+  "required": [
+    "attribution",
+    "chapters",
+    "deliverable_id",
+    "description",
+    "disclosure_text",
+    "schema_version",
+    "synthetic_media_disclosure",
+    "tags",
+    "title_candidates"
+  ],
+  "title": "EpisodeMetadata",
+  "type": "object"
+}

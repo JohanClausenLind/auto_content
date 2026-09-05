@@ -37,7 +37,9 @@ export interface TypeStyle {
   size: number;
   /** Smallest size the fitter may fall back to (px at 1080). */
   min: number;
-  weight: 400 | 500 | 600 | 700;
+  weight: 400 | 500 | 600 | 700 | 800;
+  /** Pinned family the role is set in (Inter unless a brand opts display roles into Sora). */
+  family: "Inter" | "Sora";
   lineHeight: number;
   /** In em. */
   letterSpacing: number;
@@ -115,14 +117,14 @@ export const editorialTheme: ContentTheme = {
     tone: { neutral: "#525A66", warning: "#B2551A", positive: "#1B7F4C" },
   },
   type: {
-    display: { size: 96, min: 48, weight: 700, lineHeight: 1.05, letterSpacing: -0.02, uppercase: false, tabular: false },
-    headline: { size: 60, min: 32, weight: 700, lineHeight: 1.1, letterSpacing: -0.015, uppercase: false, tabular: false },
-    subhead: { size: 38, min: 26, weight: 500, lineHeight: 1.2, letterSpacing: -0.005, uppercase: false, tabular: false },
-    body: { size: 30, min: 24, weight: 400, lineHeight: 1.35, letterSpacing: 0, uppercase: false, tabular: false },
-    caption: { size: 24, min: 24, weight: 400, lineHeight: 1.35, letterSpacing: 0, uppercase: false, tabular: false },
-    label: { size: 26, min: 24, weight: 600, lineHeight: 1.2, letterSpacing: 0.08, uppercase: true, tabular: false },
-    number: { size: 220, min: 48, weight: 700, lineHeight: 1.0, letterSpacing: -0.03, uppercase: false, tabular: true },
-    source: { size: 24, min: 24, weight: 400, lineHeight: 1.3, letterSpacing: 0, uppercase: false, tabular: false },
+    display: { size: 96, min: 48, weight: 700, family: "Inter", lineHeight: 1.05, letterSpacing: -0.02, uppercase: false, tabular: false },
+    headline: { size: 60, min: 32, weight: 700, family: "Inter", lineHeight: 1.1, letterSpacing: -0.015, uppercase: false, tabular: false },
+    subhead: { size: 38, min: 26, weight: 500, family: "Inter", lineHeight: 1.2, letterSpacing: -0.005, uppercase: false, tabular: false },
+    body: { size: 30, min: 24, weight: 400, family: "Inter", lineHeight: 1.35, letterSpacing: 0, uppercase: false, tabular: false },
+    caption: { size: 24, min: 24, weight: 400, family: "Inter", lineHeight: 1.35, letterSpacing: 0, uppercase: false, tabular: false },
+    label: { size: 26, min: 24, weight: 600, family: "Inter", lineHeight: 1.2, letterSpacing: 0.08, uppercase: true, tabular: false },
+    number: { size: 220, min: 48, weight: 700, family: "Inter", lineHeight: 1.0, letterSpacing: -0.03, uppercase: false, tabular: true },
+    source: { size: 24, min: 24, weight: 400, family: "Inter", lineHeight: 1.3, letterSpacing: 0, uppercase: false, tabular: false },
   },
   space: [0, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128],
   radius: { none: 0, sm: 4, md: 12, lg: 24, full: 9999 },
@@ -163,11 +165,25 @@ export function themeByName(name: string): ContentTheme {
 
 /** Apply approved brand overrides (accent/paper/ink only) and re-derive dependent colours. */
 export function applyBrand(theme: ContentTheme, brand: BrandTokens | null | undefined): ContentTheme {
-  if (!brand || (brand.accent === null && brand.paper === null && brand.ink === null)) return theme;
+  if (!brand) return theme;
+  const withType = brand.font_family === "Sora" ? withDisplayFamily(theme, "Sora") : theme;
+  if (brand.accent === null && brand.paper === null && brand.ink === null) return withType;
+  theme = withType;
   const paper = brand.paper ?? theme.color.paper;
   const ink = brand.ink ?? theme.color.ink;
   const accent = brand.accent ?? theme.color.accent;
   const derived = brand.paper !== null || brand.ink !== null;
+  // A dark paper (a night-mode brand) flips the roles: `textColor` reads `isDark(paper)` and then
+  // takes the `onInk` colours, so those must be "on a dark ground" colours — light text, a light
+  // muted, the accent nudged towards the ink — not the paper colour itself, which would vanish.
+  const darkPaper = isDark(paper);
+  const onDark = {
+    text: ink,
+    muted: mix(ink, paper, 0.3),
+    accent: mix(accent, ink, 0.15),
+    rule: mix(paper, ink, 0.25),
+    surface: mix(paper, ink, 0.06),
+  };
   return {
     ...theme,
     color: {
@@ -178,13 +194,31 @@ export function applyBrand(theme: ContentTheme, brand: BrandTokens | null | unde
       surface: derived ? mix(paper, ink, 0.06) : theme.color.surface,
       muted: derived ? mix(ink, paper, 0.3) : theme.color.muted,
       rule: derived ? mix(paper, ink, 0.25) : theme.color.rule,
-      onInk: {
-        text: paper,
-        muted: derived ? mix(paper, ink, 0.3) : theme.color.onInk.muted,
-        accent: brand.accent !== null ? mix(accent, paper, 0.5) : theme.color.onInk.accent,
-        rule: derived ? mix(ink, paper, 0.18) : theme.color.onInk.rule,
-        surface: derived ? mix(ink, paper, 0.06) : theme.color.onInk.surface,
-      },
+      onInk: darkPaper
+        ? onDark
+        : {
+            text: paper,
+            muted: derived ? mix(paper, ink, 0.3) : theme.color.onInk.muted,
+            accent: brand.accent !== null ? mix(accent, paper, 0.5) : theme.color.onInk.accent,
+            rule: derived ? mix(ink, paper, 0.18) : theme.color.onInk.rule,
+            surface: derived ? mix(ink, paper, 0.06) : theme.color.onInk.surface,
+          },
+    },
+  };
+}
+
+/** Set the display roles (display, headline, number) in another pinned family. Sora carries an
+ * 800 weight, so the figure and the display line step up to it; tracking tightens to match. */
+export function withDisplayFamily(theme: ContentTheme, family: "Inter" | "Sora"): ContentTheme {
+  if (family === "Inter") return theme;
+  const t = theme.type;
+  return {
+    ...theme,
+    type: {
+      ...t,
+      display: { ...t.display, family, weight: 800, letterSpacing: -0.03 },
+      headline: { ...t.headline, family, weight: 700, letterSpacing: -0.02 },
+      number: { ...t.number, family, weight: 800, letterSpacing: -0.04 },
     },
   };
 }

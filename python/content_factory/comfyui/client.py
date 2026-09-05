@@ -11,13 +11,14 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import os
 import uuid
 from collections.abc import AsyncIterator, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 import websockets
@@ -179,6 +180,22 @@ def validate_against_object_info(
     return problems
 
 
+def _read_journal(journal: Path | None) -> dict[str, Any] | None:
+    """The submit journal, or None if there is nothing usable there.
+
+    A module-level function rather than a method so the blocking read is not inside a coroutine:
+    it is one small file and the cost is nil, but a synchronous read in an async body is a smell
+    worth not having, and ruff's ASYNC240 says so.
+    """
+    if journal is None or not journal.is_file():
+        return None
+    try:
+        loaded = json.loads(journal.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
 class ComfyUIClient:
     """Async client for one ComfyUI endpoint. One instance per endpoint; safe to reuse."""
 
@@ -310,8 +327,25 @@ class ComfyUIClient:
         timeout_s: float = 600.0,
         on_progress: Callable[[ProgressEvent], None] | None = None,
         cancel: asyncio.Event | None = None,
+        collect: Literal["websocket", "history"] = "websocket",
+        poll_interval_s: float = 2.0,
+        journal: Path | None = None,
     ) -> ExecutionResult:
-        """Validate -> submit -> stream progress -> import outputs -> provenance. Cancellable."""
+        """Validate -> submit -> wait -> import outputs -> provenance. Cancellable.
+
+        ``collect="websocket"`` streams progress events and reconciles with ``/history``.
+        ``collect="history"`` never opens the socket: it polls ``/history/{prompt_id}`` until the
+        prompt has a status. ComfyUI started with ``--cache-none`` (required for the LTX GGUF stack)
+        suppresses the socket's output events, so that path is the one the video backends use.
+
+        ``journal`` is where the ``prompt_id`` is written the instant the prompt is accepted, and
+        it is what makes a rerun safe. Without it, a process that died after submitting had no
+        record of the job it had queued: a rerun submitted the identical workflow again, and on the
+        LTX GGUF stack that is another forty seconds of GPU — or two prompts racing for a card that
+        fits one. With it, a rerun for the same workflow finds the journal, asks ``/history`` what
+        became of that prompt, and **adopts** it: a finished prompt's outputs are imported without
+        generating anything, and a still-running one is waited on. See :meth:`_adopt_submitted`.
+        """
         workflow = inject_parameters(package, params)
         info = await self.object_info()
         problems = validate_against_object_info(
@@ -328,6 +362,30 @@ class ComfyUIClient:
         state = ExecutionState.queued
         error: str | None = None
         prompt_id: str | None = None
+
+        adopted = await self._adopt_submitted(journal, workflow)
+        if collect == "history":
+            if adopted is None:
+                prompt_id, _ = await self.submit(workflow)
+                self._record_submitted(journal, prompt_id, package, workflow)
+            else:
+                prompt_id = adopted
+            state, error = await self._poll_history(
+                prompt_id, timeout_s=timeout_s, poll_interval_s=poll_interval_s, cancel=cancel
+            )
+            result = await self._finish(
+                package,
+                params,
+                workflow,
+                prompt_id,
+                state,
+                error,
+                output_dir,
+                comfy_version,
+                started,
+            )
+            self._clear_submitted(journal, result.state)
+            return result
 
         async def watch() -> None:
             nonlocal state, error
@@ -359,7 +417,16 @@ class ComfyUIClient:
         except TimeoutError as exc:
             watcher.cancel()
             raise ComfyTransientError("websocket did not connect") from exc
-        prompt_id, _ = await self.submit(workflow)
+        if adopted is None:
+            prompt_id, _ = await self.submit(workflow)
+            self._record_submitted(journal, prompt_id, package, workflow)
+        else:
+            prompt_id = adopted
+            # An adopted prompt's events are already gone: the socket only carries what happens
+            # after it connects, and this prompt started in a process that has since exited. So the
+            # watcher will see nothing and `_finish` reconciles against /history, which is where
+            # the answer actually is.
+            stop.set()
 
         async def cancel_watch() -> None:
             if cancel is None:
@@ -383,6 +450,124 @@ class ComfyUIClient:
                 with contextlib.suppress(asyncio.CancelledError, Exception):
                     await t
 
+        result = await self._finish(
+            package, params, workflow, prompt_id, state, error, output_dir, comfy_version, started
+        )
+        self._clear_submitted(journal, result.state)
+        return result
+
+    SUBMIT_JOURNAL_VERSION = 1
+
+    def _graph_digest(self, workflow: Mapping[str, Mapping[str, Any]]) -> str:
+        return hashlib.sha256(canonical_dumps(workflow).encode()).hexdigest()
+
+    def _record_submitted(
+        self,
+        journal: Path | None,
+        prompt_id: str,
+        package: ComfyWorkflowPackage,
+        workflow: Mapping[str, Mapping[str, Any]],
+    ) -> None:
+        """Write the journal the instant the prompt is accepted. tmp + replace, because a crash
+        halfway through this write is exactly the crash the journal exists for."""
+        if journal is None:
+            return
+        record = {
+            "version": self.SUBMIT_JOURNAL_VERSION,
+            "prompt_id": prompt_id,
+            "endpoint": self.base_url,
+            "package_id": package.package_id,
+            "package_version": str(package.version),
+            # The *injected* graph, so a rerun that changed one parameter does not adopt the old
+            # prompt. This is the same digest the provenance record carries.
+            "workflow_sha256": self._graph_digest(workflow),
+            "submitted_at": datetime.now(UTC).isoformat(),
+        }
+        journal.parent.mkdir(parents=True, exist_ok=True)
+        tmp = journal.with_name(f".{journal.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(record, indent=1, sort_keys=True), encoding="utf-8")
+        tmp.replace(journal)
+
+    async def _adopt_submitted(
+        self, journal: Path | None, workflow: Mapping[str, Mapping[str, Any]]
+    ) -> str | None:
+        """The prompt id of a job already queued for this exact workflow, or None.
+
+        Four cases, and each has to be told apart: no journal (submit); a journal for a different
+        workflow (submit, and the old prompt is not ours to adopt); a journal whose prompt ComfyUI
+        has never heard of, because it restarted (submit); and a journal whose prompt is in the
+        history or the queue (adopt, and generate nothing).
+        """
+        record = _read_journal(journal)
+        if record is None:
+            return None
+        if record.get("workflow_sha256") != self._graph_digest(workflow):
+            return None
+        if record.get("endpoint") != self.base_url:
+            return None
+        prompt_id = str(record.get("prompt_id") or "")
+        if not prompt_id:
+            return None
+        try:
+            if (await self.history(prompt_id)).get(prompt_id):
+                return prompt_id
+            queue = await self._get_json("/queue")
+        except (ComfyTransientError, httpx.HTTPError):
+            return None
+        queued = [
+            str(entry[1])
+            for key in ("queue_running", "queue_pending")
+            for entry in queue.get(key, [])
+            if len(entry) > 1
+        ]
+        return prompt_id if prompt_id in queued else None
+
+    def _clear_submitted(self, journal: Path | None, state: ExecutionState) -> None:
+        """Drop the journal once the prompt has an outcome. A failed prompt's journal goes too:
+        it has a status in `/history`, so a rerun would adopt it and re-import the same failure."""
+        if journal is None or state == ExecutionState.running:
+            return
+        journal.unlink(missing_ok=True)
+
+    async def _poll_history(
+        self,
+        prompt_id: str,
+        *,
+        timeout_s: float,
+        poll_interval_s: float,
+        cancel: asyncio.Event | None,
+    ) -> tuple[ExecutionState, str | None]:
+        """Wait for ``/history/{prompt_id}`` to carry a status (success or error)."""
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout_s
+        while True:
+            if cancel is not None and cancel.is_set():
+                await self.delete_queued(prompt_id)
+                await self.interrupt()
+                return ExecutionState.cancelled, "cancelled"
+            hist = (await self.history(prompt_id)).get(prompt_id, {})
+            status = hist.get("status", {})
+            if status.get("status_str") == "success":
+                return ExecutionState.completed, None
+            if status.get("status_str") == "error":
+                return ExecutionState.failed, json.dumps(status.get("messages", []))[:2000]
+            if loop.time() >= deadline:
+                await self.interrupt()
+                return ExecutionState.failed, f"timed out after {timeout_s}s"
+            await asyncio.sleep(poll_interval_s)
+
+    async def _finish(
+        self,
+        package: ComfyWorkflowPackage,
+        params: Mapping[str, int | float | str],
+        workflow: Mapping[str, Mapping[str, Any]],
+        prompt_id: str,
+        state: ExecutionState,
+        error: str | None,
+        output_dir: Path,
+        comfy_version: str,
+        started: datetime,
+    ) -> ExecutionResult:
         # Reconcile with /history regardless of what the socket said (a restart can drop events).
         hist = (await self.history(prompt_id)).get(prompt_id, {})
         status = hist.get("status", {})
@@ -395,15 +580,16 @@ class ComfyUIClient:
         outputs: list[ImportedOutput] = []
         if state == ExecutionState.completed:
             for node_id, out in hist.get("outputs", {}).items():
-                for img in out.get("images", []):
+                # SaveImage reports "images"; SaveVideo / video nodes report "videos" or "gifs".
+                for item in out.get("images", []) + out.get("videos", []) + out.get("gifs", []):
                     of = OutputFile(
-                        img["filename"],
-                        img.get("subfolder", ""),
-                        img.get("type", "output"),
+                        item["filename"],
+                        item.get("subfolder", ""),
+                        item.get("type", "output"),
                         node_id,
                     )
                     outputs.append(
-                        await self.download_view(of, output_dir / node_id / img["filename"])
+                        await self.download_view(of, output_dir / node_id / item["filename"])
                     )
             missing = [n for n in package.expected_outputs if n not in hist.get("outputs", {})]
             if missing:

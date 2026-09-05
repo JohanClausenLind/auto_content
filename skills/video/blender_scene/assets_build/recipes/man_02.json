@@ -1,0 +1,7 @@
+{
+  "name": "man_02",
+  "rig": "default",
+  "macro": { "gender": 0.85, "age": 0.6, "muscle": 0.65, "weight": 0.6, "height": 0.7, "proportions": 0.5 },
+  "skin_color": [0.55, 0.4, 0.32],
+  "notes": "MakeHuman macro sliders in [0,1]; gender 0=female 1=male; height 0.5 = average"
+}

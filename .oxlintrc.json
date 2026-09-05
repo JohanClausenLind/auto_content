@@ -1,0 +1,64 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // The JS/TS half of `just lint`. Python has ruff; this is its counterpart, and like ruff it is
+  // one fast binary with a large built-in rule set rather than a plugin tree to assemble.
+  //
+  // `correctness` is an error: those rules flag code that is wrong or useless, and CI must stop
+  // on them. Everything demoted below is demoted with a reason — a rule turned off silently is
+  // indistinguishable from a rule nobody ran.
+  "plugins": ["react", "import", "promise", "vitest", "jsx-a11y", "typescript", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    // Vitest's `expect(actual, message)` IS its documented two-argument form (vitest 4.1.11) and
+    // this repo uses the message deliberately: `expect(r.status, r.stderr).toBe(0)` puts ffprobe's
+    // stderr into the failure. The rule is written for Jest, where the form does not exist.
+    "vitest/valid-expect": "off",
+
+    // Table-driven suites assert inside a loop over a generated catalogue (every workflow template,
+    // every node type), where the assertion legitimately depends on the row.
+    "vitest/no-conditional-expect": "off",
+
+    // Stylistic: it wants explicit type parameters on every vi.fn()/vi.mock(). Not a defect class.
+    "vitest/require-mock-type-parameters": "off",
+
+    // Warn, not error, and tracked in STATUS: the three remaining sites are the
+    // reset-derived-state-when-a-prop-changes pattern (search query, graph identity). They cost one
+    // extra render and are not defects; restructuring them is a UI task with its own verification,
+    // not a lint fix.
+    "react/set-state-in-effect": "warn",
+
+    // Warn, not error, and tracked in STATUS: 21 sites across 29 components carry an ARIA role on a
+    // generic element where a semantic tag would do. Each conversion changes rendered markup and
+    // event semantics, so it needs the accessibility pack re-run to verify — its own task.
+    "jsx-a11y/prefer-tag-over-role": "warn",
+
+    // Warn: autofocus is deliberate in the command palette, the add-node search and the login form
+    // — a dialog that opens on a keystroke and does not take focus is the worse accessibility bug.
+    "jsx-a11y/no-autofocus": "warn",
+
+    // The four below fire on composite widgets built the way the W3C ARIA Authoring Practices
+    // say to build them, which eslint-plugin-jsx-a11y permits by default and oxlint does not:
+    //   * `div[role="application"]` with tabIndex + onKeyDown — the node-graph canvas. The role
+    //     exists precisely to hand keyboard control to a custom widget, so the handlers are the
+    //     pattern, not a violation of it.
+    //   * `ul[role="listbox"]` / `li[role="option"]` — the add-node combobox. These two element
+    //     -> role mappings are in eslint-plugin-jsx-a11y's own default allow-list.
+    //   * `div[role="dialog"]` handling Escape — required dialog behaviour.
+    // An `li[role="option"]` whose label comes from its nested button also trips
+    // control-has-associated-label. Warn so a genuinely unlabelled control still shows up.
+    "jsx-a11y/no-noninteractive-element-interactions": "warn",
+    "jsx-a11y/no-noninteractive-tabindex": "warn",
+    "jsx-a11y/no-noninteractive-element-to-interactive-role": "warn",
+    "jsx-a11y/control-has-associated-label": "warn"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/out/**",
+    // Generated from the Pydantic contracts by `just schemas`; edit the source, not the output.
+    "packages/content-schema-ts/generated/**",
+    "apps/web/src/workspace/generated/**"
+  ]
+}

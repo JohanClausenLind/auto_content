@@ -33,6 +33,16 @@ class UploadRejectedError(Exception):
     pass
 
 
+def sniff_mime(path: Path) -> str:
+    """What the bytes say this file is. The only answer anything here trusts.
+
+    Defined once because two callers need it *before* ingesting: the upload endpoint and the
+    ingest stage both have to know whether a file needs converting first, and a second opinion
+    from a filename would be exactly the mistake this repo refuses to make.
+    """
+    return magic.from_file(str(path), mime=True)
+
+
 @dataclass(frozen=True)
 class IngestedUpload:
     artifact: ArtifactRef
@@ -55,8 +65,16 @@ def ingest_upload(
         raise UploadRejectedError("empty file")
     if size > MAX_UPLOAD_BYTES:
         raise UploadRejectedError(f"file exceeds {MAX_UPLOAD_BYTES} bytes")
-    sniffed = magic.from_file(str(path), mime=True)
+    sniffed = sniff_mime(path)
     if sniffed not in ALLOWED:
+        from content_factory.ingest.convert import CONVERTIBLE
+
+        if sniffed in CONVERTIBLE:
+            # Reached only by a caller that skipped the conversion step, so say which step.
+            raise UploadRejectedError(
+                f"file type {sniffed!r} has to be converted before it can be ingested"
+                " (ingest.convert.convert_media)"
+            )
         raise UploadRejectedError(
             f"file type {sniffed!r} is not accepted (sniffed, not extension-based)"
         )

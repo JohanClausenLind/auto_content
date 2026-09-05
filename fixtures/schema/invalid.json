@@ -95,6 +95,79 @@
       "width": 1080
     }
   ],
+  "ComputeOffer": [
+    {
+      "availability": "available",
+      "broker": null,
+      "cpu_cores": 0,
+      "disk_gb": 0.0,
+      "encoders": [],
+      "expires_at": null,
+      "gpu_count": 1,
+      "gpu_model": "RTX 4090",
+      "interconnect": "unknown",
+      "interruption_rate_per_hour": null,
+      "notes": "",
+      "offer_id": "fixture/rtx4090/1",
+      "price": {
+        "billing_increment_s": 1,
+        "currency": "USD",
+        "egress_usd_per_gb": 0.0,
+        "min_billed_s": 0,
+        "original_amount_per_hour": 0.5,
+        "prepaid_required": false,
+        "requests_usd_per_1000": 0.0,
+        "storage_usd_per_gb_month": 0.0,
+        "usd_per_hour": 0.5
+      },
+      "provider": "fixture-cloud",
+      "provisioning_overhead_s": 0,
+      "purchase_mode": "on_demand",
+      "ram_gb": 0.0,
+      "region": "unknown",
+      "retrieved_at": "2026-09-05T12:00:00+00:00",
+      "schema_version": 1,
+      "source_api": "fixture",
+      "underlying_host": null,
+      "unexpected": 1,
+      "vram_gb_per_gpu": 24.0
+    },
+    {
+      "availability": "available",
+      "broker": null,
+      "cpu_cores": 0,
+      "disk_gb": 0.0,
+      "encoders": [],
+      "expires_at": null,
+      "gpu_count": 1,
+      "gpu_model": "RTX 4090",
+      "interconnect": "unknown",
+      "interruption_rate_per_hour": null,
+      "notes": "",
+      "offer_id": "fixture/rtx4090/1",
+      "price": {
+        "billing_increment_s": 1,
+        "currency": "USD",
+        "egress_usd_per_gb": 0.0,
+        "min_billed_s": 0,
+        "original_amount_per_hour": 0.5,
+        "prepaid_required": false,
+        "requests_usd_per_1000": 0.0,
+        "storage_usd_per_gb_month": 0.0,
+        "usd_per_hour": 0.5
+      },
+      "provider": "fixture-cloud",
+      "provisioning_overhead_s": 0,
+      "purchase_mode": "handshake_deal",
+      "ram_gb": 0.0,
+      "region": "unknown",
+      "retrieved_at": "2026-09-05T12:00:00+00:00",
+      "schema_version": 1,
+      "source_api": "fixture",
+      "underlying_host": null,
+      "vram_gb_per_gpu": 24.0
+    }
+  ],
   "ContentCampaign": [
     {
       "brief": {
@@ -200,7 +273,431 @@
         }
       ],
       "schema_version": 1,
+      "staged_uploads": [],
       "workspace_id": "ws_demo00000001"
+    }
+  ],
+  "ControlBundle": [
+    {
+      "anchor_frames": [
+        0
+      ],
+      "blender_version": null,
+      "bundle_id": "cbd_fixture00001",
+      "camera": [],
+      "compiler": "hand",
+      "compiler_version": "0.1.0",
+      "fps": 24,
+      "frame_count": 8,
+      "height": 576,
+      "plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+      "schema_version": 1,
+      "shot_id": "seq_fixture0001",
+      "subjects": [
+        {
+          "label": "hands",
+          "layouts": [
+            {
+              "h": 0.3,
+              "w": 0.5,
+              "x": 0.25,
+              "y": 0.4
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            {
+              "h": 0.3,
+              "w": 0.2,
+              "x": 0.4,
+              "y": 0.4
+            }
+          ],
+          "poses": [
+            {
+              "bones": [
+                [
+                  "l_wrist",
+                  "l_index"
+                ],
+                [
+                  "r_wrist",
+                  "r_index"
+                ]
+              ],
+              "joints": {
+                "l_index": {
+                  "x": 0.33,
+                  "y": 0.5
+                },
+                "l_wrist": {
+                  "x": 0.3,
+                  "y": 0.6
+                },
+                "r_index": {
+                  "x": 0.67,
+                  "y": 0.5
+                },
+                "r_wrist": {
+                  "x": 0.7,
+                  "y": 0.6
+                }
+              }
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            {
+              "bones": [
+                [
+                  "l_wrist",
+                  "l_index"
+                ],
+                [
+                  "r_wrist",
+                  "r_index"
+                ]
+              ],
+              "joints": {
+                "l_index": {
+                  "x": 0.49,
+                  "y": 0.5
+                },
+                "l_wrist": {
+                  "x": 0.46,
+                  "y": 0.6
+                },
+                "r_index": {
+                  "x": 0.51,
+                  "y": 0.5
+                },
+                "r_wrist": {
+                  "x": 0.54,
+                  "y": 0.6
+                }
+              }
+            }
+          ],
+          "segmentation_index": 1,
+          "subject_id": "hands"
+        }
+      ],
+      "tracks": [
+        {
+          "encoding": "rgb8",
+          "frames": [
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 0,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 1,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 2,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 3,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 4,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 5,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 6,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 7,
+              "height": 576,
+              "kind": "pose_skeleton",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            }
+          ],
+          "kind": "pose_skeleton"
+        },
+        {
+          "encoding": "rgb8",
+          "frames": [
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 0,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 1,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 2,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 3,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 4,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 5,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 6,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            },
+            {
+              "compiler": "motion_plan",
+              "compiler_version": "0.1.0",
+              "frame_index": 7,
+              "height": 576,
+              "kind": "layout_boxes",
+              "motion_plan_hash": "01ff01585a7c5106325762531b307484b14da148b5c7aaa28640f485d57bf346",
+              "png_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+              "shot_id": "seq_fixture0001",
+              "width": 1024
+            }
+          ],
+          "kind": "layout_boxes"
+        }
+      ],
+      "width": 1024
+    }
+  ],
+  "EpisodeOutline": [
+    {
+      "deliverable_id": "dlv_ecfa54c78582",
+      "outline_id": "out_0e4cb15e9720",
+      "schema_version": 1,
+      "sections": [
+        {
+          "end_s": 20,
+          "kind": "intro",
+          "purpose": "Show a concrete surprise, paradox, failure, or measurable consequence — no definitions.",
+          "start_s": 0,
+          "word_budget": 48
+        },
+        {
+          "end_s": 50,
+          "kind": "question_stakes",
+          "purpose": "State what the viewer will understand and why it matters.",
+          "start_s": 20,
+          "word_budget": 73
+        },
+        {
+          "end_s": 180,
+          "kind": "build_model",
+          "purpose": "Introduce the minimum concepts and visual vocabulary.",
+          "start_s": 50,
+          "word_budget": 314
+        },
+        {
+          "end_s": 390,
+          "kind": "run_system",
+          "purpose": "Animate the mechanism, algorithm, experiment, or causal chain.",
+          "start_s": 180,
+          "word_budget": 507
+        },
+        {
+          "end_s": 495,
+          "kind": "change_variable",
+          "purpose": "Compare scenarios with a chart, simulation, or counterfactual.",
+          "start_s": 390,
+          "word_budget": 254
+        },
+        {
+          "end_s": 555,
+          "kind": "show_limits",
+          "purpose": "Limits, uncertainty, edge cases, or a common misconception.",
+          "start_s": 495,
+          "word_budget": 145
+        },
+        {
+          "end_s": 600,
+          "kind": "synthesis",
+          "purpose": "Resolve the opening question; end with one memorable implication, not a summary list.",
+          "start_s": 555,
+          "word_budget": 109
+        }
+      ],
+      "target_duration_s": 600,
+      "words_per_minute": 145
+    },
+    {
+      "deliverable_id": "dlv_ecfa54c78582",
+      "outline_id": "out_0e4cb15e9720",
+      "schema_version": 1,
+      "sections": [
+        {
+          "end_s": 20,
+          "kind": "cold_open",
+          "purpose": "Show a concrete surprise, paradox, failure, or measurable consequence — no definitions.",
+          "start_s": 0,
+          "word_budget": 48
+        },
+        {
+          "end_s": 50,
+          "kind": "question_stakes",
+          "purpose": "State what the viewer will understand and why it matters.",
+          "start_s": 20,
+          "word_budget": 73
+        },
+        {
+          "end_s": 180,
+          "kind": "build_model",
+          "purpose": "Introduce the minimum concepts and visual vocabulary.",
+          "start_s": 50,
+          "word_budget": 314
+        },
+        {
+          "end_s": 390,
+          "kind": "run_system",
+          "purpose": "Animate the mechanism, algorithm, experiment, or causal chain.",
+          "start_s": 180,
+          "word_budget": 507
+        },
+        {
+          "end_s": 495,
+          "kind": "change_variable",
+          "purpose": "Compare scenarios with a chart, simulation, or counterfactual.",
+          "start_s": 390,
+          "word_budget": 254
+        },
+        {
+          "end_s": 555,
+          "kind": "show_limits",
+          "purpose": "Limits, uncertainty, edge cases, or a common misconception.",
+          "start_s": 495,
+          "word_budget": 145
+        },
+        {
+          "end_s": 600,
+          "kind": "synthesis",
+          "purpose": "Resolve the opening question; end with one memorable implication, not a summary list.",
+          "start_s": 555,
+          "word_budget": 109
+        }
+      ],
+      "target_duration_s": 600,
+      "unexpected": 1,
+      "words_per_minute": 145
     }
   ],
   "FixPlan": [
@@ -437,6 +934,2837 @@
           "subject_id": "subj_hands0001"
         }
       ]
+    }
+  ],
+  "ShotPlan": [
+    {
+      "deliverable_id": "dlv_fixture00001",
+      "plan_id": "shp_fixture00001",
+      "planner": "fixture",
+      "planner_version": "0.1.0",
+      "schema_version": 1,
+      "shots": [
+        {
+          "action": "the man shifts his weight and looks off to the left",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 24.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "position": [
+                  0.0,
+                  -6.0,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.2
+                ],
+                "position": [
+                  0.0,
+                  -3.2,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "slow_push_in",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a wide shot of one figure standing beside a bench, on open level ground, even studio light from a single soft key",
+          "end_state": "the framing has closed to a medium shot on his face",
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the man shifts his weight and looks off to the left; the camera pushes slowly in",
+          "order": 0,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0001",
+          "staging_note": null,
+          "width": 1024
+        },
+        {
+          "action": "",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  -2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "pan_right",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a medium shot of one figure from his left, on open level ground, even studio light from a single soft key",
+          "end_state": null,
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the subject holds the pose without moving; the camera pans steadily to the right",
+          "order": 1,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0002",
+          "staging_note": null,
+          "width": 1024
+        }
+      ],
+      "story_plan_hash": null,
+      "unexpected": 1
+    },
+    {
+      "deliverable_id": "dlv_fixture00001",
+      "plan_id": "shp_fixture00001",
+      "planner": "vibes",
+      "planner_version": "0.1.0",
+      "schema_version": 1,
+      "shots": [
+        {
+          "action": "the man shifts his weight and looks off to the left",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 24.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "position": [
+                  0.0,
+                  -6.0,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.2
+                ],
+                "position": [
+                  0.0,
+                  -3.2,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "slow_push_in",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a wide shot of one figure standing beside a bench, on open level ground, even studio light from a single soft key",
+          "end_state": "the framing has closed to a medium shot on his face",
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the man shifts his weight and looks off to the left; the camera pushes slowly in",
+          "order": 0,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0001",
+          "staging_note": null,
+          "width": 1024
+        },
+        {
+          "action": "",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  -2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "pan_right",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a medium shot of one figure from his left, on open level ground, even studio light from a single soft key",
+          "end_state": null,
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the subject holds the pose without moving; the camera pans steadily to the right",
+          "order": 1,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0002",
+          "staging_note": null,
+          "width": 1024
+        }
+      ],
+      "story_plan_hash": null
+    },
+    {
+      "deliverable_id": "dlv_fixture00001",
+      "plan_id": "shp_fixture00001",
+      "planner": "fixture",
+      "planner_version": "0.1.0",
+      "schema_version": 1,
+      "shots": [
+        {
+          "action": "the man shifts his weight and looks off to the left",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 24.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "position": [
+                  0.0,
+                  -6.0,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.2
+                ],
+                "position": [
+                  0.0,
+                  -3.2,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "slow_push_in",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a wide shot of one figure standing beside a bench, on open level ground, even studio light from a single soft key",
+          "end_state": "the framing has closed to a medium shot on his face",
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the man shifts his weight and looks off to the left; the camera pushes slowly in",
+          "order": 0,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "hologram"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0001",
+          "staging_note": null,
+          "width": 1024
+        },
+        {
+          "action": "",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  -2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "pan_right",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a medium shot of one figure from his left, on open level ground, even studio light from a single soft key",
+          "end_state": null,
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the subject holds the pose without moving; the camera pans steadily to the right",
+          "order": 1,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0002",
+          "staging_note": null,
+          "width": 1024
+        }
+      ],
+      "story_plan_hash": null
+    },
+    {
+      "deliverable_id": "dlv_fixture00001",
+      "plan_id": "shp_fixture00001",
+      "planner": "fixture",
+      "planner_version": "0.1.0",
+      "schema_version": 1,
+      "shots": [
+        {
+          "action": "the man shifts his weight and looks off to the left",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 24.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "position": [
+                  0.0,
+                  -6.0,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.2
+                ],
+                "position": [
+                  0.0,
+                  -3.2,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "slow_push_in",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a wide shot of one figure standing beside a bench, on open level ground, even studio light from a single soft key",
+          "end_state": "the framing has closed to a medium shot on his face",
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the man shifts his weight and looks off to the left; the camera pushes slowly in",
+          "order": 0,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0001",
+          "staging_note": null,
+          "width": 1024
+        },
+        {
+          "action": "",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  -2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "pan_right",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a medium shot of one figure from his left, on open level ground, even studio light from a single soft key",
+          "end_state": null,
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the subject holds the pose without moving; the camera pans steadily to the right",
+          "order": 1,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0002",
+          "staging_note": null,
+          "width": 1024
+        }
+      ],
+      "story_plan_hash": null
+    },
+    {
+      "deliverable_id": "dlv_fixture00001",
+      "plan_id": "shp_fixture00001",
+      "planner": "fixture",
+      "planner_version": "0.1.0",
+      "schema_version": 1,
+      "shots": [
+        {
+          "action": "the man shifts his weight and looks off to the left",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 24.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "position": [
+                  0.0,
+                  -6.0,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.2
+                ],
+                "position": [
+                  0.0,
+                  -3.2,
+                  1.6
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "slow_push_in",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a wide shot of one figure standing beside a bench, on open level ground, even studio light from a single soft key",
+          "end_state": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the man shifts his weight and looks off to the left; the camera pushes slowly in",
+          "order": 0,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0001",
+          "staging_note": null,
+          "width": 1024
+        },
+        {
+          "action": "",
+          "anchor_frames": [
+            0,
+            96
+          ],
+          "beat_id": null,
+          "camera": {
+            "clip_end": 100.0,
+            "clip_start": 0.05,
+            "keyframes": [
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 0,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  -2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              },
+              {
+                "easing_to_next": "ease_in_out",
+                "focus_distance": 5.0,
+                "frame_index": 96,
+                "lens_mm": 35.0,
+                "look_at": [
+                  0.0,
+                  0.0,
+                  1.1
+                ],
+                "position": [
+                  2.5,
+                  -4.0,
+                  1.5
+                ],
+                "rotation_euler_deg": null
+              }
+            ],
+            "preset": "pan_right",
+            "sensor_width_mm": 36.0
+          },
+          "characters": [
+            {
+              "appearance": "a man in his forties, short dark hair, plain grey work coat",
+              "asset": "man_01",
+              "id": "man",
+              "pose": {
+                "kind": "library",
+                "name": "stand_relaxed"
+              },
+              "reference_image_sha256": [],
+              "seg_id": null,
+              "transform": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "description": "a medium shot of one figure from his left, on open level ground, even studio light from a single soft key",
+          "end_state": null,
+          "environment": {
+            "background_color": [
+              0.05,
+              0.05,
+              0.06
+            ],
+            "ground": {
+              "color": [
+                0.35,
+                0.35,
+                0.35
+              ],
+              "enabled": true,
+              "seg": false,
+              "size": 40.0
+            },
+            "walls": null
+          },
+          "fps": 24,
+          "frame_count": 97,
+          "height": 576,
+          "lighting": {
+            "intensity": 1.0,
+            "key_azimuth_deg": 35.0,
+            "key_elevation_deg": 45.0,
+            "preset": "studio",
+            "shadows": true
+          },
+          "motion_prompt": "the subject holds the pose without moving; the camera pans steadily to the right",
+          "order": 1,
+          "props": [
+            {
+              "color": [
+                0.4,
+                0.3,
+                0.2
+              ],
+              "id": "bench",
+              "seg": true,
+              "seg_id": null,
+              "source": {
+                "kind": "primitive",
+                "shape": "cube",
+                "size": [
+                  1.6,
+                  0.5,
+                  0.45
+                ]
+              },
+              "transform": {
+                "position": [
+                  0.0,
+                  -1.2,
+                  0.225
+                ],
+                "scale": 1.0,
+                "yaw_deg": 0.0
+              }
+            }
+          ],
+          "render": {
+            "canny": {
+              "high": 200,
+              "low": 100
+            },
+            "depth_range": "auto",
+            "engine": "workbench",
+            "frames": null,
+            "passes": [
+              "rough_rgb",
+              "depth",
+              "depth_exr",
+              "normals",
+              "segmentation",
+              "pose_skeleton",
+              "layout_boxes"
+            ]
+          },
+          "schema_version": 1,
+          "seed": 0,
+          "shot_id": "shot_fixture0002",
+          "staging_note": null,
+          "width": 1024
+        }
+      ],
+      "story_plan_hash": null
+    }
+  ],
+  "ShotRouting": [
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "order": 0,
+          "reason": "scene kind title is in generate_kinds",
+          "route": "generate",
+          "scene_kind": "title",
+          "shot_id": "shot_fixture0001"
+        },
+        {
+          "beat_id": "beat_000000002",
+          "order": 1,
+          "reason": "default route",
+          "route": "render",
+          "scene_kind": "big_number",
+          "shot_id": null
+        },
+        {
+          "beat_id": "beat_000000003",
+          "order": 2,
+          "reason": "default route",
+          "route": "render",
+          "scene_kind": "bullet_sequence",
+          "shot_id": null
+        },
+        {
+          "beat_id": "beat_000000004",
+          "order": 3,
+          "reason": "default route",
+          "route": "render",
+          "scene_kind": "source_card",
+          "shot_id": null
+        }
+      ],
+      "default_route": "render",
+      "deliverable_id": "dlv_short0000001",
+      "router": "kind_table",
+      "router_version": "0.1.0",
+      "routing_id": "route_demo00000001",
+      "schema_version": 1,
+      "shot_plan_hash": "1ad2b94b643e5a7b424c1ac1542671bc14af257c1a1f2993bc6eb05ef3b7a6d9",
+      "story_plan_hash": "fae37b975104efd537f25e385790d1dda84394281cf7d7e753fbb85af90a190d",
+      "unexpected": 1
+    },
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "order": 0,
+          "reason": "scene kind title is in generate_kinds",
+          "route": "generate",
+          "scene_kind": "title",
+          "shot_id": "shot_fixture0001"
+        },
+        {
+          "beat_id": "beat_000000002",
+          "order": 1,
+          "reason": "default route",
+          "route": "hand_drawn",
+          "scene_kind": "big_number",
+          "shot_id": null
+        },
+        {
+          "beat_id": "beat_000000003",
+          "order": 2,
+          "reason": "default route",
+          "route": "render",
+          "scene_kind": "bullet_sequence",
+          "shot_id": null
+        },
+        {
+          "beat_id": "beat_000000004",
+          "order": 3,
+          "reason": "default route",
+          "route": "render",
+          "scene_kind": "source_card",
+          "shot_id": null
+        }
+      ],
+      "default_route": "render",
+      "deliverable_id": "dlv_short0000001",
+      "router": "kind_table",
+      "router_version": "0.1.0",
+      "routing_id": "route_demo00000001",
+      "schema_version": 1,
+      "shot_plan_hash": "1ad2b94b643e5a7b424c1ac1542671bc14af257c1a1f2993bc6eb05ef3b7a6d9",
+      "story_plan_hash": "fae37b975104efd537f25e385790d1dda84394281cf7d7e753fbb85af90a190d"
+    }
+  ],
+  "ShotSpec": [
+    {
+      "action": "the man shifts his weight and looks off to the left",
+      "anchor_frames": [
+        0,
+        96
+      ],
+      "beat_id": null,
+      "camera": {
+        "clip_end": 100.0,
+        "clip_start": 0.05,
+        "keyframes": [
+          {
+            "easing_to_next": "ease_in_out",
+            "focus_distance": 5.0,
+            "frame_index": 0,
+            "lens_mm": 24.0,
+            "look_at": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "position": [
+              0.0,
+              -6.0,
+              1.6
+            ],
+            "rotation_euler_deg": null
+          },
+          {
+            "easing_to_next": "ease_in_out",
+            "focus_distance": 5.0,
+            "frame_index": 96,
+            "lens_mm": 35.0,
+            "look_at": [
+              0.0,
+              0.0,
+              1.2
+            ],
+            "position": [
+              0.0,
+              -3.2,
+              1.6
+            ],
+            "rotation_euler_deg": null
+          }
+        ],
+        "preset": "slow_push_in",
+        "sensor_width_mm": 36.0
+      },
+      "camera_speed": 3,
+      "characters": [
+        {
+          "appearance": "a man in his forties, short dark hair, plain grey work coat",
+          "asset": "man_01",
+          "id": "man",
+          "pose": {
+            "kind": "library",
+            "name": "stand_relaxed"
+          },
+          "reference_image_sha256": [],
+          "seg_id": null,
+          "transform": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": 1.0,
+            "yaw_deg": 0.0
+          }
+        }
+      ],
+      "description": "a wide shot of one figure standing beside a bench, on open level ground, even studio light from a single soft key",
+      "end_state": "the framing has closed to a medium shot on his face",
+      "environment": {
+        "background_color": [
+          0.05,
+          0.05,
+          0.06
+        ],
+        "ground": {
+          "color": [
+            0.35,
+            0.35,
+            0.35
+          ],
+          "enabled": true,
+          "seg": false,
+          "size": 40.0
+        },
+        "walls": null
+      },
+      "fps": 24,
+      "frame_count": 97,
+      "height": 576,
+      "lighting": {
+        "intensity": 1.0,
+        "key_azimuth_deg": 35.0,
+        "key_elevation_deg": 45.0,
+        "preset": "studio",
+        "shadows": true
+      },
+      "motion_prompt": "the man shifts his weight and looks off to the left; the camera pushes slowly in",
+      "order": 0,
+      "props": [
+        {
+          "color": [
+            0.4,
+            0.3,
+            0.2
+          ],
+          "id": "bench",
+          "seg": true,
+          "seg_id": null,
+          "source": {
+            "kind": "primitive",
+            "shape": "cube",
+            "size": [
+              1.6,
+              0.5,
+              0.45
+            ]
+          },
+          "transform": {
+            "position": [
+              0.0,
+              -1.2,
+              0.225
+            ],
+            "scale": 1.0,
+            "yaw_deg": 0.0
+          }
+        }
+      ],
+      "render": {
+        "canny": {
+          "high": 200,
+          "low": 100
+        },
+        "depth_range": "auto",
+        "engine": "workbench",
+        "frames": null,
+        "passes": [
+          "rough_rgb",
+          "depth",
+          "depth_exr",
+          "normals",
+          "segmentation",
+          "pose_skeleton",
+          "layout_boxes"
+        ]
+      },
+      "schema_version": 1,
+      "seed": 0,
+      "shot_id": "shot_fixture0001",
+      "staging_note": null,
+      "width": 1024
+    }
+  ],
+  "StoryPlan": [
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "claim_ids": [
+            "clm_wind0000001"
+          ],
+          "display_text": "In 2025, wind supplied about a fifth of Sweden's electricity.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 0,
+          "planned_duration_ms": 4200,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000002",
+          "claim_ids": [
+            "clm_wind0000002"
+          ],
+          "display_text": "That share has roughly doubled since 2018.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 1,
+          "planned_duration_ms": 3800,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000003",
+          "claim_ids": [],
+          "display_text": "Three things drove it: new turbines, better siting, and cheaper finance.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 2,
+          "planned_duration_ms": 6000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000004",
+          "claim_ids": [],
+          "display_text": "Sources: Energimyndigheten, Svenska kraftnät.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 3,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        }
+      ],
+      "deliverable_id": "dlv_short0000001",
+      "fps": 30,
+      "handle_ms": 250,
+      "height": 1920,
+      "hook_text": null,
+      "min_scene_ms": 1200,
+      "plan_id": "plan_demo0000001",
+      "scenes": [
+        {
+          "background_asset_id": null,
+          "beat_id": "beat_000000001",
+          "emphasis": [],
+          "kind": "title",
+          "scene_id": "scn_title000001",
+          "subtitle": {
+            "claim_ids": [],
+            "text": "Electricity generation"
+          },
+          "title": {
+            "claim_ids": [],
+            "text": "Sweden's wind share, 2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000002",
+          "context": null,
+          "emphasis": [],
+          "kind": "big_number",
+          "label": {
+            "claim_ids": [
+              "clm_wind0000001"
+            ],
+            "text": "of electricity from wind"
+          },
+          "scene_id": "scn_number00001",
+          "unit": "%",
+          "value": {
+            "claim_id": "clm_wind0000001",
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000003",
+          "bullets": [
+            {
+              "claim_ids": [],
+              "text": "New turbines"
+            },
+            {
+              "claim_ids": [],
+              "text": "Better siting"
+            },
+            {
+              "claim_ids": [],
+              "text": "Cheaper finance"
+            }
+          ],
+          "emphasis": [],
+          "kind": "bullet_sequence",
+          "scene_id": "scn_bullets0001",
+          "title": {
+            "claim_ids": [],
+            "text": "What drove it"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000004",
+          "emphasis": [],
+          "kind": "source_card",
+          "scene_id": "scn_sources0001",
+          "source_ids": [
+            "src_energimynd01",
+            "src_svk00000001"
+          ],
+          "variant": "default"
+        }
+      ],
+      "schema_version": 1,
+      "unexpected": 1,
+      "visual_subject": "a Swedish coastal wind farm under a flat overcast sky",
+      "width": 1080
+    },
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "claim_ids": [
+            "clm_wind0000001"
+          ],
+          "display_text": "In 2025, wind supplied about a fifth of Sweden's electricity.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 0,
+          "planned_duration_ms": 4200,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000002",
+          "claim_ids": [
+            "clm_wind0000002"
+          ],
+          "display_text": "That share has roughly doubled since 2018.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 1,
+          "planned_duration_ms": 3800,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000003",
+          "claim_ids": [],
+          "display_text": "Three things drove it: new turbines, better siting, and cheaper finance.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 2,
+          "planned_duration_ms": 6000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000004",
+          "claim_ids": [],
+          "display_text": "Sources: Energimyndigheten, Svenska kraftnät.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 3,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        }
+      ],
+      "deliverable_id": "dlv_short0000001",
+      "fps": 30,
+      "handle_ms": 250,
+      "height": 1920,
+      "hook_text": null,
+      "min_scene_ms": 1200,
+      "plan_id": "plan_demo0000001",
+      "scenes": [
+        {
+          "background_asset_id": null,
+          "beat_id": "beat_000000001",
+          "emphasis": [],
+          "kind": "title",
+          "scene_id": "scn_title000001",
+          "subtitle": {
+            "claim_ids": [],
+            "text": "Electricity generation"
+          },
+          "title": {
+            "claim_ids": [],
+            "text": "Sweden's wind share, 2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000002",
+          "context": null,
+          "emphasis": [],
+          "kind": "big_number",
+          "label": {
+            "claim_ids": [
+              "clm_wind0000001"
+            ],
+            "text": "of electricity from wind"
+          },
+          "scene_id": "scn_number00001",
+          "unit": "%",
+          "value": {
+            "claim_id": "clm_wind0000001",
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000003",
+          "bullets": [
+            {
+              "claim_ids": [],
+              "text": "New turbines"
+            },
+            {
+              "claim_ids": [],
+              "text": "Better siting"
+            },
+            {
+              "claim_ids": [],
+              "text": "Cheaper finance"
+            }
+          ],
+          "emphasis": [],
+          "kind": "bullet_sequence",
+          "scene_id": "scn_bullets0001",
+          "title": {
+            "claim_ids": [],
+            "text": "What drove it"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000004",
+          "emphasis": [],
+          "kind": "source_card",
+          "scene_id": "scn_sources0001",
+          "source_ids": [
+            "src_energimynd01",
+            "src_svk00000001"
+          ],
+          "variant": "default"
+        }
+      ],
+      "schema_version": 1,
+      "visual_subject": "",
+      "width": 1080
+    },
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "claim_ids": [],
+          "display_text": "A title over the shot it is about.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 0,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000002",
+          "claim_ids": [],
+          "display_text": "The shot itself, held while the narrator speaks.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 1,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000003",
+          "claim_ids": [],
+          "display_text": "Then against now, side by side.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 2,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000004",
+          "claim_ids": [],
+          "display_text": "What actually caused it.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 3,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000005",
+          "claim_ids": [],
+          "display_text": "The value held, and then it changed.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 4,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        }
+      ],
+      "deliverable_id": "dlv_short0000001",
+      "fps": 30,
+      "handle_ms": 250,
+      "height": 1920,
+      "hook_text": null,
+      "min_scene_ms": 1200,
+      "plan_id": "plan_kinds000001",
+      "scenes": [
+        {
+          "background_asset_id": "ast_anchor000001",
+          "beat_id": "beat_000000001",
+          "emphasis": [],
+          "kind": "title",
+          "scene_id": "scn_title000002",
+          "subtitle": {
+            "claim_ids": [],
+            "text": "Over a still from the shot"
+          },
+          "title": {
+            "claim_ids": [],
+            "text": "Sweden's wind share"
+          },
+          "variant": "default"
+        },
+        {
+          "alt_text": "A coastal wind farm under a flat overcast sky.",
+          "asset_id": "ast_anchor000001",
+          "beat_id": "beat_000000002",
+          "caption": {
+            "claim_ids": [],
+            "text": "Kriegers Flak, looking south."
+          },
+          "emphasis": [],
+          "kind": "image",
+          "motion": "slow_push",
+          "scene_id": "scn_image000001",
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000003",
+          "emphasis": [],
+          "kind": "comparison",
+          "left": {
+            "claim_ids": [],
+            "text": "2018"
+          },
+          "left_value": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2018"
+          },
+          "right": {
+            "claim_ids": [],
+            "text": "2025"
+          },
+          "right_value": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2025"
+          },
+          "scene_id": "scn_compare0001",
+          "title": {
+            "claim_ids": [],
+            "text": "2018 against 2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000004",
+          "edges": [
+            {
+              "from_id": "permits",
+              "label": null,
+              "to_id": "build"
+            },
+            {
+              "from_id": "finance",
+              "label": null,
+              "to_id": "build"
+            },
+            {
+              "from_id": "build",
+              "label": "measured",
+              "to_id": "share"
+            }
+          ],
+          "emphasis": [],
+          "kind": "flow_diagram",
+          "nodes": [
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "Faster permits"
+              },
+              "node_id": "permits"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "Cheaper finance"
+              },
+              "node_id": "finance"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "More turbines built"
+              },
+              "node_id": "build"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "A higher wind share"
+              },
+              "node_id": "share"
+            }
+          ],
+          "scene_id": "scn_flow0000001",
+          "title": {
+            "claim_ids": [],
+            "text": "What drove it"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000005",
+          "caption": null,
+          "chart": "step_chart",
+          "data": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": null
+          },
+          "dual_axis": false,
+          "emphasis": [],
+          "encoding": {},
+          "kind": "chart",
+          "scene_id": "scn_step00000001",
+          "source_ids": [
+            "src_energimynd01"
+          ],
+          "title": {
+            "claim_ids": [],
+            "text": "Wind share, by year"
+          },
+          "truncation_disclosure": null,
+          "variant": "default",
+          "x": "year",
+          "y": [
+            "share_pct"
+          ],
+          "zero_baseline": true
+        }
+      ],
+      "schema_version": 1,
+      "visual_subject": "a Swedish coastal wind farm under a flat overcast sky",
+      "width": 1080
+    },
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "claim_ids": [],
+          "display_text": "A title over the shot it is about.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 0,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000002",
+          "claim_ids": [],
+          "display_text": "The shot itself, held while the narrator speaks.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 1,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000003",
+          "claim_ids": [],
+          "display_text": "Then against now, side by side.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 2,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000004",
+          "claim_ids": [],
+          "display_text": "What actually caused it.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 3,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000005",
+          "claim_ids": [],
+          "display_text": "The value held, and then it changed.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 4,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        }
+      ],
+      "deliverable_id": "dlv_short0000001",
+      "fps": 30,
+      "handle_ms": 250,
+      "height": 1920,
+      "hook_text": null,
+      "min_scene_ms": 1200,
+      "plan_id": "plan_kinds000001",
+      "scenes": [
+        {
+          "background_asset_id": "ast_anchor000001",
+          "beat_id": "beat_000000001",
+          "emphasis": [],
+          "kind": "title",
+          "scene_id": "scn_title000002",
+          "subtitle": {
+            "claim_ids": [],
+            "text": "Over a still from the shot"
+          },
+          "title": {
+            "claim_ids": [],
+            "text": "Sweden's wind share"
+          },
+          "variant": "default"
+        },
+        {
+          "alt_text": "A coastal wind farm under a flat overcast sky.",
+          "asset_id": "ast_anchor000001",
+          "beat_id": "beat_000000002",
+          "caption": {
+            "claim_ids": [],
+            "text": "Kriegers Flak, looking south."
+          },
+          "emphasis": [],
+          "kind": "image",
+          "motion": "slow_push",
+          "scene_id": "scn_image000001",
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000003",
+          "emphasis": [],
+          "kind": "comparison",
+          "left": {
+            "claim_ids": [],
+            "text": "2018"
+          },
+          "left_value": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2018"
+          },
+          "middle_value": {
+            "dataset_id": "ds_wind00000001"
+          },
+          "right": {
+            "claim_ids": [],
+            "text": "2025"
+          },
+          "right_value": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2025"
+          },
+          "scene_id": "scn_compare0001",
+          "title": {
+            "claim_ids": [],
+            "text": "2018 against 2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000004",
+          "edges": [
+            {
+              "from_id": "permits",
+              "label": null,
+              "to_id": "build"
+            },
+            {
+              "from_id": "finance",
+              "label": null,
+              "to_id": "build"
+            },
+            {
+              "from_id": "build",
+              "label": "measured",
+              "to_id": "share"
+            }
+          ],
+          "emphasis": [],
+          "kind": "flow_diagram",
+          "nodes": [
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "Faster permits"
+              },
+              "node_id": "permits"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "Cheaper finance"
+              },
+              "node_id": "finance"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "More turbines built"
+              },
+              "node_id": "build"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "A higher wind share"
+              },
+              "node_id": "share"
+            }
+          ],
+          "scene_id": "scn_flow0000001",
+          "title": {
+            "claim_ids": [],
+            "text": "What drove it"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000005",
+          "caption": null,
+          "chart": "step",
+          "data": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": null
+          },
+          "dual_axis": false,
+          "emphasis": [],
+          "encoding": {},
+          "kind": "chart",
+          "scene_id": "scn_step00000001",
+          "source_ids": [
+            "src_energimynd01"
+          ],
+          "title": {
+            "claim_ids": [],
+            "text": "Wind share, by year"
+          },
+          "truncation_disclosure": null,
+          "variant": "default",
+          "x": "year",
+          "y": [
+            "share_pct"
+          ],
+          "zero_baseline": true
+        }
+      ],
+      "schema_version": 1,
+      "visual_subject": "a Swedish coastal wind farm under a flat overcast sky",
+      "width": 1080
+    },
+    {
+      "beats": [
+        {
+          "beat_id": "beat_000000001",
+          "claim_ids": [],
+          "display_text": "A title over the shot it is about.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 0,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000002",
+          "claim_ids": [],
+          "display_text": "The shot itself, held while the narrator speaks.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 1,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000003",
+          "claim_ids": [],
+          "display_text": "Then against now, side by side.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 2,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000004",
+          "claim_ids": [],
+          "display_text": "What actually caused it.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 3,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        },
+        {
+          "beat_id": "beat_000000005",
+          "claim_ids": [],
+          "display_text": "The value held, and then it changed.",
+          "measured_end_ms": null,
+          "measured_start_ms": null,
+          "order": 4,
+          "planned_duration_ms": 3000,
+          "section": null,
+          "spoken_text": null,
+          "words": []
+        }
+      ],
+      "deliverable_id": "dlv_short0000001",
+      "fps": 30,
+      "handle_ms": 250,
+      "height": 1920,
+      "hook_text": null,
+      "min_scene_ms": 1200,
+      "plan_id": "plan_kinds000001",
+      "scenes": [
+        {
+          "background_asset_id": "ast_anchor000001",
+          "beat_id": "beat_000000001",
+          "emphasis": [],
+          "kind": "title",
+          "scene_id": "scn_title000002",
+          "subtitle": {
+            "claim_ids": [],
+            "text": "Over a still from the shot"
+          },
+          "title": {
+            "claim_ids": [],
+            "text": "Sweden's wind share"
+          },
+          "variant": "default"
+        },
+        {
+          "alt_text": "A coastal wind farm under a flat overcast sky.",
+          "asset_id": "../../etc/passwd",
+          "beat_id": "beat_000000002",
+          "caption": {
+            "claim_ids": [],
+            "text": "Kriegers Flak, looking south."
+          },
+          "emphasis": [],
+          "kind": "image",
+          "motion": "slow_push",
+          "scene_id": "scn_image000001",
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000003",
+          "emphasis": [],
+          "kind": "comparison",
+          "left": {
+            "claim_ids": [],
+            "text": "2018"
+          },
+          "left_value": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2018"
+          },
+          "right": {
+            "claim_ids": [],
+            "text": "2025"
+          },
+          "right_value": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": "2025"
+          },
+          "scene_id": "scn_compare0001",
+          "title": {
+            "claim_ids": [],
+            "text": "2018 against 2025"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000004",
+          "edges": [
+            {
+              "from_id": "permits",
+              "label": null,
+              "to_id": "build"
+            },
+            {
+              "from_id": "finance",
+              "label": null,
+              "to_id": "build"
+            },
+            {
+              "from_id": "build",
+              "label": "measured",
+              "to_id": "share"
+            }
+          ],
+          "emphasis": [],
+          "kind": "flow_diagram",
+          "nodes": [
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "Faster permits"
+              },
+              "node_id": "permits"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "Cheaper finance"
+              },
+              "node_id": "finance"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "More turbines built"
+              },
+              "node_id": "build"
+            },
+            {
+              "label": {
+                "claim_ids": [],
+                "text": "A higher wind share"
+              },
+              "node_id": "share"
+            }
+          ],
+          "scene_id": "scn_flow0000001",
+          "title": {
+            "claim_ids": [],
+            "text": "What drove it"
+          },
+          "variant": "default"
+        },
+        {
+          "beat_id": "beat_000000005",
+          "caption": null,
+          "chart": "step",
+          "data": {
+            "claim_id": null,
+            "column": "share_pct",
+            "dataset_id": "ds_wind00000001",
+            "row_key": null
+          },
+          "dual_axis": false,
+          "emphasis": [],
+          "encoding": {},
+          "kind": "chart",
+          "scene_id": "scn_step00000001",
+          "source_ids": [
+            "src_energimynd01"
+          ],
+          "title": {
+            "claim_ids": [],
+            "text": "Wind share, by year"
+          },
+          "truncation_disclosure": null,
+          "variant": "default",
+          "x": "year",
+          "y": [
+            "share_pct"
+          ],
+          "zero_baseline": true
+        }
+      ],
+      "schema_version": 1,
+      "visual_subject": "a Swedish coastal wind farm under a flat overcast sky",
+      "width": 1080
     }
   ]
 }

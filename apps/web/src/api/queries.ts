@@ -20,6 +20,10 @@ export const queryKeys = {
   sequences: ["sequences"] as const,
   portalLinks: ["portal-links"] as const,
   portalBriefs: ["portal-briefs"] as const,
+  comfyModels: ["comfy-models"] as const,
+  comfyDownloads: ["comfy-downloads"] as const,
+  modelCatalog: ["model-catalog"] as const,
+  hfAccess: ["models", "hf-access"] as const,
 };
 
 /** How often the run views poll while open. */
@@ -113,6 +117,83 @@ export const portalBriefsQuery = queryOptions({
   queryKey: queryKeys.portalBriefs,
   queryFn: () => api.portal.briefs(),
 });
+
+export const comfyModelsQuery = queryOptions({
+  queryKey: queryKeys.comfyModels,
+  queryFn: () => api.comfy.models(),
+  staleTime: 30_000,
+});
+
+export const comfyDownloadsQuery = queryOptions({
+  queryKey: queryKeys.comfyDownloads,
+  queryFn: () => api.comfy.downloads(),
+  // While a transfer runs, keep polling; refreshing also re-checks comfy-cli's status.
+  refetchInterval: (query) => (query.state.data?.some((j) => j.state === "running") ? 2500 : false),
+});
+
+/** The weight store: what is installed, what is missing, and what is downloading right now. */
+export const modelCatalogQuery = queryOptions({
+  queryKey: queryKeys.modelCatalog,
+  queryFn: () => api.models.catalog(),
+  // One request answers the whole page, so it can poll while a transfer is in flight and sit
+  // still otherwise. Scanning the store is a stat walk, not a network call.
+  refetchInterval: (query) =>
+    query.state.data?.jobs.some((job) => job.state === "running") ? 2000 : false,
+});
+
+export function useInstallModel() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (key: string) => api.models.install(key),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.modelCatalog });
+      void client.invalidateQueries({ queryKey: queryKeys.comfyModels });
+    },
+  });
+}
+
+export const hfAccessQuery = queryOptions({
+  queryKey: queryKeys.hfAccess,
+  queryFn: () => api.models.hfAccess(),
+});
+
+export function useStoreHfToken() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) => api.models.putHfAccess(token),
+    onSuccess: () => void client.invalidateQueries({ queryKey: queryKeys.hfAccess }),
+  });
+}
+
+export function useForgetHfToken() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.models.forgetHfAccess(),
+    onSuccess: () => void client.invalidateQueries({ queryKey: queryKeys.hfAccess }),
+  });
+}
+
+export function useRelinkModels() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.models.relink(),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.modelCatalog });
+      void client.invalidateQueries({ queryKey: queryKeys.comfyModels });
+    },
+  });
+}
+
+export function useStartModelDownload() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: import("./types").ModelDownloadBody) => api.comfy.download(body),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.comfyDownloads });
+      void client.invalidateQueries({ queryKey: queryKeys.comfyModels });
+    },
+  });
+}
 
 export const opsHealthQuery = queryOptions({
   queryKey: queryKeys.opsHealth,

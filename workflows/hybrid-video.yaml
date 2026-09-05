@@ -1,0 +1,230 @@
+# One narrated timeline, two renderers.
+#
+# This is the lane that was called hybrid-shot-router-video on the canvas. It replaces it. The name
+# is for what it does to the material: every beat of one script becomes a shot, and each shot is
+# drawn either deterministically or generatively depending on what the beat is made of. Nothing
+# here is specific to the first film it cut.
+#
+# The split is the point, and the line is drawn by TEXT rather than by subject matter. A beat whose
+# content is words on screen — a title, a heading, a pull quote and its attribution, a call to
+# action, a chart's labels, a table — is set by the card renderer in the pinned face at the pinned
+# size, correctly, every run. An image model renders typography as ornament that looks like
+# letters; every wind short v1-v5 shows it, and on a quote the words are a claim attributed to a
+# named person, so a generative pass over them is a fabrication risk rather than an art-direction
+# choice. A beat with no text in it — an `image` scene, which names an asset and an alt text — has
+# nothing to typeset and nothing to garble, so it is the one kind that goes generative by default.
+# Sending data through the generative chain invents figures. route_shots decides per beat, and
+# compose_video is handed the same routing so it knows which source each beat came from and
+# splices them back in beat order.
+#
+# The narration spine runs once for the whole film, not per branch. Word timings from the recorded
+# narration set the beat boundaries, so both picture paths are cut against the voice rather than
+# the voice being stretched to fit the pictures.
+schema_version: 1
+id: hybrid-video
+name: Hybrid video
+description: >
+  One script becomes one narrated timeline whose beats are drawn two different ways: data scenes
+  are rendered deterministically as typeset cards, staged scenes are generated from Blender
+  controls through the image and video models, and the two are spliced back together in beat order.
+  Narration is synthesized, aligned, captioned and mixed once for the whole film.
+category: video
+tags: [hybrid, router, cards, story, narration, video]
+prerequisite: >
+  A script with at least one `image` scene: that is the kind the router sends to the generative
+  chain, and the demo fixture has none, so it routes nothing. The worked example is
+  `--story fixtures/story/wind_2024.json --shots fixtures/shots/wind_2024.json` (eight beats, two
+  of them images, 30 fps, 9:16). If the script must be researched first, use data-story-video.
+models:
+  - kind: skill
+    label: Qwen3-TTS voice skill
+    skill: skills/audio/qwen3tts
+  - kind: path
+    label: Qwen3-TTS 1.7B base weights
+    path_includes: qwen3-tts-1.7b-base
+    filename: model.safetensors
+  - kind: skill
+    label: Resemble Enhance skill env
+    skill: skills/audio/resemble_enhance
+  - kind: path
+    label: Resemble Enhance weights
+    path_includes: resemble-enhance
+  - kind: skill
+    label: Blender scene controller
+    skill: skills/video/blender_scene
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream-O1 skill env
+    skill: skills/image/hidream
+  - kind: comfy
+    label: LTX-2.5 transformer
+    folder: diffusion_models
+    filename: ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 text encoder
+    folder: text_encoders
+    filename: gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 video VAE
+    folder: vae
+    filename: ltx-2.5-video-vae-conv-bf16.safetensors
+  - kind: skill
+    label: Manim scene env
+    skill: skills/video/manim
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "how something works, told with its own numbers", audience: general, quality: demo}
+
+  # No research front end here, on purpose. Research, claim verification, dataset compilation and
+  # copywriting live in data-story-video, where drafting a script from sources IS the lane. Adding
+  # them here made this definition's first fourteen steps a copy of that one, and two lanes that
+  # differ only in their tail are the duplication this catalogue exists to remove. What makes this
+  # lane its own thing is the router. Feed it a written script with --story, or let plan_story
+  # draft one; if you need the research front end, that is the other lane.
+  - key: story
+    type: plan_story
+    note: Beats, each with a scene kind. The kind is what route_shots later reads.
+  - key: script
+    type: lock_script
+
+  # Narration spine. Its word timings define the beat boundaries both picture paths are cut to.
+  - key: voice
+    type: synthesize_narration
+    values: {voice: qwen3tts, instruct: "calm explanatory narrator, unhurried, even pace"}
+    note: An even pace matters here because the beat boundaries are taken from these timings.
+  - key: clean_voice
+    type: restore_speech
+    values: {enhancer: resemble_enhance}
+    note: >
+      Polish only. Synthesized narration has no room noise or band limit to repair, so cleanup and
+      band extension stay off. Same length out as in, so the timings below stay valid.
+  - key: timings
+    type: align_words
+  - key: captions
+    type: compile_captions
+  - key: music
+    type: select_music
+  - key: mix
+    type: mix_audio
+    note: No sound design in this lane. Data beats have nothing to foley and mixed sources would.
+
+  # Deterministic picture path: the card renderer draws every beat from the timeline.
+  - key: timeline
+    type: compile_timeline
+    note: >
+      No fps value: the story's own rate is master and the stage takes it from the plan. It was
+      pinned to 24 here "to match plan_shots", which is how the wind shorts shipped 24 fps footage
+      in a 30 fps film — the pin matched the planner's default, not the script.
+  - key: scenes
+    type: render_scenes
+    note: Charts, maps, tables and titles. The beats routed to render are cut from this.
+
+  # Generative picture path: only the beats route_shots sends to generate reach Blender.
+  - key: shots
+    type: plan_shots
+    note: One shot per beat, camera preset following the scene kind.
+  - key: router
+    type: route_shots
+    values: {generate_kinds: "[image]"}
+    note: >
+      Written down here rather than left to a setting. `image` is the only scene kind with no text
+      in it, so it is the only one an image model can draw without garbling something a viewer is
+      meant to read; titles, quotes, charts and tables are typeset. Add a kind here, or one beat at
+      a time through routing.overrides, when a film needs it.
+  - key: controls
+    type: compile_controls
+    values: {compiler: blender}
+    note: Headless Blender writes the control passes, so staged beats keep one continuous space.
+  - key: anchor
+    type: generate_anchor
+    values:
+      prompt: "the scene staged exactly as the control passes show"
+      style: >
+        one consistent editorial illustration look across every staged beat, restrained palette,
+        clean shapes, no photographic lighting, no text or numerals in the image
+    note: >
+      No text in the image on purpose. Anything a viewer is meant to read belongs on a rendered
+      card where it is typeset rather than drawn.
+  - key: motion
+    type: generate_video
+    values: {prompt: "camera moves exactly as staged in the 3D scene"}
+    note: >
+      No size value. With a shot plan the clip is generated at the ShotSpec's own size — what the
+      anchor was drawn at and the control passes were rendered at. `size` is read only on the
+      `motion: hold` path. compose_video letterboxes into the timeline frame, never crops.
+
+  - key: cut
+    type: compose_video
+    note: >
+      Takes the routing as well as both picture sources, so each beat is filled from the branch it
+      was routed to and the film comes out in beat order rather than branch order.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: voice, to_slot: script}
+  - {from_key: voice, from_slot: audio, to_key: clean_voice, to_slot: audio}
+  - {from_key: clean_voice, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: story, from_slot: story, to_key: music, to_slot: story}
+  - {from_key: clean_voice, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: music, from_slot: music, to_key: mix, to_slot: music}
+  - {from_key: story, from_slot: story, to_key: timeline, to_slot: story}
+  - {from_key: timings, from_slot: timings, to_key: timeline, to_slot: timings}
+  - {from_key: timeline, from_slot: timeline, to_key: scenes, to_slot: timeline}
+  - {from_key: story, from_slot: story, to_key: shots, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: router, to_slot: story}
+  - {from_key: shots, from_slot: shots, to_key: router, to_slot: shots}
+  - {from_key: router, from_slot: routing, to_key: controls, to_slot: shots}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: controls, from_slot: controls, to_key: anchor, to_slot: controls}
+  - {from_key: anchor, from_slot: anchor, to_key: motion, to_slot: first_frame}
+  - {from_key: controls, from_slot: controls, to_key: motion, to_slot: controls}
+  - {from_key: scenes, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: motion, from_slot: video, to_key: cut, to_slot: clips}
+  - {from_key: router, from_slot: routing, to_key: cut, to_slot: routing}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: captions, from_slot: captions, to_key: cut, to_slot: captions}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - script
+  - voice
+  - clean_voice
+  - timings
+  - captions
+  - music
+  - mix
+  - timeline
+  - scenes
+  - shots
+  - router
+  - controls
+  - anchor
+  - motion
+  - cut
+  - qc
+  - pack

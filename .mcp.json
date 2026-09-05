@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "content-factory": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "set -a; . ./.env; set +a; export CF_MCP_CLIENT_TOKEN=\"$CF_MCP_TOKEN\"; exec uv run content-factory mcp"
+      ]
+    }
+  }
+}

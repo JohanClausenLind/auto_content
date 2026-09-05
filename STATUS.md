@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-09-01. Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
+Last updated: 2026-09-09. Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
 RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 24.19.0).
 
 ## Phase checklist
@@ -41,7 +41,8 @@ RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 
       on success, release on failure), `image.generate` through ComfyUI fixture AND mock cloud via
       one invocation path, evaluation packs with approval lifecycle (approve/revoke per model x
       skill), allowlisted `comfy model download` planner with hash verification.
-- [x] **Phase 6 — durable pipeline (backend)** — **GREEN** (2026-09-01); Pipeline Canvas UI in progress.
+- [x] **Phase 6 — durable pipeline (backend)** — **GREEN** (2026-09-01); read-only run Pipeline
+      Canvas shipped with phase 8; the editable node-graph Workspace shipped 2026-09-03 (below).
       Durable ProductionWorkflow (CREATED→PREFLIGHTING→WAITING_FOR_APPROVAL→APPROVED→PRODUCING→
       COMPLETE), approval signal bound to the exact preflight revision (stale approvals recorded and
       ignored), ActionItems (open on waiting, resolved on decision), idempotent cached stage
@@ -251,7 +252,216 @@ minimum, Buttondown API tier.
 | Lint | `uv run ruff format --check . && uv run ruff check . && uv run pyright` | all clean, 0 findings |
 | Local model (2026-09-01) | `uv run content-factory model-check "…"` | GREEN against the real Ollama: routing chose `local_structured` (qwen38-ridge:latest, 3090), 1 attempt, structured reply validated, $0.0000; qwen3:8b is the small-GPU fallback (`models/catalog.py`) |
 
+## Node-graph Workspace (commands actually run, 2026-09-03)
+The web UI now centres on a ComfyUI-style node graph editor. New package
+`packages/node-graph` (typed reversible graph ops + undo/redo history + strict serialiser +
+React Flow canvas, node cards with litegraph geometry/palette, datatype-coloured slots, combo/
+number/seed/text/textarea/toggle widgets, per-node notes, node library panel, add-node search,
+Parameters/Nodes overview panel). `apps/web`: `/workspace` route with workflow tabs,
+library + overview side panels, honest "Check graph" validation (execution of workspace graphs is
+NOT wired to the backend; the Job Queue lists real `/v1/runs`), graphs persisted in
+localStorage (server persistence needs a Pydantic contract first — next smallest task below).
+Shell nav became a ComfyUI-style icon rail; all existing routes and tests kept.
+Node catalogue is `Record<Stage, NodeDefinition>` over the generated contract type, so a new
+pipeline stage fails typecheck until it has a node; a test also checks the schema enum.
+
+| What | Command | Result |
+| --- | --- | --- |
+| node-graph suite | `pnpm test` (packages/node-graph) | 27 passed / 4 files (op inverses restore exactly, replace-on-occupied-input, cycle refusal + reasons, topo order, validation, strict parse rejects unknown fields, history coalescing/limit, canvas + widgets + panels in jsdom) |
+| web suite | `pnpm test` (apps/web) | 63 passed / 16 files (7 new workspace tests incl. stage-coverage drift guard; all pre-existing shell/a11y/keyboard tests still pass on the rail shell) |
+| repo gates | `just fmt && just lint && just typecheck && just test` | all green (ruff/pyright/tsc clean; 203 Python passed, all TS suites pass) |
+| prod build | `pnpm build` (apps/web) | clean (chunk-size warning only) |
+| real browser | vite dev + loopback mock of GET /v1/session,meta,runs + Playwright chromium | screenshots verified; interactions proven: dbl-click search-add (N 12→13), drag-link-to-canvas opens type-filtered search and auto-wires (L 12→13, "Nodes accepting SEQUENCE…"), library click-add and HTML5 drag-drop add, slot-to-slot drag connect (valid ✓), mid-drag 4 compatible slots highlight / 28 dim |
+
+## Workflow templates + local model inventory (commands actually run, 2026-09-03)
+Templates browser in the Workspace (ComfyUI-style gallery): six premade graphs — single image
+(HiDream-O1), single image (Krea2 Turbo + realism LoRA), stitch images → video (anchor/lock/
+keyframes/drift/interpolate/compose), image-to-video (MiniMax H3, its real local model filenames
+in the node's combos, audio from the audio VAE), narrated video (script → Kokoro/mock TTS →
+align → captions → loudness master → mux), and brief → video with AI audio → gated social publish
+(new `publish.social` node over the Tier-1 path; approval + kill switch stated on the node).
+New backend: `comfyui/inventory.py` + `GET /v1/comfy/models` — read-only local model inventory
+from the settings workspace, comfy-cli's own `config.ini` default workspace, and
+`comfyui.extra_model_roots` (this host's `.env` adds `~/models` and `~/git/ai_models`). Template
+cards check every requirement against that inventory ("(1)" download suffixes normalised) and
+print the exact allowlisted `comfy model download --url … --relative-path models/<kind>
+--filename …` for anything missing (never inventing a URL — unpinned sources say so); skill-served
+models (HiDream server, Kokoro) point at their `skills/` READMEs instead.
+
+| What | Command | Result |
+| --- | --- | --- |
+| inventory unit tests | `uv run pytest tests/unit/test_comfy_inventory.py -q` | 4 passed (ini parse, root dedupe, kind/junk/depth rules, missing roots) |
+| inventory API test | `uv run pytest tests/api/test_comfy_models.py -q` (compose postgres) | 1 passed (401 unauthenticated; configured roots + files listed) |
+| API suite | `uv run pytest tests/api -q` | 20 passed |
+| template tests | `pnpm vitest run test/templates.test.tsx` (apps/web) | 5 passed (every template builds a valid, serialisable graph; requirement matching incl. "(1)" suffix; command shape; panel apply-as-tab flow) |
+| repo gates | `just fmt && just lint && just typecheck && just test` | all green (207 Python core, apps/web 68, node-graph 27) |
+| real machine | mock-session vite + real inventory scan + Playwright chromium | 18 model files across 3 existing roots; MiniMax H3 ×4, Krea2 ×4 and HiDream shards all show INSTALLED; missing-model cards show copyable comfy-cli commands; “Use template” opened the MiniMax graph as a new tab (N: 6 L: 6 ✓ valid) |
+
+### Template browser v2 + Models panel + one-click downloads (2026-09-03, later)
+Template browser now mirrors ComfyUI's dialog: left category rail with counts, header search,
+card grid; each card's thumbnail is a live SVG drawn from the template's actual graph
+(`GraphThumbnail` in node-graph), with a Ready / "N models to download first" badge and a
+collapsible model list. New Models panel (left library tab): installed models grouped by kind
+with sizes (live inventory), running downloads, "wanted by templates" with per-file status, and
+an Add-from-URL box. One-click downloads: `POST /v1/comfy/models/download` +
+`GET /v1/comfy/models/downloads` run the allowlisted `comfy --skip-prompt --json model download
+… --background` and poll `comfy model download-status` on read (no server threads); https +
+huggingface.co/civitai.com only, destination pinned inside the workspace models/ tree,
+idempotent per file, already-present files never touch the network.
+
+| What | Command | Result |
+| --- | --- | --- |
+| download manager | `uv run pytest tests/unit/test_comfy_downloads.py -q` | 5 passed (host allowlist + traversal refusals, background start + status polling argv, idempotency, file-present short-circuit, failure reporting) |
+| API | `uv run pytest tests/api -q` | 21 passed (incl. 202 start → complete on poll; 422 for non-allowlisted host) |
+| web | `pnpm test` (apps/web) | 71 passed / 18 files (models panel: grouped inventory, wanted-by-templates commands, add-from-URL posts the exact body and the job appears as running) |
+| repo gates | `just fmt && just lint && just typecheck && just test` | all green (212 Python core) |
+| real browser | Playwright chromium | template gallery renders with live graph thumbnails, category rail (6/2/3/1), Ready badges (all six Ready on this host); Models panel lists 18 files with sizes by kind; Add-from-URL click produced a running download job |
+
+## Repo review + fixes (commands actually run, 2026-09-03, later)
+Reviewed the workspace/node-graph/templates/downloads work. Fixed: (1) model-source validation
+now has one rulebook — `models/install.py:validate_model_source`, reused by one-click downloads;
+(2) app-settings retrieval deduplicated into `api/deps.py:app_settings` (comfy + sequences
+routes); (3) comfy route handlers made sync so subprocess/disk work runs in the threadpool, not
+on the event loop; (4) `parseGraph` now also rejects duplicate link ids and doubly-connected
+inputs (invariants applyOp already enforced); (5) the editor reducer refuses an unappliable op
+batch instead of crashing the canvas; (6) the add-node search closes on canvas click; (7) node
+notes auto-grow (shared `useAutoGrowTextarea`, also dedupes the prompt textarea logic);
+(8) Overview title field normalises empty/default titles back to null. Considered and kept:
+node-graph's catalogue search stays separate from web-ui's fuzzy.ts (reuse would invert the
+package dependency). `just schemas-check` no drift; `apps/web` prod build clean; `just doctor`
+green with `.env` sourced. Gates after fixes: `just fmt && just lint && just typecheck &&
+just test` all green (212 Python core, node-graph 28, web 71); `uv run pytest tests/api -q`
+21 passed.
+
+## Workspace graph execution + new production lanes (commands actually run, 2026-09-03, later)
+The five-point plan landed in one pass; licensing intentionally deferred per operator.
+1. **WorkspaceGraph contract + execution**: `schemas/workspace_graph.py` (registered; 43 schemas
+   generated), Postgres persistence (`workspace_graphs` + Alembic `c4b1a7e2f9d0`),
+   `/v1/graphs` CRUD + `/compile` (typed per-node dispositions) + `/runs`.
+   `workspace/compile.py` maps a hand-drawn graph onto the SAME DeliverableDAG/ContentCampaign the
+   campaign compiler emits (stage_defaults() shared); brief node → campaign brief; notes/muted/
+   publish nodes skipped with reasons; stages without executors BLOCK with reasons; a missing
+   Preflight Gate is INJECTED so no graph run can skip operator approval. ProductionWorkflow takes
+   a precompiled `dag_json` (re-validated in the activity). The editor saves to the server
+   (debounced write-behind; localStorage co-cache) and the floating Run bar starts real runs.
+2. **video.generate skill**: `media/video_generate.py` mirrors the image skill — one invocation
+   path, ComfyUI backend (allowlisted `minimax-h3.i2v` package fixture, 6 bound parameters,
+   image_to_video capability flag) or deterministic ffmpeg mock; containers verified with ffprobe
+   (streams, dimensions, duration, audio flag vs provenance). New Stage `generate_video`
+   (inference-video) wired to the mock by default.
+3. **Charts + music**: video-ui gains ChartScene (bar/horizontal_bar/line/area; other kinds fall
+   back to bars with the kind named on screen; zero baseline preserved) and TimelineScene —
+   IMPLEMENTED_KINDS now 12. Music lane: `MusicTrack` contract, fixtures/music library
+   (synthesised in-repo bed + manifest), Stage `select_music` (deterministic, hash-verified,
+   empty-library tolerant), `add_music_bed` (looped bed, sidechain duck under speech, fade-out)
+   feeding the same two-pass loudnorm master.
+4. **Animation**: `AnimationSpec` contract; builtin Pillow renderer (count_up / equation /
+   diagram_build → frames/0000.png… + preview.mp4); Stage `render_animation`; opt-in Manim skill
+   scaffold at skills/video/manim (same output layout, `CF__ANIMATION__EXECUTOR=manim`).
+5. Reviewer pass fixes: template-relationship leak into graph campaigns (re-validate at compile),
+   ApiError now carries structured bodies (422 problems reach the UI), adoption race + updater
+   purity in WorkspacePage, run-refused header. ComfyUI-feel: node right-click context menu
+   (collapse/duplicate/mute/bypass/delete), AI/HYBRID/HUMAN header badges, floating top-centre
+   Run bar (Run · Check graph · N active).
+
+| What | Command | Result |
+| --- | --- | --- |
+| graph compile unit | `uv run pytest tests/unit/test_workspace_compile.py -q` | 7 passed (dispositions, cycle/double-input refusals at the contract, preflight injection, determinism) |
+| new stages unit | `uv run pytest tests/unit/test_new_stages.py -q` | 7 passed (music determinism+hash check, music-bedded master hits −14 LUFS, generated clip verified, animation determinism, lying-backend refused) |
+| graphs API | `uv run pytest tests/api -q` (compose) | 24 passed (CRUD strict-validated, compile dispositions, run 202/422) |
+| **end-to-end graph run** | `uv run pytest tests/integration/test_workspace_graph_run.py -q` | **1 passed (~17s)**: drawn graph → compile → real Temporal → WAITING_FOR_APPROVAL → approve exact revision → COMPLETE; every stage exactly once; music-selection + bedded master + generated.mp4 + animation frames all present |
+| render smoke | `just render-smoke` | passes (chart/timeline scenes registered; smoke timeline unchanged) |
+| repo gates | `just fmt && just lint && just typecheck && just test` | all green (226 py core; node-graph 29; web 74; schemas 43 generated, TS roundtrip 17) |
+| migration | `uv run alembic upgrade head` | at c4b1a7e2f9d0 |
+| real browser | vite + loopback mock + Playwright | floating Run bar, node context menu, AI/HUMAN badges verified; Run → “run started … waits at the approval gate”; graph synced to server (12n/12l) |
+
+Known limits, stated in-product: sequence/article/newsletter stages still have no executors (graph
+runs containing them are refused with per-node reasons — the stitch template is compose-only until
+those land); `generate_video` defaults to the mock backend until the operator wires the live
+ComfyUI endpoint; model-license policy table deferred by operator decision.
+
+### Follow-up hardening (2026-09-03, evening)
+- Run views now carry the compiled DAG's **real edges** (`run_view.edges` from the project's
+  dag.json, corrupt-file tolerant) and the Pipeline Canvas draws them instead of the legacy
+  chain heuristic — hand-drawn fan-out graphs render truthfully on the run detail page.
+  Verified: `pnpm test` (pipeline-canvas 13), `tests/unit/test_workspace_compile.py` (8),
+  e2e rerun asserts `plan_story → generate_video:gen` appears in the view (1 passed, ~13s).
+- Temporal dev-server hygiene: terminated 8 orphaned test workflows (no dev-DB row) and the
+  failed e2e attempts; the graphs API test now terminates the workflow it starts, so it stops
+  leaking one parked run per suite execution.
+- Stitch template card states its limitation up front (sequence stages executor-less ⇒ Run
+  refuses with per-node reasons). ADR-0011 records the graph-execution decision (one engine,
+  compile onto the production DAG, preflight injection); CLAUDE.md ADR count updated;
+  `.env.example` documents CF__COMFYUI__EXTRA_MODEL_ROOTS / CF__MEDIA_LIBRARY__MUSIC_DIR /
+  CF__ANIMATION__EXECUTOR. Gates re-run green (227 py core; prod build clean).
+
+### MCP graph tools + first real operator video (2026-09-03, night)
+MCP server (ADR-0007 surface) gained `list_graphs`, `run_graph` (compile → typed refusal or
+durable run), and `get_run_outputs` (locate produced artifacts on disk); registered in `.mcp.json`
+via a wrapper that sources `.env` (token never committed); verified over real stdio (11 tools).
+First real production video through the full live stack (API + worker on queue control +
+Temporal + Postgres, worker CUDA-blocked, VRAM watchdog never tripped, system peak 3.2 GiB —
+idle-GPU property held): workspace graph "Wind video" (16 stages) in the operator's
+demo-editorial workspace → approval → COMPLETE 16/16, producing final.mp4 (16.4 s, 1080×1920,
+h264+aac: narration + ducked music bed), captions.srt, mastered wav, generated.mp4 (mock i2v),
+animation preview. Two genuine findings fixed along the way: (1) the workspace_graphs migration
+lacked server_default=now() on timestamps — metadata-created test tables masked it; migration
+fixed and reapplied; (2) a drawn graph that omits the align_words → compile_timeline dependency
+fails honestly at run time with the exact node error (the engine trusts the drawn edges — as
+designed; the catalog's timings input documents the real dependency).
+Also: `reset-password --prompt` (hidden input; `--password` now warns it lands in shell history)
+and `auth.password_min_length` setting (default 12, hard floor 4; operator set 4 in `.env`).
+
+### GPU freeze recovery + live Krea2 video lane (commands actually run, 2026-09-04)
+The overnight GPU freeze was diagnosed (kernel log: `NVRM GspRmFree failed / GPU_IN_FULLCHIP_RESET`)
+as an **open-driver-specific GSP firmware bug**. Root fix: swap to the **proprietary** 595 module.
+Secure Boot blocked the DKMS-built module (unsigned); resolved by installing Canonical's pre-signed
+prebuilt `linux-modules-nvidia-595-7.0.0-30-generic` and removing the DKMS module — no MOK dance.
+Verified: `nvidia-smi` → 595.84; `modinfo -F license nvidia` → `NVIDIA` (proprietary, not `-open`).
+GSP firmware left ON (`EnableGpuFirmware=18`) on purpose — forcing it 0 on 595/Ampere risks the
+module not loading on next boot; the proprietary swap already fixes the freeze at the source.
+
+Live GPU lane (`projects/showcase/`, GPU-only, no CPU fallback) now produces real videos:
+- Services run under systemd `--user` (survive session end): `comfyui-showcase.service`
+  (ComfyUI 0.33.0, custom DynamicVRAM fork, `--reserve-vram 5.0`, MemoryMax=24G) and
+  `showcase-gpu.service` (`bin/showcase_gpu.py`).
+- **Three safety layers, all verified live:** cold-start preflight (`state/gpu_safe_preflight.sh`
+  now gates on the *proprietary module* + ≥16 GB free + Ollama unloaded); in-loop `health_ok()`
+  (≥3800 MiB free, proprietary module, nvidia-smi responsive); hard watchdog
+  (`bin/gpu_watchdog.sh`, kills the process group below 3000 MiB free or on nvidia-smi error).
+- Measured reality: Krea2-turbo (UNET 12.5 GB + qwen3vl-4B TE 5 GB + VAE) is ~17.4 GB resident on
+  the 24 GB card; res probe picks 512px (`state/res_probe.json`, peak 20195 MiB). First video
+  `G000` verified with ffprobe: 1080×1920 h264+aac, 28.7 s, Krea2 stop-motion @3fps, `af_heart`
+  voice + music bed + captions — **min free VRAM 4162 MiB during the run, watchdog never fired.**
+  Note: with the proprietary driver a VRAM overrun is now a recoverable CUDA OOM, not a freeze.
+- Batch of ~99 diverse videos (cycling artstyles from `state/matrix.json`, 3 aspect ratios, 3 fps)
+  producing as `G###`; monitored live.
+
+### Video-quality + provenance upgrade (2026-09-04, later)
+Operator feedback drove three fixes to `bin/showcase_gpu.py`:
+- **Coherent motion** (was a jump-cut slideshow of 10 unrelated stills): now 1 t2i keyframe +
+  an **img2img chain** (`krea2_i2i_package`, denoise 0.30, fixed seed, one scene prompt) so every
+  keyframe stays on the SAME reference and evolves gently; keyframes are aspect-matched
+  (`kf_dims`, area≈probe px² so VRAM is unchanged) and spread across the full duration, then
+  **blend motion-interpolated to 16 fps** (`build_motion_clip`; mci was too slow for a batch).
+  Verified: t=1s and t=22s of a 28.7s clip are the same warrior/moon/crystals composition.
+- **Provenance next to each video**: rich `meta.json` + a human-readable `<vid>__<model>__<style>.txt`
+  info sheet (every model file, LoRA+strength, sampler, art style, audio, and **every keyframe's
+  prompt+seed**); the mp4 is renamed `G000__krea2-turbo__oil-paint-epic.mp4` (model+style in the name).
+- **Audio variety** (was identical bed+SFX on every video): `pick_bed` rotates the 6 beds
+  (genre-biased) and `sfx_events` varies the 4 SFX per video. Recommended AI upgrades: Stable Audio
+  Open (music) + MMAudio (per-video synced SFX), both local on the 3090.
+Ops: ComfyUI OOM'd once under `--reserve-vram 5.0` (too much RAM offload); fixed by `--reserve-vram 2.0`
++ MemoryMax=27G + `Restart=on-failure`. Harness now pings ComfyUI and unloads before the cold-start
+preflight so warm restarts pass. ~84 s/video; batch of ~99 regenerating.
+
 ## Resume instruction (next smallest task)
+GPU video lane is live and safe (see 2026-09-04 above). When the ~99-video `G###` batch finishes,
+extend variety for longer unattended runs (more scripts/artstyles/loras; stage HiDream + MiniMax
+i2v behind the same preflight, heaviest last). Formal-pipeline next smallest task:
+executors for the image-sequence branch (generate_anchor … package_sequence)
+so the stitch template runs end-to-end; then the ComfyUI `video.generate` backend behind a
+settings switch (mock stays the default), measured under a resource lease on the 24 GB card.
 Everything buildable without the operator is built. Tailnet serve is verified (see Phase 0
 results). The remaining items each need the operator:
 1. Live Bluesky gate: put a designated TEST account's BLUESKY_HANDLE/BLUESKY_APP_PASSWORD in
@@ -262,3 +472,5126 @@ results). The remaining items each need the operator:
 3. External security review (docs/requirements-traceability.md maps capability → code → proof).
 Baseline check before any new work:
 `set -a; . ./.env; set +a; just doctor && just test && uv run pytest tests/api -q`.
+
+## Documentary episode lane (commands actually run, 2026-09-04, session auto-content-1b)
+Operator supplied a "channel video system" prompt; a gap analysis mapped it onto this repo (most
+of it already exists here: Temporal not Hatchet per ADR-0001, claims/citations, ComfyUI, cost
+ledger, loudness/a11y QC, gated publishing). What was genuinely missing landed as the
+documentary lane:
+- **Contracts** (registered, 47 schemas total): `EpisodeOutline` (7-section editorial arc
+  cold_open→synthesis, sections tile the duration exactly, word budgets by time share — 1,450
+  words for 10 min at 145 wpm), `ShortsPlan`/`ShortExcerpt`, `EpisodeMetadata` (title candidates,
+  chapters from the arc, source attribution, synthetic-media disclosure required when generative
+  media is used), `EditorialStyleKit` (semantic palette #08111F/#F4F1E8/#47D7FF/#FFB547/#66E39A/
+  #FF5C6C, IBM Plex/STIX names as identity only — pinned font files stay Inter, motion rules incl.
+  6-12-frame transitions and photosensitive_safe as a Literal[True]).
+- **Lane code**: `deliverables/documentary.py` (deterministic campaign builder: one 16:9
+  long_video + N 9:16 short_videos linked excerpt_of; `plan_shorts` picks contiguous
+  claim-dense 20-60 s beat windows — whole-plan fallback when the long plan is shorter;
+  `short_story_plan` re-edits (never crops): fresh vertical StoryPlan, measured timings reset so
+  narration/alignment/captions regenerate per short, a REWRITTEN hook drops its claim links);
+  `style/editorial.py` (image style suffix + one-paragraph <200-word LTX-style video prompt
+  builder + 2-8 s clip bound); `models/copywriter.py:draft_hook` (local model, only when
+  `execution.local_copywriter`, verbatim hook otherwise); `stage_plan_story` writes
+  story/outline.json + story/shorts.json + story/shorts/<id>.plan.json for documentary-shaped
+  campaigns (non-documentary outputs byte-identical to before); CLI
+  `runs start-documentary --topic … --minutes 10 --shorts 3 [--dry-run]`.
+- **Genuine bug found and fixed**: the timeline compiler accumulated per-span round-up error on
+  narrated timelines (~1 frame late per beat vs the stem, which sits at absolute ms via adelay) —
+  probed at 2 frames by beat 4 of the demo, would blow past any tolerance on a 10-minute episode.
+  Narrated boundaries are now placed at ABSOLUTE frames (`round(measured_ms - t0)`),
+  COMPILER_VERSION 0.2.0; existing narrated-test expectations unchanged (they were frame-aligned).
+  New `qc/drift.py` (start/middle/end probes, >2 frames = blocker) is wired into
+  `stage_qc_deliverable` for narrated video; demo drift after the fix: [0, 0, 0].
+
+| What | Command | Result |
+| --- | --- | --- |
+| new unit tests | `uv run pytest tests/unit/test_documentary.py tests/unit/test_editorial_style.py tests/unit/test_drift_qc.py -q` | 20 passed (incl. 40-beat regression that fails on the old accumulating compiler) |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 248 passed (e2e demo passes with the drift gate wired) |
+| schemas | `just schemas` | 47 schemas / 168 defs; TS roundtrip 22 passed (new fixtures valid + bad-enum/unknown-field EpisodeOutline rejected). `schemas-check` still flags THIS TREE's uncommitted schema files (incl. pre-existing WorkspaceGraph/AnimationSpec/MusicTrack) — it is a commit-time gate, passes once committed |
+| lint/type | `uv run ruff check .` / `uv run pyright` | clean / 0 errors |
+| API suite | `uv run pytest tests/api -q` (compose) | 24 passed |
+| Temporal integration | `uv run pytest tests/integration/test_workspace_graph_run.py tests/integration/test_production_workflow.py -q` | 4 passed in 128 s (full run + worker-kill + graph e2e, with the changed stage_plan_story/qc) |
+| CLI | `content-factory runs start-documentary --topic "How undersea cables carry the internet" --dry-run` | campaign compiles: 4 deliverables (1 long + 3 shorts), DAG summary printed |
+
+Deliberately NOT added from the operator prompt, with reasons: Hatchet (ADR-0001 chose Temporal;
+one engine); LTX-2.5/SeedVR2/Chatterbox/ACE-Step/MMAudio catalog pins (pins must come from a
+registry/research pass, never memory — the showcase lane already runs Krea2 live; candidates
+listed in the prompt for a future research pass); IBM Plex/STIX font bundling (needs pinned font
+files; names recorded in the style kit only); asset_license.json (model-license policy table
+deferred by operator 2026-09-03; SourceRecord.rights_status already covers source rights);
+YouTube resumable upload (publishing stays behind existing gates; platform adapters need operator
+dev apps, same as Tier 2/3).
+Known limit, stated honestly: the audio/video branches still narrate the FIXTURE long plan
+(sample_story_plan) — the derived per-short plans are written to story/shorts/ but
+lock_script/synthesize_narration do not yet consume per-deliverable plans; that plumbing is the
+lane's next smallest task and pairs naturally with the image-sequence executors already queued in
+the resume instruction above.
+
+## Distributed placement + economics groundwork (commands actually run, 2026-09-05, session auto-content-1b)
+Operator supplied a "distributed AI video creation for local development" brief; gap analysis
+against this repo (Temporal stays per ADR-0001 — one workflow authority; cost ledger, resource
+leases, ModelGateway, ArtifactStore, backups/restore drills, gated publishing all already exist).
+The missing pieces landed contracts-first as the multi-node/economics groundwork (52 registered
+schemas now):
+- **NodeCapabilityReport** (`schemas/nodes.py`, `hardware/capability.py`): per-node identity +
+  HardwareInventory + volumes + encoder capabilities where LISTED ≠ VERIFIED (a real 4-frame
+  test encode decides) + probe results + explicit unknown_fields; CPU-only nodes are healthy,
+  just not GPU-admitted. CLI `content-factory node-report` probes THIS machine.
+- **ComputeOffer** (`schemas/offers.py`, `placement/supply.py`): normalized offers with actual
+  billing terms (min duration, rounding increment, storage/egress/request charges, prepaid,
+  TTL/staleness, availability confidence); interruption evidence is None-when-unknown, never
+  zero. Default source is a labeled fixture; live Vast/Runpod/Shadeform/Prime/SkyPilot/dstack
+  adapters are follow-ups behind the same protocol once the operator supplies accounts.
+- **Placement policy** (`schemas/placement.py`, `placement/economics.py`): expected_total_cost =
+  all-attempt compute (billed allocation with min+rounding applied once) + storage + transfers +
+  requests + licenses + retry; completion time estimated separately (queue delay unbilled);
+  wait_local is a first-class candidate; decisions persist considered+rejected with reasons and
+  atomically reserve budget via the existing CostLedger (typed pause_budget/pause_no_candidate,
+  never a silent downgrade); should_migrate demands savings beat switch costs.
+- **Storage roles** (`schemas/storage_plan.py`, `storage/volumes.py`): roles (scratch/model_cache
+  /durable_archive/artifact_exchange/cloud_cache/backup) bound to STABLE volume identities
+  (fs UUID via findmnt, st_dev fallback) with a marker-file write guard — absent root, swapped
+  disk at the same mount, read-only remount, and reserve breach all refuse writes and never
+  mkdir on the boot disk; backup may not share the archive's volume; StorageAccountant reserves
+  free space per VOLUME so co-located roles can't promise the same bytes twice; non-destructive
+  discovery (`parse_mounts`/`discover_volumes`), `safe_child` blocks traversal.
+- **Energy** (`schemas/energy.py`, `energy/meter.py`): trapezoid integration with sampling gaps
+  recorded (never invented energy), cumulative-counter resets handled, job+idle attribution that
+  MUST reconcile to the measured total (schema-enforced), all-in tariffs with component bounds;
+  wall-meter vs NVML kept as separate sources so GPU energy is never double-charged.
+- **Forecasting** (`forecasting/`): seasonal-naive + rolling-mean baselines, WAPE/MAE (WAPE is
+  None on all-zero actuals — not silently 0; MAPE avoided), rolling-origin backtest that is
+  leakage-free by construction. Display-only: forecasts never override caps/limits/allocations.
+  TimesFM 3.0 (noncommercial weight license per operator note, re-verify at adoption) and
+  Chronos-2 documented as optional adapters pending a pinned research pass — never from memory.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new unit suites | `uv run pytest tests/unit/test_placement_economics.py tests/unit/test_storage_volumes.py tests/unit/test_energy_meter.py tests/unit/test_forecasting.py tests/unit/test_node_capability.py -q` | 38 passed — incl. the brief's §6 cases: synthetic A/B ($0.432 vs $0.290 → B), local-wait wins w/o deadline, cold download flips winner, minimum rental flips winner, reliability excludes spot, VRAM feasibility, budget race can't double-reserve, no-migration rule |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 286 passed |
+| schemas | `just schemas` | 52 schemas / 184 defs; TS roundtrip 28 passed (new fixtures valid; bad purchase_mode + unknown-field ComputeOffer rejected) |
+| full recipe | `just test` | exit 0 (all Python + TS suites) |
+| lint/type | `just fmt && just lint && uv run pyright` | clean / 0 errors |
+| real machine | `uv run content-factory node-report` | vegaserv: RTX 3090 detected; **av1_nvenc LISTED but FAILED the real test encode** (the exact 3090-has-no-AV1-encode trap, caught not assumed); h264/hevc_nvenc + libx264/x265/svtav1 verified; 3 volumes discovered; roles cpu/composition/gpu |
+
+Deliberately NOT added, with reasons: SkyPilot/dstack/live marketplace adapters and any paid
+provisioning (need operator accounts + a spending policy; fixture source and dry-run-first per
+brief §7); a second workflow/compute authority (ADR-0001); multi-node worker enrollment/installer
+(the wiring path is per-node Temporal task queues keyed by NodeCapabilityReport — next task);
+ZFS/restic adoption (backup.sh + restore rehearsal exist; evaluate on a real second machine);
+TimesFM/Chronos weights (license + pinning need a research pass). Placement/energy/forecast
+records are not yet persisted to Postgres or shown in the web UI — contracts and engines are
+tested; persistence + dashboard panels are the follow-up.
+
+## AI video stack: verified, gap-fixed, wired (commands actually run, 2026-09-05, session auto-content-1b)
+Operator ran `~/Downloads/download_ai_video_stack.sh` (core mode) and named the core pipeline:
+LTX-2.5, HiDream-O1, SeedVR2, Cutie, Stable Audio 3 Small SFX, MMAudio, ACE-Step 1.5, WhisperX.
+New: `models/video_stack.py` — the tiered stack catalog (9 tiers, 21 entries, fallback roles)
+with an on-disk verifier (no network, no model loads; distinguishes ready/downloading/gated/
+repo-without-weights/manual-step/incompatible/won't-fit) + CLI `content-factory video-stack`
+[--json] + `scripts/download_video_stack_extras.sh` (every HF fetch pinned to the revision
+verified 2026-09-05 via the HF/GitHub APIs).
+Base-script defects found and fixed:
+- **MMAudio silently failed**: the script requests bare `mmaudio_large_44k_v2.pth` but the repo
+  stores `weights/mmaudio_large_44k_v2.pth` → models/mmaudio was empty. Extras fetches the
+  correct path pinned @ eb13a1a9 (3.9 GB now on disk).
+- **All three interpolation repos were cloned weightless** (GIMM-VFI/VFIMamba/Practical-RIFE
+  have no checkpoints in-repo). Extras fetches GSean/GIMM-VFI @ ab7735cd and MCG-NJU/VFIMamba
+  @ 9c6ded60. RIFE stays a MANUAL step: official weights are Google-Drive-only, HF mirrors are
+  0-download junk.
+- **facebook/sam3.1 is manually gated** — only LICENSE/README landed (52 KB). Cutie
+  (hkchengrex/Cutie + cutie-base-mega.pth from the sczhou/ProPainter v0.1.0 release) installed
+  as the ungated tracking/segmentation primary per the operator's core list.
+- **LTX-2.3 editing IC-LoRAs verified INCOMPATIBLE** with this stack: their model cards declare
+  base_model Lightricks/LTX-2.3; the stack's transformer is the LTX-2.5 22B distilled GGUF.
+- **JoyAI-Video-Edit won't fit** (its low-VRAM path targets 32 GB-class GPUs); ProPainter
+  (S-Lab NON-COMMERCIAL — flagged) + Cutie cover editing on the 3090.
+- **ACE-Step 1.5 official pack is turbo-only** — no XL/SFT artifact published anywhere on HF.
+- **LivePortrait weights moved** to KlingTeam/LivePortrait (KwaiVGI id is gone); pinned
+  @ 82a4fa67 (insightface dependency non-commercial — flagged).
+- 24 GB paths for Wan: QuantStack/Wan2.2-T2V-A14B-GGUF Q5_K_M pair @ 73eafba5 + Comfy-Org
+  umt5-fp8/VAE @ c4f60d30 (28 GB), and Wan-Animate-2 via community quant karcsiha Q5_K_M
+  @ 33dc8c56 (official repo is BF16-only, no 24 GB fit) — community quants flagged as such.
+Setup done: PySceneDetect pinned (`scenedetect==0.7.1`; it hard-depends on full opencv-python
+5.0.0.93 — no headless extra exists in 0.7.1); `.env` CF__COMFYUI__EXTRA_MODEL_ROOTS now
+includes `~/ai-video-stack/models` (inventory sees 29 stack files / 104 total); stray untracked
+`MMAudio/` clone at the repo root (mtime 11:01, predates this session's work) fenced from ruff
++ gitignored, NOT deleted — canonical clone lives in ~/ai-video-stack/repos.
+
+| What | Command | Result |
+| --- | --- | --- |
+| stack tests | `uv run pytest tests/unit/test_video_stack.py -q` | 8 passed (fake-root statuses incl. undersized files, .incomplete=downloading, gate vs repo-only, static verdicts) |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 294 passed |
+| lint/type | `just fmt && just lint && uv run pyright` | clean / 0 errors |
+| extras | `./scripts/download_video_stack_extras.sh all` | exit 0 (~42 GB: VFI ckpts, LivePortrait, ProPainter, Cutie, MMAudio fix, Wan T2V pair, Animate-2 quant) |
+| **live verify** | `uv run content-factory video-stack` | **16/21 READY** — the full core-eight pipeline is green; remaining: SAM 3.1 (Meta gate), IC-LoRAs (incompatible), JoyAI (won't fit), RIFE (manual weights), PrismAudio (weights fetch on first run) |
+
+Next smallest task for this lane: a ComfyWorkflowPackage for the LTX-2.5 GGUF path (transformer +
+gemma text encoder + both VAEs + spatial upscaler are on disk; the showcase lane's ComfyUI 0.33.0
+is the runtime) behind the existing allowlist, then `generate_video`'s live backend switch.
+
+## AI video: LTX-2.5 image-to-video lane + model consolidation (2026-09-05, showcase session)
+Built the real animated-video lane the operator asked for: `projects/showcase/bin/showcase_i2v.py`.
+Prompt-accurate **Krea2 keyframes → LTX-2.5 image-to-video** (directed motion, consistent scene) →
+Kokoro narration + rotated music bed + varied SFX + burned captions. Batch-phased (Krea2 loaded once
+for all keyframes, LTX once for all clips, then ffmpeg-only assemble). Proven end-to-end: `M000` =
+1080×1920, 28.75s, 10 scenes, real motion (warrior walks forward while the scene stays consistent).
+Notes for the LTX-2.5 GGUF path (complements this lane's "next smallest task" above):
+- Installed + patched **ComfyUI-GGUF** (added `gemma4` arch) for the LTX transformer/text-encoder GGUFs.
+- LTX fits the 24 GB card with offloading via ComfyUI `--cache-none --reserve-vram 1.5` (RAM-cache OOMs otherwise).
+- LTX **text-to-video is broken** in this GGUF packaging: the gemma4 GGUF ships no tokenizer metadata and
+  Comfy bundles no gemma tokenizer → constant conditioning. Worked around with **image-to-video** (content
+  from the Krea2 keyframe, LTX supplies motion); i2v prompt-follows fine.
+- `ComfyUIClient.run_package` (websocket output-collection) returns nothing under `--cache-none`; the lane
+  submits raw `/prompt`+`/history` instead.
+
+Model consolidation (operator: "put all AI models in one place"): all real model files consolidated under
+`~/ai-video-stack/models/` (family dirs); `~/models` and `~/git/ComfyUI/models` are now symlink farms
+pointing there (0 broken; verified a live Krea2 gen works through them). **Freed ~196 GB** (581G→385G,
+75%→50% on /home): removed `stable-audio-3-optimized` (129 GB, sm_90/sm_120/tflite/MLX/cpu-amx unusable on
+sm_86 + redundant onnx), verified byte-identical duplicates (minimax_h3, `~/models/LTX-2.5`, qwen-ridge),
+Trash, and the stray repo-root MMAudio clone. `~/.ollama` and `~/.openclaw` left untouched (coordinated
+with the video-stack session; acceptance = `content-factory video-stack` ≥16/21 + `model-check` green).
+
+## Repo review + fixes (commands actually run, 2026-09-05, session auto-content-1b)
+Full working-tree code review (high effort, fixes applied) over all three sessions' uncommitted
+work. Ten confirmed findings fixed, all test-verified:
+1. timeline/compiler.py: narrated durations were still clamped to min_scene_ms after the
+   absolute-boundary change — a beat gap under 1200 ms pushed every later cue off the voice and
+   the new av_drift QC failed the run as a blocker. Voice is the clock now: narrated duration =
+   max(1, boundary − cursor); min_scene_ms stays a planning guard on the silent path only.
+   Independently reproduced pre/post: 950 ms gap → drift [0,0,0], QC green.
+2-4. workspace/compile.py: typed refusals for shared-stage-depends-on-branch-stage edges and for
+   links from muted/bypassed producers into executing nodes (both previously compiled ok=true
+   then crashed post-approval); carousel sinks now compile as CarouselSpec instead of falling
+   through to short_video (stage_compile_cards KeyError).
+5-6. Workspace editor: per-graph debounced saves (editing one graph no longer cancels another's
+   pending PUT; server-doc adoption merges instead of clobbering local-only graphs);
+   parseGraph now mirrors the Pydantic limits (64/200/5000, width≥1, self-link/cycle rejection),
+   note/name inputs got maxLength, and a failed write-behind PUT surfaces as a visible
+   "Not saved to the server" alert instead of a silent 422 loop.
+7. cli reset-password: `--password ""` no longer installs a random never-echoed secret.
+8. storage/volumes.py: /proc/mounts octal unescape no longer mojibakes UTF-8 mount paths
+   (unicode_escape → targeted \040|\011|\012|\134 decode); non-ASCII volumes discoverable again.
+9. Justfile: `set dotenv-load := true` reverted — it leaked the operator's real .env
+   (DATABASE_URL, VAULT_MASTER_KEY, …) into `just test`, violating the no-keys core-suite rule;
+   recipes needing .env already source it explicitly.
+10. stages.py animation: ffmpeg via the shared wrapper (-nostdin + timeout) and manim got a
+   timeout — a hung encode can no longer pin the activity thread forever.
+Plus confirmed cleanups: machine-independent music selection hashes, dag_edges mtime cache off
+the event loop, pipeline-canvas honors empty edge lists, queryKeys registry, download jobs
+require non-zero size, password_min_length default pinned by a test. The edited (uncommitted but
+already-applied) workspace_graphs migration gained the model's missing workspace_id FK
+(ondelete=CASCADE) + index; the live dev DB was brought to match by direct DDL after an orphan
+check (0 orphans) because a downgrade would drop the operator's saved graphs.
+
+| What | Command | Result |
+| --- | --- | --- |
+| gates | `just fmt && just lint && uv run pyright` | clean / 0 errors |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 294 passed |
+| frontend | `pnpm -r test` | all 9 packages green (222 tests: web 75, web-ui 32, node-graph 29, schema-ts 28, content-ui 21, canvas 13, video-ui 10, editor-core 8, renderer 6) |
+| API | `uv run pytest tests/api -q` (compose) | 24 passed |
+| Temporal | `uv run pytest tests/integration/test_workspace_graph_run.py tests/integration/test_production_workflow.py -q` | 4 passed (~2:49; full run, worker-kill, graph e2e on the fixed compile) |
+| drift repro | synthetic 950 ms-gap plan → compile → check_av_drift | drift [0,0,0], passed |
+| migration | manual FK/index DDL on dev DB → `uv run alembic check` | "No new upgrade operations detected" |
+
+Reviewed-but-deferred (need a human/design decision, listed honestly): live ComfyUI
+video.generate backend switch (docstring now states mock-only truth), MCP/REST run_graph service
+extraction + MCP audit records, sample_campaign() as the workspace-run template, offers.py
+billing-terms wording vs the "no billing code" rule (it models CLOUD price terms, not customer
+billing — flagged for the operator to confirm), and a dead-code sweep below the severity cut.
+
+### Post-consolidation follow-ups (2026-09-05, later, auto-content-1b)
+Per the consolidation session's heads-up: CF__COMFYUI__EXTRA_MODEL_ROOTS trimmed to just
+`~/ai-video-stack/models` (~/models is now a symlink farm into it — the old three-root list
+double-counted; inventory now 82 files, deduplicated); RIFE 4.25 weights landed in
+repos/Practical-RIFE/train_log/ so the catalog checks that real location (`repo_globs`) and
+manual_step now clears once the manual step is done — `content-factory video-stack` is
+**17/21 READY** (was 16). HiDream catalog path repointed to the canonical
+models/hidream-o1/. Verified: `uv run pytest tests/unit/test_video_stack.py -q` → 9 passed;
+ruff/pyright clean.
+
+### Review follow-through + installed-inventory audit (2026-09-05, later, auto-content-1b)
+The review fork ran one more cleanup wave (dedup of the ffprobe helper into video_generate.py
+etc.); independently re-verified after it: `uv run pytest -m "not integration and not gpu and not
+live" -q` → **295 passed**; ruff + pyright clean. A disk/code inventory audit (subagent, findings
+verified on disk) then established:
+- `~/ai-video-stack/models` is the single physical store (241 GB, 23 families); `~/models` and
+  `~/git/ComfyUI/models` are symlink farms into it; ~196 GB freed by the consolidation.
+- **Repo hygiene fixed now:** removed the empty stray dirs `vae/` and `latent_upscale_models/`
+  (a 2026-09-04 download that landed in the wrong cwd) and the empty, unreferenced
+  `skills/fixture/noop-echo/`.
+- **Surfaced, operator decision:** `stable-audio-3/` at the repo root is an untracked duplicate
+  clone (487 files, 116 MB, same commit 779434a as `~/ai-video-stack/repos/stable-audio-3`,
+  zero references) — same class of stray as the removed MMAudio clone; safe to delete.
+- **Must be committed with the rest:** `fixtures/music/` (calm_bed_a.wav + sha-pinned
+  tracks.json) is untracked yet `stage_select_music` depends on it — a clean checkout would fail.
+- **Design gaps, stated honestly:** no skill dir carries the signed manifest.json the
+  SkillRegistry requires (skills are invoked by path, not discovered); `stage_synthesize_narration`
+  hardcodes MockTTS although KokoroTTS + its 5.7 GB venv exist (no TTS provider switch, unlike
+  `animation.executor`); `stage_generate_video` hardcodes the mock although ComfyUIVideoBackend +
+  the MiniMax H3 package + weights are all present; the HiDream backend has no stage caller;
+  ~160 GB of on-disk weights (krea2, minimax-h3/music3, breeze-tts2, qwen-fable, seedvr2-7b,
+  foleycrafter, and the catalogued-but-uninvoked Wan/ACE/SFX/VFI families) are referenced only by
+  the loose `projects/showcase/` scripts or by nothing. Next smallest task unchanged: the LTX-2.5
+  ComfyWorkflowPackage + a `VideoSettings.backend` switch, then a TTS provider switch (Kokoro).
+- Resolved (operator-approved, 2026-09-05): deleted the duplicate repo-root `stable-audio-3/`
+  clone (same commit 779434a as the canonical `~/ai-video-stack/repos/stable-audio-3`); committed
+  `fixtures/music/` (9f4af66) so `stage_select_music`'s sha-pinned library survives a clean
+  checkout. The remaining uncommitted tree (all three sessions' work) still needs its commit.
+
+## Model-role decisions (operator, 2026-09-05, session auto-content-1b)
+Full inventory audit of `~/ai-video-stack/models` (241 GB, 19 weight families) + Ollama (3 models)
+against what the code actually invokes. Finding: every generative stage in `workflows/stages.py`
+is still mock/fixture; real generation lives only in `projects/showcase/bin`. The operator chose
+one model per role; these are binding for the wiring work that follows.
+
+| Role | Decision | Losers / notes |
+|---|---|---|
+| Video generation | **LTX-2.5 22B distilled Q5 GGUF, image-to-video** — first real `ComfyWorkflowPackage` + `VideoSettings.backend` switch | MiniMax H3 dropped (54 GB > VRAM+RAM, never produced output); Wan 2.2 T2V kept on disk, not wired |
+| Keyframes / stills | **HiDream-O1 for anchors + reference edits; Krea2 Turbo + LoRAs for styled keyframes**, phase-sequenced | Krea2 must be added to `models/video_stack.py`; Qwen-Image-Edit-2509 (ADR pose path) still not on disk |
+| HiDream runtime | **Keep the own server** (`skills/image/hidream`, bf16 shards, torch 2.8 + flash-attn, :8801) | ADR-0006's fp8 ComfyUI checkpoint path not pursued |
+| Narration | **Evaluate Breeze-TTS2 first** (7.2 GB `BreezeForConditionalGeneration`, unreferenced, licence + timestamps unknown) before setting the default; Kokoro is the fallback candidate | `stage_synthesize_narration` still hardcodes MockTTS until the evaluation lands |
+| SFX / Foley | **MMAudio large 44k v2 primary** (video-synced), **Stable Audio 3 Small SFX for text-only SFX** | catalog roles flip (Stable Audio was primary, MMAudio fallback); PrismAudio/FoleyCrafter parked |
+| Music | **Evaluate ACE-Step 1.5 turbo vs MiniMax Music3 GGUF**, then wire the winner behind `stage_select_music` with the fixtures library as fallback | Music3 has no runtime yet; ACE-Step venv exists (torch 2.10) |
+| Upscale / restore | **SeedVR2 7B int8** (8.3 GB) | catalog entry moves 3B → 7B; the `seedvr2_videoupscaler` node repo must be installed under ComfyUI custom_nodes |
+| Video editing | **Cutie (tracking/masks) + ProPainter (inpaint)**; ProPainter's S-Lab non-commercial licence accepted for this private deployment | SAM 3.1 stays gated; SeC, JoyAI, IC-LoRAs out |
+| Interpolation | **RIFE 4.25 now** (only interpolator with a venv), **GIMM-VFI as quality tier** for approved finals | VFIMamba parked |
+| Characters | **Not now**; Wan-Animate-2 + LivePortrait weights kept, unwired | Wan-Animate-2 needs clip_vision_h (absent); LivePortrait has no code + insightface non-commercial |
+| Text / LLM | **qwen38-ridge stays primary; Ollama Qwen3.6-27B-Heretic Q4_K_M added as a quality tier** in `models/catalog.py` | the loose Qwen3.8-27B "Fable" GGUF (18 GB) stays unimported |
+| Dead weight | **Delete MiniMax H3 only** (54 GB) — NOT yet executed; queued as step 1 of the wiring work | Fable GGUF, SeedVR2 3B, Breeze, music loser kept pending evaluation |
+
+Defects surfaced by the audit (fix during wiring):
+- `~/git/ComfyUI/models/vae/minimax_h3_audio_vae_fp32(1).safetensors` — stray "(1)" suffix; moot once MiniMax is deleted.
+- LTX latent spatial upscaler is symlinked into `upscale_models/` but `LatentUpscaleModelLoader` reads `latent_upscale_models/` (empty) → move the link.
+- `krea2/loras/Krea2-realism-V1.safetensors` (1.6 GB) not linked into ComfyUI; Wan 2.2, Wan-Animate-2, SeedVR2, HiDream not linked at all (only krea2/minimax/ltx are).
+- Six torch builds across envs (ComfyUI 2.12 cu130, Kokoro 2.14 cu130, HiDream 2.8 cu128, ACE-Step 2.10, SeedVR2 node 2.11, MMAudio 2.7.1 cu118) — per-skill subprocess runners, as ADR-0004 intends.
+- LTX needs `--cache-none --reserve-vram 1.5`, which breaks `ComfyUIClient.run_package` websocket collection; the LTX package needs the `/prompt`+`/history` polling path the showcase lane already uses.
+- Chatterbox Turbo (another project's systemd unit, :8003) holds ~0.7 GB VRAM permanently; not ours, but it is in every VRAM budget.
+- `docs/licensing.md` lists 9 models; ~20 on disk are absent (LTX-2.5, Krea2, Wan, SeedVR2, ACE-Step, Stable Audio, MMAudio, Cutie, ProPainter, GIMM-VFI, Breeze, …).
+- Neither `whisperx` nor `faster_whisper` is installed in any env; ADR-0004's alignment fallback is repo-only.
+- `~/git/ai_models/image_generators/HiDream-O1-Image` and `~/ai-video-stack/repos/hidream-o1-code` are the same commit (2c2d29f); the skill server hardcodes the former.
+
+Next smallest task (in order): (1) delete MiniMax H3 weights + template + symlinks on operator go;
+(2) LTX-2.5 i2v `ComfyWorkflowPackage` + `VideoSettings.backend` + polling client path;
+(3) TTS provider switch with Breeze-TTS2 evaluation pack vs Kokoro; (4) catalog updates
+(Krea2, SeedVR2 7B, MMAudio/Stable Audio roles, Heretic tier) + fix the symlinks above.
+
+### MiniMax H3 removed + Breeze-TTS2 identified (commands actually run, 2026-09-05, later, auto-content-1b)
+Operator go on the queued deletion. Removed `~/ai-video-stack/models/minimax-h3/` (51 GB) plus its
+five symlinks (`~/models/MiniMax-H3`, ComfyUI diffusion_models/text_encoders/vae ×4 incl. the
+stray `(1)` one); `find -xtype l` over both symlink farms → 0 broken links. `minimax-music3` kept
+(music evaluation still open). Code retargeted to the chosen LTX-2.5 i2v path instead of leaving a
+hole: workspace node `generate_video` is now "Image to Video (LTX-2.5)" with the real on-disk GGUF/
+VAE filenames and LTX size table; template `image-to-video-ltx` (was `-minimax`) lists the four
+LTX files with pinned HF URLs; msw inventory + tests follow; Python fixture
+`sample_ltx_i2v_package` (package_id `ltx-2.5.i2v`, 16 nodes mirroring the proven
+`showcase_i2v.ltx_i2v` graph, 6 bound params, 3 required models, ComfyUI-GGUF pinned @ 6ea2651
+with the local gemma4 patch noted) replaces `sample_minimax_i2v_package`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| delete | `rm -rf ~/ai-video-stack/models/minimax-h3` + 5 symlinks | gone; 0 dangling links; `df /home` 21% used |
+| web | `pnpm test` / `pnpm typecheck` (apps/web) | 75 passed / 18 files; 0 TS errors |
+| python | `uv run pytest tests/unit/test_new_stages.py -q` | 7 passed (LTX fixture valid + bound) |
+| python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 295 passed, 32 deselected |
+| lint/type | `ruff check`, `ruff format`, `pyright` on touched files | clean / 0 errors |
+
+**Breeze-TTS2 — what it is and what it needs (web-verified 2026-09-05):**
+- `~/ai-video-stack/models/breeze-tts2` = **BreezeBlue/Breeze-TTS-2** (Resonia Inc.), 3B params,
+  released 2026-08-25; on-disk revision `799624c` **is HF main** (lastModified 2026-09-02), all 17
+  files present with matching sizes. **No further model downloads**: codec (Mimi-style) + audio
+  tokenizer (Qwen3-TTS 12 Hz, Apache-2.0) are inside the checkpoint.
+- Needs (not on disk): inference code `github.com/breezeblue-ai/breeze-tts` (Apache-2.0, latest
+  commit 43e2ea1 2026-09-04) in its own uv env: `torch==2.9.1 torchaudio==2.9.1 qwen-tts==0.1.1
+  transformers==4.57.3 numpy>=2 soundfile>=0.13 fastapi uvicorn python-multipart` (a seventh torch
+  build on this host). flash-attn only for the Docker/`--fast-all` path; eager needs none.
+  VRAM ≈7.7 GiB eager, 14.4 GiB fast.
+- **No word/token timestamps** in the CLI or API (streaming 24 kHz PCM only) → ADR-0004 forced
+  alignment becomes mandatory: WhisperX 3.8.6 (`torch~=2.8.0`, own env) or faster-whisper 1.2.1
+  (CTranslate2, no torch; `Systran/faster-whisper-base.en` already in the HF cache). Neither is
+  installed today.
+- Languages: the open-weight card says **English + Chinese only**; the 50-language claim is the
+  hosted product. No Swedish either way (Kokoro has none either).
+- **Licence blocker:** BreezeBlue Research and Non-Commercial License v1.1 (2026-09-01) covers the
+  weights AND "self-hosted outputs"; commercial output rights exist only via their paid API.
+  Stricter than ProPainter (tool-only). **Operator ruled 2026-09-05: "not commercial, local test
+  and research" — accepted.** Evaluation proceeds; the restriction is recorded in the skill's
+  pyproject description and must be revisited before any published or client-facing use.
+
+### Breeze-TTS2 evaluation, round 1 (commands actually run, 2026-09-05, later, auto-content-1b)
+Operator ruled the non-commercial licence acceptable ("local test and research"). Set up
+`skills/audio/breeze/` (pyproject with the upstream pins verbatim, `run.py` with the Kokoro
+stdin→one-JSON-line contract, README), inference code cloned to
+`~/ai-video-stack/repos/breeze-tts` @ 43e2ea1; `uv sync` → torch 2.9.1+cu128, transformers 4.57.3,
+qwen-tts 0.1.1 (CUDA available). Samples + JSON in `~/ai-video-stack/eval/tts-2026-09-05/`
+(same 38-word English narration text for all three; not in the repo).
+
+| Sample | Audio | Load | TTFA | Generate | RTF | Peak VRAM | Native word timings | Loudness / peak |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Kokoro af_heart (baseline) | 12.30 s | ≈6.7 s wall incl. load, CPU-class | — | — | ≪1 | n/a | **41 tokens** | −25.3 LUFS / −4.6 dBFS |
+| Breeze voice-design, female narrator, cfg 4 | 13.92 s | 4.55 s | 2270 ms | 17.5 s | **1.26** | 7969 MiB | none | −22.4 LUFS / −4.1 dBFS |
+| Breeze voice-design, male narrator, cfg 4 | 14.00 s | 2.29 s | 1348 ms | 16.1 s | **1.15** | 7969 MiB | none | −20.7 LUFS / −3.7 dBFS |
+
+Intelligibility + alignment path (faster-whisper 1.2.1 `base.en`, CPU int8, ~0.7 s per clip,
+model already in the HF cache): WER vs the source text Kokoro 0.053, Breeze-f 0.026, Breeze-m
+0.026 (the residual "errors" are the ASR's own spellings: harbor/harbour, key/quay). Calibration
+of ASR-derived word starts against Kokoro's native timestamps: **mean |Δ| 116 ms, p90 235 ms,
+max 343 ms** on 36/38 matched words — usable for burned captions, coarser than Kokoro's native
+token timing that the timeline compiler currently trusts.
+
+Findings:
+- Breeze runs on this card in eager mode at ~8 GB and is **slower than real time (RTF 1.15–1.26)**;
+  the advertised sub-40 ms TTFA / 0.32 RTF needs the `--fast-all` CUDA-graph path (≈14.4 GiB,
+  long warmup; not tried yet) — it would still coexist with nothing heavy on the GPU.
+- Instruction-following works: two clearly different narrators from text descriptions alone, no
+  reference audio. Kokoro has fixed voices only.
+- No timestamps → a `BreezeTTS` executor must run forced alignment (ADR-0004 order: WhisperX,
+  else faster-whisper) and mark `timing_source=alignment`; the 116 ms mean error is the cost.
+- Harmless noise: torchaudio probes for `sox` (not installed) and the runtime prints diagnostics
+  to stdout — `run.py` now redirects those to stderr so stdout is exactly one JSON line (verified).
+- `skills/audio/breeze/uv.lock` left untracked, matching the Kokoro skill convention.
+
+| What | Command | Result |
+| --- | --- | --- |
+| env | `cd skills/audio/breeze && uv sync` | ok; `torch 2.9.1+cu128 cuda 12.8 available True` |
+| synth ×2 | `uv run --project skills/audio/breeze python skills/audio/breeze/run.py --instruction … --cfg-scale 4 < text.txt` | exit 0 both; wall 26.0 s / 21.9 s; JSON metrics above |
+| baseline | `uv run --project skills/audio/kokoro python skills/audio/kokoro/run.py --voice af_heart < text.txt` | 12.3 s, 41 tokens |
+| align | `uv run --with faster-whisper==1.2.1 python …` (CPU int8, `HF_HUB_OFFLINE=1`) | 38/38 words each; WER + Δ figures above |
+| runner contract | guarded `run.py` re-run, stdout piped to `json.load` | exactly 1 line, parses |
+| lint | `uv run ruff check skills/audio/breeze/run.py && ruff format --check` | clean |
+
+Open before Breeze can be the default voice: (a) listen test by the operator (files above);
+(b) try `--fast-all` for RTF; (c) decide whether 116 ms-class alignment timing is acceptable for
+the narrated timeline, or keep Kokoro for timing-critical deliverables and Breeze for voice
+design; (d) the `VoiceSettings.provider` switch + `BreezeTTS` executor + alignment stage.
+
+### Model store moved to /mnt/fast/models (other session, 2026-09-05, later) — verifier repointed
+While this session worked, the operator's other session moved every weight family to
+`/mnt/fast/models/<short>` (fast NVMe), deleted `~/ai-video-stack/models/`, and made
+`~/models/<DisplayName>` the human-readable symlink index (see `~/ai-video-stack/MODELS-MOVED.md`).
+It repointed `.env`/`.env.example` (`CF__COMFYUI__EXTRA_MODEL_ROOTS='["/mnt/fast/models"]'`), the
+ComfyUI symlink farm, and `skills/audio/breeze/run.py`'s default model path. Every
+`~/ai-video-stack/models/...` path written in today's sections above now lives under
+`/mnt/fast/models/...` (same short names); the MiniMax H3 deletion earlier today went through the
+old symlink and removed `/mnt/fast/models/minimax-h3` — confirmed absent.
+Fixed here: `content-factory video-stack` had silently dropped to 4/21 READY (it assumed
+`<root>/models`). `models/video_stack.py` gained `verify_video_stack(..., models_root=)` +
+`resolve_models_root()` (explicit `--models`/`$AI_VIDEO_MODELS` → `<root>/models` if present →
+first existing configured inventory root); the CLI prints the weights path it scanned.
+Noted, not touched: `/mnt/fast/models/LTX-2.5/diffusion_models/ltx-2.5-22b-dev-transformer-comfy-int8-convrot.safetensors`
+(21.5 GB, the **dev** 22B in Comfy int8 — a different variant from the distilled Q5 GGUF in
+`ltx25/`, no download process running) and a new `ltx25/text_encoders/gemma_tokenizer.model`
+(another session's work; if ComfyUI-GGUF can consume it, the LTX text-to-video limitation may be
+lifted — unverified). The two long-running `content-factory mcp` processes still hold the old
+inventory root from startup and need a restart to scan `/mnt/fast/models`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| verifier tests | `uv run pytest tests/unit/test_video_stack.py -q` | 10 passed (new: override + resolver fallback) |
+| live | `set -a; . ./.env; set +a; uv run content-factory video-stack` | `weights: /mnt/fast/models` — **17/21 READY** again (PrismAudio no weights, SAM 3.1 gated, IC-LoRAs incompatible, JoyAI won't fit) |
+| lint/type | ruff + pyright on video_stack.py, cli/main.py, test | clean / 0 errors |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 296 passed, 32 deselected |
+
+### TTS voices, round 2: 15 Kokoro voices + 17 Breeze voices (commands actually run, 2026-09-05, later, auto-content-1b)
+Operator asked for more voices from each engine. Web-verified inventories: **Kokoro-82M ships 54 fixed
+voices in 9 languages** (hexgrad/Kokoro-82M VOICES.md; en-US 20, en-GB 8, ja 5, zh 8, es 3, fr 1,
+hi 4, it 2, pt-BR 3; grades A…F+; no Swedish). **Breeze TTS 2 has no voice list**: voices are
+designed from a description (age, gender, accent, pitch, rate, energy, timbre, style — the
+attribute axes of BreezeBlue's own TTS-Voice-Design-Benchmark, which includes "Swedish-accented
+English", "British RP", "Australian"), cloned from reference audio + exact transcript, or a clone
+directed by an instruction. Same 38-word text for all; `~/ai-video-stack/eval/tts-2026-09-05/`
+now holds 34 wavs + JSON + `index.html` (audio players, len/gen/VRAM/loudness/WER per sample;
+`make_index.py`, `fw_check.py` regenerate it).
+
+| Engine | Samples | Time per sample | Intelligibility (faster-whisper WER; 0.026 = ASR floor) |
+| --- | --- | --- | --- |
+| Kokoro | 15 voices: af_heart/bella/nicole/sarah/kore/aoede, am_michael/fenrir/puck/echo, bf_emma/isabella, bm_george/fable/lewis (`--lang gb` → British phonemes) | ~5–6 s wall each incl. load | all 15 at the floor (0.026–0.053); af_nicole is a slow whisper (19.7 s for the text) |
+| Breeze | 15 designs (presenter, storyteller, British, RP, Swedish-accented, Australian, late-night, trailer, teacher, corporate, husky, scholar, synthetic, heroic, vocal-events) + 1 clone (ref = Kokoro af_heart) + 1 directed clone | 15–26 s wall each; RTF 1.11–1.26; 7.8–8.1 GB | 12/17 at the floor; style costs words: gravelly storyteller 0.158 (dropped the last word), soft late-night 0.105 ("harbour wakes" → "hop awakes"), events sample 0.080 |
+
+Findings: (1) Breeze design prompts steer accent/age/energy audibly from text alone and the clone
+path works from a 12 s reference; (2) low-energy/whispery/gravelly designs are the ones the ASR
+stumbles on — also the ones forced alignment will time worst; (3) `(sigh)`/`(laugh)` events render
+without breaking the words; (4) Kokoro's grade-D voices still transcribe cleanly — the grade is
+about naturalness, not intelligibility. Listening verdict is the operator's (index.html).
+
+### AI stack consolidated into the repo (commands actually run, 2026-09-05, evening, home session)
+Operator: "everything that has to do with ~/git/auto_content should be in that folder". Everything
+stack-related that lived loose in `~` now lives here, git-ignored (`/ai-video-stack/`, `/models/`):
+
+| Was | Now |
+| --- | --- |
+| `~/ai-video-stack/` (27 GB: `repos/` 21 clones, `venvs/`, `eval/`, `my-video/`, `remotion-video/`) | `ai-video-stack/` (same-filesystem rename) |
+| `~/models/` (18 display-name symlinks → `/mnt/fast/models/<short>`) | `models/` |
+| `~/setup-model-storage.sh`, `~/model-move.log`, `~/model-swap.log` | `ai-video-stack/ops/` |
+| `~/Downloads/download_ai_video_stack.sh` (the base downloader the extras script supplements) | `scripts/download_ai_video_stack.sh` |
+| `~/git/whisperX`, `~/git/ai_models/image_generators/HiDream-O1-Image` (pointer symlinks into the stack) | removed; targets are `ai-video-stack/repos/{whisperX,hidream-o1-code}` |
+
+Weights did not move: `/mnt/fast/models` stays the store; `CF__COMFYUI__EXTRA_MODEL_ROOTS`, the
+ComfyUI symlink farm, `repos/ACE-Step-1.5/checkpoints` and `repos/MMAudio/ext_weights` were already
+absolute into it. Six venvs inside the stack (`venvs/{download,scenedetect}`, `repos/{ACE-Step-1.5,
+MMAudio,seedvr2_videoupscaler,Practical-RIFE}/.venv`) had absolute shebangs / `pyvenv.cfg` /
+editable `.pth` / `direct_url.json` under the old path (177 files) — rewritten with sed; the download
+venv's shebangs still pointed at the long-gone `~/ai-video-stack/.download-venv` and are fixed too.
+Code defaults repointed: `video_stack.default_stack_root()` (`$AI_VIDEO_ROOT` else
+`<repo>/ai-video-stack`, used by the `video-stack` CLI), both download scripts (`<repo>/ai-video-stack`,
+weights → `$AI_VIDEO_MODELS` / `/mnt/fast/models` / `<root>/models`, venv → `venvs/download`),
+`skills/audio/breeze/run.py` and `skills/image/hidream/server.py` (`<repo>/ai-video-stack/repos/…`,
+`<repo>/models/…` via `Path(__file__).parents[3]`), READMEs, `templates.ts` HiDream setup hint,
+`.env.example`, `docs/setup.md`. Paths in the dated sections above are left as written (history);
+read `~/ai-video-stack/…` as `ai-video-stack/…` and `~/models/…` as `models/…`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| venv smoke | `venvs/download/bin/hf version`, `venvs/scenedetect/bin/scenedetect version`, `repos/*/.venv/bin/python -c 'import sys; print(sys.prefix)'` (MMAudio also `import mmaudio`) | hf 1.30.0, PySceneDetect 0.7.1, all four prefixes resolve to the new location |
+| broken links | `find ai-video-stack models -xtype l` (node_modules pruned) | none |
+| lint/type | ruff format+check, pyright on video_stack.py, cli/main.py, test, both skills, generate_holding_hands.py | clean / 0 errors |
+| verifier tests | `uv run pytest tests/unit/test_video_stack.py -q` | 11 passed (new: `default_stack_root` env-then-repo) |
+| live | `set -a; . ./.env; set +a; uv run content-factory video-stack` | `at …/auto_content/ai-video-stack (weights: /mnt/fast/models)` — **17/21 READY**, unchanged |
+| skill defaults | breeze `DEFAULT_REPO/breeze_infer` + `DEFAULT_MODEL/config.json`; hidream repo dir + `models/HiDream-O1-Image-Dev/model-00001-of-00008.safetensors` | all resolve |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 297 passed, 32 deselected |
+| web | `pnpm --filter @content-factory/web exec vitest run test/templates.test.tsx` | 6 passed |
+| ignore | `git check-ignore -v ai-video-stack models` | both matched by the new `.gitignore` lines; neither shows in `git status` |
+
+Not done: nothing committed (working tree already carried a large uncommitted batch). The two
+long-running `content-factory mcp` processes predate the move and still need a restart to pick up
+any path change. Left alone as unrelated: `~/fix-esp.sh` (boot ESP fix), `~/package-lock.json`
+(empty stray lockfile from an `npm install` in `~`), `~/git/ComfyUI`, `~/git/sam2`, `~/git/comfy-cli`.
+
+### Layout sorted ComfyUI-style (commands actually run, 2026-09-05, later that evening, home session)
+Operator: "sort the folders so they look better, more like the ~/git/ComfyUI layout-ish". The nested
+`ai-video-stack/` from the previous section is gone; its contents are flat, purpose-named top-level
+dirs (all git-ignored), and the weight index is sorted into category folders like ComfyUI's `models/`:
+
+| Was (previous section) | Now |
+| --- | --- |
+| `ai-video-stack/repos/` (21 upstream clones) | `external/` |
+| `ai-video-stack/venvs/{download,scenedetect}` | `.venvs/{download,scenedetect}` |
+| `ai-video-stack/eval/`, top-level `out/` (empty; `image_sequences.output_root`) | `output/eval/`, `output/` (settings default is now `"output"`) |
+| `ai-video-stack/{my-video,remotion-video}` (two pristine `create-video` scaffolds, 2026-07-31) | `sandbox/remotion/` |
+| `ai-video-stack/ops/` (setup-model-storage.sh + move logs) | `scripts/host/` |
+| `ai-video-stack/MODELS-MOVED.md` | folded into `docs/setup.md` "Local AI stack" |
+| `models/<DisplayName>` (18 flat symlinks) | `models/{video_generation,image_generation,video_editing,characters,restoration,frame_interpolation,sound_effects,music,speech,text}/<DisplayName>` |
+
+Layout contract change: the stack root IS the repo root (`default_stack_root()` = `$AI_VIDEO_ROOT`
+else `REPO_ROOT`); checkouts are `<root>/external` (`video_stack.EXTERNAL_DIR`); `resolve_models_root`
+now prefers the configured store over `<root>/models` because the latter is only the symlink index.
+Both download scripts default `REPO_DIR=$ROOT/external`, `VENV=$ROOT/.venvs/download`. Skill defaults:
+breeze → `external/breeze-tts` + `models/speech/Breeze-TTS-2`; hidream → `external/hidream-o1-code`
++ `models/image_generation/HiDream-O1-Image-Dev` (README, docstrings, `templates.ts` hint updated).
+CLAUDE.md/AGENTS.md "Layout" lists the new dirs. Venv shebangs/pyvenv.cfg/.pth rewritten again for
+the new paths. Noted: `.venvs/` is redundant (`hf` is at `~/.local/bin/hf`, scenedetect is in the
+project `.venv`) and `sandbox/remotion/*` is throwaway — both kept; deleting is the operator's call.
+
+| What | Command | Result |
+| --- | --- | --- |
+| lint/type | ruff format+check, pyright on video_stack.py, cli/main.py, config/settings.py, test, both skills, generate_holding_hands.py | clean / 0 errors |
+| verifier + sequences | `uv run pytest tests/unit/test_video_stack.py tests/api/test_sequences_review.py -q` | 11 passed, 2 skipped (pre-existing skips) |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | 315 passed, 32 deselected |
+| web | `pnpm --filter @content-factory/web exec vitest run test/templates.test.tsx` | 6 passed |
+| live | `set -a; . ./.env; set +a; uv run content-factory video-stack` | `at /home/vega/git/auto_content (weights: /mnt/fast/models)` — **17/21 READY**, unchanged |
+| venv smoke | `.venvs/download/bin/hf version`, `.venvs/scenedetect/bin/scenedetect version`, `external/{ACE-Step-1.5,MMAudio,seedvr2_videoupscaler,Practical-RIFE}/.venv/bin/python -c 'import sys; print(sys.prefix)'` (+ `import mmaudio`) | all resolve to the new paths |
+| skill defaults | `external/breeze-tts/breeze_infer`, `models/speech/Breeze-TTS-2/config.json`, `external/hidream-o1-code`, `models/image_generation/HiDream-O1-Image-Dev/model-00001-of-00008.safetensors` | all present |
+| broken links | `find external .venvs models output sandbox -xtype l` (node_modules pruned) | none |
+| ignore | `git check-ignore -v external .venvs models output sandbox` | all five matched; none in `git status` |
+| stale refs | grep for `ai-video-stack`, `~/models`, `venvs/`, `out/holding`, old index paths across tracked files | only the dated history above |
+
+### Blender scene-control layer, phases 0–2 (commands actually run, 2026-09-05, evening, vega-93 session)
+Operator approved the 3D scene-control plan (`~/.claude/plans/this-is-a-way-staged-hellman.md`):
+script → shot plan → Blender control passes → HiDream anchors → LTX keyframe guides → post chain.
+This section covers the contracts, the stages and the standalone Blender skill; HiDream/LTX
+integration, character assets and the post chain follow in later sections.
+
+**Phase 0 — contracts.** `schemas/shots.py` (new): `ShotSpec`/`ShotPlan` (camera keyframes with
+look-at or Euler, characters with library/clip/bone poses, props, environment, lighting, render
+passes, `anchor_frames`), and the compiler-neutral output `ControlBundle` (`ControlTrack` per
+`ControlKind`, `SubjectTrack` with segmentation index + per-frame layout/pose, `CameraFrame`).
+`ControlKind` gained `rough_rgb, depth, depth16, depth_exr, normals, segmentation, canny`;
+`ControlAsset` gained `compiler` + `shot_id` (defaults keep old payloads valid). `control_compile.py`:
+`BUILTIN_KINDS` (pose_skeleton, layout_boxes; other kinds are refused) and a limb-ordered
+`render_openpose_pose` (OpenPose-18 names/colours — the sorted-name palette was wrong for Wan/DWPose).
+Registered in `schemas/registry.py` + `packages/content-schema-ts/src/index.ts`; fixtures
+`sample_shot_plan`, `sample_control_bundle` (+ invalid variants).
+
+**Phase 1 — stages.** New `Stage.plan_shots`; sequence branch reordered to
+`plan_shots → compile_controls(render-cpu) → generate_anchor → lock_generation → …`
+(`dag_compiler.COMPILER_VERSION` 0.2.0). `config/settings.py`: `ShotSettings` (planner
+story_presets|fixture, size, fps, LTX 8k+1 snapping) and `ControlSettings` (compiler
+motion_plan|blender, blender_bin, engine, assets_root, timeout). New `shots/` package: camera presets by
+scene kind (`presets.py`) and the deterministic planner (`planner.py`: one shot per `VisualBeat`,
+ids from hashes, anchors at both ends). `stage_plan_shots` and `stage_compile_controls` (builtin
+path writes `controls/<seq>/<kind>/frames/NNNN.png` + `.done.json` + `bundle.json` + `controls/manifest.json`)
+registered in `STAGE_EXECUTORS`. Web: `SHOTS`/`CONTROLS` slot types, `plan_shots` node,
+`compile_controls` inputs/outputs/widgets, `generate_keyframes.controls` → CONTROLS;
+`compile_controls` left the executorless set in `templates.test.tsx`. `fixtures/shots/demo.json`.
+
+**Phase 2 — `skills/video/blender_scene` (standalone).** One-shot runner
+`render.py <spec.json> <out_dir>` drives `/snap/bin/blender --background --factory-startup
+--python-exit-code 3 --python blender_entry.py -- …` (exit codes 0/2/3/4/5/6, JSON summary on
+stdout, logs under `<out>/logs/`). Data passes (depth, normals, object index) from **Cycles CPU, 1
+spp, box filter** via multilayer EXR read back with Blender's bundled OpenImageIO; rough RGB from
+Workbench (falls back to Cycles CPU 16 spp when no GPU context). Outputs per pass
+`<kind>/frames/NNNN.{png,exr,json}` + `.done.json` (`input_hash` over spec sha, pass, frame, skill +
+Blender versions, engines, depth range), `camera.json` (quaternion, intrinsics, world_to_camera),
+`metadata.json`. Skeleton export is JSON (OpenPose-18, baked vertex anchors, ray-cast visibility);
+layout export gives boxes + HiDream `xxyy`. Verified against Blender 5.2.1: multilayer EXR is
+`image_settings.media_type="MULTI_LAYER_IMAGE"` + `OPEN_EXR_MULTILAYER`; the file is multi-part
+(read each part with its own subimage index — the first version read part 0 for every pass); the
+object-index channel is `ViewLayer.Object Index.X`; OpenImageIO stamps `DateTime` into EXRs unless
+pinned; `gpu.platform` cannot be queried before rendering in `--background`. Canny runs on a
+contrast-stretched grey (the clay render is intentionally low contrast); background normals are black.
+Tooling: pytest marker `blender` (excluded from `just test`), `just test-blender-skill`, ruff
+per-file-ignores for the skill.
+
+| What | Command | Result |
+| --- | --- | --- |
+| contracts | `uv run python scripts/export_schemas.py && pnpm --filter @content-factory/content-schema-ts run generate` | 55 schemas, 212 defs |
+| schema tests | `uv run pytest tests/unit/test_shots_schema.py tests/unit/test_control_compile.py -q` | 21 passed |
+| schema-ts | `pnpm --filter @content-factory/content-schema-ts run typecheck && … test` | tsc clean, 34 passed |
+| stages | `uv run pytest tests/unit/test_shot_planner.py tests/unit/test_stages_shots.py tests/unit/test_dag_compiler.py tests/unit/test_workspace_compile.py tests/unit/test_new_stages.py tests/unit/test_shots_schema.py tests/unit/test_control_compile.py -q` | 56 passed |
+| web | `pnpm -r typecheck && pnpm --filter @content-factory/web test` | 9 packages clean, 75 passed / 18 files |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live"` | 329 passed, 32 deselected |
+| skill unit | `cd skills/video/blender_scene && uv sync && uv run pytest -q tests` | 33 passed |
+| skill live | `uv run pytest -m blender tests/integration/test_blender_scene_render.py -q` | 1 passed (cube fixture rendered twice, byte-identical; ~2.4 s per 4-frame render) |
+| lint/type | `just lint && just typecheck` | 375 files formatted, ruff clean, all TS packages clean |
+
+Not done yet (next sections): character assets (MPFB2 into Blender 5.2, `assets_build/`), the
+`controls.compiler=blender` path in `stage_compile_controls`, `video_stack.py` entries
+(`scene_control` tier), HiDream multi-reference + layout conditioning, `generate_anchor`/`lock_generation`
+executors, LTX keyframe guides, Wan-Animate-2 pose path, post chain, IC-LoRA training.
+
+### Blender scene-control layer, phases 3–4 (commands actually run, 2026-09-06, morning, vega-93 session)
+**Phase 3 — Blender compiler path + character assets.** `controls.compiler=blender` now runs for real:
+`python/content_factory/controls/blender.py` (`run_blender_scene`, the manim-style `uv run --project`
+subprocess with a `SUBPROCESS_RUN` seam), `controls/bundle.py` (`build_control_bundle`: verifies every
+recorded digest, adapts skeleton/layout JSON to `SkeletonPose`/`Box`, renders the `pose_skeleton`
+(OpenPose-18 colours) and `layout_boxes` PNG tracks, writes `bundle.json`), and
+`stage_compile_controls`'s blender branch (per-shot `.done.json` keyed on shot hash + engine +
+assets root + builder version; `blender_scene:<shot>` execution log lines). `models/video_stack.py`
+gained `StackTier.scene_control` with `blender` (tool) and `blender-characters` (abs_globs on
+`/mnt/fast/models/blender-assets/characters/*/*.blend`); `content-factory video-stack` shows both READY.
+Character assets: `skills/video/blender_scene/assets_build/` — `run_in_blender.sh` loads MPFB2 2.0.16
+from the Blender **5.1** user tree via `BLENDER_USER_EXTENSIONS` (Blender 5.2 registers it fine;
+nothing installed into the 5.2 config), `verify_mpfb.py`, `build_character.py` (MakeHuman basemesh
+19,158 verts + MPFB default rig 163 bones + OpenPose-18 anchors baked as basemesh vertex ids on the
+**evaluated** mesh — measuring `data.vertices` ignored the macro shape keys and made every recipe
+1.69 m — plus a mask-free keypoint proxy; collection `CH_<name>`), `bake_poses.py` (`idle`,
+`stand_relaxed`, `t_pose`; the MPFB walk cycle targets IK helper bones the plain rig lacks, so
+`clips/walk_cycle.json` is skipped with a note), `render_turnaround.py` (8 views per character),
+recipes `man_01` 1.76 m, `woman_01` 1.61 m, `man_02` 1.95 m, `woman_02` 1.54 m, `build_all.sh`.
+Assets live under `/mnt/fast/models/blender-assets/` (indexed `models/characters/Blender-Assets`).
+Live character render: all 18 joints in frame, person's right on the viewer's left, ankles correctly
+flagged occluded by the bench. Fixed on the way: OpenImageIO `write_image` segfaults on a 2-D array
+(needs `(h, w, 1)`), and `read_image` must be given the current subimage index per EXR part.
+
+**Phase 4 — HiDream conditioning + sequence-branch executors.** `skills/image/hidream/server.py`
+accepts `ref_images_b64` (list; identity refs first, then rough render + skeleton — upstream README §4
+pattern) and `layout_bboxes` (relative xywh -> upstream `[x1,x2,y1,y2]`, max 5, box i places ref i),
+defaults `CF_HIDREAM_MODEL_TYPE=full` (the on-disk weights are the full model; README corrected).
+`sequences/engine.py`: `ControlConditioning`, `ReferenceEditBackend.edit_conditioned` /
+`generate` (defaults keep old subclasses valid), `_frame_marker_hash(..., conditioning_sha=None)`
+(old markers stay valid), `build_sequence(..., conditioning_for=)`, mock `generate`.
+`sequences/hidream_backend.py` no longer discards the control image. `stages.py`: `stage_generate_anchor`
+(per shot per `anchor_frames` with identity turnaround refs + layout boxes + rough RGB + skeleton; single
+anchor without controls; cached by lock+prompt+conditioning+seed+backend), `stage_lock_generation`,
+`stage_generate_keyframes`/`stage_drift_qc`/`stage_package_sequence` (MotionPlan path; step aside
+for Blender bundles). `ImageSequenceSettings.backend mock|hidream` + anchor lock defaults. Web:
+stale caveats removed from `single-image-hidream`, `single-image-krea2`, `image-to-video-ltx`;
+`stitch-sequence-video` now names `interpolate` as the blocker; executorless set is `{interpolate, ingest}`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| MPFB in 5.2 | `assets_build/run_in_blender.sh assets_build/verify_mpfb.py` | `{"ok": true, "mpfb": "2.0.16", "vertices": 19158, "bones": 163}` |
+| characters | `run_in_blender.sh build_character.py recipes/<r>.json /mnt/fast/models/blender-assets` ×4 + `bake_poses.py` + `render_turnaround.py` ×4 | 4 `.blend` (2.3 MB each), 3 poses, 32 turnaround views |
+| unit (phase 3) | `uv run pytest tests/unit/test_compile_controls_blender.py tests/unit/test_video_stack.py tests/unit/test_stages_shots.py tests/unit/test_shots_schema.py tests/unit/test_control_compile.py -q` | 45 passed |
+| live | `uv run pytest -m blender tests/integration/test_blender_scene_render.py -q` | 3 passed (cube determinism, prop-only bundle at 1024x576, character skeleton) |
+| unit (phase 4) | `uv run pytest tests/unit/test_hidream_backend.py tests/unit/test_image_sequences.py tests/unit/test_stages_anchor.py tests/unit/test_workspace_compile.py tests/unit/test_video_stack.py tests/unit/test_compile_controls_blender.py tests/unit/test_stages_shots.py tests/unit/test_new_stages.py tests/unit/test_dag_compiler.py -q` | 64 passed |
+| web | `pnpm --filter @content-factory/web typecheck && … test` | tsc clean, 75 passed |
+| server helpers | `cd skills/image/hidream && uv run --no-sync python -c "import server; …"` | xywh->xxyy + full/dev settings as designed |
+| core gate (phase 3) | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 336 passed + 1 environment-dependent assertion, since fixed |
+| lint/type | `just lint && just typecheck` | clean |
+
+Not run: the live HiDream test (`uv run pytest -m live tests/live/test_hidream_controls.py`) needs the
+skill server up with the model loaded (~17 GB VRAM); left for the operator or the end-to-end pass.
+
+### Non-generative video toolchain installed and verified (commands actually run, 2026-09-06, home session)
+Operator supplied an install list for the non-generative lane (charts, maps, diagrams, screenshots,
+maths). Adapted to this repo rather than run verbatim, for three reasons: the apt packages were
+already present, `~/ai-video-stack/tools/manim` no longer exists (yesterday's consolidation), and
+`npx create-video@latest` would have added a fourth Remotion project — `apps/renderer` already is
+the Remotion project, and `sandbox/remotion/` already holds two untouched scaffolds.
+
+| Asked for | Done as |
+| --- | --- |
+| `apt install ffmpeg build-essential python3-dev libcairo2-dev libpango1.0-dev` | already installed (6.1.1 / 12.10ubuntu1 / 3.12.3 / 1.18.0 / 1.52.1) — nothing run, no sudo needed |
+| `npx create-video@latest` | skipped; `apps/renderer` (Remotion 4.0.518) is the project |
+| `npm install d3 vega vega-lite vega-embed maplibre-gl` | `pnpm add --filter @content-factory/video-ui --save-exact` — d3 7.9.0, vega 6.4.0, vega-lite 6.4.3, vega-embed 7.2.0, maplibre-gl 6.7.0 (+ `@types/d3` 7.4.3 dev). Landed in `packages/video-ui` because the Remotion scene components live there |
+| `npm install -D playwright` + `playwright install --with-deps chromium` | `pnpm add --filter @content-factory/renderer --save-exact -D playwright@1.63.0`; `playwright install chromium` (Chromium 153.0.8010.12 + headless shell). `--with-deps` needs root and proved unnecessary — Chromium launches fine |
+| `uv init && uv add manim` in `~/ai-video-stack/tools/manim` | `uv sync` in the **existing** `skills/video/manim` (pinned `manim==0.19.0`, wired to `CF__ANIMATION__EXECUTOR=manim`). PyPI has 0.21.0; the pin was left alone — bumping it is a separate decision |
+
+**Two real defects found and fixed in `skills/video/manim/render.py`** (untracked, written before the
+env existed, so it had never once executed): `to_edge(2 * [0, 1, 0][1])` passed the int `2` where a
+direction vector belongs and crashed every render (`TypeError: 'int' object is not subscriptable`) —
+now `to_edge(UP)`, with `arrange(direction=DOWN)` for the same reason; and `DecimalNumber` typesets
+through `MathTex`, so `count_up` demanded LaTeX despite the skill's documented no-LaTeX fallback —
+now `mob_class=Text` whenever `latex` is absent from PATH. Also added `-start_number 0` to the ffmpeg
+explode: the builtin renderer writes `frames/0000.png…` and the two layouts are contractually
+indistinguishable downstream, but ffmpeg's `%04d` starts at 1.
+
+| What | Command | Result |
+| --- | --- | --- |
+| d3 + vega + vega-lite | Node ESM smoke: `scaleLinear`, `d3.line()` path, Vega-Lite→Vega compile, `view.toSVG()` | scale/path correct; 8349-byte SVG from the compiled spec |
+| vega-embed + maplibre-gl | headless Chromium via Playwright against a loopback static server | vega-embed drew 12 paths + 12 texts; MapLibre reported WebGL 2.0 and painted its layer — confirmed by screenshot, not by pixel readback (see below) |
+| playwright | `chromium.launch()` → `page.screenshot()` | 560×640 PNG produced |
+| manim | `uv run manim checkhealth`; then `render.py` for `count_up` and `equation` | checkhealth PASSED except LaTeX (optional); both kinds render 24 frames, `0000.png`…`0023.png`, 640×360, ~216 distinct colours (not blank) |
+| Remotion unaffected | `just render-smoke` | `smoke-title.mp4`, all six ffprobe assertions true |
+| typecheck | `just typecheck` | pyright 0 errors; tsc clean in all 9 workspace projects incl. `video-ui` and `renderer` |
+| tests | `just test` | Python 358 passed, 33 deselected; JS 18+2+2+1 files, all passed |
+
+Gotchas recorded in `docs/setup.md` → "Non-generative video toolchain": MapLibre v6 is ESM-only with
+**named** exports (no default, no UMD); capturing its canvas needs `preserveDrawingBuffer: true` or
+the readback is black while the page looks right; Vega-Embed is browser-only, so server-side charts
+should go through `vega.View(...).toSVG()`; Manim needs texlive only for real `MathTex`.
+
+Not done: none of these libraries is imported by any scene yet — `ChartScene` still hand-rolls its
+SVG and there is no `MapScene`, so the render bundle is unchanged. `just lint` currently fails on 7
+files (`comfyui/client.py`, `media/ltx_packages.py`, `media/video_generate.py`, `workflows/stages.py`
+and three matching tests) that a **concurrent session** was writing during this work (mtimes 06:17–06:21);
+they are not mine, and reformatting them mid-edit would collide, so they were left untouched.
+
+### Blender scene-control layer, phases 5–8 (commands actually run, 2026-09-06, morning, vega-93 session)
+The auto-content-8c session ended before starting its LTX tasks, so this session built them in the
+locations it had named.
+
+**Phase 5 — LTX-2.5 keyframe guidance.** `media/ltx_packages.py`: `ltx_i2v_package()` (the proven
+16-node graph as a builder, ids stable) and `ltx_i2v_guided_package(n)` for n = 1..4 (`LoadImage` +
+`LTXVAddGuide` pairs chained after `LTXVImgToVideo`, `CFGGuider`/`SamplerCustomAdvanced` rewired to
+the last guide; params `guide_i`, `guide_i_frame_idx`, `guide_i_strength`; capability
+`keyframe_guide`). `comfyui/client.py`: `run_package(..., collect="history")` polls `/history` instead
+of the websocket (`--cache-none` suppresses output events) and imports `videos`/`gifs` outputs, not
+only `images`. `media/video_generate.py`: `GuideFrame`, `VideoGenerationRequest.guides`,
+`run_video_skill(..., guide_pngs, extra_files)` with digest checks, `ComfyUIVideoBackend(guided_packages,
+collect, timeout_s, length_rule)`. `VideoSettings` (backend mock|comfyui, package, guide strength, max
+guides, collect, timeout). `stage_generate_video`: one clip per shot — anchor 0 as first frame, later
+anchors as guides at their Blender frame indices, size/fps/length from the ShotSpec, per-shot cache,
+ffmpeg concat to `exports/generated.mp4`; the no-shots path is unchanged.
+
+**Phase 6 — template + ADRs.** `blender-controlled-video` template (`plan_story → plan_shots →
+compile_controls{blender} → generate_anchor → generate_video → qc → packages`), `BLENDER_SKILL`
+requirement, `HIDREAM_WEIGHTS` label corrected to the full model; `docs/adr/0012-blender-scene-control-layer.md`;
+ADR-0006 amended (LTX control = keyframe guidance until an IC-LoRA exists; history polling).
+
+**Phase 7 — Wan-Animate-2 pose path (optional, not runnable yet).** `media/wan_packages.py`
+(`WanAnimate2ToVideo` graph: anchor as `reference_image` + CLIP-vision, the Blender skeleton track as
+`pose_video` via `LoadVideo`/`GetVideoComponents`, 4k+1 lengths); `controls/derive.pose_video_from_track`
+(ffmpeg); `video.package=wan-animate-2.pose` switch in `stage_generate_video` (uploads the pose mp4 as an
+extra file, no guides). Declares the two weights this host lacks: `clip_vision_h.safetensors`,
+`wan_2.1_vae.safetensors` (Comfy-Org repackaged).
+
+**Phase 8 — post chain.** `skills/video/postchain/` (one runner, `run.py <job.json>`; tools cutie /
+propainter / seedvr2 / gimm_vfi / rife execute in their upstream checkout envs
+`external/<repo>/.venv` — RIFE and SeedVR2 already have one, `setup_envs.sh` builds the other three;
+frames normalised to `frames/%04d.png`; Cutie driver seeds from the Blender segmentation mask).
+`python/content_factory/postchain/runner.py` (`run_tool` with a `SUBPROCESS_RUN` seam, `explode_video`,
+`mux_frames`). New `Stage.fix_video` / `Stage.upscale_video` (workspace extras, render-gpu) and the
+`interpolate` executor: a per-clip chain (`video/<shot>/{frames,masks,fixed,upscaled,interpolated}` +
+`chain.json` with pinned step inputs so reruns never read their own output), `PostChainSettings`
+(`remove_seg_ids` — fix_video is a pass-through until ids are chosen; upscaler/resolution;
+interpolator rife|gimm_vfi + factor), `exports/final.mp4` muxed and concatenated. Catalog nodes for both
+new stages; `interpolate` gained an engine widget; the last executor-less stage is `ingest`, so the
+stitch template lost its caveat.
+
+| What | Command | Result |
+| --- | --- | --- |
+| LTX packages + client | `uv run pytest tests/unit/test_ltx_packages.py tests/unit/test_comfyui_client.py tests/unit/test_new_stages.py tests/unit/test_stages_anchor.py tests/unit/test_compile_controls_blender.py tests/unit/test_media_skill_backends.py -q` | 37 passed (history polling against the fixture server, guided packages 1–4 bind and rewire, per-shot clips with guides) |
+| post chain + Wan | `uv run pytest tests/unit/test_post_chain.py tests/unit/test_wan_packages.py tests/unit/test_new_stages.py tests/unit/test_stages_anchor.py -q` | 22 passed (fake tools; masks/fixed/upscaled/interpolated chain, cache hits, MotionPlan keyframes interpolated, pose video muxed) |
+| web | `pnpm --filter @content-factory/web typecheck && … test` | tsc clean, 75 passed (new template in the coverage test) |
+| core gate (phase 5–6) | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 355 passed |
+| lint/type | `just lint && just typecheck` | clean |
+
+Not run live: LTX end to end and the HiDream server — the GPU currently carries ollama's
+`llama-server` (13.3 GB) plus a Chatterbox server, so neither the 17 GB HiDream load nor the LTX
+GGUF stack fits alongside; operator's call to stop ollama first. Wan needs the two missing weights.
+Cutie/ProPainter/GIMM-VFI need `skills/video/postchain/setup_envs.sh` once.
+| post chain live | `uv run --project skills/video/postchain python skills/video/postchain/run.py <rife job on the cube render>` | RIFE 4.25 in `external/Practical-RIFE/.venv`: 4 frames → 7 interpolated, 9.5 s (RIFE writes `./vid_out`, so the runner executes inside its results dir with an absolute `--model`) |
+| core gate (phase 7–8) | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 364 passed, 36 deselected |
+| lint/type | `just lint && just typecheck` | ruff clean, 9 TS packages clean |
+| schema drift | `uv run python scripts/export_schemas.py --check` | only `WorkspaceGraph.schema.json` reported, and only because that pre-existing generated file was never `git add`ed (untracked since before this work) |
+
+## 2026-09-06 — hand-drawn love story lane: recorded voice, MMAudio SFX, node parameters (home session)
+
+Operator ask: a 60-second hand-drawn love story — two characters walking towards each other under
+an overhead camera, a new drawing every two seconds, the walk kept consistent by the Blender
+skeleton, narrated by the operator's own recorded voice (two people later), with sound effects and
+the edit done automatically, startable from the GUI. Research first (HiDream-O1's IP pipeline gained
+layout + skeleton conditioning 2026-05-13, which is the `IP_skeleton` pattern the local skill server
+already implements; LTX-2.5 FLF2V keyframe guides; WhisperX/faster-whisper for forced alignment;
+MMAudio large 44k v2 for video-synced foley), then four gaps closed.
+
+**1. Node parameters reach the executors.** A workspace graph carried only its shape: every widget
+was decoration and every stage read process-wide settings, so two graphs on one host could not
+differ. `StageNode.params` (a string map) is frozen by the graph compiler from the node's widget
+values, travels through `NodePlan` → `ExecuteNodeInput.params_json` → `StageContext.params`, and is
+folded into the node input hash, so turning a knob re-runs exactly that stage and its dependents.
+Typed accessors (`_param`, `_param_int`, `_param_float`, `_param_bool`, `_param_size`) fall back to
+the configured default. Honoured today by `plan_story` (`story` fixture), `plan_shots`
+(planner/fixture_path/size/fps), `compile_controls` (compiler), `generate_anchor`
+(prompt/style/seed/model), `interpolate` (engine/factor) and the two new stages.
+
+**2. `voice_over` — human takes instead of TTS.** `audio/takes.py`: recordings are found by beat id
+under `takes_dir` (`<beat_id>.wav`, or `<beat_id>.<speaker>.wav` for a two-hander), normalised to
+mono PCM with ffmpeg, reviewed against the locked script with the *existing*
+`human_tasks.validation.validate_take` (same diff, same verdicts — improvisation inside tolerance is
+accepted as performed and counted in the stage facts), and timed by forced alignment
+(`faster_whisper` in a throwaway uv env behind `SUBPROCESS_RUN`; `even_split` is the offline default
+and marks `TimingSource.estimated`, a new honest value for real audio with apportioned boundaries).
+The output is the same `NarrationSegment` per beat that a TTS produces, so captions, the timeline
+compiler, the mix and the mux are untouched. A missing take fails the stage and names the beat.
+`VoiceIdentity.provider` gained `"human"`. Cached per beat by (take bytes, script, aligner).
+
+**3. `sound_design` — MMAudio foley on the silent cut.** `audio/sfx.py`: MMAudio large 44k v2 in
+`external/MMAudio/.venv` (weights, ext_weights and env all already present on this host) watches the
+picture and writes sound that lands on the frame; longer films are generated in `window_s` slices
+against the matching slice of picture and concatenated, so a 60 s film gets foley over its whole
+length. Runs after the picture and before the mix; `mix_audio` beds `audio/sfx.wav` under the
+narration with the same ducked bed mixer the music uses. `MockSfxBackend` keeps the graph runnable
+with no GPU.
+
+**4. The film itself.** `scripts/make_love_story_shots.py` generates two fixtures:
+`fixtures/shots/love_story_topdown.json` (30 shots x 2 s, overhead camera descending 11.5 m → 2.1 m,
+two MPFB rigs posed bone by bone — stride phases from a gait function, then a reach that closes into
+a hold; bone names verified against the baked `t_pose.json`) and `fixtures/story/love_story.json`
+(six spoken lines; the beat ids are the take filenames). Each shot renders exactly one Blender
+keyframe and gets one HiDream drawing: 30 Blender frames and 30 drawings for a 60-second film, with
+LTX-2.5 animating the two seconds after each. Template `handdrawn-love-story` wires the whole thing
+in the GUI; the card carries a new `prerequisite` line ("record the six lines as
+takes/<beat_id>.wav") — deliberately *not* a `caveat`, so the runnability invariant stays exact.
+
+Also fixed: `bad_generate_without_shot` was in the Ajv invalid-fixture set, but the rule is a
+`BeatRoute` model_validator (a cross-field rule JSON Schema cannot express), so the roundtrip test
+was red on an uncommitted working tree. Moved to `tests/unit/test_shot_router.py` where the
+validator is the thing under test.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new stages | `uv run pytest -q tests/unit/test_voice_over_and_sound_design.py` | 11 passed (takes discovery, even-split coverage, forced alignment keeps script words + measured spans, a wrong take is refused, stage caching, MMAudio windows a 20 s clip into 3 seeded runs through its own interpreter) |
+| node parameters | `uv run pytest -q tests/unit/test_node_params.py` | 8 passed (widgets → DAG params → JSON round trip, love-story fixtures load, anchor style/seed change the lock hash) |
+| shot router | `uv run pytest -q tests/unit/test_shot_router.py` | 8 passed |
+| schema roundtrip | `pnpm --filter @content-factory/content-schema-ts test` | 36 passed |
+| web | `pnpm --filter @content-factory/web test` | 76 passed (new template test: skeleton → drawings, recordings → mix, prerequisite shown) |
+| contracts | `just schemas` | 56 schemas, 214 defs (DeliverableDAG gains `params`; NarrationSegment gains `human` + `estimated`) |
+| lint/type | `just lint && just typecheck` | ruff clean, pyright clean, 9 TS packages clean |
+| core gate | `just test` | 428 passed, 36 deselected (Python) + 246 passed across 9 TS packages |
+
+Not run: the film itself. HiDream (~17 GB), LTX-2.5 (Q5 pair, needs `--cache-none`) and MMAudio each
+fit the 24 GB card **one at a time**, and the run needs recorded takes that do not exist yet. The
+`even_split` aligner and the `mock` SFX backend keep the graph runnable end to end without either.
+
+Found while checking the inventory: `clip_vision_h.safetensors` and `wan_2.1_vae.safetensors` (the
+two weights Wan-Animate-2's pose path was missing) are now on disk **and linked into ComfyUI**
+alongside `wan_animate_2-Q5_K_M.gguf`. The Wan pose path drives a reference character with the
+Blender skeleton *video* rather than per-keyframe stills — a stronger consistency guarantee than LTX
+keyframe guides for exactly this film. It needs the full skeleton track, so a Wan variant of the
+fixture must drop `render.frames=(0,)`. Next smallest task if the operator wants it.
+
+
+### Running the two-hander lane for real: three films, and what the renders taught (2026-09-06, home session)
+
+The lane was built but never run. Running it changed four things about it, each found by looking at
+a render rather than by reasoning.
+
+**The scenario generator.** `scripts/make_story_fixtures.py` (was `make_love_story_shots.py`) now
+takes a `Scenario` — who is in it, the acts, how far apart they start and end, how much of the frame
+the pair should fill, the lines and their durations — and emits both fixtures. Three films ship:
+`love_story` (30 shots / 61 s), `last_train` (26 / 53 s), `letting_go` (24 / 49 s, the same rig
+walking apart). A new film is a dozen lines of data.
+
+**The lane runs locally.** `WORKFLOWS["handdrawn-two-hander"]` + `WORKFLOW_PARAMS` mirror the
+template's widget values, `run_stages` applies per-stage params (a local run and a canvas Run now
+execute identically), and `run-local` gained `--story`, `--shots` and `--style` — one lane, any film.
+`scripts/make_placeholder_takes.py` renders a scratch track (`<beat_id>.scratch.wav`) so the lane is
+runnable before anyone records; each file is replaced by a real take with a file copy.
+
+**Three bugs the run found, all pre-existing:**
+- `run_workflow` resolved `--until` against the original stage list *after* `--from` had already
+  shortened it, so `--from generate_anchor --until generate_video` silently ran four stages too many.
+- `make_context` addressed `dlv_localrun0001`, which the fixture campaign does not contain, so every
+  stage that looks its own spec up (`write_copy`, `qc_deliverable`, `compile_destination_packages`)
+  died on a bare `StopIteration`. It now defaults to the campaign's video deliverable.
+- `lock_script`'s node declared a required TEXT input it never reads — it freezes the story plan. The
+  input is optional now and the node takes STORY, so a written film needs no copy draft.
+
+**What the renders taught (the interesting part):**
+- The MPFB rig rests with its arms *out*, and limbs swing about local **X** while arms raise and
+  lower about local **Z** — read off the baked `t_pose.json`, then confirmed with an eight-variant
+  probe render. The first pose model rotated the wrong axis and produced starfish. Poses now compose
+  (`qz` arms down, then `qx` swing) instead of replacing.
+- Camera height is now derived, not guessed: from the gap, the lens and the fraction of frame the
+  pair should fill — **and** the frame's short side, which the first version ignored, so close shots
+  beheaded both characters.
+- **HiDream-O1 ignores the requested resolution.** `PREDEFINED_RESOLUTIONS` in the upstream pipeline
+  are all ~4 MP and it matches on aspect ratio alone, so 1024x576 comes back 2560x1440 and takes
+  ~5 min (7-10 min with anything else on the card), not the ~40 s a 0.6 MP image would. A 30-drawing
+  film is therefore 2.5-5 GPU-hours. The anchor stage now records the delivered `png_width`/
+  `png_height` instead of implying the lock's request came back, and the canvas widget says
+  "megapixels (ignored by hidream-o1)".
+- **The clay turnarounds must not be identity references.** HiDream's IP pipeline treats every
+  reference as subject material: with the MPFB turnaround as the identity ref it drew a nude grey
+  mannequin on a beautiful plaza, and with the Blender rough render as a structural ref it copied the
+  clay geometry into the frame. The skeleton *is* honoured — the reach reads exactly as staged.
+  So which passes reach the model is now a setting and a node parameter
+  (`ImageSequenceSettings.anchor_references`, default `("pose_skeleton",)`, `identity` opt-in) and
+  part of the anchor's cache key. Next step for identity: a styled character sheet per character,
+  generated once and reused; the clay renders should never reach the model.
+- **`compose_video` only knew how to mux onto a Remotion bundle**, so a narrated *drawn* film failed
+  looking for a render it never had. Both it and `sound_design` now resolve the silent cut through
+  one `_silent_picture` helper (Remotion bundle, else the post chain's `final.mp4`, else the
+  concatenated generated clips).
+- The post chain's `chain.json` pins its step inputs as **absolute** paths, so moving a project
+  directory invalidates the chain with a `FileNotFoundError` rather than a cache miss. Noted, not
+  fixed.
+
+| What | Command | Result |
+| --- | --- | --- |
+| control passes, three films | `content-factory run-local handdrawn-two-hander --story … --shots … --until compile_controls` | love_story 30 shots / 85 s, last_train 26 / 82 s, letting_go 24 / 73 s — rough RGB, depth, normals, segmentation, OpenPose skeleton, layout boxes, all from the real Blender 5.2.1 |
+| skeleton quality | eyeballed `sht_love_0029/pose_skeleton/frames/0000.png` | two OpenPose-18 figures seen from above, arms extended, hands meeting in the middle — the staging is exactly what was authored |
+| pose axis probe | 8 single-shot Blender renders (2.2 s each) | arms raise/lower about local Z, swing about local X; arms-down is ~80 deg |
+| reach probe | 6 two-character renders | `qz(±80)` then `qx(-70)` is the pose where the hands meet |
+| HiDream anchors | `CF__IMAGE_SEQUENCES__BACKEND=hidream … --from generate_anchor` | server loads in ~40 s and holds 19.6 GB; first drawing 2560x1440 in 4.7 min; stopped after one — clay mannequin, see above |
+| mock tail | `--from generate_anchor --until generate_video` on last_train | 26 mock anchors 0.4 s, 26 clips concatenated to a 54.2 s `generated.mp4`, RIFE interpolate 26 clips / 100 s on the GPU *while HiDream held 22 GB* |
+| reference-set probe | 2 HiDream renders, same prompt and seed, different reference sets | with the clay rough render: two clay mannequins composited onto a plaza. Skeleton only: two *clothed* people facing each other, hands meeting, in ink and wash — the staging read exactly as authored |
+| lane end to end | `run-local handdrawn-two-hander --from interpolate` on last_train (mock anchors) | RIFE 92 s, lock_script, voice_over (5 takes force-aligned, `speakers: ["scratch"]`), align_words, captions, music, sound_design (mock MMAudio scored the 54.1 s cut), mix -13.9 LUFS, compose_video, **qc_deliverable passed**, 1 destination package — `exports/final.mp4`, 44.1 s h264+aac |
+| first drawings, fixed refs | `CF__IMAGE_SEQUENCES__BACKEND=hidream … --from generate_anchor` | two clothed figures on a rain-wet plaza at dusk in ink and wash, ~6 min each. See the framing row below for what three of them exposed |
+| framing floor | 3 drawings of the original staging, restage, 1 more drawing | at **17-19 %** of the frame's short side HiDream drew the OpenPose joint dots as little coloured objects and invented two walkers going the *same way*. `MIN_BODY_FRACTION = 0.33` is now enforced in the generator (it refuses a gap it cannot frame readably, naming the shot) and covered by a test; all three films restaged to 33-86 %. The redraw at 33 % lost the coloured-dot artefact and the figures are properly sized — **but it drew four people walking the same way, not the two facing each other.** See the conclusion below |
+| art direction | 3 style presets on one shot, then a 4-way lever probe | **The style clause was being ignored because of where it sat in the prompt.** Style last (behind the subject and two sentences of staging): ukiyo-e came back as the same heavy-outline photoreal idiom. The *identical words moved to the front*: an actual woodblock — flat carved colour, single-weight outline, hatched rain, flat sky. Same prompt, same reference, same seed; only the position changed. `_anchor_prompt` now leads with the style, with a test pinning the order. Presets live in `sequences/styles.py`; `resolve_style` refuses a mistyped name (a two-word prompt would otherwise burn hours of GPU quietly) |
+| reference mode costs 3x | the same probe | With a reference image: **330 s** per drawing. Without: **104 s**. Reference (IP) mode is 3x the wall clock, so a 30-drawing film is ~2.75 h with pose control and ~52 min without — worth knowing when choosing between pose accuracy and iteration speed |
+| what the skeleton is read *as* | the same 3 renders | All three drew **hands entering from the left and right frame edges** — HiDream mapping the OpenPose skeleton onto a *front-on* camera, which is how such skeletons appear in its training data. The earlier "good" image was the same front-on reading, which happened to read well. **The overhead premise fights the one control signal that works**, which is a bigger constraint than any style choice |
+| the brief-topic leak | reconstructed the exact prompt the anchor stage sends | Every drawing this session began with *"How much of Sweden's electricity came from wind in 2025?"* — `_anchor_prompt` leads with the campaign brief topic and `run-local` uses the fixture campaign. Each scenario now carries a `subject`, `--subject` sets the generate_anchor `prompt` param (which the stage already prefers), and the generator prints it |
+| **why the images were weird** | operator asked for a diagnosis before continuing; measured the Blender geometry instead of reading the generated pictures | **Four bugs, all in the staging I wrote, none in the model.** Verified against Blender's own `layout/frames/*.json` boxes and profile probe renders, not inferred: (1) `camera_height` sized the frame with `BODY_LENGTH_M = 1.9`, a person's *head-to-foot height* — the dimension you see from the **side**. From directly above a body measures **0.56-0.72 m** front-to-back. Every camera sat **3.2x too high** and every figure came out a third of its intended size, which is why the model treated the skeletons as scene decoration and invented full-size walkers to fill the space. (2) An 80 deg local-Z "arms down" rotation was applied on top of a rest pose whose arms were **already down** — diagnosed originally from a top-down clay render where foreshortening made the shoulders look splayed. That rotation is what made every figure a starfish. (3) Composing the reach *after* that Z sent the arms **backwards**. (4) `yaw -90` faces **-X**, so the character standing on the -X side needed `+90`: the signs were swapped and **the pair stood back to back in every frame of every film**, with the reach extending away from the person it was for. Plus: a 0.9 m closing gap is geometrically impossible for two 0.62 m arms, so the hands interpenetrated into a tangle |
+| after the fixes | 3 Blender re-renders, 91 s each | Bodies now **19-55 %** of frame height (was 10-32 %), rule agrees with measured geometry within ~20 % (was 3.2x out), the pair face each other, and the closing shot is two people from directly above with fingertips almost touching and no interpenetration. Tests added: pure-X-axis invariant per bone, both characters' yaw, reach gaps inside arm's reach, and the framing floor against the footprint model |
+| OOM on resume | `CF__IMAGE_SEQUENCES__BACKEND=hidream … --from generate_anchor` | HiDream loads 19.4 GB, and an operator's Steam process (`GlyphEngine`, 1.6 GB) plus Chatterbox, Discord and wezterm left under 600 MB headroom on the 24 GB card — a 238 MB allocation failed. Fixed without touching the operator's processes by restarting the server under `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, which trades ~30 % throughput (9.5 s/step vs 6.6) for surviving the fragmentation. Worth wiring into the service spawn rather than an ad-hoc env var |
+| skeleton ink | `_pose_ink` sizes stroke and joint radius from the pose's own pixel extent | OpenPose's own renderer sizes ink to the detected person; ours sized it to the canvas, so the same skeleton read as a pose in a close shot and as a scatter of baubles in a wide one. **Honest note: at the corrected framing this is a no-op** — a 184 px figure gives stroke 4 / radius 6, exactly the old canvas-derived values. It was reasoned from the *old* broken framing where figures were ~110 px. Kept as a correct generalisation (close shots at ~300 px now get proportionate ink) but it did **not** fix the remaining artefact, which is a dark curved shape beside each figure's reaching arm — still unexplained |
+| held-drawing cut | `run-local handdrawn-two-hander-stills --from generate_video` on the finished 30 | Operator wanted the drawings **cut together with the roughness left in** — no LTX, no interpolation. `generate_video` gained `motion: hold` (ffmpeg concat demuxer, one entry per drawing with an explicit duration, `-vsync vfr`) and `interpolate` gained `engine: none`. **3.8 s** for a 30-shot film, no GPU. Verified rather than assumed: sampled at 4 fps there are **29 hard cuts between 30 drawings**, held pairs differ by 0.03 mean and cuts by 29.8 — nothing blended, no invented in-betweens. Both are canvas widgets and a second lane; the LTX path is untouched |
+| first complete film | the same run `--from lock_script` | `exports/final.mp4`, **51 s, 1024x576, h264+aac, 10.4 MB, qc_deliverable passed**, destination package compiled. Audio is the mock scratch track until the operator records the six lines |
+| style reel, 9 art directions | `scripts/make_style_reel.py output/style-reel …` (19:46 → 03:00 unattended) | **9/9 complete videos**, 16.4 s each, 8 held drawings apiece: woodblock, charcoal, riso, oil, cel, silhouette, watercolour, pencil, ink_wash. One Blender pass (25 s) shared by all nine — control passes do not depend on art direction — so the cost per style is only its drawings (46 min). Cutting each video: ~2 s, no GPU. Added a `_reel()` scenario helper that shortens any film to a comparison cut with the same staging arithmetic |
+| what the two failures teach | the same reel | `watercolour` drew a hand **holding a sheet of watercolour paper**; `pencil` drew a **sketchbook page**. Both prompts name the medium as a physical object ("on cold-press paper", "sketchbook paper") and the model rendered the object. Directions that name a *process* — carved outline, two flat tone steps, halftone dots, impasto — land. Worth fixing those two presets to describe process rather than surface |
+| **why the frames were inconsistent and looked bad** | operator reported changing characters, changing backgrounds, bad frames and a colour cast across all nine videos; measured each claim | **Three causes, all mine.** (1) **Only one reference per drawing.** Every anchor marker reads `references: 1, reference_kinds: ["pose_skeleton"]` — nothing anchors identity, clothing, street or palette, so the model reinvents all of it each frame. Upstream's own IP_skeleton example passes `0.face.jpg 0.bg.jpg 0.openpose.jpg …`: **face and background come before the skeleton**. I set `anchor_references = ("pose_skeleton",)` after the clay turnarounds poisoned the image, wrote "next step: a styled character sheet", and never built it — so consistency was never solved, only staging and style were. (2) **Colour was never declared.** `color_range`, `color_space`, `color_primaries` all `unknown`; ffmpeg round-trips fine but any other player guesses, and one assuming limited range on full-range data crushes blacks and shifts the palette. (3) **84 % of the pixels were thrown away.** The held cut used the ShotSpec size (1024x576) — which is LTX's generation size, irrelevant to a held cut — while HiDream returns 2560x1440. Measured edge energy *rose* 54 % over the drawing: ink hatching aliasing into crunch |
+| fixes 2 and 3, no GPU | re-cut all nine, ~11 s each | Cut now at the drawings' native 2560x1440 (a `size` param still forces a preview), converted to limited-range BT.709 and **tagged** (`color_range=tv`, `colorspace=bt709`, primaries and trc), crf 16, faststart. Edge energy 42.37 against the drawing's 42.76 — a 1 % h264 difference instead of 54 % aliasing |
+| fix 1, needs GPU | not done | Per film and style, generate once: a character sheet per character and a background plate (text-to-image, ~104 s each — 3x faster than reference mode), then pass `[sheet_a, sheet_b, background, skeleton]` with layout boxes paired to the identity refs, per upstream's documented order. ~5 min of setup per style, then every frame is anchored to the same people and the same street |
+### Model stack decided, and premade assets replace hand-authored ones (2026-09-07, home session)
+
+Operator's stack, with their VRAM correction accepted: **HiDream-O1** for initial reference-asset
+generation, **FLUX.2-dev** as the primary multi-reference compositor (character + clothes + scene +
+style + props + pose) producing consistent keyframes, **LTX-2.5** for video, **Qwen-Image-Edit-2511**
+as a secondary repair/editor stage. On a 24 GB 3090, FLUX.2 fp8 is the wrong tier — the transformer
+alone is ~32-35 GB and needs offload; **Q4_K_M GGUF at ~20 GB** is the practical choice. My earlier
+"fp8 fits 12-16 GB" was a search result repeated without checking, and it was wrong.
+
+**Premade assets instead of authoring them.** The decisive realisation: the contracts *already*
+support this. `ClipPose(kind="clip", name=...)` exists in `schemas/shots.py`, and
+`skills/video/blender_scene/bl/posing.py` already loads `<assets>/clips/<name>.json` in
+`cf.clip.v1` format — per-frame bone quaternions, slerped, with speed/offset/loop — and applies it.
+The `clips/` directory is simply **empty**. Every hand-authored stride and reach quaternion this
+session was reinventing, badly, what that slot exists to hold; four of the bugs found today
+(wrong swing axis, spurious arms-down rotation, inverted reach, hands interpenetrating) cannot
+occur in mocap, which is anatomically correct by construction.
+
+**Chosen source: Quaternius Universal Animation Library — CC0**, FBX/GLB/Blend, free tier 45
+animations (15 MB) including locomotion, Source tier ships a `.blend` with the rig *and* the
+animations so no FBX retargeting is needed. Mixamo is in maintenance mode and should not be built
+on. Acquisition needs one manual click: itch.io's name-your-own-price flow is not reliably
+scriptable and the Pro/Source tiers cost money, which is the operator's call.
+
+**Measured evidence for why this matters:** the four MPFB sculptures are the *same silhouette* —
+man_01 vs man_02 differ by **0.4 %**, woman_01 vs woman_02 by **0.2 %**, man vs woman by **0.8 %**.
+The recipes carry only MakeHuman macro sliders (gender, age, muscle, weight, height); there is no
+clothing or hair, and `build_character.py` has no clothing support. The rubric's
+`identity_distinctness` scored **1.67/10** and was right. This, not prompting, is the root cause of
+the character inconsistency across every film made so far.
+
+**Rubric added** (`controls/rubric.py`, version-stamped): seven weighted criteria scored from
+measurements through fixed curves — readability, pose legibility, silhouette separation, identity
+distinctness, anatomical plausibility, camera variety, frame discipline. Target 8.5. Scored against
+the current love-story configuration: **5.3/10**. Raising a score means changing the asset or the
+staging, never the thresholds.
+
+**Runner scenario added**: 30 shots, one character, an orbiting camera program (azimuth sweeping
+300 degrees, elevation/distance/lens each on their own cycle, median 0.97 m of camera movement
+between shots) — the first fixture that scores anything on camera variety. Blocked at
+`review_assets`, correctly: the sculptures are not approvable yet.
+
+**The skill now self-updates** without asking, on the operator's instruction. What keeps it honest
+is not a prompt: the failure→guidance mapping is fixed in code so it can report recurrence but
+never invent a rule, a failure must recur before becoming a rule, every lesson carries its
+measurements and frame ids, every self-applied change appends its diff to
+`skills/image/prompting/self-updates.jsonl`, and applying still refuses when the file changed
+underneath (correctness, not permission).
+
+### Review gates and a prompting skill that proposes rather than edits (2026-09-07, home session)
+
+Operator: review the 3D sculptures with images before they are used, review each generated image
+so it makes logical sense, learn how to prompt this model well and keep that knowledge updated —
+and ask permission, showing the change, before changing it. All of it in the pipeline.
+
+**Two blocking stages.** `Stage.review_assets` runs deterministic checks over the turnaround a
+character build already renders (views present, figure fully inside its own frame, all 18 keypoints
+projected, bilateral symmetry in the t-pose, plausible height) plus a contact sheet, and blocks
+until an approval exists that is bound to the built mesh's digest — rebuild the asset and the
+approval no longer applies. `Stage.review_frames` writes a contact sheet of every drawing in order
+with measured findings beside each, and blocks until a verdict bound to the exact image digests
+exists; rejecting one frame costs one frame. Both are `Executor.human` because passing
+measurements is necessary and never sufficient: "these are the same two people as the last frame"
+and "this pose is bodily possible" are not measurable here. **There is no local VLM** — ollama
+carries three text-only models — so the reviewer is a person or an agent looking at the sheet,
+which is what the stage requires and waits for.
+
+**The checks exist because of specific failures**, each measured this session and each invisible to
+the code at the time: tonal collapse (31 % of pixels crushed to near-black, 36 % midtones against a
+photograph's 60-80 %), a half-applied monochrome instruction (39 % of pixels still saturated after
+"no colour" — the "weird colour" the operator saw), subject matter jammed into the frame edge, and
+background churn between consecutive frames (a held drawing measures ~0, a cut in the same world
+~30, a new world 55+).
+
+**Found on its first run:** the turnaround builder renders `left90` but no `right90`, so every
+character asset has one-sided profile coverage. Reported as an advisory rather than a blocker —
+demanding a view the builder never makes would fail every asset — but an identity reference built
+from one-sided profiles is worth knowing about.
+
+**The prompting skill proposes; it never edits itself.** `skills/image/prompting/SKILL.md` holds
+eight rules, each with the evidence that produced it. `content_factory.prompting` reads frame-review
+verdicts and can only write a **proposal**: the lessons, the numbers behind each, and a unified
+diff. `apply_proposal` refuses without a named person, refuses if the guidance changed since the
+proposal was written (so an unrelated edit is never silently discarded), and therefore refuses a
+second application of the same proposal. A failure must recur (`MIN_OCCURRENCES = 2`) before it
+becomes a rule, and the failure→guidance mapping is fixed in code, so the learner can report
+recurrence but cannot invent a rule. The reasoning is in the module docstring: a system that
+rewrites its own instructions from its own output has no check on it — one bad inference becomes a
+rule, the rule shapes the next output, and the evidence for it is circular.
+
+| What | Command | Result |
+| --- | --- | --- |
+| asset checks on real assets | `content-factory assets review` | man_01, woman_01, man_02, woman_02 — all four pass every blocker, all four flag `profile_coverage`, none `usable` because none is approved |
+| both gates | `uv run pytest -q tests/unit/test_reviews.py` | 11 passed (a mirrored rig caught by symmetry, a collapsed keypoint proxy caught, tonal collapse and half-applied monochrome measured, an unapproved asset refused) |
+| proposal safety | `uv run pytest -q tests/unit/test_prompting_proposals.py` | 7 passed (one bad frame is noise; the learner cannot invent a rule; propose is inert; apply refuses without a name, refuses when stale, and refuses re-application) |
+| contracts | `just schemas` | 60 schemas, 221 defs |
+| lint/type | `just lint && just typecheck` | ruff clean; pyright clean apart from another session's untracked `test_narration_backend.py` |
+
+Not run: no images were generated. The operator paused generation to have this built first, so the
+gates have not yet blocked a real run end to end — the next run through
+`handdrawn-two-hander` will park at `review_assets` until the four assets are approved.
+
+| what this retracts | — | The earlier conclusion "HiDream reads the overhead skeleton as a front-on camera, so the overhead premise fights the control signal" is **withdrawn as unproven** — the model had never been given a coherent skeleton to work with. Whether the overhead premise works is now an open question again, testable with one drawing |
+| where the skeleton actually holds | 5 real HiDream generations | **Pose conditioning is honoured when the skeleton dominates the frame and not otherwise.** The close hand-meeting shot (two skeletons filling the frame, hands touching in the middle) came back exactly as staged: two clothed people, facing each other, fingers meeting. Every establishing-distance shot — even at 33 % body height — came back as a stylistically perfect but freely-invented street scene. Style, palette, street and lighting were rock solid across *all* of them, so what is unreliable is the pose signal, not the look. Three ways forward, operator's call: stage every shot inside the intimate range where it works; switch the wide shots to the **Wan-Animate-2 pose path** (built to be driven by a pose video, and its two missing weights are now on disk and linked into ComfyUI); or accept wide shots as invented atmosphere and keep the skeleton guarantee for the close half |
+| tests | `uv run pytest -q tests/unit/{test_local_runner,test_story_fixtures,test_node_params,test_voice_over_and_sound_design,test_stages_anchor}.py` | 8 + 12 + 9 + 13 + 4 passed |
+
+
+## 2026-09-06 — hybrid shot-router workflow (session vega-93)
+
+A third video workflow next to the all-Remotion (`narrated-video`) and all-generative
+(`blender-controlled-video`) ones: one narrated timeline, each beat rendered by whichever renderer
+suits it, spliced back together by FFmpeg. ADR-0012 amended.
+
+- **Contract** `ShotRouting` / `BeatRoute` (`schemas/shots.py`; registry, fixtures
+  `sample_shot_routing` + 3 invalid instances, `just schemas` → `ShotRouting.schema.json`, TS index).
+- **Router** `shots/router.py::route_shots(story, shots, default_route, generate_kinds, overrides)`:
+  scene-kind table + per-beat overrides, `render` fallback when a generate beat has no planned shot;
+  `RoutingSettings` (`CF__ROUTING__DEFAULT_ROUTE`, `GENERATE_KINDS`, `OVERRIDES` JSON by beat id).
+- **Stage** `route_shots` (new `Stage` member, workspace extra, control class) writes
+  `shots/routing.json`; `compile_controls` (Blender path) renders only generate-routed shots, so
+  anchors and LTX clips follow; `compose_video` with such a routing cuts `render` beats out of the
+  Remotion render by frame index, conforms each `generate` beat's `video/<shot>/clip.mp4`
+  (letterbox, retime, hold last frame, exact `duration_frames`), encodes segments identically with
+  `.done.json` caching, concatenates losslessly, muxes narration when present, writes
+  `exports/compose.json`. Without generate-routed beats the stage is unchanged.
+- **Web** `route_shots` node; `compose_video` inputs `clips` (VIDEO) + `routing` (SHOTS); template
+  `hybrid-shot-router-video` (narration + Remotion + Blender/HiDream/LTX branches into one compose).
+- **Readiness report fix** `models/video_stack.py::index_store_root`: `content-factory video-stack`
+  scanned `<repo>/models` (the symlink index) and reported NO WEIGHTS for a complete stack; it now
+  follows the index to the store (`/mnt/fast/models`) when no explicit/configured root is given.
+
+| What | Command | Result |
+| --- | --- | --- |
+| router + stage | `uv run pytest tests/unit/test_shot_router.py -q` | 7 passed |
+| hybrid end to end (mocks: fake Blender, mock HiDream/LTX, ffmpeg stand-in for the Remotion render) | `uv run pytest tests/unit/test_compose_mixed.py -q` | 3 passed: 4 segments in beat order (generate, render, render, render), every segment exactly its beat's frames, final = timeline frames with narration, rerun reuses all segment markers with the same hash; all-render routing takes the plain mux path; missing clip is a clear error |
+| neighbours | `uv run pytest tests/unit/test_compile_controls_blender.py tests/unit/test_stages_anchor.py tests/unit/test_dag_compiler.py tests/unit/test_workspace_compile.py tests/unit/test_shots_schema.py tests/unit/test_new_stages.py -q` | 52 passed |
+| video-stack root | `uv run pytest tests/unit/test_video_stack.py -q`; `uv run content-factory video-stack` | 12 passed; report now says `weights: /mnt/fast/models`, 19 ready (was 6 ready / 9 "missing weights") |
+| web | `pnpm --filter @content-factory/web typecheck && pnpm --filter @content-factory/web test` | tsc clean, 75 passed |
+| Remotion | `just render-smoke` | passed (3.0 s clip, frames/faststart true) |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 374 passed, 36 deselected |
+| lint/type/schemas | `just lint && just typecheck`; `uv run python scripts/export_schemas.py --check` | clean; drift check reports only the pre-existing untracked `StoragePlan`/`WorkspaceGraph` schema files |
+
+Inventory for a live hybrid run (2026-09-06, GPU now free: 4.5 GB used, no ollama):
+- Present and ready: Blender 5.2 + 4 MPFB characters; HiDream weights (33 GB) + skill venv (torch
+  2.8 cu128, pipeline imports); LTX-2.5 GGUF stack linked into `~/git/ComfyUI/models` (unet, clip,
+  vae) with ComfyUI 0.33.0 + ComfyUI-GGUF; Remotion; Kokoro/Breeze TTS venvs; music library; RIFE and
+  SeedVR2 envs; Cutie/ProPainter/GIMM-VFI weights.
+- Not running: ComfyUI (`comfy launch --background -- --cache-none --reserve-vram 1.5`) and the HiDream
+  server (`uv run --project skills/image/hidream python skills/image/hidream/server.py`). They do not
+  fit the 24 GB card together (≈17 GB + ≈20 GB): run `generate_anchor` with HiDream up, stop it, then
+  `generate_video` with ComfyUI.
+- Missing code path: `synthesize_narration` always uses `MockTTS` (tone bursts) — the Kokoro/Breeze
+  skills are installed but not selectable from the stage, so a live hybrid video has placeholder audio.
+- Missing envs (post chain only, not on the hybrid path): `skills/video/postchain/setup_envs.sh`
+  builds Cutie / ProPainter / GIMM-VFI venvs (torch cu128 wheels, internet).
+- Missing weights (optional Wan pose path): `clip_vision_h.safetensors`, `wan_2.1_vae.safetensors`
+  (Comfy-Org/Wan_2.1_ComfyUI_repackaged); the Wan GGUF + umt5 exist in the store but are not linked
+  into `~/git/ComfyUI/models`.
+- `just doctor` reports `DATABASE_URL not set` although `.env` sets it: dotenv is intentionally not
+  loaded, so export `.env` into the shell before `just doctor` / CLI runs.
+
+### The non-generative lane is wired into scenes (commands actually run, 2026-09-06, home session)
+Operator: "fix everything" — the three items from the guide written earlier today. Sections 1 and 3
+were documentation and coordination; section 2 was the real build.
+
+**1. Lint gate.** Resolved by waiting, as predicted: the concurrent session finished and formatted
+its own files. `just lint` is green (416 files, ruff check clean, pnpm lint clean). Nothing of that
+session's work was reformatted from here.
+
+**2. Scenes.** Every library now has a consumer, or an explicit reason not to.
+
+| Change | Detail |
+| --- | --- |
+| `ChartScene` | six missing `ChartKind`s implemented — `donut` (d3 `arc` + pure `donutAngles`), `stacked_bar` (`d3.stack`), `histogram` (`d3.bin`, 8 thresholds), `scatter`/`bubble` (`d3.scaleLinear`, radius from the second series), `waterfall` (running close). `bar`/`horizontal_bar`/`line`/`area` are untouched, so nothing already rendered moves. Multi-category kinds take `theme.series` (Okabe-Ito) rather than cycling three UI colours |
+| `MapScene` (new) | d3-geo + topojson-client, all four contract projections, choropleth joined on the first dataset column against the topojson feature id. Pure SVG: no WebGL, no tiles, no async beyond one asset fetch |
+| `ScreenshotScene` (new) | Remotion `<Img>` plus a highlight box positioned on the *rendered* image via `containRect`, so letterboxing cannot shift it. Holds the render until the bitmap decodes so natural size is known |
+| `capture-screenshot.mjs` (new) | the Playwright capture step: fixed viewport, `deviceScaleFactor`, `reducedMotion`, pinned locale/timezone/colour-scheme, plus an injected stylesheet that kills any JS-driven animation. Header states it is operator-run and never part of `just test` |
+| Registration | all four touch points for both scenes: component, `index.ts` export, `IMPLEMENTED_KINDS`, `SceneSwitch`. `IMPLEMENTED_KINDS` is 12 → 14 |
+| `SceneEnv.assetUrl` | scenes reach `bundle.assets` through the same `AssetUrlResolver` the artboard path uses; identity by default, `staticFile()` from the renderer app |
+| Deps | `topojson-client@3.1.0` + `@types/topojson-client@3.1.5`, and `@types/geojson@7946.0.16` / `@types/topojson-specification@1.0.5` explicitly (pnpm's strict isolation does not link transitive `@types`) |
+
+**3. Traps.** `docs/setup.md` gained a used-by table and one newly discovered entry, and the same
+warning sits on the `MapScene` docstring: **topojson ring winding**. d3-geo reads a counter-clockwise
+exterior ring as the whole globe minus the shape, so one badly wound region floods the plot. It cost
+a render to diagnose here and presents as a projection bug, not a data bug.
+
+| What | Command | Result |
+| --- | --- | --- |
+| end to end | `node scripts/render-timeline.mjs --bundle <8-scene bundle>` | 878 frames, 1080×1920; donut, stacked bar, choropleth and screenshot all render as real scenes, not placeholders (frames inspected) |
+| determinism | the same bundle rendered twice, sha256 compared | `f20c9a3a03ced8f5…` both times — byte-identical |
+| highlight box | screenshot scene rendered with `highlight_region` null vs set | hashes differ, and the drawn box lands on the image fractions requested |
+| lint | `just lint` | 416 files formatted, ruff check clean, pnpm lint clean |
+| typecheck | `just typecheck` | pyright 0 errors; tsc clean in all 9 workspace projects |
+| tests | `just test` | Python 388 passed, 36 deselected; `video-ui` 25 passed (4 files), `renderer` 6 passed |
+| smoke | `just render-smoke` | six ffprobe assertions true |
+
+Verification bundle used data: URLs for both assets, so nothing was written into `public/` or
+`fixtures/`. Worth committing a small topojson + PNG fixture later so `render-smoke` covers these
+scenes; not done here.
+
+Not mine, still red: `packages/content-schema-ts` `rejects invalid ShotRouting fixtures` fails. Every
+`ShotRouting` file is the concurrent session's untracked in-flight work (written 06:55–07:08); left
+alone rather than guessed at. Vega, Vega-Lite, Vega-Embed and MapLibre remain installed with no
+importer, deliberately — the reasons are in `docs/setup.md`.
+
+## 2026-09-06 — automated live run of the hybrid workflow (session vega-93)
+
+Everything the operator used to do by hand around a live run is now code, and the hybrid workflow ran
+end to end on this machine with real backends.
+
+- **`services/local.py`** — stages that need a GPU tenant call `ensure("hidream" | "comfyui")`: healthy →
+  no-op; otherwise stop the other tenant (24 GB card, one at a time), link every `RequiredModel` of the
+  known ComfyUI packages from the weight store into ComfyUI's model folders (GGUF files also into the
+  legacy `unet`/`clip` dirs), spawn the server detached (HiDream skill server via `uv run --project`;
+  ComfyUI from its workspace `.venv` — comfy-cli's own `launch` runs `main.py` under its tool Python and
+  fails with `No module named comfy_aimdo`), wait for the health check. Handles/logs in `.services/`
+  (git-ignored). `LocalServicesSettings` (`auto_start`, `exclusive_gpu`, `comfy_extra_args` =
+  `--cache-none --reserve-vram 1.5`, `comfy_workspace`, `link_models`, `weight_store`).
+- **Narration** — `NarrationSettings.tts = mock | kokoro`; `stage_synthesize_narration` caches per beat
+  by (provider, voice, spoken text). `KokoroTTS` drops punctuation-only tokens from word timings.
+- **Local runner** — `runners/local.py` + `content-factory run-local <workflow> [--from] [--until]` +
+  `just run-local`; stage orders mirror the templates; `run.json` per deliverable; absolute paths only
+  (the first live attempt handed Remotion a relative bundle path).
+- **Environments / weights** — `setup_envs.sh`: Cutie installed without its GUI deps (cchardet does not
+  build on 3.11), GIMM-VFI from its real imports (its 2021 pins no longer build); all three envs import
+  torch with CUDA. Wan 2.1 `clip_vision_h` + `wan_2.1_vae` downloaded to `/mnt/fast/models/wan21-repack`
+  and linked (with the Wan GGUF and umt5) into ComfyUI by the orchestrator.
+- **Misc** — `just doctor` sources `.env` (dotenv is intentionally not loaded by settings) and now passes;
+  `just setup-postchain`; `.env.example` live-backend block; ADR-0012 operations paragraph; docs/setup.md
+  "Running a workflow live".
+
+| What | Command | Result |
+| --- | --- | --- |
+| services | `uv run pytest tests/unit/test_local_services.py -q` | 7 passed (start/wait, GPU hand-off both ways, operator-started ComfyUI stopped via comfy-cli, auto_start off → manual command, timeout → log path, linking idempotent) |
+| narration + runner | `uv run pytest tests/unit/test_narration_backend.py tests/unit/test_local_runner.py -q` | passed (mock default, kokoro selectable, per-beat cache, punctuation filter; runner report, slicing, absolute paths, campaign deliverable) |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 388 passed, 36 deselected |
+| lint/type | `just lint && just typecheck` | clean |
+| doctor | `just doctor` | All checks passed (comfyui warn only when not running) |
+| **live hybrid run** | `just run-local hybrid-shot-router-video` with `CF__CONTROLS__COMPILER=blender CF__IMAGE_SEQUENCES__BACKEND=hidream CF__VIDEO__BACKEND=comfyui CF__NARRATION__TTS=kokoro` (three resumes with `--from` after the fixes below) | **passed**: kokoro 4 beats 22 s · align/captions/mix (−14.6 LUFS) · timeline 537 f · Remotion 13.5 s · plan_shots 4 / route 1 generate + 3 render · Blender controls 32 s (7 pass kinds) · HiDream auto-started, 2 anchors 773 s (full model, 50 steps, ~8 s/step) · HiDream stopped, ComfyUI auto-started from its venv, LTX-2.5 clip 74 s (105 f @24, guide at 96) · compose 5.4 s: 4 segments 164+109+157+107 = 537 f, 1080×1920 @30 + AAC, 17.9 s · qc_deliverable passed (av_drift, delivery_promise, flashing) · 1 package |
+
+Fixed during the live run: relative project path → Remotion ENOENT (runner resolves paths);
+`comfy launch` → `comfy_aimdo` import error (launch from the workspace venv); made-up deliverable id →
+`StopIteration` in `qc_deliverable` (runner defaults to the campaign's video deliverable). Output:
+`output/local-runs/hybrid-live-2026-09-06/deliverables/dlv_short0000001/exports/final.mp4`.
+
+Quality finding, not fixed here: both HiDream anchors reproduce the grey clay MPFB mannequin from the
+rough render and turn the beat text ("electricity") into literal lightning; LTX then animates exactly
+between them. Mechanics are right; the next step is a per-shot scene-description prompt (the planner
+currently uses the narration text) and sending only skeleton + layout boxes, not the clay render, as
+references. ComfyUI is left running after a run (the last tenant stays up so a rerun is instant).
+
+## 2026-09-06 — v2 of the hybrid short: critique, research, new story (session vega-93)
+
+The first live video was judged unusable: no hook (5 s of an abstract AI shot before any point is
+made), no burned-in captions (most short-form viewing is muted), a 16:9 clip letterboxed into a 9:16
+frame, cards with dead time (a 3.6 s source list as the ending), a fact-then-list script with no turn,
+and HiDream copying the grey MPFB clay render because the rough pass was sent as a reference. Web
+research (short-form retention: hook in 1–3 s, captions +40 % retention, ~80 % muted viewing, safe
+zones; data-story structure: setup → surprise → insight → action; LTX-2.5 prompting: separate camera
+and subject clauses, one subject, stable geometry) shaped the changes below.
+
+- **New story** `fixtures/story/wind_2024.json` (8 beats, ~36 s @ 152 wpm) with real 2024 numbers:
+  wind out-produced nuclear for all of Q4 2024, 40.8 TWh record, share 10.2 % (2018) → 20.9 % (2023),
+  turbine orders 1,244 MW (2023) → 446 MW (2024), causes per Svensk Vindenergi, ~2 GW by 2027 vs
+  ~2 GW/yr 2020–22. Sidecars `wind_2024.datasets.json` / `wind_2024.sources.json` (SWEA Q4 2024
+  statistics, Renewables Now, Baltic Wind, Wikipedia/Energimyndigheten table). Two generative beats
+  (`image` kind): hook = aerial dawn wind farm in snow, outro = turbine close-up at sunset, both
+  vertical 576×1024 from `fixtures/shots/wind_2024.json` (text-to-image anchors, one per shot, LTX
+  motion prompt with camera and subject clauses; no clay reference).
+- **Pipeline changes**: `stage_plan_story` imports story sidecars (datasets → `data/`, source cards →
+  `research/source_cards.json`) and `stage_compile_timeline` builds the bundle from the project's
+  datasets/sources (fallback: demo); `compose_video` burns captions (libass, white on translucent
+  box, re-wrapped ≤ 22 chars/line, bottom margin 22 % = above the platform UI band; `ComposeSettings`)
+  on both paths and writes `exports/compose.json`, and reruns from the recorded pristine picture (a
+  rerun used to caption its own output twice); `stage_compile_captions` compiles per beat with
+  `balanced_cues` (no one-word stragglers, no cue spanning two scenes); Kokoro runs on CPU by default
+  (`narration.kokoro_device`; it OOMed on CUDA while HiDream held the card); HiDream/ComfyUI are
+  started lazily, only before an uncached generation, so a cached rerun never evicts the other tenant.
+- **Live result** `output/local-runs/wind-2024-v2/…/exports/final.mp4`: 1080×1920, 1087 frames /
+  36.2 s, 8 segments (2 generated, 6 Remotion), captions burned, qc_deliverable passed. Anchors:
+  2 × 576×1024 in 637 s on the shared HiDream (queued behind another session's jobs); LTX: 2 clips in
+  154 s; second pass after tightening three beats re-spoke 3 beats and reused every anchor and clip
+  (cache_hits 2/2, no server started).
+
+| What | Command | Result |
+| --- | --- | --- |
+| sidecars / captions / runner | `uv run pytest tests/unit/test_story_sidecars.py tests/unit/test_compose_mixed.py tests/unit/test_captions_per_beat.py tests/unit/test_local_services.py tests/unit/test_narration_backend.py -q` | passed |
+| Remotion check of the new story | `just run-local narrated-video --story fixtures/story/wind_2024.json --until render_scenes` (mock TTS) | 1130 frames, every scene kind drew (image beats as placeholders, routed generative) |
+| live v2 | `just run-local hybrid-shot-router-video --story fixtures/story/wind_2024.json --shots fixtures/shots/wind_2024.json` with blender/hidream/comfyui/kokoro, `CF__ROUTING__GENERATE_KINDS='["image"]'`, `CF__IMAGE_SEQUENCES__ANCHOR_REFERENCES='[]'`, `CF__NARRATION__SPEED=1.15` | passed (17 stages) |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 437 passed, 36 deselected (final, after the lazy server start and balanced captions) |
+| lint/type | `just lint && just typecheck` | clean |
+
+Still open (quality): HiDream at 576×1024 leaves ring/crosshatch texture in skies (render anchors at
+2× and downscale, or use the 1024-class sizes the model card assumes); the LTX hook clip's camera
+rise is subtle (blades turn, camera barely moves — stronger camera clause or a start/end pair of
+anchors); the Remotion cards are typographically plain with large empty areas (design pass); the
+anchor prompt is prefixed with the fixture campaign's brief topic (the other session added a
+`--subject` option). Another session (auto-content-6a) edits the runner/anchor code concurrently;
+coordination happened over cross-session messages, nothing is committed.
+
+## 2026-09-06 — dark redesign of the cards (v3 of the wind short, session vega-93)
+
+User feedback on v2: text looked poor, charts were boring, the video should be dark, the second
+scene looked odd, overall "make it more interesting to watch". Changes:
+
+- **Brand sidecar** `fixtures/story/wind_2024.brand.json` (`paper #0B0F14`, `ink #F2F5F9`, `accent
+  #4CC3FF`) imported by `stage_plan_story` into `story/brand.json` and applied to the render bundle
+  (`_project_brand`). `content-ui applyBrand` is now dark-paper aware: with a dark paper the
+  `onInk` roles (which `textColor` uses whenever the ground is dark) become light text, light muted,
+  accent nudged towards ink — before, they were set to the paper colour and text vanished. Test:
+  body ≥ 7:1, label/muted ≥ 4.5:1 on the dark paper.
+- **Portrait-aware scenes** (`video-ui`): `useSceneGeometry` gains `portrait` and `align`; the
+  `SceneFrame` draws a thin accent progress rule across the top of the safe area for the scene's
+  duration. Big number: centred, larger, accent rule draws under the figure as the count completes,
+  context steps up to subhead. Bar chart: bars grow one after another, value labels pop in as each
+  finishes, the latest bar carries the accent and the rest are muted, year labels sit under their
+  bars, the tallest bar fills the plot (no round-axis ceiling since values are labelled), headline
+  title. Bullets: display title, headline points with rounded accent markers in a centred column.
+  Timeline: vertical spine in portrait with the events stacked, last event in accent. Outro: CTA as a
+  solid accent pill above the sources. Title/section: centred. House rules kept (flat colours, no
+  gradients/glow/bounce). Landscape layouts unchanged.
+- **Result** `output/local-runs/wind-2024-v2/…/exports/final.mp4` (v3): 36.2 s, dark cards, burned
+  captions, qc_deliverable passed. The rerun regenerated both anchors and clips (214 s + 158 s)
+  because the peer session's style-first anchor prompt changed the cache key — the new anchors are
+  as good as before (dawn wind farm, sunset turbine).
+
+| What | Command | Result |
+| --- | --- | --- |
+| content-ui | `pnpm --filter @content-factory/content-ui test` | 22 passed (dark-paper contrast test added) |
+| video-ui | `pnpm --filter @content-factory/video-ui typecheck && … test` | clean, 25 passed |
+| Remotion check | `just run-local narrated-video --story fixtures/story/wind_2024.json --until render_scenes` | every card drew dark; chart/number frames inspected |
+| live v3 | `just run-local hybrid-shot-router-video --story … --shots …` (same env as v2) | passed (17 stages) |
+| lint/type/tests | `just lint && just typecheck`; `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | clean; 442 passed, 36 deselected |
+
+## 2026-09-07 — type: Sora display face, Inter captions (v4 of the wind short, session vega-93)
+
+User asked for nicer text. Two faces were at work before: Inter 400–700 on the cards (pinned via
+@fontsource) and DejaVu Sans Bold in the burned captions (whatever libass found on the system).
+
+- **Second pinned family.** `@fontsource/sora@5.3.0` (SIL OFL) added to `apps/renderer` and
+  `packages/content-ui`; the width-table generator is now `gen-inter-widths.mjs <family> <weights>`
+  and produced `src/fonts/sora-widths.ts` (600/700/800). `fonts/index.ts` exports `FONT_FACES`
+  (Inter + Sora), `fontStackFor(family)`, `fontFaceCss`; the renderer loads every face and
+  `bundle.mjs` copies both packages' files into `public/fonts/`.
+- **Family-aware typography.** `TypeStyle.family` (Inter | Sora) and weight 800; `fitText` /
+  `fitNumber` / `measureText` take `family` and measure from that family's table (fallback: nearest
+  Inter weight). `BrandTokens.font_family` accepts `"Sora"`; `applyBrand` → `withDisplayFamily`
+  sets display / headline / number to Sora (800/700/800, tighter tracking) and leaves body, label,
+  caption and source in Inter. Scenes set text in the role's family (`useFittedText`, big number,
+  chart value labels, timeline dates). Default theme unchanged: Inter everywhere unless a brand opts in.
+- **Captions in Inter Bold.** `assets/fonts/inter/{Inter-Bold,Inter-SemiBold}.ttf` + LICENSE (Inter
+  4.1, SIL OFL) vendored; `ComposeSettings.caption_font="Inter"`, `caption_fonts_dir` → libass
+  `fontsdir`, so the burn is identical on any machine.
+- **Caption band.** Portrait cards now keep their content above 64 % of the frame height
+  (`CAPTION_BAND_TOP`), where the caption block sits — the chart's axis labels no longer collide
+  with the captions.
+- **Result** (same file, `output/local-runs/wind-2024-v2/…/exports/final.mp4`): 36.2 s, Sora
+  display type, Inter captions, dark cards; anchors and clips reused from cache (no GPU time).
+
+| What | Command | Result |
+| --- | --- | --- |
+| content-ui | `pnpm --filter @content-factory/content-ui test` | 24 passed (Sora brand swap, Sora widths) |
+| video-ui / renderer | `pnpm -r typecheck`; package tests | clean; 25 / 6 passed |
+| compose + sidecars | `uv run pytest tests/unit/test_compose_mixed.py tests/unit/test_story_sidecars.py -q` | 7 passed |
+| schemas | `just schemas` (BrandTokens.font_family) | regenerated; drift check only the pre-existing untracked WorkspaceGraph file |
+| live rebuild | `just run-local hybrid-shot-router-video --story … --shots …` | passed, 17 stages, cache_hits 2/2 on anchors and clips |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 445 passed, 36 deselected |
+
+## 2026-09-07 — pipeline review + mainstream-editing features (v5 of the wind short, session vega-93)
+
+**Review.** A from-scratch run of the hybrid template on mock backends failed at `compose_video`:
+the 2D `motion_plan` control compiler produced one bundle keyed by the fixture MotionPlan's sequence
+id, so no `video/<shot>/clip.mp4` existed for the routed shots. Fixed: with a shot plan present the
+mock compiler emits one bundle per routed shot (`compile_bundle_from_motion_plan(..., shot_id=,
+anchor_frames=(0,))`), so anchors, clips and the splice line up exactly as on the Blender path. The
+whole template now runs offline (`test_hybrid_workflow_runs_end_to_end_on_mock_backends`: 17 stages,
+Remotion stubbed with an ffmpeg render). Everything else re-verified: mixed/plain compose reruns,
+routing, per-beat captions, lazy GPU start, Kokoro CPU, story sidecars, dark brand, Sora type.
+
+**Features, from the short-form research** (85 % watch muted; captions +12 % view time / +40 %
+completion; 71 % decide in the first 3 s, mean 1.7 s; change something on screen every 3–5 s;
+restrained caption animation reads as quality, bouncy as cheap):
+- **Word-by-word highlight captions** — `audio/captions.to_ass` writes `captions/captions.ass`: one
+  event per spoken word, the whole cue visible, the current word in the brand accent (colour only).
+  `compose_video` burns the ASS when `compose.caption_highlight` is on (SRT stays the fallback and the
+  sidecar). Fonts from the flat `assets/fonts/` (Inter Bold/SemiBold, Sora Bold/ExtraBold static
+  instances built from the OFL variable font with fontTools; licences alongside).
+- **Hook headline** — `StoryPlan.hook_text` (≤ 120 chars) burned in Sora Bold over the opening
+  `compose.hook_seconds` (2.8 s) in the top third, the claim of the film for the muted first
+  glance. Wind story: "Wind beat nuclear. Then Sweden stopped building."
+- **Pacing facts** — `compose.json.pacing` (`mean_scene_s`, `longest_scene_s`, `scenes_over_6s`,
+  `changes_per_10s`) and `longest_scene_s` in the stage facts; wind short: 8 scenes, mean 4.5 s,
+  longest 6.2 s, 2.2 changes per 10 s.
+- **Card drift** — portrait cards scale 1.00 → 1.03 linearly over their duration, so no frame is
+  ever fully still.
+- Already present and confirmed: music ducking under speech (sidechain in `add_music_bed`), -14.5 LUFS.
+
+| What | Command | Result |
+| --- | --- | --- |
+| offline hybrid end to end | `uv run pytest tests/unit/test_local_runner.py -q` | passed (17 stages on mocks) |
+| captions / compose / stages | `uv run pytest tests/unit/test_captions_per_beat.py tests/unit/test_compose_mixed.py tests/unit/test_control_compile.py tests/unit/test_stages_anchor.py tests/unit/test_new_stages.py tests/unit/test_local_runner.py -q` | 37 passed |
+| web / video-ui | package tests | 76 / 25 passed; `just typecheck` clean |
+| live rebuild | `just run-local hybrid-shot-router-video --story … --shots …` | passed, anchors/clips from cache |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 448 passed, 36 deselected |
+| lint / type | `just lint && just typecheck` | clean (audio skill files from a third session formatted + given the standard skill per-file ignores) |
+
+## 2026-09-07 — non-verbal background music: MiniMax-Music3 gets a runtime (session vega-93)
+
+Operator's brief: use `models/music/MiniMax-Music3-GGUF` to make background music for all kinds of
+video — non-verbal, classical and calm for documentaries, **subtle, must not take over**, sometimes
+just calm textures, and some documentary music that "becomes quicker then slower".
+
+**The model had no runtime, and now it does.** STATUS has said "Music3 has no runtime yet" since
+2026-09-05, and the model card says why: the five GGUFs "are **not** usable with llama.cpp alone"
+because generation needs the whole pipeline (LM 8.59B → RVQ depth decoder → condition encoder →
+flow-matching DiT → vocoder). The only implementation is **HOT-Step CPP** (engine MIT), now at
+`external/HOT-Step-CPP`. It reads as a desktop app but the engine builds headless binaries — and
+the MM3 code is in the *server*, not in `ace-lm`/`ace-synth`, which are the ACE-Step tools and print
+`unknown architecture` at these weights because the ACE registry classifies on
+`general.architecture` while MM3 is discovered separately. The usable surface is
+`POST /mm3/synth` → `GET /mm3/job?id=` → `GET /mm3/take?id=`.
+
+**Getting CUDA without root.** The box has driver 595.84 and no CUDA toolkit, and PyPI's
+`nvidia-cuda-nvcc-cu12` turns out to ship only `ptxas` — no `nvcc` driver — so the pip route is a
+dead end. NVIDIA's runfile extracts as a plain user (`./cuda_12.6.3_*.run --tar mxvf`), which gives
+a real nvcc 12.6 that works with the system gcc 13.3; the assembled toolkit lives at
+`.venvs/cuda-12.6/root` (git-ignored, 7.4 GB). Two build gotchas: `-DGGML_BLAS=ON` fails with no
+BLAS installed (use `OFF`), and the final link needs `-Wl,-rpath-link` for `libcublas.so.12`
+because `libggml-cuda.so` records `RUNPATH $ORIGIN` only — that is also why `mm3.start_server()`
+injects `LD_LIBRARY_PATH`.
+
+**CPU was measured and rejected first**: 15 s of audio took ~2¼ min in the AR stage alone and was a
+fifth through the flow stage at 5 min — 20–30x realtime, ~7 hours for this library. On the 3090 the
+warm rate is **1.9x realtime** (40 s of audio in 76 s).
+
+**22 instrumental tracks in `assets/music/`** — documentary (5), tension/investigative (3), nature
+(3), explainer/corporate/tech (5), human-interest (2), calm textures (4). 44.1 kHz stereo 24-bit
+FLAC, sha256-pinned `manifest.json`, generated index — the same shape as `assets/sfx/`. New skill
+`skills/audio/music` (numpy + soundfile only, **no torch**: generation happens in the engine over
+HTTP) whose DSP is *imported from* `skills/audio/sfx/sfx.py` rather than copied, so both libraries
+are measured by the same audited code.
+
+**The finding that shaped everything: MM3 does not take a duration.** `mm3_assemble_prompt()` builds
+the LM prompt from `caption` + `lyrics` only. `duration` becomes `max_frames`, which is nothing but
+the AR loop's stopping bound — the model is never told how long the piece should be, and stops when
+it emits EOS. Asking for 120–150 s returned **19–62%** of the cap. A sectioned Arrangement helps a
+little (24-28% → 30-47%); **stating the length in the caption makes it consistently worse**
+(15-29%). No sampler setting moves it: `lm_rep_penalty` 1.15 produced **bit-identical** output
+(the penalty never touches the EOS token) and temperature only changes which draw you get. There is
+no EOS override in the engine. So length is what candidate selection optimises for cues — longest
+passing take of N seeds — and loop entries sidestep it entirely, which is why the static material
+is the loopable material. Measured library: 15–83 s, median 35 s, 14.2 min total.
+
+**Two QC metrics that earn their place.**
+`presence_band_ratio` — the share of a track's energy in **1–4 kHz**, the band a narrator competes
+for. It is a *ratio*, so it describes what ducking cannot fix: turning a bed down moves the whole
+spectrum, not the overlap. Across the library it ran 0.015–0.757 (median 0.126); the two that broke
+0.30 were exactly the ones whose sources live there — glassy bell tones (0.757) and midrange muted
+plucks (0.322) — and both were re-prompted onto lower sources rather than shipped. The library is
+deliberately **not** EQ-carved: carving bakes in an assumption about one voice, and `add_music_bed`
+already sidechains.
+`slow_envelope_range_db` — p95−p5 of a **10 s moving RMS**, replacing EBU LRA as the "does it
+travel" test. LRA is the wrong tool on sparse music: a felt-piano bed measured **LRA 25.7 LU** while
+being perfectly even in level, because LRA reads the silences between chords. Smoothing over ten
+seconds discards the gaps and leaves the shape. The first bands were guessed and never fired
+(`[0,22]` against a 0.8–17.5 dB spread); they are now calibrated from the measured distribution,
+and the arc entries have a real floor so "asked for an arc, got a drone" is catchable.
+`build_library.py --reflag` recomputes QC and flags from the audio on disk, so recalibrating costs
+no GPU time.
+
+**Two bugs worth recording.** Wrapping the *longest* loop a take supports leaves exactly one
+possible window, and the first static pad came out with a **7.1 dB level jump** across the wrap;
+reserving ~8 s of slack and searching offsets for the most level-stable span
+(`mm3.best_loop_window`) fixed it at a shorter length — for a pad, a short inaudible join beats a
+long one that pumps. And `score()` originally ranked *every* entry by length, which is meaningless
+for a loop: loops are now scored on seam match, flatness and presence instead.
+
+**Only textures loop.** Pads and drones have no phrase structure, so the sfx skill's tail-over-head
+wrap applies cleanly. Music with phrases does not loop by wrapping however good the crossfade is,
+and the library does not claim otherwise.
+
+**Commands actually run**
+- `git clone --depth 1 --recursive https://github.com/scragnog/HOT-Step-CPP.git` into `external/`.
+- CUDA 12.6.3 runfile downloaded (4.45 GB) and extracted with `--tar mxvf`; `nvcc -ccbin g++` test
+  compile passed against gcc 13.3.
+- `cmake .. -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=86 …` + `--target ace-server` — built after
+  the rpath-link fix.
+- `GET /mm3/props` — all five modules `probe_ok`, `available:true`, `synth_ready:true`, 25 fps,
+  `max_audio_frames_limit` 9000 (360 s).
+- `build_library.py` (22 tracks x 3 candidates) — **22/22 built**; then four rounds of targeted
+  re-prompting and re-seeding on the entries QC flagged. Final: **22 tracks, 14.6 min, 117.4 MB**,
+  manifest sha256 verified against every file, all within 0.6 LU of the -23 LUFS target,
+  presence-band ratio 0.015-0.336 (median 0.130), lengths 9-83 s (median 35 s), **5 still flagged**
+  (`doc_strings_piano_arc` too_flat, `doc_investigative_pulse` short, `doc_unease_drone`
+  crowds_the_voice, `calm_texture_deep` short, `calm_texture_glass` crowds_the_voice).
+- Regenerating two tracks from their recorded seeds reproduced their measurements exactly
+  (0:32/arc 6.0/voice 0.232 and 0:37/arc 5.8/voice 0.126), which is the determinism claim tested
+  rather than asserted.
+- `uv run ruff format/check skills/audio/music/ skills/audio/sfx/` — all checks passed.
+
+**Where it stopped, and why.** Four rounds of targeted regeneration fixed the severe faults —
+`calm_texture_glass` went from 0.757 presence-band energy to 0.298, `nature_gentle_curious` from
+23 s to 1:16, `doc_investigative_pulse` from 0.322 to 0.223 — but past that each round traded one
+flag for another (a clean seam for a shorter take, lower presence for a worse arc). That is what
+optimising an uncontrollable generator looks like, and it is the point to stop: the five remaining
+flags are marginal, every number is in the manifest, and the flags are advisory by design.
+
+The four `texture` entries are the weakest part of this library: MM3's natural output has movement
+and midrange content, which is the opposite of what a static bed wants. **`assets/sfx/drone/` does
+this role better** — `drone_low_loop` and `sub_bed_loop` measured harsh-band 0.000, event prominence
+2.0, seam -1.9 dB. For "just calm noise under narration", reach for those first.
+
+**Not done.** Nobody has *listened* to any of it — every judgement here is a measurement, and
+measurements catch a bed that sits in the voice band, a loop that pumps, or a track that did not
+move, but not "is this a good cue". Absence of vocals rests on the engine's `[instrumental]`
+substitution plus the captions, not on a detector. Two `assets/music` files disappeared from disk
+between the build and the final verification with no OOM or filesystem error in the logs and no
+other session claiming the directory — cause unexplained; both regenerated identically from their
+seeds, and the sha256 manifest is what caught it. And `assets/music/` (117 MB) is untracked, like
+`assets/sfx/` — regenerable from `library.json`, so committing it is a size decision, not a
+default.
+
+## 2026-09-07 — a sound-effect and ambience library from Stable Audio 3 Small-SFX (session vega-93)
+
+Operator's brief: use `models/sound_effects/StableAudio3-Small-SFX` to make at least 20 common video
+sound effects — whooshes, storm and rain, a graph page changing, something popping in — researched
+first, pleasant to listen to, and **loopable without anyone thinking twice**.
+
+**Research first** (`docs/research/2026-09-07-video-sfx-and-ambience-library.md`, 24 sources). Two
+findings shaped the whole thing. Editors reach for two disjoint families — short one-shots that mask
+cuts and mark UI beats, and long continuous beds that place a documentary in a room — so the library
+is split that way rather than being one flat pile of effects. And "pleasant" has a measurable
+definition: the unpleasantness model is *high sharpness, high roughness, low tonality, high
+loudness*, with roughness living in the 15–300 Hz modulation band; beds whose amplitude moves at
+gust rate sit on the pleasant side of the 20 Hz handover, so nothing here is prompted bright.
+
+**38 sounds in `assets/sfx/`** — 24 one-shots (6 transitions, 4 impacts, 13 UI/motion-graphics,
+`thunder_distant`) and 14 beds (rain, storm, wind, forest, ocean, stream, fire, room tone, city,
+crowd, crickets, two drones). 6.7 minutes, 72.9 MB, 44.1 kHz stereo 24-bit FLAC, with a
+sha256-pinned `manifest.json` and a generated index, in the shape of `fixtures/music/tracks.json`.
+**All 38 pass QC with zero flags.**
+
+**New skill `skills/audio/sfx`** (`uv sync`; torch 2.7.1+cu126, transformers 5.16.1, soundfile
+0.14.0), never imported by the control plane. `library.json` is the recipe — 38 prompts, seeds,
+durations, loop and level targets — so the set is reproducible from the file alone. Loads entirely
+from disk: `from_pretrained` goes through `hf_hub_download`, but `T5GemmaConditioner` honours a
+`model_path` that outranks `repo_id`, so rewriting the conditioner config to the checkout's
+`t5gemma-b-b-ul2/` subfolder and calling `load_diffusion_cond()` directly reaches no network at all
+(`HF_HUB_OFFLINE=1` as a second guard). Runs on **CPU by default** — the small model wants no GPU
+(~10 s for 30 s of audio) and the 3090 was held by the HiDream server throughout.
+
+**Three things the first build got wrong, and what the measurements said.**
+
+*Short requests do not work.* Half the one-shots came back as broadband hiss. It looked like seed
+variance — a duration sweep at a fixed prompt and seed alternates good/bad through 1.0–2.0 s — but
+it is not. Three prompts x eight seeds x four lengths: **0/8 usable at 0.8 s, 7/8 at 1.5 s, 8/8 at
+2.5 s, 8/8 at 4.0 s.** Below ~1 s *every* take across three prompts is noise. The requested duration
+is now a generation parameter (`MIN_GEN_S = 3.0`) and the short file is cut out of the result
+afterwards. Relatedly the model places the event late in the window (a 1.5 s thud peaking at
+1.38 s), so the trim finds the onset at −35 dB rather than gating on silence at −60 dB, which had
+been leaving half a second of dead air in front of cues that have to land on a frame.
+
+*One seed is not enough, and "it generated cleanly" is not the same as "it is the right sound".*
+Every entry is now auditioned over several seeds and scored. Spectral flatness separates a designed
+one-shot (0.000) from a failed take (0.24–0.64) completely — and is useless for beds, because rain
+*is* noise, so the test runs on one-shots only. The score also weighs how much energy lands in the
+band the entry claims: `whoosh_soft` generated flawlessly three times running and was a bass rumble
+each time, i.e. a duplicate of `whoosh_deep`, until the prompt and the band pushed it into the mids.
+
+*A statistical seam test cannot tell a splice from real content.* A broadband-transient check
+flagged `forest_day_loop` at +14.7 dB; it was a loud bird at 26.8 s of 28 s, faithfully reproduced.
+Dropped it. `loop_wrap` folds the tail back over the head, so the wrap is a continuous span of the
+source and **asserts** it is sample-adjacent — verified separately that the body is bit-exact and
+that `out[0] == x[L]`, `out[-1] == x[L-1]`. Every filter afterwards is zero-phase and *circular*
+(rFFT), and level is one constant scalar: ffmpeg `loudnorm` in its default dynamic mode would have
+moved the seam. Tonal beds take an equal-*gain* crossfade instead of equal-power — `sub_bed_loop`
+showed a 6.1 dB jump under equal-power because its head and tail are phase-related.
+
+**Thunder is not in the storm bed.** A thunder roll baked into a loop announces the repeat every
+cycle (`event_prominence_db` 11.9). `storm_bed_loop` is continuous weather; `thunder_distant` is a
+one-shot the editor places. Same reasoning turned `night_crickets_loop` from a 4 kHz shriek
+(harsh-band ratio **0.785**) into a bed at **0.012** by prompting for distance, which is what rolls
+a real 4 kHz source off.
+
+**Levels.** One-shots to max-momentary −16 LUFS / −3 dBTP; beds to integrated −23 LUFS / −1 dBTP.
+Integrated LUFS is meaningless for a 0.3 s click (BS.1770 gates on 400 ms blocks), hence momentary.
+The very short transients land 5–10 LU under target because reaching it would put their peaks
+through the ceiling; `gain_limited_by` records it per file, and it is how they should sit anyway.
+
+**Commands actually run**
+- `cd skills/audio/sfx && uv sync` — resolved torch 2.7.1+cu126, transformers 5.16.1, soundfile 0.14.0.
+- `uv run python build_library.py` (CPU) — 38/38 built, **flagged: none**, 72.9 MB into `assets/sfx/`.
+- Manifest integrity re-checked afterwards: all 38 sha256 and byte counts match, no orphan files.
+- Beds: integrated −27.1..−23.0 LUFS, max |seam level delta| **1.88 dB** (threshold 3), max event
+  prominence **8.2 dB** (threshold 10). One-shots: max flatness **0.218**, true peak ≤ −3.0 dBTP.
+- Wrap verified independently: body bit-exact vs source, seam sample-adjacent, FLAC PCM_24
+  round-trip lossless (max error 0.000e+00).
+- `uv run ruff format skills/audio/sfx/ && uv run ruff check skills/audio/sfx/` — all checks passed.
+
+**Not done.** Nobody has *listened* to these yet — every judgement above is a measurement, and
+measurements catch hiss, harshness, level jumps and repeating events but not "does this whoosh feel
+right". The 72.9 MB in `assets/sfx/` is untracked and uncommitted: it is regenerable from
+`library.json`, so committing it is a deliberate call about repo size, not a default.
+
+**Superseded in part, same day.** Session vega-94 later added a *recorded* half to this same
+directory (`recorded.json` + `ingest_recorded.py`, sharing a new `index.py` so either builder
+re-renders the whole manifest). `assets/sfx` now holds **49 files: 11 generated, 38 recorded** —
+27 of the 38 ids above were replaced by Sonniss GDC excerpts of the same name, and 11 new ids were
+added. Nothing here was lost: `library.json` and its seeds are unchanged, so any replaced id
+regenerates with `build_library.py --only <id>`. The measurements in this entry describe the
+generated set as built; `assets/sfx/manifest.json` is the current truth for what is on disk.
+
+
+## 2026-09-07 — speech restoration: the voice chain between the take and the mix (session vega-93)
+
+Operator's brief: make the audio path look like
+
+```
+TTS -> artifact/noise detection -> ClearerVoice (optional cleanup) -> Resemble Enhance
+    -> de-esser -> EQ -> light compression -> true-peak limiter -> EBU R128 -> 48 kHz WAV
+```
+
+and download and integrate **Resemble Enhance** (metallic/muffled AI speech, missing highs) and
+**ClearerVoice-Studio** (speech enhancement + 48 kHz super-resolution).
+
+**Where the chain was cut.** Everything down to *light compression* is per beat, in a new
+`restore_speech` stage; the *limiter* and *R128* are per programme, in `mix_audio`'s `master()`.
+The music bed and the SFX are mixed under the speech between those two points, and limiting each
+beat separately would flatten the programme twice. Nothing is reordered — each step just runs where
+it can see the signal it is meant to act on.
+
+**Models on disk** (`models/speech_restoration/`, links into `/mnt/fast/models`, both permissive —
+`docs/licensing.md` updated):
+- `ResembleEnhance` — `ResembleAI/resemble-enhance` @ `4e3510c`, `enhancer_stage2/` only (680 MB),
+  **MIT code and weights**; code at `external/resemble-enhance` @ `8e97814`.
+- `MossFormer2_SE_48K` @ `eff8c97` (212 MB) and `MossFormer2_SR_48K` @ `39eb1f2` (419 MB), both
+  **Apache-2.0**. The SR repo's third file `do_03925000` (1.7 GB) is HiFi-GAN training state that a
+  verified run never opens, so it is not downloaded. Code is the `clearvoice==0.1.2` wheel;
+  `external/ClearerVoice-Studio` @ `6b3774d` is kept as the readable reference.
+`scripts/download_video_stack_extras.sh` fetches and links all of it; `content-factory video-stack`
+grew a **SPEECH RESTORATION** tier that reads READY for all three.
+
+**Two isolated skills** (`just setup-speech-restoration`), never imported by the control plane:
+- `skills/audio/resemble_enhance` — needs **deepspeed** (an inference-path import of the *training*
+  Engine) which ships an sdist whose `setup.py` imports torch and demands nvcc; solved with
+  `no-build-isolation-package` + `extra-build-variables DS_ACCELERATOR=cpu`, so a plain `uv sync`
+  works. **numpy is pinned below 2**: the CFM solver does `float()` on a shape-(1,) array, which
+  numpy 2 turns into a `TypeError`.
+- `skills/audio/clearervoice` — writes 48 kHz itself (upstream's writer resamples back to the
+  *input* rate, discarding exactly the band SR just created) and runs in a temp dir whose
+  `checkpoints/<MODEL>` symlinks the local weights, so a production run never reaches Hugging Face.
+
+**Control plane.** `audio/detect.py` measures each take (level, clipping, DC, noise floor,
+sibilance, spectral flatness, band limit) from one FFmpeg decode — this is what *gates* the two
+optional steps, so a clean take is not denoised for nothing. `audio/restore.py` runs the chain and
+the FFmpeg tail (`deesser` → `highpass`/`bass`/`equalizer`/`treble` → `acompressor` →
+`apad`/`atrim`). `mix.py::master()` gained `limit_true_peak` in front of the two-pass loudnorm and
+now takes a `MasterChainSpec`. Four new contracts (`SpeechArtifactReport`, `SpeechRestorationSpec`,
+`SpeechRestorationReport`, `MasterChainSpec`), `SpeechRestorationSettings`, `Stage.restore_speech`
+in the audio branch and both narration lanes, and a `restore_speech` canvas node.
+
+**Word timings cannot move.** Every step returns the beat at the length it received; the tail ends
+`apad=whole_len=N,atrim=end_sample=N`; both skill scripts and the stage refuse a drift over 10 ms.
+The segment record is rewritten with the new hash and sample rate so the contract still describes
+the bytes on disk, and the synthesis output is never overwritten — restoration writes
+`<beat>.restored.wav` beside it, so a rerun starts from the untouched take.
+
+**Defaults**: the FFmpeg tail is on (it needs nothing but FFmpeg); both model steps are `off` and
+turned on from `.env`, like every other backend here.
+
+**Live run** — `just run-local narrated-video --story fixtures/story/wind_2024.json --until mix_audio`
+with `CF__NARRATION__TTS=kokoro`, all three model steps on, `DEVICE=cpu` (the 3090 was held by
+another session's HiDream server all session, so **the CUDA path is still unproven**). 8 beats,
+37.1 s of Kokoro narration at 24 kHz:
+
+| Beat | Duration in → out | Rate | Band limit | Sibilance | Findings before → after |
+| --- | --- | --- | --- | --- | --- |
+| 01 | 5350 → 5350 ms | 24k → 48k | 12.0 → 19.5 kHz | 0.0220 → 0.0194 | `band_limited` → none |
+| 02 | 4475 → 4475 ms | 24k → 48k | 12.0 → 17.4 kHz | 0.0328 → 0.0086 | `band_limited` → none |
+| 03 | 4475 → 4475 ms | 24k → 48k | 12.0 → 19.7 kHz | 0.0304 → 0.0305 | `band_limited` → none |
+| 04 | 4800 → 4800 ms | 24k → 48k | 12.0 → 19.6 kHz | 0.0219 → 0.0204 | `band_limited` → none |
+| 05 | 6000 → 6000 ms | 24k → 48k | 12.0 → 19.5 kHz | 0.0269 → 0.0237 | `band_limited` → none |
+| 06 | 6250 → 6250 ms | 24k → 48k | 12.0 → 19.7 kHz | 0.0353 → 0.0365 | `band_limited` → none |
+| 07 | 3725 → 3725 ms | 24k → 48k | 12.0 → 18.6 kHz | 0.0284 → 0.0200 | `band_limited` → none |
+| 08 | 2025 → 2025 ms | 24k → 48k | 12.0 → 20.0 kHz | 0.0379 → 0.0197 | `band_limited` → none |
+
+**Maximum duration drift across all eight beats: 0 ms.** Band limit 12.0 → 19.3 kHz mean, all eight
+`band_limited` findings cleared. `cleanup:clearervoice` was skipped on **every** beat — Kokoro's
+noise floor measures −92 dBFS, so the gate correctly declined to denoise clean audio, which is the
+whole point of putting detection first. Master: **−14.3 LUFS / −1.0 dBTP**, LRA 3.4, QC passed.
+
+Cost on CPU: `restore_speech` 1041.8 s for 37.1 s of speech (`synthesize_narration` was 176.2 s).
+Resemble Enhance dominates it at RTF ~18.6; ClearerVoice SR is ~3.0. This is the number that says
+`DEVICE=cuda` is not optional for routine use.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_speech_restoration.py -q -m "not gpu"` | 17 passed, 1 deselected |
+| live chain, real models | `just run-local narrated-video --story fixtures/story/wind_2024.json --until mix_audio` (all three steps on, CPU) | passed, 8 stages, table above |
+| skills, standalone | both `run.py` on 9.25 s of Kokoro speech | RE 44.1 kHz RTF 18.6; CV SE RTF 2.5; CV SR RTF 3.0 → 19.3 kHz |
+| stack index | `uv run content-factory video-stack` | new SPEECH RESTORATION tier, 3 × READY |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 465 passed, 37 deselected |
+| JS | `pnpm -r test` | all suites pass (schema map + templates updated) |
+| lint / type | `just lint && just typecheck` | pyright 0 errors, tsc clean, ruff check clean; `ruff format --check` flags one file (`skills/audio/sfx/build_library.py`, untracked and last written 05:32 by a concurrent session — left alone) |
+
+To hear it rather than read it: `output/local-runs/restore-chain-check/ab-comparison.wav`
+is beat 1 raw, a 0.6 s gap, then the same beat restored (11.3 s, 48 kHz).
+
+Not done: the **CUDA path is unverified** (no free VRAM this session) — `--device cuda` is wired
+and both scripts report peak VRAM, but nobody has run it. `just schemas-check` still reports drift,
+as it did before this work: ~20 schema files across several sessions are untracked because nothing
+in this tree is committed yet. `fixtures/demo/timeline-bundle.json` gained `"hook_text": null`,
+which the regenerated `StoryPlan` schema (another session's field) requires — that fixture was the
+only thing left failing `pnpm -r test`.
+
+## 2026-09-07 — narration voice: Qwen3-TTS replaces Kokoro (session vega-93)
+
+Operator: "replace kokoro with qwen tts". The weights and an isolated skill
+(`skills/audio/qwen3tts`, Apache-2.0 code and weights, built by another session earlier today) were
+already on disk at `/mnt/fast/models/qwen3-tts-1.7b-{base,customvoice}`; what was missing was the
+one thing its own README named as the blocker — **Qwen3-TTS returns no word timestamps at all**,
+and captions, the timeline compiler and the mix all need them.
+
+**How the beats are timed now.** ADR-0004's precedence is provider → forced alignment → ASR;
+Qwen3-TTS lands on the middle rung. `Qwen3TTS` in `audio/tts.py` generates the beat, then
+`faster_whisper_words()` transcribes it with word timestamps (CPU int8, no VRAM) and
+`snap_to_script()` puts the **locked script's** words on the measured spans — the same function
+that times a human recording, so a caption never shows the transcript's spelling. The transcript is
+also compared with the script: below `narration.script_similarity_min` (0.80, lower than the 0.85
+recorded-take floor because a TTS reads normalized text) the beat fails by name instead of shipping
+with captions that drift against it. `even_split` stays the offline stand-in and records itself as
+`estimated`, never as measured. `synthesize_narration`'s facts now carry `timing_source`, so a run
+says which of the three it was.
+
+**What changed.** `NarrationSettings` gained the Qwen block (timbre, language, delivery
+`instruct`, device, Base-weights voice clone via `qwen_ref_audio`/`qwen_ref_text`) and the aligner
+block; `VoiceIdentity.provider` gained `qwen3tts`; `_tts_executor` now takes the stage context, so
+the canvas node's `voice`/`speaker`/`instruct`/`aligner` widgets actually reach the executor
+instead of being decoration. `TTSExecutor.fingerprint()` is new and folded into the per-beat cache
+key — without it, changing a delivery note would have silently reused the old take. `.env.example`,
+`docs/setup.md`, `docs/licensing.md`, the canvas catalog and templates, the CLI help and
+`video-stack` (three new SPEECH/TIMING entries) all name Qwen3-TTS as the narration voice.
+
+**Kokoro is kept, not deleted.** It is 82M parameters against 1.7B, needs no aligner because it
+times its own tokens, and runs on CPU in seconds — the right answer when the card is busy.
+`CF__NARRATION__TTS=kokoro` still selects it. It is deliberately *not* an entry in the `video-stack`
+index: its weights arrive with the `kokoro` wheel rather than in `models/`, so the index has nothing
+to verify and an entry there would have been a claim it could not check (the catalog invariant in
+`test_video_stack.py` caught exactly that). The Qwen entry's caveat points at it instead.
+
+**Verified live** on one beat through the real executor (`love_story_reel`, `--device cpu`,
+`instruct="Calm documentary narrator, unhurried."`):
+
+```
+provider      : qwen3tts / ryan / Qwen3-TTS-12Hz-1.7B-CustomVoice
+timing_source : forced_alignment          <- not "provider", not "estimated"
+24000 Hz, 2080 ms, "I saw you before I knew you."
+  I 0->180  saw 180->460  you 460->720  before 720->1020  I 1020->1340
+  knew 1340->1540  you 1540->1900 ms
+```
+
+And separately on an 11-word beat: faster-whisper `base.en` returned **11 spans for 11 script
+words** — a 1:1 snap with real measured boundaries — at transcript similarity **0.909** (only
+"outproduced" vs "out-produced" differed).
+
+The measured timings then survive the contract they have to satisfy: `align_words` reported
+**coverage 1.0 and zero findings** on both beats (monotonic, no overlaps, every script word timed),
+and `compile_captions` cut 3 cues over 16 words. Nothing downstream can tell that these timings
+were measured after the fact rather than emitted by the model — which is the whole point.
+
+| What | Command | Result |
+| --- | --- | --- |
+| narration backends | `uv run pytest tests/unit/test_narration_backend.py -q` | 10 passed (5 new Qwen tests: even_split, forced alignment, refusal, fingerprint, canvas overrides) |
+| live pipeline | `just run-local narrated-video --story fixtures/story/love_story_reel.json --until compile_captions` with `CF__NARRATION__TTS=qwen3tts` | passed, 6 stages: `{"provider":"qwen3tts","spoken":1,"timing_source":["forced_alignment"]}` (beat 1 served from cache), both beats **coverage 1.0 with 0 alignment findings**, 3 caption cues over 16 words |
+| alignment on real Qwen audio | `faster_whisper_words` + `snap_to_script` on a generated beat | 11/11 spans, similarity 0.909 |
+| stack index | `uv run content-factory video-stack` | SPEECH TIMING: Qwen3-TTS CustomVoice (primary) + Base (alternative), both READY |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 489 passed with `test_from_and_until_together_slice_to_the_stages_asked_for` deselected. That one failure is not from this work: a concurrent session added `Stage.review_frames` to the `handdrawn-two-hander` order at 06:04 and the test still pins the old sequence — theirs to update |
+| JS / lint / type | `pnpm -r test`; `just lint && just typecheck` | all 9 suites pass; ruff 449 files clean, pyright 0 errors, tsc clean |
+
+Not done: **the GPU path is unverified for this too.** `qwen_device` defaults to `cuda:0` and the
+model needs ~5 GB, but the 3090 was held by another session's HiDream server (19.5 GB) for the
+whole session, so every measurement above is CPU. That matters more here than usual: CPU generation
+took **over ten minutes for a single beat**, and one multi-beat run was killed mid-way when swap
+filled under concurrent load. Qwen3-TTS is not usable on CPU for a real film.
+
+## 2026-09-07 — the same pipeline for generated non-speech audio (session vega-93)
+
+Operator: "use the same pipeline for each of the different generated noises… of course you decide."
+So: **the architecture is shared, the models are not** — and that was decided by experiment, not
+by taste.
+
+**The experiment.** Three sounds from the repo's own generated library (`assets/sfx`, Stable Audio
+3 Small SFX) put through the speech chain's models exactly as a narration beat would be:
+
+| Model | Sound | RMS in → out | Energy left |
+| --- | --- | --- | --- |
+| ClearerVoice `MossFormer2_SE_48K` | `whoosh_soft` | -24.0 → **-70.9** dBFS | 0.5 % |
+| ClearerVoice `MossFormer2_SE_48K` | `rain_light_loop` | -33.6 → **-73.5** dBFS | 1.0 % |
+| ClearerVoice `MossFormer2_SE_48K` | `impact_soft` | -28.0 → **-71.3** dBFS | 0.7 % |
+| Resemble Enhance (`enhance`, nfe 32) | `whoosh_soft` | -24.0 → **-73.4** dBFS | 0.3 % |
+
+Resemble Enhance's whoosh came back with a **0.002 waveform correlation** to its input and a
+spectrum collapsed to sub-200 Hz: it did not restore the sound, it replaced it with unrelated
+rumble. Neither result is a bug — a speech *enhancer* removes everything that is not a voice, and a
+speech *restorer* rebuilds what it hears as speech. A whoosh is noise to both.
+
+**So `python/content_factory/audio/condition.py` shares the detection stage, the true-peak limiter
+and the length lock, and has no field, flag or code path for either speech model.**
+`condition_sound` refuses an `AudioProfile.speech` spec outright, and a test asserts the spec has
+no `*enhanc*` field so the decision cannot be quietly undone. What non-speech material gets
+instead: repair gated on measurement (declip, declick at the seams between generated windows, DC
+removal, sub-sonic trim) and normalisation to a known loudness.
+
+**The measurement layer is now material-agnostic.** `SpeechArtifactReport` → `AudioArtifactReport`
+with a `profile` (`speech` | `sound_effect` | `music`) and an `asset_id` (the old `beat_id` was an
+`OpaqueId`, which would have rejected `"sfx"` — the stage test caught that before a run did).
+`AudioArtifactThresholds.for_profile` is where the judgement lives: for non-speech it disables the
+noise-floor, spectral-flatness and band-limit checks, reinterprets the 5-9 kHz ratio as *harshness*
+rather than sibilance at a looser limit, and keeps every integrity check. The same numbers mean
+opposite things — a flat spectrum is hiss in a narration take and the whole content of a rain bed —
+and a test asserts the identical measurements produce `spectral_flatness` + `noise_floor` under the
+speech profile and nothing under the sound-effect one.
+
+**Normalising the bed, and why it is a behaviour change.** The SFX bed used to enter the mix at
+whatever loudness MMAudio happened to render, minus a blind 22 dB. Measured on real assets that
+meant the rain loop landed at **-53.2 LUFS**, the ocean loop at -49.6 and the mock bed at -58.8 —
+in a -14 LUFS programme, inaudible. Now `sound_design` normalises the bed to
+`sound_design.bed_lufs` (-23 LUFS integrated, the same target `assets/sfx/library.json` uses for
+beds, ~9 LU under the programme) and the mix gain becomes `bed_trim_db` (0 dB) instead of -22 dB.
+`condition=false` keeps the old blind-cut path intact, and both are tested.
+
+The generator's output is kept as `sfx.raw.wav` and never overwritten — same discipline as
+`restore_speech` — with the report at `sfx-condition.json` and the conditioning folded into the
+stage's cache key.
+
+**Not conditioned, on purpose:** the curated `fixtures/music` and `assets/sfx` libraries. They are
+already mastered, `select_music` verifies each track against its manifest hash, and runtime
+processing would invalidate the very hash that proves what shipped. `skills/audio/sfx/build_library.py`
+(another session's) already conditions the library at build time with per-category targets — this
+work deliberately did not touch or duplicate it. Generated music gets the SFX treatment at its own
+generation stage when ACE-Step is wired.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the experiment | both skills' `run.py` on `assets/sfx/{transition,weather,impact}` | table above |
+| new suite | `uv run pytest tests/unit/test_sound_conditioning.py -q` | 12 passed |
+| conditioning real assets | `condition_sound` on rain / ocean / whoosh / impact | beds hit -23.0 LUFS exactly (+8.5, +4.7 dB); one-shots stopped at the -1 dBTP ceiling (+4.6, +2.4 dB) and reported `gain_limited` rather than clipping — independently the same constraint `assets/sfx/README.md` documents |
+| length + rate | same run | every asset 3000→3000 / 2017→2017 / 2400→2400 ms, all out at 48 kHz |
+| the mix still lands | narration + conditioned bed at 0 dB trim, mastered | **-14.30 LUFS / -1.00 dBTP**, passed (old path measured -14.60 / -1.00) |
+| stage | `uv run pytest tests/unit/test_voice_over_and_sound_design.py -q` | 16 passed, including a new test that the blind-cut path still works with `condition=false` |
+| every suite this work touches | `uv run pytest tests/unit/test_{sound_conditioning,speech_restoration,narration_backend,voice_over_and_sound_design,captions_and_mix,video_stack,new_stages,dag_compiler,workspace_compile}.py -q` | 96 passed |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 501 passed. The 2 failures are both a concurrent session's in-flight work, not this one: `Stage.review_frames` added to the `handdrawn-two-hander` order at 06:04, and a new one-character scenario in `scripts/make_story_fixtures.py` at 06:40 |
+| JS / lint / type | `pnpm -r test`; `just lint && just typecheck` | all suites pass; pyright 0 errors, tsc clean; `ruff format --check` flags only `skills/audio/music/mm3.py` (that session's new file, written 06:29 — left alone) |
+
+## 2026-09-07 — the SFX library is mostly real recordings now (session vega-94)
+
+Operator: "check if we have Sonniss GDC Archive installed on this pc", then "pull out the assets
+that could be used for this repo and put them in sfx, remove the generated ones if we have real
+replacements for it and sort it in the correct directories".
+
+**It is installed, and it is one part of the year's bundle.** `~/Music/sonniss_gdc_2026` holds the
+**#GameAudioGDC Bundle 2026 Part 9** — 347 WAV, 7.5 GB, 122 supplier packs, 96/192 kHz — complete
+and fully extracted, verified against the bundle's own `Readme.txt` ("347 WAV files, 7.47GB+") and
+the 347 data rows of its tracklist spreadsheet. No other part exists anywhere on the machine
+(filesystem-wide search for `*sonniss*`, `*GDC*`, `*Filelist*`). Content skews to **long ambience**
+— the ten biggest packs are bar/food-court, haunting ambiences, a volleyball match, city rain,
+crowd walla, the Norwegian coast, extreme winds, German trains — with each pack a 1-4 file sampler
+of that supplier's commercial library.
+
+**`assets/sfx` is now 49 sounds: 38 cut from the bundle, 11 still generated.** 27 generated sounds
+were replaced by a real recording of the same id, and 11 new ids were added where the bundle held
+something the taxonomy did not have (`rain_city_loop`, `hail_window_loop`, `pub_walla_loop`,
+`station_hall_loop`, `meadow_day_loop`, `lake_shore_loop`, `park_wind_trees_loop`,
+`room_tone_hum_loop`, `braam_horn`, `glitch_data`, `counter_tick`). A recorded sound and a
+generated one are interchangeable in a mix: same 44.1 kHz stereo 24-bit FLAC, same loop wrap, same
+two loudness targets, same QC fields — `sfx.py` is used unchanged, which is the whole reason the
+two halves can sit in one directory.
+
+**What is deliberately still generated, and why.** Eleven ids, and three of them on purpose rather
+than by omission: the bundle has **no stream**, **no night-only cricket bed**, and its nearest
+office room tone is a fridge. Filling those with something that is nearly the sound would have been
+worse than leaving them, so `stream_loop`, `night_crickets_loop` and `room_tone_office_loop` stay
+generated (the first two were missing from disk before this session and were regenerated). The
+fridge went in as `room_tone_hum_loop` on its own merits. The rest — `whoosh_deep`, `swish_fast`,
+`riser_short`, `sweep_documentary`, `braam_soft`, `pop_small`, `whoosh_ui_short`, `sub_bed_loop` —
+have no better source in Part 9.
+
+**No timestamps were written by hand.** A 680 s food-court recording holds one good 30 s loop and a
+lot of foreground chatter, so the builder sweeps the whole file on a 0.25 s block-RMS envelope,
+ranks every candidate start on the two things that give a loop away, decodes the shortlist, wraps
+each for real and keeps the best-scoring — the judgement `build_library.score` already makes
+between seeds, applied to offsets instead. `crowd_murmur_loop` came from 554 s into that recording
+out of 647 candidate windows. **The recorded beds measure ≤5.6 dB event prominence against ≤8.2 dB
+for the generated ones**, which is the measurable version of "a recording of a place beats a
+description of one". One-shots are located the same way: `tick_light` is one tick out of the sixty
+the event gate found in a minute of antique clock.
+
+**Four things the measurements changed.**
+
+1. **A sound that swells needs a -60 dB gate, not -35 dB.** The event gate that finds a click ends
+   the event where it falls back, and for a reverse sweep the quiet approach *is* the sound. Worse,
+   a 16.5 s horn braam peaks at **7.7 s**, so the 6 s cap sized for a normal impact would have
+   shipped it decapitated. Both were caught in `--analyze` before anything was written. `gate_db`
+   is now per entry, and the new **`truncated`** flag fires whenever `max_s` ends a sound still
+   above -30 dB of its own peak — the difference between clipping a spent reverb tail and cutting a
+   sound short.
+2. **`noise_like` is a generated-side check and does not transfer.** High flatness with rising HF
+   tilt is the signature of a take that came back as hiss. A commercial recording cannot fail that
+   way: a bright UI pop measures +35 dB tilt, a corrupted-data glitch 0.78 flatness, and both are
+   exactly the sound their supplier named. Keeping the flag would have meant ten per-entry
+   overrides saying "this one is allowed to be what it is" — a check that has stopped checking. It
+   was dropped on this side (flatness and tilt stay as *description* in the manifest) and replaced
+   by `truncated` and `clipped`, which are how an excerpt actually goes wrong.
+3. **Two UI picks were decided by number, not by name.** `Button Arp Twinkle` measured a
+   **0.689** harsh-band ratio — 69 % of its energy in 2-5 kHz — so `notify_soft` went to
+   `Interface Plucks Happy` at **0.052** instead. `click_soft`'s bright vintage double-click
+   measured 0.480 harsh with a 4589 Hz centroid; a real **light switch** at 0.135 and 1495 Hz reads
+   over speech without the spike, so that is what a UI click is now.
+4. **A ticking clock cannot be a bed.** One was cut, because a ticking-clock loop is a documentary
+   staple — and then dropped, because a metronomic event inside a loop announces the wrap every
+   cycle. That is exactly what `event_prominence_db` exists to catch; the honest response to the
+   flag was to drop the entry, not raise the threshold.
+
+**Two flags left standing, both correct.** `hail_window_loop` (harsh **0.72**) and `data_ticks`
+(harsh 0.40) exceed the 0.35 sharpness proxy because hail on glass and a thin data readout *are*
+harsh — the hail is granular HF impacts and measures nearly all of its energy in that band.
+Flags are advisory by design — they name what to listen to first — so they were left rather than
+overridden away.
+
+**Licensing has two clauses that bind code, not just docs.** The grant is broad (royalty-free,
+unlimited commercial projects, modification permitted, **no attribution required**, explicitly
+covering synchronisation with audio-visual projects). But the agreement **expressly prohibits using
+the sounds to train or enhance AI**, including "technologies capable of generating sound effects
+... in a similar style", and prohibits selling them "as they come" as opposed to incorporated into
+a project. So these 38 files are **mix material only** — never a training, fine-tuning or
+conditioning input, and specifically never fed to this repo's own audio models. That happens to
+match the existing decision recorded above ("Not conditioned, on purpose: the curated
+`fixtures/music` and `assets/sfx` libraries"), which is now a licensing requirement and not only a
+hash-integrity one. Recorded in `docs/licensing.md` and `THIRD_PARTY_NOTICES.md`.
+
+**New in the skill.** `recorded.json` (the recipe: 38 sources, loop lengths, which event to take),
+`recorded.py` (ffmpeg/soxr decode, provenance out of the bundle's own tracklist, window search,
+event gate) and `ingest_recorded.py` (the driver, with `--analyze`, `--list`, `--only`).
+`index.py` is new and shared: both builders now render `manifest.json` + `README.md` through it
+over the *whole* library, so `build_library.py` runs with no bundle present and
+`ingest_recorded.py` runs with no GPU or model load, and neither leaves the index describing only
+its own half. Every prose number in the generated README is computed from the entries, because the
+old hard-coded ones ("38 sounds", "within 1.9 dB") stopped being true the moment the library
+changed. Provenance is *derived*, not retyped: supplier, library and URL come from the bundle's
+tracklist spreadsheet, and every entry pins the source file's sha256, its offset and how many
+windows or events were auditioned.
+
+**Not committed, and that is a decision for the operator.** `assets/sfx` is 114.9 MB and still
+untracked. The generated half is regenerable from a local model; the recorded half is regenerable
+only from a 7.5 GB bundle that lives outside the repo and is not fetchable by a build — so unlike
+the earlier 72.9 MB it is *not* freely reproducible, which argues for committing it the way
+`fixtures/music/` was. Against: 115 MB in git, and a public copy of the FLACs would be
+redistribution under §Restrictions (b). Left untracked pending that call.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the archive | `find / -iname '*sonniss*'`; bundle `Readme.txt`; tracklist row count | Part 9 only, complete: 347 WAV / 7.5 GB / 122 packs, 0 unextracted archives |
+| provenance parse | `recorded.credits()` on `Game Audio GDC Bundle 2026 (Part 9) Filelist.xlsx` | 347/347 rows (needed a `t="str"`/`<v>` cell path, not just inline strings) |
+| plan | `ingest_recorded.py --list` | 38 sounds: 18 beds, 20 one-shots, 27 replacing a generated id |
+| dry run | `ingest_recorded.py --analyze` | caught the braam/sweep truncation and the two harsh UI picks before writing |
+| the ingest | `ingest_recorded.py` | 38/38 written, flagged `hail_window_loop` + `data_ticks`, 48.7 s |
+| the two gaps | `build_library.py --only stream_loop,night_crickets_loop --device cuda` | 2/2, flagged none, 15.9 s; the shared index kept all 38 recorded entries |
+| determinism | re-ran 5 ids and compared sha256 | 5/5 byte-identical |
+| integrity | sha256 + ffprobe over all 49 | 0 missing, 0 hash mismatches, 0 orphans, one stream format: `flac,44100,2,24` |
+| levels | manifest | beds -30.1..-23.0 LUFS int / max seam 1.53 dB / max event prominence 8.17 dB; one-shots -26.5..-16.0 LUFS momentary, 16 of 27 stopped by the -3 dBTP ceiling rather than clipping |
+| lint / type | `uv run ruff format --check . && uv run ruff check . && uv run pyright` | 464 files formatted, all checks passed, 0 errors 0 warnings |
+| core gate | `uv run pytest -m "not integration and not gpu and not live" -q` | **510 passed**, 34 deselected, 243 s |
+| JS gate | `pnpm -r test` | all suites pass: web 76, video-ui 25, renderer 6, editor-core + content-schema-ts done |
+
+## 2026-09-07 — a reference library of real human interaction, and CMU mocap driving the rig (session blender-3d-scene-controller)
+
+Operator: download FLUX.2, clone Inter-X/InterGen, sort a pile of downloaded interaction datasets
+and sound packs into the project, work out whether a 2D video reference beats the 3D path when the
+scene does not need 3D, and design how all of it fits the pipeline.
+
+**`/mnt/fast/reference` is now a 19 GB layered reference library**, seven sources, with
+`INVENTORY.json` (counts from the filesystem, partial sources marked partial), a `README.md`, and
+`_index/` holding derived metadata, the contact sheets that verify the label maps, and the
+prototypes. Every archive was checked against its extracted copy by size with a sha256 sample
+before deletion; `~/Downloads` went from 14 GB to 176 MB and holds no dataset any more.
+
+| Source | Size | Complete | What it is |
+| --- | --- | --- | --- |
+| CMU-Mocap | 7.1 GB | yes | 2514 AMC trials, 2311 with text, 110 two-person across subjects 18/19, 20/21, 22/23, 33/34 |
+| Harmony4D | 4.3 GB | hugging subset (2 of 208 seqs) | 22 calibrated cameras, per-frame SMPL for both people, COCO-17 3D, SMPL-45 2D, COLMAP |
+| SBU-Kinect | 6.4 GB | yes (282/282) | 8 labelled actions, 15-joint two-person skeletons, RGB + depth |
+| UT-Interaction | 0.6 GB | yes | 20 sequences, 120 segmented clips, 6 classes with frame ranges |
+| TV-Human-Interactions | 0.2 GB | yes | 300 broadcast clips: 6978 hug and 5401 kiss frames, with per-person head orientation |
+| MotionHub | 0.7 GB | EgoBody + GRAB complete | SMPL-H motions with hierarchical captions |
+| Stock | 17 MB | on demand | one Pexels clip; bulk copying is prohibited so this layer stays per-shot |
+
+**Three corrections that change what these datasets are for.**
+
+1. **MotionHub does not contain what it was asked for.** The requested `interx/`, `chi3d/`, `hi4d/`
+   and `annotations/two_person_interaction/` paths do not exist in `ZeyuLing/MotionHub`; its only
+   top-level directories are `CombatMotion_seperate`, `EgoBody`, `GRAB` and `HumanML3D_AMASS`, and
+   none of them is two-person interaction data. EgoBody and GRAB are complete here (1943 and 2670
+   files, byte-checked against the remote listing); CombatMotion was skipped as fight motion;
+   `HumanML3D_AMASS` is partial because HuggingFace throttles this repo's 74366 small files to
+   about 1/s even authenticated, so finishing it would take ~13 h. `hf download` never starts on it
+   at all: it enumerates the whole tree first and stalls, where `dataset_info(files_metadata=True)`
+   returns the same listing in 1.2 s.
+2. **Harmony4D is a geometry source, not a look source.** The 22-camera coverage is real and rings
+   the pair through a full 360 degrees, but tripods stand between the lens and the subjects in most
+   views, the room is lab clutter, and the subjects are two men in Aria glasses under flat
+   fluorescent light (`_index/sheets/h4d_angles.png`). Its value is the contact geometry and the
+   calibration, re-rendered on our own characters — not the pixels. The cameras also sit on one
+   ring at chest height, so it supplies azimuth, not high and low angles.
+3. **Every class-id map was verified by looking at a frame, not by trusting a paper's ordering.**
+   UT: 0 hand_shake, 1 hug, 2 kick, 3 point, 4 punch, 5 push, with the class in the *third*
+   filename field. SBU: 01 approaching, 02 departing, 03 kicking, 04 pushing, 05 shaking_hands,
+   06 hugging, 07 exchanging_objects, 08 punching. Contact sheets and the frame that proves each
+   are in `_index/sheets/` and `_index/measured/class_maps.json`. A wrong entry there answers a
+   query for a hug with a shove.
+
+**`cf.clip.v2`: the empty `clips/` directory is now 55 two-person mocap clips.** `ClipPose` and a
+`cf.clip.v1` loader already existed and `clips/` was simply empty. v1 could not carry this, and the
+measurement says why: quaternions solved on `man_01` are up to **19.4 degrees** wrong on `woman_01`
+(mean 8.6) because MPFB fits the rig to each mesh. v2 stores the **world direction of each
+anatomical segment** plus root translation and a ground offset, and the aim solve runs at render
+time against whatever rig is loaded — **max residual 0.0003 degrees on all four characters**, and
+0.024 degrees when Blender itself grades it. Two-person trials bake as one file with both actors on
+one timeline, so contact is the captured contact: `cmu_22_23_08` "hold hands, swing arms, walk"
+keeps its wrists 5.3 cm apart.
+
+Root motion is a **displacement from the clip's own origin**, never the capture's absolute position.
+The x and y anchor keeps the shot's staging in charge of where the pair stands; the z anchor is the
+frame-0 hip height, without which the capture's absolute hip height lands on top of the rig's own
+and lifts the figures a metre — which is exactly what the first render showed, legs filling the
+frame and heads cut off.
+
+**New in the skill:** `mocap/asf_amc.py` (ASF/AMC parse + forward kinematics, bpy-free so it is
+testable in the normal run), `mocap/clip.py` (the baker), `mocap/segments.py` (segment→bone map and
+the aim solve as plain matrices), `mocap/sample.py` (frame sampling, shortest-arc direction
+interpolation), `mocap/bake_library.py` + `cmu_clips.json` (the recipe: all 55 paired trials, tagged
+with a controlled vocabulary where `affection` is the field that keeps aggression out of a tender
+scene), `mocap/dump_rig.py`, `mocap/verify_in_blender.py`, `bl/retarget.py`, and the `segments`
+branch through `bl/posing.py` → `blender_entry.py`, whose summary now reports how many bones each
+retarget actually aimed.
+
+**Contract:** `SegmentClipPose` added to `PoseRef` in `schemas/shots.py`. `actor` is a `SlugId`
+rather than the `Literal["a","b"]` first drafted, because Harmony4D's performers are `aria01` and
+`aria02` and a two-value literal would lock that source out.
+
+**A shot plan that stages them, with the camera solved from the clip's own geometry.**
+`scripts/make_mocap_shot_plan.py` writes `fixtures/shots/two_hander_mocap.json`: six shots
+(handshake, arms linked walking, a hand on her shoulder, kneeling to comfort her, holding hands,
+sheltering her), each camera placed at the distance where the subject fills a target fraction of
+frame height, aimed at the middle of the subject's vertical extent, and pushed back if the pair is
+too wide. The framing solve exists because of a measured cliff: HiDream honours the pose skeleton
+when the figures are large and ignored it at 33 % body height.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the library | `_index/build_inventory.py` | 19.3 GB across 7 sources; CMU 2514 trials / SBU 282 sequences / TV-HI 300 clips / Harmony4D 2 seqs x 22 cams all verified |
+| archives vs extracted | zipfile/tarfile compare, sha256 on a sample | CMU 2626+2393, UT 141, TV-HI 600, Harmony4D 68653, sound packs 649 — 0 missing, 0 digest mismatches; 8 non-ASCII filenames `unzip` had mangled repaired by digest match |
+| SBU completeness | skeleton files in zips vs on disk | 282 vs 282, 0 lost |
+| clip bake | `mocap/bake_library.py` | 55 clips + manifest, 32 MB, 0 flags (8 posture tags corrected because the measured travel disagreed with them) |
+| cross-character exactness | `pytest tests/test_mocap_retarget.py` | direction clips 0.0003 deg max on all four characters; baked v1 quaternions 19.4 deg max, 8.6 mean |
+| retarget inside Blender | `mocap/verify_in_blender.py` on man_01 and woman_01 | 35/35 bones aimed, residual max 0.024 and 0.019 deg — Blender's own pose evaluation agrees with the solver |
+| the six shots | `render.py` per shot | 6/6 ok, ~4.1 s each, 3 frames each |
+| framing | layout JSONs over all six | body height 0.458..0.804 (median 0.625); **0 of 36 character boxes below the 0.33 readability floor**, against 15 of 30 shots below 0.45 in the shipped love story; min visible fraction 0.90 |
+| control signal | skeleton JSONs over all six | joints in frame min 16/18, mean 17.9/18 |
+| skill suite | `cd skills/video/blender_scene && uv run pytest -q tests` | 94 passed (43 new) |
+| contracts | `export_schemas.py` + `content-schema-ts generate` | 62 schemas, 225 defs; `SegmentClipPose` in the generated TS |
+| lint | `ruff format` + `ruff check` on the touched tree | clean |
+| type | `uv run pyright` | 0 errors, 0 warnings |
+| core gate | `uv run pytest -q -m "not integration and not gpu and not live and not blender"` | 507 passed, 37 deselected, 219 s |
+| the fixture through the repo's own loader | `shots.planner.load_fixture_plan` | 6 shots, planner `fixture`, every character carrying `segments:<clip>:<actor>` |
+
+**FLUX.2-dev is on disk and laid out to the house convention:** `/mnt/fast/models/flux2-dev/`
+holds `diffusion_models/flux2-dev-Q4_K_M.gguf` (20 GB), `text_encoders/mistral_3_small_flux2_fp8`
+(18 GB), `vae/flux2-vae` (336 MB) and `loras/Flux_2-Turbo-LoRA` (2.8 GB), indexed as
+`models/image_generation/FLUX.2-dev` and linked into ComfyUI's `diffusion_models`, `unet`,
+`text_encoders`, `vae` and `loras`. The installed ComfyUI (0f1fa67a) already detects `flux2` and
+knows the Mistral text encoder, so the stack is loadable; the transformer and encoder cannot
+co-reside in 24 GB, so a run has to encode text first and free the encoder. **Not run live** — the
+GPU was held by another session's music build all session.
+
+**Also landed:** `external/{Inter-X,InterGen,ISTA-Net}` cloned (code only — InterHuman is
+CC BY-NC-SA, i.e. non-commercial, and Inter-X is form-gated); MakeHuman's CC0 system assets moved
+to `/mnt/fast/models/blender-assets/asset-packs/` (clothing, hair, eyes, shoes — the missing
+ingredient behind `identity_distinctness 1.67/10`); 11 extracted 99Sounds packs at
+`/mnt/fast/sound-libraries/99Sounds`, handed to the session that owns `skills/audio/sfx` along with
+the finding that the licence is **per pack, not one grant**: 5 grant commercial use explicitly, 2
+are silent on it, 4 ship no terms at all, and 5 of 11 bar use as the source material for another
+sound library.
+
+**The design, and the 2D-vs-3D answer**, are in `/tmp/.../PLAN.md` (51 k) from a 21-agent research
+and adversarial-verification pass: 10 dimensions, every one returning
+`sound_with_corrections`, 107 refuted claims. The short answer to the operator's question: for every
+source on disk that ships poses the reference is **3D**, so the smart move is to drive the existing
+Blender path with real mocap rather than swap in 2D video; a 2D reference is the better answer only
+for footage with no pose data, and no pose estimator is installed to make any (though ComfyUI's
+torchvision ships `keypointrcnn_resnet50_fpn` with COCO-17 and only its 226 MB checkpoint is
+missing). The measured routing threshold is **subject scale, not shot type**.
+
+Not done, and sequenced in the plan's build order: the `reference.py` contracts + SQLite index +
+`find_reference` stage, the `route_shots` rule, the workflow-definition refactor that collapses the
+five hand-maintained copies of every workflow into one file each, the licence guard in code, and
+the FLUX.2 experiment lane.
+
+### The workflow catalogue: one file per workflow, and one command to run one (2026-09-07, later, session blender-3d-scene-controller)
+
+Operator: keep the two-hander lane but rename it to something general, decide the other two
+collisions myself, cover ten to fifteen kinds of content, make it all interchangeable in the UI,
+remove the duplicates, drop licences entirely, and make running a workflow cost as few tokens as
+possible so Claude runs one thing and the rest is automatic.
+
+**The duplication was worse than reported.** A workflow was defined in two hand-written places:
+the canvas held 9 templates, the runner 5, only 3 ids appeared in both, the same film was
+`handdrawn-love-story` on the canvas and `handdrawn-two-hander` in the runner, and the runner
+carried the two human review gates the canvas template had no nodes for — so a canvas run of that
+film silently shipped without anyone looking at it. Adding one workflow touched 8 places in 6 files.
+
+**Now there is one file per workflow and everything else is generated.**
+
+| Piece | File |
+| --- | --- |
+| Contract | `schemas/workflow_template.py` — nodes, wires, per-node values, model requirements, run order |
+| Loader both front doors read | `workflows/catalog.py` |
+| Definitions | `workflows/*.yaml`, 15 of them |
+| Node catalogue the validator checks against | `fixtures/schema/node_catalog.json`, esbuild-bundled out of `catalog.ts` by `scripts/dump_node_catalog.mjs` |
+| Canvas data | `apps/web/src/workspace/generated/workflowTemplates.ts` + a tracked JSON twin as the drift gate |
+| Commands | `content-factory workflows list\|show\|validate\|new`, and `content-factory make` |
+
+`templates.ts` went from **777 lines to 243**: the 464-line hand-written array is gone and
+`WORKFLOW_TEMPLATES` is now `WORKFLOW_TEMPLATE_DATA.map(toTemplate)`. `runners/local.py` lost
+`WORKFLOWS`, `WORKFLOW_PARAMS` and the five stage-tuple constants. Order and values key on **node
+key**, not stage, which fixes the old table silently collapsing a lane that used one stage twice.
+
+**The validator earns its keep immediately.** It checks that every widget value is a widget the node
+declares, that wire slot names and types match, that `order` is a topological order of `wires`, and
+that a lane using a stage with no executor admits it in `caveat`. Then I added a check that a combo
+value is one of the widget's declared options — and it caught **six wrong values in my own exemplar
+plus `quality: standard` in seven files** the moment it existed: `motion: animate` where the widget
+says `ltx`, `factor: 2` where it says `2x`, `cleanup: true` where it says `clearervoice`,
+`enhancer: resemble` where it says `resemble_enhance`, `mood: tender` where it says `calm`. Every
+one of those would have validated and then silently taken the stage's fallback.
+
+**Two widgets that looked bound and were not.** `upscale_video` declared a `resolution` widget and
+never read it, so a workflow asking for 2160 quietly got whatever the host was configured for; it
+now reads `_param` the way `stage_interpolate` already did. `generate_keyframes` declared `frames`
+and `seed` and reads neither — the frame count comes from the control plan and the seed from the
+generation lock — so those widgets were **removed** rather than left advertising control that does
+not exist. A test now asserts both.
+
+**The three decisions, settled as asked.**
+
+1. **`picture-story`**, not `handdrawn-love-story`. Named for what it does to the material: nothing
+   in it is specific to a romance, and the same lane makes a fable or a product story from a
+   different script. A test fails on `love` or `romance` in any workflow id or name.
+2. **The stills variant is a parameter, not a workflow.** `--set motion.motion=hold`. Two
+   definitions differing by one widget value is the duplication this refactor exists to remove, and
+   a test now fails if any two lanes run the same stages in the same order.
+3. **Research and copywriting belong to `data-story-video` only.** I first gave them to
+   `hybrid-video` as well, on the reasoning that its script is drafted from sources. Putting the
+   two lanes side by side killed that: hybrid's first fourteen steps became a copy of data-story's,
+   and two lanes differing only in their tail is exactly the duplication this refactor removes. So
+   the front end went back to the one lane where drafting from sources *is* the point. What makes
+   hybrid its own lane is the router. Measured after the reversal: hybrid has 5 stages data-story
+   does not (`plan_shots`, `route_shots`, `compile_controls`, `generate_anchor`, `generate_video`),
+   data-story has 9 hybrid does not (`ingest`, `research`, `verify_claims`, `compile_datasets`,
+   `write_copy`, `compile_cards`, `render_cards`, `originality_gate`, `package_qc`), and the 13 they
+   share are the narration spine, which they legitimately share. The end-to-end test now derives
+   its expected stage count from the definition instead of a literal, so the next such change shows
+   up as a definition change rather than a test edit.
+
+**Fifteen lanes, and six other consolidations on the way.** Two single-image templates became one
+lane with a model widget. `blender-controlled-video`, `hybrid-shot-router-video`,
+`stitch-sequence-video`, `image-to-video-ltx` and `video-to-social` were renamed to say what they do
+rather than which model does it.
+
+| Lane | Cat | Stages | For |
+| --- | --- | --- | --- |
+| `single-image` | image | 4 | One still; the model is a widget |
+| `image-set` | image | 10 | Stills that must look like each other |
+| `image-upscale` | utility | 3 | Bigger and cleaner stills |
+| `picture-story` | video | 19 | Drawings cut into a film with a recorded voice |
+| `photo-sequence-video` | video | 10 | Stills cut into a video, silent |
+| `image-to-video` | video | 5 | One still becomes a moving shot |
+| `scene-controlled-video` | video | 8 | 3D-staged cinematography, no sound |
+| `hybrid-video` | video | 22 | Data scenes and staged scenes in one narrated timeline |
+| `narrated-video` | video | 13 | Typeset cards with narration; the cheapest lane |
+| `data-story-video` | video | 22 | Researched explainer; the only lane still incomplete (`ingest` has no executor, declared) |
+| `silent-video` | video | 12 | Music and effects, no voice |
+| `single-clip-post` | social | 14 | One short clip finished for posting |
+| `voice-over-track` | audio | 8 | A narration track and captions, no picture |
+| `audio-restore` | audio | 4 | Clean up a recording |
+| `video-finish` | utility | 5 | Fix, upscale and interpolate an existing video |
+
+**One command, few tokens.** `content-factory make <id>` resolves the definition, preflights the
+lane, runs every stage, prints one line per stage, and ends with a single JSON object holding
+`passed`, the project directory and the path to `run.json`. `--plan` prints the steps without
+running. The preflight refuses a lane whose stages have no executor or whose weights are absent,
+because finding that out fifteen minutes into a render costs more than finding it out now.
+`.claude/skills/produce/SKILL.md` tells an agent exactly this and nothing more, so producing
+something is one tool call and one short read instead of an agent driving nineteen stages by hand.
+
+**Licences are gone**, on the operator's instruction. No licence field on any contract, no licence
+class, no gate, and the clip documents were rebaked without theirs. `docs/licensing.md` belongs to
+another session and was left alone: it is a record, not a gate. The withdrawal is marked in the plan
+so nobody re-adds it as an oversight.
+
+**Adding a workflow, afterwards:** write one YAML file, run `just schemas`. Two commands.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the catalogue | `content-factory workflows list` | 15 workflows; 14 ready, `data-story-video` marked todo with its reason |
+| validation | `content-factory workflows validate` | checked 15, problems 0 |
+| the option check, on first run | same | caught 7 files and 6 distinct wrong values, all fixed |
+| generated data | `scripts/export_workflows.py` | 15 templates, JSON + TS regenerated; `--check` is the drift gate |
+| node catalogue | `scripts/dump_node_catalog.mjs` | 55 node types with widgets, slots, slot types and option lists |
+| definition tests | `uv run pytest -q tests/unit/test_workflow_definitions.py` | 100 passed |
+| web | `pnpm --filter @content-factory/web typecheck && test` | tsc clean; 18 files, 76 tests pass |
+| one-command run | `content-factory make picture-story --plan` | 19 steps, no blocked stages, no missing models |
+
+Also landed in the same pass: `Stage.find_reference` with its executor, its DAG-compiler defaults,
+its place at the head of the sequence branch, its canvas node and `ReferenceSettings`. The stage
+degrades honestly — with no library on disk it writes a selection file saying so and selects
+nothing, the way `select_music` already behaves — and `schemas/reference.py` carries the four
+contracts (`ReferenceClip`, `ReferenceLibrary`, `ReferenceQuery`, `ReferenceMatchSet`) with the
+closed vocabularies, including six tags that name interactions **no source on disk has**, so a query
+for a head on a shoulder comes back empty and says which term was missing rather than handing back a
+shoulder-touch.
+
+### The reference library is queryable, and a lane stages from it (2026-09-07, later still, session blender-3d-scene-controller)
+
+The rest of the plan: contracts, a synonym lexicon, a sqlite index, FTS5 retrieval, seven ingesters,
+a build driver, and the stage that makes a film out of the answer.
+
+**It works end to end on the operator's own example.** Asking
+
+> She sits beside him, rests her head on his shoulder and he puts his arm around her.
+
+with `people_count=2, require_affection=affection` returns, in order: `cmu_22_23_04` (*"B comforts
+A, puts one hand on A's shoulder"*), `cmu_22_23_05` and `cmu_22_23_06` (both hands on shoulders),
+`cmu_22_23_07`, `cmu_22_23_03` (*"A sits, holds face in hands; B kneels, comforts A"*),
+`cmu_20_21_02` (link arms, walk) and `cmu_18_19_12` (*"friends meet, hang out; A sits, B joins"*).
+Every one of those is a baked mocap clip, so every one can actually drive the rig.
+
+And it says what it cannot answer. The same query reports `absent: head_on_shoulder`: the lexicon
+understood the phrase, the vocabulary declares the tag, and **no source on disk has one**. Six tags
+are declared and deliberately empty (`head_on_shoulder`, `cuddle`, `slow_dance`, `carry_child`,
+`stroke_hair`, `hold_face`), so a query for them comes back empty and names the gap instead of
+handing back a shoulder-touch dressed as a head on a shoulder. That list is the operator's shooting
+list.
+
+**A lane stages from it.** `picture-story` now runs `find_reference` before `plan_shots`, and
+`plan_shots` has a third planner, `reference`. Run against `fixtures/story/love_story.json`:
+
+```
+ok   find_reference   {"beats": 6, "selected": 2, "absent_terms": []}
+ok   plan_shots       {"shots": 6, "planner": "reference", "staged_from": ["cmu_18_19_01", "cmu_20_21_02"]}
+```
+
+Beat 2 was staged from *link arms, walk*; beat 4, "You just held out your hand", from *walk, shake
+hands*. Each staged shot carries **two** characters pointing at the same clip with actors `a` and
+`b`, so the contact on screen is the contact that was captured. The four beats with no match keep
+the preset single-character staging rather than having a pair invented for them, which is the
+failure mode this whole path exists to avoid.
+
+**The index.** 15,507 clips from six sources in 20 seconds, built from the clip documents on disk
+rather than from memory, so it is reproducible from the tree. `manifest_sha256` is over the ordered
+documents and never over the sqlite bytes, because the file depends on the host's libsqlite3 build.
+
+| Source | Clips | Skipped |
+| --- | --- | --- |
+| cmu_mocap | 2303 | 156 |
+| motionhub (EgoBody, GRAB, HumanML3D) | 12761 | 257 |
+| tv_human_interactions | 300 | 0 |
+| ut_interaction | 140 | 1 |
+| harmony4d | 2 | 9 |
+| pexels | 1 | 0 |
+
+The skip list is worth reading rather than counting. The CMU ingester refuses to lie: *"'playground
+- climb' names no posture the vocabulary can express (climbing, hanging, swimming, crawling,
+tumbling), and calling it standing would be a lie."* That is 156 trials left out with the reason
+attached, which is the behaviour asked for.
+
+**Retrieval is lexical on purpose.** SQLite FTS5 with BM25 over the closed vocabularies plus a
+committed synonym lexicon, no embeddings: about 15k rows, no torch pinned, tests must run with no
+GPU and no network, and BM25 lets a test assert an exact score. The tokenizer sets
+`tokenchars '_'`, without which `unicode61` shreds `head_shoulder` and a search for it matches a
+clip tagged `head_head`. Phrases match longest-first and are consumed, so "head on shoulder" cannot
+also fire the bare word "head".
+
+**Two integration seams needed fixing after the parallel build**, both found by running the thing
+rather than by reading it. The build driver rejected the MotionHub ingester for declaring one
+`SOURCE` while returning clips of three; both sides already supported a `SOURCES` tuple, and the
+mismatch was a mid-write state. The query module read `library(key, value)` where the index builder
+had written `library(id, doc)` — one row holding the whole `ReferenceLibrary`, which is the better
+choice because it keeps the contract intact, so the reader now accepts either shape and does not
+depend on a decision that is not its business.
+
+| What | Command | Result |
+| --- | --- | --- |
+| contracts | `uv run python scripts/export_schemas.py` | 67 schemas; `ReferenceClip`, `ReferenceLibrary`, `ReferenceQuery`, `ReferenceMatchSet` registered |
+| the build | `content-factory reference build` | 15507 clips, 6 sources, 423 skips, 19.9 s |
+| the example query | `content-factory reference search` | the seven comfort clips, in that order, with `absent: head_on_shoulder` |
+| the lane | `content-factory make picture-story --until shots --story fixtures/story/love_story.json` | 2 of 6 beats staged from real takes, 4 falling back |
+| the stage and planner | `uv run pytest -q tests/unit/test_find_reference_stage.py` | 9 passed |
+| an absent library | same suite | selects nothing, writes a note naming the build command, and the lane still passes |
+| type | `uv run pyright <the new modules>` | 0 errors |
+
+New: `schemas/reference.py`, `reference/{lexicon,index,query,build}.py`,
+`reference/ingest/{cmu,harmony4d,sbu,ut,tvhi,motionhub,stock}.py`,
+`fixtures/reference/lexicon.v1.json`, `cli/reference_cmd.py`, `shots/planner.py::plan_shots_from_reference`,
+`stage_find_reference`, `ReferenceSettings`, `just reference` and `just reference-search`.
+
+### Integration, and the camera the retrieval path needed (2026-09-07, final pass, session blender-3d-scene-controller)
+
+Four things the parallel build could not have caught, all found by running the pipeline rather than
+reading it.
+
+**A NaN killed the render, and the cause was a camera that was never told what it was looking at.**
+`compile_controls` failed with *"postprocess failed: Out of range float values are not JSON
+compliant: nan"* on the first mocap-staged shot. The retarget was fine: 580 pose rows, 35 bones
+applied to each of the two actors of `cmu_20_21_02`. The depth pass reported `near: 0.01`, the
+camera's own clip start, which is geometry sitting on the near plane. The preset planner solves its
+cameras for one subject standing at the origin; a mocap clip moves the pair, and *link arms, walk*
+travels 2.2 m, so a character walked through the lens.
+
+`shots/framing.py` is the fix: read how far the actors travel and how tall they stand from the clip
+itself, then place the camera at the distance where they fill a target fraction of the frame, and
+push back when the pair is wider than the frame at that distance. `plan_shots_from_reference` calls
+it for every staged shot instead of inheriting a camera solved for somebody else. Two lessons are
+constants rather than comments because each cost a render: aim at the middle of the subject's
+vertical extent, not chest height, and take the extent from the highest hip the clip reaches plus a
+standing head so a kneeling clip is not framed for a height nobody occupies.
+
+The result is measurable, and it is the metric that decides whether the image model reads the pose
+at all:
+
+| | Retrieval-staged shots | Preset shots |
+| --- | --- | --- |
+| Characters | 2 | 1 |
+| Body height in frame | 0.48–0.80 | 0.68–1.00 |
+| Visible fraction | **1.00** | 0.67 |
+| Skeleton joints in frame | **18/18** | 14/18 |
+
+The preset shots score higher on raw size and worse on everything that matters: a third of the body
+is outside the frame, so four joints of the eighteen are gone. All six shots now render, 384 s for
+the set, and the handshake take's wrists close to a 0.048 normalised gap on frame 32 with both
+figures whole.
+
+**The FTS tokenizer omitted diacritic folding.** `index.py` declared
+`tokenize = "unicode61 tokenchars '_'"` where the query side's `convert_media()` folds NFKD and drops
+combining marks, so an accented caption word could never match the folded query word. Now
+`unicode61 remove_diacritics 2 tokenchars '_'` with `prefix = '2 3'`, verified by inserting a café
+caption and matching both spellings.
+
+**And the rebuild would not have picked that up.** `manifest_sha256` digests the clip documents, so
+a schema change leaves every document identical and the driver skipped the rebuild while the index
+kept the old tokenizer. `index.schema_matches()` now reads the DDL back out of `sqlite_master`, and
+the driver consults it before deciding a rebuild is unnecessary. It said `False` on the index built
+minutes earlier, which is exactly the state that would otherwise have shipped.
+
+**The four reference contracts had to be registered in the hand-maintained TS index**, which is
+typed as a `Record` over every schema name and therefore failed to typecheck until they were. That
+guard worked as designed.
+
+Two more small ones. `stage_upscale_video`'s resolution came back as a string once it read
+`_param`, because that helper speaks strings while the setting and the tool speak numbers; the
+coercion is explicit now. And the web test asserting `picture-story` uses `planner: fixture` was
+updated, since the lane's default is `reference` now.
+
+**The verifiers earned their place.** Sixteen agents, and the adversarial half refuted overstated
+byte totals in two reports, an unreproducible motion-classification calibration claim that appeared
+in a module docstring as well as a report, a false statement that a particular encoded video was
+the only one in either take, and a reported test run that predated the code it claimed to have
+tested. It also fixed the multi-source ingester contract in the build driver, which is the first
+bug I hit when I ran it.
+
+| Gate | Command | Result |
+| --- | --- | --- |
+| format | `uv run ruff format --check .` | 513 files already formatted |
+| lint | `uv run ruff check .` | all checks passed |
+| type | `uv run pyright` | 0 errors, 0 warnings |
+| contract drift | `export_schemas.py --check`, `export_workflows.py --check` | clean; 15 templates, none stale |
+| web type | `pnpm --filter web typecheck` | tsc clean |
+| JS suites | `pnpm -r test` | 0 failures; web 18 files / 78 tests |
+| catalogue | `content-factory workflows validate` | checked 15, problems 0 |
+| library | `content-factory reference build` | 15789 clips, 9 sources, 423 skips, 16 s |
+| the lane, live | `make picture-story --until controls --story fixtures/story/love_story.json` | 6/6 shots rendered, 2 staged from real takes |
+
+**Addendum, same day.** Two findings from sharing the tree with another session working the same
+lanes.
+
+*Two solo clips were invisible to retrieval.* `auto-content-6a` added `cmu_35_18` and `cmu_16_36`
+(run/jog), named `cmu_<subject>_<trial>`, which is exactly the id the CMU ingester already uses for
+the **raw** single-person AMC trial of that subject and trial. The ingester resolves it correctly in
+principle, marking `(subject, trial)` covered so the AMC version is skipped, but the index I had
+built still carried both ids as `asf_amc` with no `retargeted_clip` — so a planner looking for
+something it could drive a rig with found nothing, and two clips that existed on disk were not
+queryable. Rebuilt: both are `cf_clip_v2` now and the index holds 57 baked clips against 57 in the
+manifest. The cause was a race, not a defect: their rebake landed between my full build and my next
+one, whose no-op decision rested on a manifest digest computed before those clips existed. Two
+consecutive full builds now produce the same manifest with zero documents written.
+
+The id-space overlap is worth recording even though it resolved in favour of the right clip: a solo
+*baked* clip and its own source trial can never both be indexed, and a typo in a manifest
+`subjects` field would silently shadow an unrelated trial.
+
+*Their speed measurement was being dropped.* They added peak and sustained-1s root speed to
+`bake_library.py`. The CMU ingester's `_measured` copies only keys it knows and only floats or float
+lists, so a nested `{actor: {peak, sustained_1s}}` fell through. It now flattens to
+`speed_peak_a` / `speed_sustained_1s_a` and the `_b` pair, so how fast is searchable next to the
+posture tag. Their reason for measuring both is sound: a scramble peaks high and averages low, a jog
+does the reverse.
+
+Two tests were pinning the clip library's size, at 55 and then 57. They read
+`manifest["counts"]["clips"]` now, so another session adding a clip is not a test failure.
+
+*Accepted from them:* the HiDream recipe. The weights on disk are HiDream-O1-Image-**Dev**, whose
+recipe is 28 steps at guidance 0, not the full model's 50 at 5, so every generation was pushed
+through 1.8x the steps at a guidance the model was distilled not to need. The default is `dev` now.
+The reason nobody caught it is worth keeping: the two upstream repos ship identical file sizes and
+**shard 8 is byte-identical** between them, so the directory name, the total size and a hash of any
+single arbitrary shard all fail to identify the checkpoint. Only shard 1 discriminates.
+`models/hidream_identity.py` does that and reports whether the configured recipe agrees. Nothing
+this session generated an anchor, so there is nothing of mine to re-check.
+
+## Framing a staged shot in a frame that is not 16:9 (2026-09-07, later)
+
+`auto-content-6a` left a note that `solve_framing` retreats until a 4.45 m sprint fills 0.19 of
+frame height, under the 0.33 where HiDream stops honouring the pose skeleton, and split out a
+one-actor `solve_framing_at` for it. Their number did not reproduce for me: in 16:9 that clip
+solves at 0.58. It reproduces exactly in **9:16**, at 0.182 — a portrait frame is narrow enough
+that holding the cast apart pushes the camera back on its own. That reframes the finding. It is not
+a locomotion problem, it is an aspect-ratio problem, and it is much bigger than one clip:
+
+| aspect | shots under the cliff, one path-covering camera | after |
+|---|---|---|
+| 16:9 | 0 of 57 | 0 of 57 |
+| 1:1 | 2 of 57 | 0 of 57 |
+| 9:16 | 30 of 57 | 12 of 57 |
+
+Twenty-nine of the thirty portrait failures are two-person clips, so a one-actor solver fixes two of
+them. `cmu_33_34_01` travels 1.54 m and still lands at 0.197: the travel is not what breaks it.
+`solve_framing_tracking` keyframes the camera on the whole cast at each frame that matters, holding
+the azimuth so the shot keeps one look, and `plan_shots_from_reference` uses it when the
+path-covering camera measures under the cliff. It keeps the tracked camera only if it is actually
+better, because tracking does nothing for a pair standing too far apart to fit the frame. This
+matters because the documentary lane's whole second half is vertical shorts, and `9:16` is a
+first-class aspect in the content schema.
+
+*The trigger and the report have to be the same number.* They were not, twice, and both times the
+disagreement hid a real failure. First the decision used the solve's own target while the report
+measured the finished camera; the solve sizes for the tallest the cast ever stands and aims at the
+middle of the path, so on `cmu_16_36` in 1:1 it claimed 0.33 and frame 0 delivered 0.26. Then the
+measurement sampled only camera keyframes: a static camera reported 0.42 at frame 0 while the
+rendered layout boxes fell to **0.216** by the last anchor, because the pair had walked away from a
+camera that never moved. Both are now one function, sampling both ends and every anchor, and
+`underframed_shots` measures a finished plan rather than re-running the solve — so it reads a
+camera that came from a preset, a fixture or a hand edit too.
+
+*The estimate flatters itself by about 0.02.* Rendered layout boxes came in 0.016 and 0.022 under
+the estimate on the two staged portrait shots checked frame by frame, always the same direction,
+because the estimate models a hip plus a standing head and the render measures the mesh's bounding
+box. `ESTIMATE_OPTIMISM` is added before testing the cliff, or a shot estimated at 0.34 renders at
+0.318 and gets called legible while the image model is already ignoring it.
+
+Measured on the real lane, `picture-story --set shots.size=576x1024`, control passes rendered:
+
+| shot | before | after |
+|---|---|---|
+| `cmu_20_21_02` anchors | 0.406, **0.216** | 0.560, 0.554 |
+| `cmu_18_19_01` anchors | 0.318, 0.347 | unchanged, and now reported |
+
+*A truncated line cannot carry a warning.* The under-framing fact was invisible: `run_plan` cuts a
+stage's facts to 160 characters before logging and the CLI cuts the line again at 96, so the fact
+arrived as the tail of a severed JSON blob. `stage_warnings` now lives in the runner, where the
+untruncated facts are, and gets its own `WARN` line the way a review gate gets `GATE`. It fires in
+portrait and stays silent in 16:9. The planner reports rather than fixes, because the answer is a
+wider frame or a clip whose cast stands closer, and neither is the planner's call.
+
+*Removed as duplication:* `solve_framing_at` and `actor_extent_at`. Both were the one-actor case of
+the group functions, and `make_runner_shot_plan.py` — their only caller — moved to
+`solve_framing_tracking` on its own.
+
+Commands run: `ruff format --check .` (one file would be reformatted, `scripts/score_staging.py`,
+another session's), `ruff check .` clean, `pyright` 0 errors, `content-factory workflows validate`
+15 checked 0 problems, `export_workflows.py --check` 15 templates 0 stale, `pnpm --filter web
+typecheck` clean, `pnpm -r test` 24 files 109 tests 0 failures, `pytest -m "not integration and not
+gpu and not live"` 846 passed with one failure in another session's new
+`tests/unit/test_runner_shot_plan.py`, and two live lane runs at 576x1024 rendering 6/6 shots of
+control passes in 337 s and 303 s.
+
+*Not mine, left alone, reported to them:* `test_runner_shot_plan.py` builds a layout box as
+`{"box": {"h": measured}}` while `make_runner_shot_plan.py`, edited nine minutes later, reads
+`box["y"]`. A real layout box carries `h/w/x/y`, so the script is right and the fixture is behind.
+`scripts/score_staging.py` is unformatted. Both files are theirs and were created after my last
+green suite.
+
+*Still not done, and still deliberate:* `route_shots` has no 2D-vs-3D rule table in code
+(`BeatRoute.control_source`, `predict_body_fraction` as a routing input). `picture-story`
+unconditionally takes the 3D-plus-mocap path, which is the right answer for the material on disk.
+The FLUX.2 experiment lane is unrun on the GPU. `data-story-video` still has no `ingest` executor
+and says so in its `caveat`.
+
+*The schema check reads red for a reason that is not staleness.* `export_schemas.py --check`
+compares generated output against git HEAD, and 67 schemas plus two fixtures have never been
+committed. Regenerating produces byte-identical files: I hashed all of them, regenerated, and
+hashed again with no differences. Nothing is stale; nothing in this repo has been committed.
+
+---
+
+## 2026-09-07 — a runner from captured motion, and four bugs the pictures found
+
+The outstanding task was thirty frames of a person running from thirty camera angles, images
+generated, with the sculpture and frame review gates in the path. It is staged, scored and rendered;
+the images are stopped on a measured defect and the diagnosis is below.
+
+**There is no run in the two-person library.** The whole clip set is CMU's paired contact takes, and
+its fastest thing tagged `running` is `cmu_18_19_13` at 1.79 m/s sustained — a scramble for a chair.
+`cmu_33_34_02` is a 1.79 m/s football drill. So the runner comes from CMU's single-subject sprint
+trials, baked through the same recipe: `cmu_35_18` (35 f, 3.18 m/s sustained, 3.48 peak) and
+`cmu_16_36` (38 f, 2.72 m/s). `bake_library.py` takes a `subject` entry beside `pair` for that, and
+`bake_trial` already supported a one-actor cast.
+
+The baker now measures root speed as well, peak and fastest-sustained-second, because the posture
+tag says *running* and only a number says how fast. Ranked across all 57 clips the walking ones top
+out at 1.35 m/s, the two-person "running" ones sit at 1.21–1.79, and the sprints at 2.72 and 3.18;
+the widest gap anywhere above 1 m/s is 1.79 → 2.53, so `RUN_MPS = 2.2` sits in it. That flagged
+three clips whose own motion contradicts their tag, and one genuine omission — `cmu_20_21_13`,
+blindfold tag, whose chase sustains 2.69 m/s and was tagged `walking` only. `cmu_20_21_10` will
+stay flagged: its root crosses the floor at 2.53 m/s because somebody is swinging the actor, which
+a root-speed proxy cannot tell from running.
+
+Three places assumed two actors and now do not. `_baked_clips` in the CMU ingester rejected any
+manifest entry without exactly two subjects, so a solo baked clip was skipped and then re-ingested
+as a raw AMC with no `retargeted_clip` — on disk and invisible to retrieval. `plan_shots_from_reference`
+zipped the cast against a literal `("a", "b")`, which would have handed a character an actor id a
+solo clip cannot answer for and failed inside Blender rather than in the planner. And
+`render_turnaround.py` rendered `left90` with no `right90`, so `check_profile_coverage` reported
+one-sided coverage on every asset; it renders both now and the check is a blocker rather than an
+advisory, since the tool makes it.
+
+### The pictures found four bugs that no test could
+
+Every one of these was invisible in the contracts and obvious in a contact sheet.
+
+*Workbench studio lighting was fixed in world space.* `use_world_space_lighting` was on with
+`studiolight_rotate_z` set from the shot's key azimuth — and rotate_z only applies to world-space
+lighting and measurably did nothing. Across thirty stills orbiting one figure, body luma swung from
+39 to 116 on nothing but where the camera stood; twenty of thirty left the figure darker than luma
+60 and seventeen separated from the ground by under 12 luma, five of those by under 6. A
+near-silhouette carries no pose signal, which is the only reason the pass exists. Camera-relative
+lighting lifted the worst to 78 and narrowed the range to 78–116, contrast floor 25.1. This changes
+`rough_rgb` for every lane.
+
+*The framing solve ignored elevation.* A standing figure seen from above projects as
+`top * cos(elevation)`, so solving the distance from its true height put the camera too far back on
+any raised shot: the four 38-degree stills came back 0.13 to 0.17 of frame height under target while
+the near-level ones landed within 0.03. `_place` targets the apparent height now. At the 3–14
+degrees the two-hander uses, cos is 0.997–0.999, so that lane moves by under half a percent.
+
+*A raised camera fills the frame with floor.* At 38 degrees the two-hander's 0.30 grey ground came
+back within 6 luma of the body. At 0.16 the same shots separate by 26 and at 0.09 by over 45.
+
+*`assets approve` wrote where `review_assets` did not read.* The CLI defaulted to
+`output/asset-reviews/approvals`, the stage looked in `<project_dir>/reviews/approvals`, so
+following the command the block itself prints left the run blocked with nothing to explain why. One
+setting answers for both now — `controls.asset_approvals_dir` — and it lives outside any run,
+because an approval binds to a mesh digest and is a standing statement about that sculpture rather
+than a fact about one film. Keeping it per-run would demand re-approving an unchanged mesh for every
+film, which is how a review gate becomes a rubber stamp.
+
+### Staging, scored and looped to the bar
+
+`scripts/score_staging.py` scores a rendered controls directory against `controls/rubric.py`, every
+criterion on its worst shot rather than its average, read off what Blender delivered rather than
+what the plan asked for. Four iterations, each one changing the staging:
+
+| pass | what changed | score |
+| --- | --- | --- |
+| 0 | golden-angle azimuth, 0.52–0.82 target fractions | 5.63 → 6.99 |
+| 1 | 12-degree orbit, 40–58 mm lenses, 0.84/0.88 fractions, measured size correction | 8.44 |
+| 2 | 0.82/0.86 fractions, measured vertical aim correction as well | 8.66 |
+| 3 | a second composed correction iteration | **8.93** |
+
+The 5.63 → 6.99 step is not an iteration: it is one bug in the scorer. It fed captured joint flexion
+into the rubric's anatomical-plausibility criterion, which scored a sprint 0.9/10 for knees at 116
+degrees, which is what a running knee does. The criterion names *authored* rotations, where 140
+degrees on one axis is a typo somebody made; a `segments` pose authors none. So it reports
+not-applicable, the same way identity distinctness does for a solo scene, and prints the retarget
+fidelity beside it as evidence — worst 2.9 degrees of disagreement between a rendered elbow's bend
+and the capture's own, measured by unprojecting the skeleton pass through `camera.json`, so the 10
+is not a free pass.
+
+Two of those changes were the rubric telling me something true. Golden-angle azimuth covers thirty
+directions about as evenly as thirty samples can and scored **0.0** on camera variety: consecutive
+cameras a median 13.1 m apart, past the 6 m where the criterion says nothing reads as one place any
+more. Even coverage and neighbour continuity are in tension and continuity wins — thirty views of
+one place beats thirty places. And the first correction pass scored 0.0 on frame discipline because
+it fixed only the size: the solve aims at half a *standing* height, every runner came out high in
+frame with top margins of 0.000–0.025 against bottom margins near 0.10, and one head clipped. The
+correction reads the measured box centre too. It is a fixed-point iteration, because raising the
+camera to centre the subject also raises the elevation, which shrinks it again: worst framing error
+went 0.169 → 0.051 and worst off-centre 0.071 → 0.032 over two composed passes.
+
+### The images are stopped, and the reason is measured
+
+One anchor generated before I stopped the run rather than spend two hours on twenty-nine more the
+frame gate would reject. It is a real, correctly-posed runner on a wet street at dusk — and 48 % of
+its pixels are crushed under luma 12 against a 35 % threshold, with 26 % midtones where a photograph
+runs 60–80 %. Five probes, one variable each:
+
+| probe | crushed | midtones | saturation | hi-freq |
+| --- | --- | --- | --- | --- |
+| `cinematic` + skeleton | 0.565 | 0.177 | 133 | 0.127 |
+| `photographic` + skeleton | 0.428 | 0.216 | 104 | 0.129 |
+| `documentary` + skeleton | 0.367 | 0.256 | 99 | 0.143 |
+| `photographic`, no references | 0.410 | 0.218 | 107 | 0.128 |
+| `photographic` + depth instead | 0.373 | 0.191 | 122 | 0.107 |
+| `documentary`, overcast track instead of dusk cobbles | **0.180** | **0.293** | 78 | 0.106 |
+
+Two conclusions. The tonal crush is the brief plus the style, not a defect: a dusk wet-cobbled
+street lit by practical lamps is a genuinely dark, high-contrast subject, `cinematic` grades it
+hardest, and the same style on a flat overcast track lands at 0.180 crushed — comfortably inside
+the threshold. Dropping the skeleton reference changed the crush not at all (0.129 → 0.128) and
+destroyed the pose match, which is the other thing that probe established: the skeleton is what
+makes the generated pose follow the staging, and it is not what is wrong.
+
+The high-frequency speckle is a real artifact and none of those variables move it. It survives every
+style, every reference set, and a subject with no texture in it — on the overcast track it covers
+smooth tarmac, where nothing in the scene could produce it. Style-independent,
+subject-independent, reference-independent. Under-denoising at 28 steps and generation above the
+model's native resolution are the two candidates left, and a steps/resolution probe against the
+server is the next thing to run.
+
+| Gate | Command | Result |
+| --- | --- | --- |
+| format | `uv run ruff format --check .` | 515 files already formatted |
+| lint | `uv run ruff check .` | all checks passed |
+| type | `uv run pyright` | 0 errors, 0 warnings |
+| tests | `uv run pytest -m "not integration and not gpu and not live"` | 833 passed, 34 deselected, 356 s |
+| skill tests | `pytest tests/test_mocap_library.py` (blender_scene) | 12 passed |
+| contracts | `just schemas` then `export_schemas.py --check` | regenerated, in sync with source; tree uncommitted |
+| catalogue | `content-factory workflows validate` | checked 15, problems 0 |
+| clip library | `mocap/bake_library.py` | 57 clips + manifest, 4 flagged |
+| index | `content-factory reference build` | 15789 clips, 9 sources, 19 s, 1 document written |
+| the lane | `run-local picture-story --shots runner_mocap.json --until controls` | 30/30 shots, 720 frames, staged from `cmu_35_18` |
+| staging | `scripts/score_staging.py` | 8.93/10 against 8.5 (rubric 1.0.0) |
+
+*Found while measuring, not fixed, and the next thing worth doing:* the **preset** planner has the
+same failure and worse. In 9:16 all four unstaged shots of the love-story film put their first
+anchor at a measured 0.216 of frame height and their last at 0.471, because `slow_push_in` starts
+wide from a distance solved for one subject at the origin with no aspect in the calculation. So the
+first anchor image of every unstaged shot in a vertical short has its pose skeleton ignored. Staged
+shots in the same run measure 0.554 to 0.560. `underframed_shots` cannot see these: it needs a
+clip's geometry and a preset shot has a `LibraryPose`, not a `cf.clip.v2` document. Extending it
+would mean estimating the extent from `FIGURE_HEIGHT_M` and the character transforms, which is a
+report-only change and would cover every shot rather than only the retrieved ones. Left alone
+because reworking the preset planner's cameras is a different job from the retrieval path.
+
+**Correction to the section above, from `blender-3d-scene-controller`.** I wrote that a
+path-covering camera on `cmu_35_18` retreats until the runner fills 0.19 of frame height. Measured:
+0.577 in 16:9, 0.325 in 1:1, 0.182 in 9:16 — all from the same 7.71 m. I had stated the portrait
+number as the 16:9 one. The reason the runner lane tracks the body still holds, but it is the
+weaker reason: 0.577 is legible and simply short of the 0.82–0.86 the rubric's pose-legibility
+criterion asks for, not under the cliff. Corrected in `solve_framing_tracking`'s docstring and in
+`make_runner_shot_plan.py`.
+
+**Staging iterations, in full, since the table above compresses them.** Pass 0 scored 5.63 with the
+scorer feeding captured joint flexion into the anatomical-plausibility criterion — 0.9/10 for knees
+at 116 degrees, which is what a running knee does. That criterion names *authored* rotations, the
+kind somebody types wrong; a `segments` pose authors none, so it reports not-applicable and prints
+retarget fidelity beside it as evidence. Fixing the scorer, not the rubric, gave 6.99. Then 8.44
+(orbit, narrower lenses, measured size correction), 8.66 (measured vertical aim as well), 8.93 (a
+second composed iteration).
+
+*Scored against the rubric, using `auto-content-6a`'s `scripts/score_staging.py`.* On
+`shot_7ee5749be6ef`, the shot the tracking change actually moved:
+
+| criterion | before | after |
+|---|---|---|
+| readability | 8.74 (0.406) | 10.00 (0.560) |
+| pose_legibility | 4.49 (0.121) | 6.93 (0.165) |
+| silhouette_separation | 5.38 (26.97) | 4.75 (24.51) |
+| overall | 5.45 | 6.10 |
+
+Separation costs a little because the camera is closer, which is a real trade and worth watching if
+it ever approaches the under-12 range their lighting fix was about. The whole six-shot film scores
+4.03 and staged-shots-only 4.71, both against a bar of 8.5, and neither number moves with this
+change: the rubric takes the worst shot per criterion, the worst readability belongs to the preset
+shots at 0.2155, and the worst of the two staged shots is the one whose pair stands too far apart
+to fix. Two things follow. The rubric's worst-shot rule hides a real improvement, so a per-shot
+score is the one to read while iterating. And the film's score is held down by
+`identity_distinctness` at 0.00, which is the two characters being the same untextured mannequin,
+not a framing problem at all.
+
+*Final gates, all run after the last edit:* `ruff format --check .` 517 files formatted, `ruff
+check .` clean, `pyright` 0 errors, `content-factory workflows validate` 15 checked 0 problems,
+`pytest -m "not integration and not gpu and not live"` **849 passed** 34 deselected 0 failures.
+
+**The `steps` override was silently discarded on the dev recipe.** 28 and 50 steps at the same seed
+returned a byte-identical PNG, sha256 `497564af99cb`, each taking ~100 s, so both really generated.
+Upstream's `build_scheduler` calls `set_timesteps(num_inference_steps)` and then *overwrites*
+`sched.timesteps` with `timesteps_list` when one is given; the loop takes `num_steps` from the
+list's length, so the dev recipe's pinned 28-entry schedule decided the step count and the argument
+never mattered. `skills/image/hidream/server.py` drops the pinned list when a caller passes an
+explicit `steps`, on the reading that asking for a step count is asking for a schedule of that
+length. The same probe confirmed `width`/`height` are advisory: `find_closest_resolution` snaps to one of
+eleven predefined ~4 MP resolutions. It minimises the difference in *ratio*, so the aspect survives
+exactly — 1024x576 and 2560x1440 both give 2560x1440, but 576x1024 gives 1440x2560 and 768x768
+gives 2048x2048, each at 0.000 % aspect error, measured across five inputs. What a ShotSpec cannot
+choose is the pixel count, not the shape. Documented rather than changed; the snapping is
+upstream's.
+
+**Three bugs in `score_staging.py`, all found by running another lane's shots through it.**
+`identity_distinctness` hardcoded `silhouette_delta = 0.0`, so every two-character film scored 0.00
+on a criterion nothing had measured. It now crops each character's segmentation mask to its own
+bounding box, resizes to 64x64 and takes the mean absolute difference: `man_01` against `woman_01`
+measures 0.1863 and scores 9.24, so the untextured mannequins are nearly distinguishable by
+silhouette after all. Read per shot it is in-scene distinguishability rather than identity, since
+two characters doing different things differ in silhouette however identical their meshes; the
+stricter test would compare the same two assets in the same pose off their turnarounds.
+
+The retarget-fidelity evidence line read the wrong frame and the wrong actor: `metadata["poses"]`
+carries one entry per entity *per rendered frame* and the dict was keyed on the entity alone, so a
+frame-0 skeleton was compared against clip frame 60, and the clip's frames were always taken from
+`actors[0]` regardless of which actor a character played. The solo runner hid both, having one
+actor and one rendered frame. With them fixed `cmu_18_19_01` measures 12.5 degrees against
+`cmu_35_18`'s 2.9 — and that gap is the measurement's precision, not the retarget's error: an
+included angle is ill-conditioned near straight, the sprint's elbows sit at 92-116 degrees and the
+handshake's at 25-30. And the weakest-criteria lines printed `Criterion.why`, which names the
+property when it is *satisfied*, so a low score read as its own contradiction; they say
+`wanted: ...` now.
+
+**Upstream splits the dev recipe in two and we only had one half.** `inference.py` branches on
+`is_editing = len(ref_images) == 1`: editing with exactly one reference runs `flow_match` on the
+distilled 28-step schedule and passes no noise arguments, so the pipeline's `NOISE_SCALE = 8.0`
+stands; every other dev case runs `flash` and passes `noise_scale_start`, `noise_scale_end` and
+`noise_clip_std` explicitly. That second half matters because `flash` is the one scheduler that
+actually consumes `s_noise` — diffusers' `FlowMatchEulerDiscreteScheduler.step` ignores the
+argument entirely, using noise only under `stochastic_sampling` and never scaling it — so leaving
+those at 8.0 is not the recipe upstream ships. Our server mirrored the editing half and sent
+everything else to `default`, which upstream never selects for dev. It now picks `flash` for
+anything other than a single reference, with 7.5, and takes the three noise arguments as request
+fields so either recipe is reachable.
+
+The relevance to the speckle: `anchor_references = ("pose_skeleton",)` is exactly one reference, so
+every anchor this lane has ever generated took upstream's **editing** branch — 28 distilled steps at
+guidance 0, meant for editing a photograph — while being asked to synthesise a whole scene from a
+skeleton drawing on black. Raising the step count made the speckle marginally worse rather than
+better (28 steps: 0.1599 of pixels above a luma gradient of 60; 50 steps: 0.1564, and visibly
+denser noise on smooth tarmac), which rules out under-denoising and is consistent with a schedule
+being asked to do a job it was distilled away from. `noise_clip_std` is the untested knob that
+exists precisely to bound extreme noise values, and it was unreachable until now.
+
+**Step count trades tone against time and does nothing useful for the speckle.** Same prompt, same
+seed, same reference, on the overcast-track brief with the pinned schedule dropped:
+
+| steps | seconds | crushed | midtones | hi-freq |
+| --- | --- | --- | --- | --- |
+| 28 | 101 | 0.179 | **0.521** | 0.1599 |
+| 50 | 179 | 0.266 | 0.367 | 0.1564 |
+| 80 | 290 | 0.288 | 0.324 | 0.1517 |
+
+Three times the time buys a 5 % reduction in high-frequency energy and costs a third of the midtone
+range. 28 is the number, and 28 *without* the pinned distilled schedule is the best tone measured
+anywhere in this phase — midtones 0.521 against 0.293 for the same subject and style on the pinned
+schedule, comfortably inside both thresholds.
+
+It is not free, though, and the picture says why the schedule is pinned. On the unpinned run the
+skeleton reference starts being *drawn*: a gold-coloured armature appears beside the runner where
+the OpenPose limbs were, which is the documented HiDream behaviour that every reference is subject
+material. The pinned distilled schedule is upstream's editing recipe and it is what makes the
+single reference read as a pose to follow rather than an object to render. So the two are in
+tension on this path: pinned honours the pose and crushes the tone on a dark brief; unpinned frees
+the tone and starts drawing the skeleton. Pinned plus a plain brief clears `black_clipping` at
+0.180 and lands 0.293 on `midtone_range`, whose 0.30 is an advisory rather than a blocker.
+
+`workflows/image-upscale.yaml` already exists and runs SeedVR2 frame by frame over a folder of
+stills, which is the intended place to take the speckle out rather than the sampler. Worth trying
+before any more sampler archaeology.
+
+**The speckle is the `flow_match` path, and `flash` has none of it.** Same prompt, same seed, same
+single skeleton reference, on the overcast-track brief:
+
+| recipe | hi-freq | crushed | midtones | saturation | pose |
+| --- | --- | --- | --- | --- | --- |
+| `flow_match` + pinned schedule (upstream's editing branch, the lane's default) | 0.1060 | 0.180 | 0.293 | 78 | correct: the staged stride |
+| `flow_match`, 28 steps, schedule unpinned | 0.1599 | 0.179 | 0.521 | 75 | the skeleton starts being drawn as a gold armature |
+| `flash`, noise scale 7.5, no clip | **0.0002** | 0.000 | 0.988 | 22 | broken: two bodies fused, brief ignored |
+
+Three orders of magnitude of high-frequency energy between the two schedulers on identical input.
+Whatever produces the speckle lives in the `flow_match` integration, not in the prompt, the
+subject, the references, the step count or the resolution — all of which were held constant here
+and varied in the six probes before it.
+
+The catch is that `flash` cannot be driven the way this lane drives it. It is upstream's branch for
+everything *except* a single reference, and given one it half-follows the skeleton: the image is a
+clean, smooth, correctly-lit top-down shot of a single fused two-headed body on an indoor floor,
+having ignored both the staged camera and the brief. So the trade across the three rows is real and
+none of them is currently shippable on its own: the default is the only one that stages the shot,
+and it is the one that speckles.
+
+That makes the next experiment concrete rather than exploratory. `flash` is selected by *not*
+having exactly one reference, so the question is whether two structural references — skeleton plus
+depth, say — keep the pose on the clean path. It was never tried: every probe so far sent one
+reference or none, and the settings comment warning that HiDream treats every reference as subject
+material is about *identity* references, which is a different failure from two structural passes.
+`anchor_references` already accepts a tuple, so it costs one setting and one image to find out.
+
+**And `noise_clip_std` shows what the single reference actually is to this model.** On `flash` with
+the noise clipped to one standard deviation the output is a near-blank grey field with the OpenPose
+skeleton *drawn on it* as a white stick figure: crushed 0.000, midtones 0.999, saturation 11.8,
+hi-freq 0.0000. Clip the noise and the model stops departing from its input and simply reproduces
+it.
+
+That is the whole mechanism in one picture. The single reference is not a hint, it is an image
+being reconstructed, and the recipe decides how far the model travels away from it. `flow_match`
+plus the pinned distilled schedule travels far enough to build a scene while still honouring the
+pose, and its residual high-frequency noise is what that costs. `flash` at 7.5 travels so far it
+abandons the staging. `flash` clipped to 1.0 barely leaves the reference at all. What this lane
+wants — follow the pose, invent everything else — is what upstream's editing branch approximates,
+and the speckle is the price of that approximation rather than a misconfiguration anywhere.
+
+**Two structural references is the recipe.** Every probe until now sent one reference or none, and
+the untried cell was the answer. Skeleton plus depth, same seed, same prompt, `flow_match`:
+
+| references | crushed | midtones | hi-freq | pose |
+| --- | --- | --- | --- | --- |
+| `pose_skeleton` | 0.180 | 0.293 (fails the 0.30 check) | 0.1060 | correct |
+| `pose_skeleton` + `depth` | 0.176 | **0.460** | 0.1746 | correct, and a coherent scene |
+| `pose_skeleton` + `depth`, `flash` | 0.001 | 0.990 | 0.0004 | washed out, staging abandoned |
+
+Depth works where the skeleton alone does not because it is a smooth grey figure with no saturated
+colour anywhere in it, so the model reads it as structure rather than as an object to draw — which
+is what the bright OpenPose dots become the moment the schedule lets them.
+`ImageSequenceSettings.anchor_references` defaults to both now.
+
+That needed one deliberate divergence from upstream. `inference.py` selects the scheduler by
+`len(ref_images) == 1`, so two references would take the `flash` branch, and flash abandons the
+staging. This lane wants pose-following synthesis rather than photo editing, so the server defaults
+to `flow_match` at any reference count and `scheduler` is there to get upstream's rule back. It is
+recorded in the server as a divergence with the measurement behind it, not as a correction to
+upstream.
+
+The speckle stays at 0.17 on this path and is not going to come out of the sampler. `noise_clip_std`
+showed why, and `workflows/image-upscale.yaml` with SeedVR2's weights already on disk is where it
+should come out instead.
+
+The runner's brief changed from dusk wet cobbles to an overcast track, recorded in
+`make_story_fixtures.py` with the numbers: the dusk version measured 0.37 crushed against a 0.35
+threshold and 0.26 midtones against 0.30, because a dark street lit by practical lamps is a
+genuinely high-contrast subject that the model grades harder. The brief was the tone problem.
+
+## The preset cameras had no aspect in them (2026-09-07, later still)
+
+`auto-content-6a` handed this back, and it was one line of geometry. The preset distances are fixed
+multiples of subject height, calibrated by eye on 16:9. A 35 mm lens sees far more vertically in a
+portrait frame, so the same distance leaves the figure at a fraction of the height it had in
+widescreen. `camera_keyframes` now scales the whole camera rig about its own look-at point by
+`aspect_scale(width, height)`.
+
+Scaling about the look-at point rather than the ground distance is what keeps a preset a preset:
+elevation and azimuth are held exactly, so a crane cranes through the same arc and a pan pans
+through the same angle, and only the distance changes. 16:9 scales by one, so nothing on that
+aspect moves at all — verified by asserting a default call equals an explicit 16:9 call for every
+preset in the enum, and by the plan hash.
+
+`underframed_shots` now covers shots with no clip too, through `standing_extent`, which models a
+character as a full standing height above wherever it was placed. That is what made the preset
+defect visible at all: before, a `LibraryPose` shot was skipped, so the only way to see this was to
+render the passes and measure the boxes by hand.
+
+Rendered anchors, `picture-story --set shots.size=576x1024`, control passes for 6/6 shots:
+
+| shot | before | after |
+|---|---|---|
+| four preset shots | 0.216, 0.471 | 0.722, 1.000 |
+| `cmu_20_21_02` | 0.560, 0.554 | unchanged |
+| `cmu_18_19_01` | 0.318, 0.347 | unchanged, still the one flagged |
+
+The film's score went 5.53 to 5.91, readability 3.30 to 6.22. One criterion moved the other way and
+it is worth being precise about why, because the first reading was wrong. `frame_discipline` fell
+from 10.00 to 2.25, which looked like a regression I had introduced. It is not: I rendered and
+scored the same film in 16:9, which this change does not touch, and it scores **1.22** there. The
+close end of `slow_push_in` crops the figure in every aspect — 1.503 of frame height by the
+arithmetic — and portrait was hiding it by being too far away for anything to reach the frame edge.
+So the fix brought vertical in line with widescreen, and widescreen is the worse of the two.
+
+*That leaves a real decision, and it is not mine.* Capping the close end so a whole figure stays in
+frame would change every push-in shot in the repo, shift plan hashes, and alter the look the
+operator has been reviewing all along. Against that, a push-in ending tight is ordinary
+filmmaking, and the cheaper answer might be to anchor earlier frames rather than reframe the
+preset. `slow_push_in` is the preset for `title`, `section_intro`, `image`, `quote` and `callout`,
+so it is most of the film either way. Put to the operator with the numbers rather than decided
+here.
+
+Commands run: `ruff format --check .` and `ruff check .` clean, `pyright` 0 errors, `pytest -m "not
+integration and not gpu and not live"` **856 passed** before the last two test rewrites, three live
+lane runs rendering 6/6 shots of control passes at 576x1024 twice and 1024x576 once, and
+`scripts/score_staging.py` on all three.
+
+**Correction to the two rows above: `flash` is the right scheduler and upstream's rule was right.**
+I recorded flash as abandoning the staging and returning a washed-out frame at 0.990 midtones. That
+was a misread of a metric rather than a look at the picture. With **two** references — skeleton plus
+depth — flash returns the best frame generated in this phase: a clean photographic runner mid-stride
+with the staged side-on pose, a coherent track, and 0.0004 of pixels above a luma gradient of 60
+against `flow_match`'s 0.1746. Three orders of magnitude, and no visible speckle anywhere.
+
+A 0.990 midtone fraction is not a failure. It means almost every pixel sits between luma 60 and 195,
+which for grey concrete under a flat overcast sky is a correctly exposed low-contrast scene.
+`midtone_range` exists to catch midtones that have been *crushed out* of an illustration, and a very
+high fraction is not that defect read backwards. Flash fails only at one reference, fusing two
+bodies and abandoning the brief — which is exactly the `is_editing` split, so the reference count
+decides and upstream decides it correctly. The divergence recorded above is reverted; the server is
+back to `len(ref_images) == 1 -> flow_match, else flash`.
+
+So what fixed the lane is one setting: `anchor_references = ("pose_skeleton", "depth")`. Depth earns
+its place twice, once as smooth grey structure the model reads rather than draws, and once by moving
+the lane off the single-reference editing recipe entirely.
+
+This is measured on **one** staged shot. The pose held and the frame is clean, but one sample is not
+a recipe; the thirty-shot run is what says whether flash holds the staging across thirty camera
+angles. Also worth recording against this machine rather than the code: the first thirty-shot attempt
+was killed for low system memory, because an 8B model load and a full `pytest` run from the other
+session do not fit in 31 GB with swap already full. The load spike is the fatal part, not the
+resident model.
+
+**Per-shot rows, and they contradict the aggregate in the opposite direction to the one expected.**
+`score_report` takes an optional `per_shot` mapping and reports each shot's own weighted score plus
+`worst_shots`, the ones failing on their own. The other session's finding was that a film scored on
+its worst shot per criterion cannot say whether a change worked: one of their shots went 5.45 to
+6.10 across a change while the film sat at 4.65 and 4.71, because the worst readability belonged to
+a shot the change did not touch.
+
+On the runner it goes the other way. Every one of the thirty shots scores between **9.05 and 9.72**
+on its own and none is under target, while the film scores 8.93 — because each criterion is taken on
+its worst shot and different criteria have their worst on different shots, so the film is stricter
+than any single frame in it. Both numbers are true and they answer different questions, which is
+why the report now carries both rather than leaving a reader to discover the difference.
+
+**Correction: the resolution snapping preserves aspect exactly.** I recorded that every anchor comes
+back 2560x1440 whatever the ShotSpec says. `find_closest_resolution` minimises the difference in
+*ratio* across eleven predefined resolutions, so the shape survives and only the pixel count is
+taken out of the caller's hands: 1024x576 and 2560x1440 both give 2560x1440, but 576x1024 gives
+1440x2560, 768x768 gives 2048x2048 and 1080x1920 gives 1440x2560 — every one at 0.000 % aspect
+error, measured. A vertical ShotSpec does get a vertical anchor, which is what makes the other
+session's portrait framing work meaningful.
+
+**First anchor of the thirty-shot run, through the pipeline rather than a probe:** two references
+(`pose_skeleton`, `depth`), 2560x1440, the staged side-on stride, a coherent track with lanes,
+fencing and buildings. Crushed 0.029, midtones 0.748, hi-freq **0.0255** against 0.1060 for the
+single-reference recipe and 0.1746 for two references on `flow_match` — four to seven times cleaner,
+and both tonal checks comfortably inside their thresholds rather than marginal.
+
+One residual artifact to watch across the remaining twenty-nine: the runner's legs carry a faint
+fishnet pattern, which looks like the depth pass being partly *drawn* rather than only read. It is
+the same failure mode as the skeleton's bright dots, much milder, and whether it is systematic or
+one frame is exactly what thirty frames will say. Recording it before the rest arrive so the answer
+is a distribution and not a memory.
+
+**Timing, measured rather than estimated:** 16:48:15 and 16:54:40 for the first two anchors, so
+6 min 25 s each and about 3.2 hours for thirty. That is three times what the same request cost as a
+direct probe, where the server reported 114 s for two references on `flash`, and the gap is not a
+regeneration loop — the stage log carries exactly one line per shot. Unexplained and left
+unexplained for now, because it is a throughput question rather than a correctness one; worth an
+hour when the pictures are in, since a 3x overhead on the one stage that costs real GPU time is
+worth having.
+
+*The operator chose to move the anchor rather than reframe the preset,* so the cameras are
+untouched and `anchor_frames_for(preset, frame_count)` decides which frames get a generated anchor.
+A push-in's second anchor moves back to where the whole figure is still in frame; every other
+preset keeps the last frame, because pulling anchors in for a move that never crops would cost
+temporal coverage for nothing. The tail of a push-in is the video model's job, which it was anyway.
+
+The fraction was measured, not chosen, and it is much earlier than the 0.7 I illustrated the
+decision with. Read off the rendered layout boxes of two films, the box stops fitting inside the
+frame at 0.36 of the move in 16:9 and 0.32 in 9:16, and reaches full frame height by the end. The
+constant is 0.30, under both. It is tied to this preset's `d_close` and to smoothstep easing, so
+the docstring says to re-measure if either changes.
+
+`slow_pull_out` has the same crop at the other end and is deliberately left alone: its close end is
+frame 0, which `ShotSpec` requires to be an anchor, so no choice of anchors can avoid it. Moving
+its *other* anchor would hide the problem rather than fix it. That one needs a camera change or
+nothing, and it is not what was chosen.
+
+One pre-existing test asserted anchors at both ends unconditionally. It now asserts the rule.
+
+*Not yet verified by rendering.* Every measurement above comes from renders, but this last change
+is checked analytically only: `auto-content-6a` has the box for a two-hour thirty-anchor run and a
+Blender control render alongside an 8B model load is what killed their last one. The check to run
+when the box is free is the layout box height at the new anchor frame of a push-in shot, which
+should come back near 0.72 rather than 1.000.
+
+Final gates: `ruff format --check .` 517 files formatted, `ruff check .` clean, `pyright` 0 errors,
+`content-factory workflows validate` 15 checked 0 problems, `export_workflows.py --check` 15
+templates 0 stale, `pytest -m "not integration and not gpu and not live"` **864 passed**, 34
+deselected, 0 failures.
+
+## 2026-09-08 — the playbook audit's priority-1 items (session auto-content-p1)
+
+An audit of the repo against the channel playbook produced nine priority-1 items with file:line
+evidence. They are worked in order below; each subsection carries the commands actually run.
+
+### 1. The prompt path: the still gets one instant, the clip gets the progression
+
+The most-measured defect in the repo (STATUS 1627, 1704). `plan_shots_from_story` copied a beat's
+`display_text` — narration, written to be *spoken over* a picture — into `motion_prompt`, and
+`_anchor_prompt` put that in front of the image model together with a `description` reading
+"title scene for beat 3". Three separate failures came out of one line:
+
+- The image model was asked to illustrate an argument rather than to describe a frame.
+- The still was handed a progression ("the camera pushes slowly in"), which a single frame cannot
+  carry out; asking for it is how a static anchor acquires motion blur and a second pair of arms.
+- The beat number was inside the anchor's `input_hash`, so **inserting a beat mid-story
+  renumbered every later beat and regenerated a whole film's worth of anchors that had not
+  changed.** At 6 min 25 s per anchor (measured, STATUS 3238) that is hours per inserted beat.
+
+New contract fields, all optional so the nine `fixtures/shots/*.json` still validate:
+`StoryPlan.visual_subject`, `ShotSpec.action`, `ShotSpec.end_state`, `ShotSpec.staging_note`,
+`CharacterSpec.appearance`. `staging_note` is one more than the audit asked for and it is there for
+a reason: the reference planner's clip id and solved body fraction were *inside* `description`, and
+three tests check that what the plan claims is what `underframed_shots` measures. Deleting the
+claim would have deleted a real guarantee, so it moved to a field no prompt reads.
+
+New `python/content_factory/shots/prompt_compile.py` owns every clause table:
+`FRAMING_CLAUSE` (read off the **start** of the move — a push-in opens wide, and frame 0 is the
+anchor), `END_FRAMING_CLAUSE`, `CAMERA_MOVE_CLAUSE`, `LIGHTING_CLAUSE`, `environment_clause`,
+`subject_clause`, and `compile_video_prompt(shot, story)` wrapping `style.editorial.video_prompt`.
+`PROMPT_COMPILER_VERSION` rides in the clip `input_hash`, so a reworded clause regenerates the
+clips it changes and nothing else. `reference.lexicon.phrase_for` is a new reverse lookup so a
+shot staged from a retrieved clip says what the clip shows in an everyday word, from the same
+committed table that retrieved it (`interaction:hold_hands_walk` → "held hands").
+
+`_anchor_prompt` is now style → subject → `shot.description`, and `motion_prompt` is gone from it.
+The compiled prompt is recorded in each anchor's `.done.json`.
+
+One deliberate change outside the audit's list: `MockReferenceEditBackend.generate` now tints one
+row of the frame from a digest of the prompt. Without it the mock returns byte-identical pixels for
+every prompt, so the anchor sha never moves, the clip made from it is served from cache, and **every
+cache test that turns a prompt knob is vacuous** — including the audit's own acceptance test (c).
+
+| What | Command | Result |
+| --- | --- | --- |
+| new prompt-path suite | `uv run pytest tests/unit/test_prompt_compile.py -q` | 8 passed (planner copies no narration and no "beat N"; restaging leaves anchors 100 % cached and regenerates the clips; a beat inserted mid-story leaves the other three shots' anchor `input_hash` byte-identical; a style change redraws and leaves narration/align/captions/timeline `outputs_hash` unchanged) |
+| items 1+2 blast radius | `uv run pytest tests/unit/test_prompt_compile.py tests/unit/test_node_params.py tests/unit/test_shot_planner.py tests/unit/test_find_reference_stage.py tests/unit/test_shots_schema.py tests/unit/test_stages_shots.py tests/unit/test_stages_anchor.py tests/unit/test_local_runner.py tests/unit/test_workspace_compile.py tests/unit/test_image_sequences.py -q` | 108 passed |
+| contracts | `just schemas` | 67 schemas / 245 defs, 55 node types, 15 templates. New valid fixtures carry `visual_subject`, `action`, `end_state`, `appearance`; new invalid fixtures reject an empty `appearance`, a 601-char `end_state` and an empty `visual_subject` |
+| reference library (present on this host) | `uv run pytest tests/unit/test_find_reference_stage.py -q` | 20 passed, including the three `@baked`/`@walking` tests that read the framing claim off `staging_note` |
+
+**Acceptance, checked directly rather than only through the suite.** Running `plan_shots` →
+`compile_controls` → `generate_anchor` on `fixtures/story/wind_2024.json` and reading the anchor
+markers back: every prompt is `premium practical-film photography, natural light, physically
+convincing materials. a coastal wind farm. a locked-off medium wide shot, of one figure, …` — no
+beat's `display_text` appears in any of them, and the string "beat" appears in none.
+
+Four tests changed rather than being deleted, each because the thing it pinned moved:
+`test_node_params.py` asserted the motion text was inside the anchor prompt (now asserts it is
+*not*); the three reference-stage tests read the clip id, the tracking note and the framing claim
+off `description` (now off `staging_note`). `fixtures/shots/demo.json` was regenerated from
+`sample_shot_plan()`.
+
+### 2. The brief-topic leak
+
+`runners.local.make_context` handed every local run `sample_campaign()` unchanged, so **every lane
+run carried the demo fixture's brief topic — "How much of Sweden's electricity came from wind in
+2025?"** — and `stage_generate_video` used it two ways: as the whole LTX prompt on the single-clip
+path, and as the substitute whenever a shot carried no motion text (STATUS 1370, 1678).
+
+`workspace.compile.campaign_with_brief` is now the one helper both front doors use; `compile_graph`
+calls it, and so does `make_context(brief=…)`. `runners.local._brief_for` reads the lane's own
+`input.brief` node values out of the yaml and lets `--subject` override the topic. `--subject` now
+reaches three places, because three different models are told it: the anchor prompt, the story's
+`visual_subject` (which is what `--subject`'s help text has always described), and the single-clip
+video path. Both `ctx.campaign.brief.topic` reads are gone from `generate_video`; with no shot and
+no subject it raises naming both `--subject` and `visual_subject`, and it raises **before**
+`_ensure_backend_ready`, so a refused run has not already evicted the other tenant on the card.
+The single clip's seed is now derived from its own prompt rather than from the brief.
+
+| What | Command | Result |
+| --- | --- | --- |
+| brief tests | `uv run pytest tests/unit/test_local_runner.py -q -k "brief or subject"` | 3 passed (the lane's topic replaces the fixture's; an empty topic is named, not defaulted; a single-clip lane with no subject raises with `_ensure_backend_ready` never called) |
+| live mock lane | `uv run content-factory make image-to-video --subject "a paper lantern drifting over still water at dusk" --force` | `generate_anchor` ok, `generate_video` ok. Anchor prompt: `premium practical-film photography, … . a paper lantern drifting over still water at dusk.` LTX request prompt: `hold the framing of the first frame and let the motion develop out of it. a paper lantern drifting over still water at dusk.` — no wind question in either. FAILED at `interpolate`, pre-existing and unrelated: `external/GIMM-VFI/.venv` has no `tensorboard`, which `src/utils/writer.py` imports at module scope |
+
+### 3. Dead widgets, as a class rather than one at a time
+
+Nineteen node types declared a widget their executor never read — knobs that look bound, do
+nothing, and cost a render each to discover. The guard that caught the last two
+(`generate_keyframes`') was two hand-written assertions naming those nodes, which cannot catch the
+next one.
+
+New `python/content_factory/workflows/widget_audit.py` reads `workflows/stages.py` as a syntax tree
+and answers the question for all 55 node types at once: every declared widget must reach a
+`_param`-family call or a `ctx.params.get` somewhere in its executor. It follows four indirections
+because stages use all four — module helpers (`_anchor_lock`, `_tts_executor`, `_video_backend`),
+*derived* readers found to a fixpoint (a helper forwarding its own `key` parameter, which is how
+`_param_list` and `_param_int_list` are picked up without being named), nested closures
+(`_tts_executor`'s `param(key, default)`), and table-driven loops (`_control_passes` reads six
+toggles by iterating a module constant). `WIDGET_EXEMPTIONS` takes a reason per entry and
+`stale_exemptions()` fails an entry once it stops applying, so the table cannot rot into excuses.
+
+Bound, per stage:
+
+| Stage | Widgets | What they now do |
+| --- | --- | --- |
+| `generate_video` | `prompt`, `duration`, `guide_strength`, `noise_seed`, `unet_name`/`clip_name`/`vae_name` | lane preamble joined with the compiled shot prompt; clip length on the single-clip path; `LTXVAddGuide` strength; request seed (0 = the shot decides); the three weight file names threaded through `ltx_i2v_package`, `ltx_i2v_guided_package` **and** `_required_models`, so the doctor check looks for the files the package actually names |
+| `route_shots` | `default_route`, `generate_kinds` | JSON *or* CSV *or* a bare bracketed list (`[image]`), which is what YAML hands through; an unknown route is refused by name |
+| `compile_timeline` | `fps` | recompiles the plan at that rate (see item 4) |
+| `mix_audio` | `target_lufs` | `AudioMixSpec.target_lufs`, which `master` then refuses to miss |
+| `select_music` | `mood`, `gain_db` | the mood narrows the pool **before** the deterministic pick, so it decides the track rather than labelling it; a mood no track carries selects nothing and names the mood |
+| `render_animation` | `kind`, `duration_s`, `fps`, and a new `size` | `equation`/`diagram_build` take their steps from the story's beats and say so when there is no story; the frame was hardcoded 1280x720, so a vertical maths short was unreachable |
+| `generate_anchor` | `model`, `megapixels` | hidream-o1→hidream, flux2-dev→flux2, mock; krea2-turbo and comfy-fixture raise a named preflight error (neither can take control passes as references). `megapixels` scales the requested size aspect-held to a multiple of 32, and 0 means "leave it alone" |
+| `compile_controls` | `rough_rgb`, `depth`, `normals`, `segmentation`, `skeleton`, `canny` | override `RenderSpec.passes` before the shot is hashed, so a lane that wants skeleton+depth renders skeleton+depth. `depth` is one toggle for two passes (the 8-bit PNG and the EXR its range is measured from); `layout_boxes` is not a toggle |
+| `fix_video` | `remove_ids`, `mask_dilation` | Cutie's keep-ids and ProPainter's dilation |
+| `render_static` | `scale` | a real retina export: `--scale` added to `render-artboard.mjs`, and `check_still` is told the scaled size |
+| `write_copy` | `tone` | four tones spelled as instructions in `copywriter.TONES`; with `execution.local_copywriter` off the facts say the tone was ignored rather than implying it did something to a fixture string |
+| `synthesize_narration` | `speed` | `VoiceIdentity.speed`, which every executor here reads (mock included), so it re-times the audio rather than labelling it |
+
+Deleted from `apps/web/src/workspace/catalog.ts`, each with the reason in place: `write_copy.variants`
+(the stage writes one payload and a second caption has no consumer), `compile_cards.cards` (the
+count is the carousel deliverable's own `card_count`), `package_sequence.format` and
+`compile_captions.format` (all outputs are written every time — the review gate wants the contact
+sheet, `compose_video` burns from the SRT; a single-choice widget could only take things away),
+`generate_video.audio_vae` (there is no audio branch in the i2v graph to load it into),
+`compose_video.codec` (delivery is H.264/MP4 throughout — the store, the ffprobe QC, the caption
+burn and every destination package assume it; VP9/ProRes is a delivery-format decision, not a knob).
+
+Exempted with a reason, all three because the executor is still a fixture stand-in:
+`research.depth`, `plan_story.beats`, `compile_artboards.format`.
+
+**One behaviour change worth stating plainly:** `single-image`, `photo-sequence-video` and
+`picture-story` all declare `model: hidream-o1`, and that widget was inert. Those three lanes now
+default to the HiDream backend instead of drawing mock rectangles. That is what the lane
+definitions have always said they wanted (they list the HiDream weights and skill under `models:`),
+but it means a `make picture-story` on a machine with no HiDream now fails at the preflight rather
+than silently producing grey placeholders. Offline runs pass `backend=mock`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the new static check | `uv run pytest tests/unit/test_workflow_definitions.py -q` | 102 passed; `unread_widgets()` is `{}` for all 55 node types and `stale_exemptions()` is `{}` |
+| widget audit by hand | `uv run python -c "from content_factory.workflows.widget_audit import unread_widgets; print(unread_widgets())"` | `{}` (was 19 stages / 34 widgets) |
+| contracts | `just schemas` · `content-factory workflows validate` | 67 schemas / 245 defs · 15 checked, 0 problems |
+| LTX packages | `uv run pytest tests/unit/test_ltx_packages.py -q` | 7 passed |
+
+### 4. One master frame rate
+
+`fixtures/story/wind_2024.json` is 30 fps. `ShotSettings.fps` defaults to 24. Nothing compared
+them, and `hybrid-video.yaml` pinned `compile_timeline` to `fps: 24` with the note "24 to match
+plan_shots" — matching the *planner's default* rather than the script. So every wind short v1–v5
+shipped 24 fps footage stepped up to 30 by ffmpeg's `fps` filter, which reaches a higher rate by
+duplicating frames: one frame in five shown twice, for the whole film, and nothing said so.
+
+- `plan_shots` defaults its rate to the loaded `StoryPlan.fps` (the setting is only the fallback
+  for a lane that plans shots without a story) and **refuses** a plan whose rate disagrees with the
+  story, naming both rates. Refused rather than reported: the conform is lossy and there is no
+  honest way to run it.
+- `compile_timeline` reads its `fps` widget, recompiles the plan at that rate, and refuses a
+  timeline that disagrees with the shot plan — the direction the wind shorts actually failed in.
+- `_segment_filter` emits `fps=` only when the source is at another rate, and a conformed segment
+  records `retimed_from_fps` in `compose.json` (plus a `retimed` count in the stage facts).
+  `COMPOSE_MIXED_VERSION` → 0.3.0, because the filter string is inside every segment's `input_hash`.
+- `fixtures/shots/wind_2024.json` is now 30 fps at the same durations (153 and 129 frames, both on
+  LTX-2.5's 8k+1 grid), and the `fps: 24` pin is gone from `hybrid-video.yaml`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_master_fps.py -q` | 5 passed (a 30 fps story plans 30 fps shots against a 24 fps setting; the widget cannot disagree either; the demo fixture plan against the wind story is refused naming both rates; the committed wind fixtures agree; the filter conforms only when it must, and conforms when the probe fails) |
+| hybrid splice | `uv run pytest tests/unit/test_compose_mixed.py tests/unit/test_stages_shots.py -q` | 11 passed |
+
+### 5. The router's default is the one scene kind with no text in it
+
+`routing.generate_kinds` was title, section_intro, chapter_transition, image, quote, callout, outro.
+Six of those seven are *text* scenes — a title, a label and a heading, a pull quote with its
+attribution, a call to action — and a card renderer sets them in the pinned face at the pinned size
+correctly every run, where an image model renders typography as ornament that resembles letters.
+On a `quote` it is worse than cosmetic: the words are a claim attributed to a named person, so a
+generative pass over them is a fabrication risk. `image` carries no text at all (an asset id and an
+alt text), so it is the only default. The default is now `("image",)`, stated explicitly as
+`generate_kinds: [image]` in `hybrid-video.yaml`, and the lane's header comment — which said a
+quote "has no correct picture" — now draws the line at text rather than at subject matter.
+
+Both things the audit flagged are handled. **ADR-0012** carries a new
+`## Amendment (2026-09-08)` paragraph rather than being silently contradicted: the 2026-09-06
+amendment recorded the seven-kind list and the compose-time fps conform as accepted facts, and both
+are superseded there with the measurement behind each. And the demo fixture has no `image` scene,
+so `hybrid-video`'s `prerequisite` now names the worked example —
+`--story fixtures/story/wind_2024.json --shots fixtures/shots/wind_2024.json`, eight beats, two of
+them images — and says the demo fixture routes nothing. `sample_story_plan()` was left alone
+deliberately: giving it an image beat would move the demo e2e's timeline, its render bundle and
+several hashes for the sake of a lane example.
+
+| What | Command | Result |
+| --- | --- | --- |
+| router | `uv run pytest tests/unit/test_shot_router.py -q` | 10 passed. The rewritten `test_stage_writes_routing_and_honours_settings` asserts `generate: 0` on the demo fixture (all four beats are text) instead of the title beat going to the image model; two new tests cover the widget path and pin the committed default as a decision |
+| lane definitions | `content-factory workflows validate` | 15 checked, 0 problems |
+
+### 5b. Per-short narration: the shorts stop narrating the episode
+
+`plan_story` has written a derived per-short plan since 2026-09-04 — a re-edit, never a crop, with
+the measured timings reset so narration, alignment and captions regenerate, and with a rewritten
+hook. **Nothing consumed them.** Every per-deliverable stage resolved `story/plan.json`, so all N
+shorts locked the long episode's script and came out as N copies of the same film at a different
+aspect ratio. STATUS 528 recorded this as "the lane's next smallest task".
+
+The fix is one function. `_story_plan_path(ctx)` prefers `story/shorts/<deliverable_id>.plan.json`
+when it exists, and `lock_script`, `synthesize_narration`, `align_words`, `compile_captions`,
+`compile_timeline`, `plan_shots` and `find_reference` all read the plan through it — so the
+playbook's episode-to-shorts recipe is `make` on a documentary campaign, with no new lane and no new
+contract. `lock_script` reports which plan it locked, because a short silently narrating the
+episode is invisible in a sentence count. `short_story_plan` now also carries the excerpt's own
+`hook_text` (a 30-second excerpt's headline is not the episode's) and the episode's
+`visual_subject`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| documentary | `uv run pytest tests/unit/test_documentary.py -q` | 12 passed, including a new end-to-end check: three shorts, three different locked scripts, each from its own `story/shorts/<id>.plan.json` at 1080x1920 under its own hook, while the long video still reads `story/plan.json`. Driven off `fixtures/story/wind_2024.json`, because on the demo fixture `plan_shorts` falls back to the whole plan for every short and the guarantee becomes untestable |
+
+### 6. The silent lanes could not finish a run, and a held cut was being smoothed
+
+Three lanes exist for films with no speech in them. None of them completed:
+
+- **silent-video** said so in its own caveat. `mix_audio` built its bed on a narration stem read
+  from per-beat segment files that only `voice_over` or `synthesize_narration` write, so the lane
+  died inside the mix with the music already chosen and the foley already generated.
+- **photo-sequence-video** had no picture at all. Its output is approved PNGs under
+  `sequence/frames`; it has no `generate_video` and no `interpolate`, deliberately, and
+  `compose_video` reached `_silent_picture`, found no mp4 and raised.
+- **compose_video's plain path** muxed `audio/narration-mastered.wav` unconditionally and then read
+  narration segments to size a speech QC that means nothing for a music bed.
+
+`mix_audio` now runs with no narration: the first bed becomes the base, `_loop_to_length` sizes it
+from the picture (a silent lane has no measured speech to take a length from) and the master runs
+on that. Nothing ducks, because there is nothing to duck under. With nothing at all to mix it says
+so and names the three ways to fix it. `_final_audio` decides the finished cut's track — the
+mastered mix, else an unmastered sfx or music file, else nothing — and the plain path muxes it or
+writes `-an` video-only, records `narrated` and `audio` in `compose.json`, and runs the speech QC
+only on speech. `_silent_picture` cuts `sequence/frames` into `exports/generated.mp4` at
+`SEQUENCE_PREVIEW_FPS` (8, the one constant the sequence branch's preview, `stage_interpolate` and
+this now share), so the image-sequence lanes have a picture.
+
+`stage_interpolate` checks for `exports/held.done.json` first: **a held cut is never interpolated,
+whatever the engine widget says.** `motion: hold` exists to guarantee every frame on screen is a
+drawing a person approved, and rife runs happily over a concat of stills, inventing frames nobody
+drew and nobody reviewed. The marker wins over the widget, and the fact records
+`skipped="held cut"` with the `requested_engine` it overrode. `picture-story` keeps
+`engine: rife, factor: 2x` and now says why that is safe.
+
+The false caveats are gone from `silent-video.yaml` and rewritten on `photo-sequence-video.yaml`
+(its remaining caveat — the cut is 8 frames long — is still true).
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_silent_lanes.py -q` | 4 passed. `silent-video` runs end to end on mocks with a music+sfx bed and no voice (`mix_audio.narrated=false`, `compose.audio="bed"`, video+audio streams); the same lane with the sound stages dropped writes a cut with **only** a video stream (`compose.audio="none"`); `photo-sequence-video` finishes both passes of its frame-review gate and delivers a 1.0 s silent cut of its 8 approved drawings; and `motion: hold` + `engine: rife` produces `skipped="held cut"`, zero interpolated frames anywhere under the run, and still composes |
+| lane definitions | `content-factory workflows validate` · `scripts/export_workflows.py` | 15 checked, 0 problems · 15 templates regenerated |
+| full core suite at this point | `uv run pytest -m "not integration and not gpu and not live" -q` | **883 passed**, 34 deselected, 1 failed — the failure was `test_generated_files_match_the_definitions` flagging the yaml edits as stale, fixed by running `export_workflows.py` |
+
+Found and deliberately not widened into: on `photo-sequence-video` the `frames_gate` node is wired
+from `drift` (the eight keyframes) but `review_frames` reads `anchors/manifest.json`, so it gates
+**one anchor** rather than the eight drawings. That is the same defect class as the dead widgets —
+a stage reading somewhere other than where the graph says — and it is recorded in the new test
+next to the assertion, rather than fixed inside item 6.
+
+### 7 — recorded after item 9
+
+Item 7 needs the GPU, and items 8 and 9 do not. They were built first so the box stayed free for
+as long as possible and so item 9's telemetry existed to *measure* item 7 with — the seconds per
+anchor and the VRAM before and after are exactly what its acceptance asks for. Its entry is below,
+after item 9.
+
+### 8. BLOCKED, and the frame check that was running too late
+
+`RunState.BLOCKED` has been in `db/models.py` since the run state machine was written and nothing
+ever set it (STATUS 2992). Everything a stage could not finish raised `RuntimeError`, so a run that
+had generated a frame three times, checked it three times and been handed three unusable pictures
+looked exactly like a run with a bug in it: same exception, same FAILED state, same invitation to
+retry — which is three more GPU-minutes per frame for the same answer.
+
+The other half is *when* the deterministic checks ran. `qc/frame_review.py` measures tonal
+collapse, a half-applied monochrome instruction, edge intrusion and background churn, and it ran
+inside `review_frames`, where a person was already looking at the contact sheet. So a thirty-anchor
+run spent three GPU hours and then showed a reviewer frames whose style instruction the code could
+have caught the moment each one arrived.
+
+New `python/content_factory/workflows/blocked.py`: `BlockedError(reason, stage, attempts,
+candidates)`, `BLOCKED_EXIT_CODE = 5`, and `blocked_details(exc)` which finds the payload through
+either wrapping — a local `LocalRunError` around it, or Temporal's `ActivityError` around an
+`ApplicationError` typed `Blocked`. Four consumers:
+
+- `stage_generate_anchor` runs the blocker findings after every uncached generation and regenerates
+  with `seed = lock.seed + attempt - 1` (the pattern `sequences.engine.build_sequence` already uses
+  for keyframes — derived, so the second attempt is the same second attempt on every machine) up to
+  `max_regen_attempts_per_frame`. The marker records `attempts` and the seed that actually drew the
+  frame; a frame that passes first time is byte-identical to what it was before. When the attempts
+  run out it raises, keeping every rejected candidate on disk as `<frame>.attemptN.png`, because
+  the whole point is that a person looks at them. Only *blockers* trigger a regeneration — the
+  advisory findings are deliberately loose and mean "look at this".
+- `stage_generate_keyframes` converts its post-regeneration drift failure to a block for the same
+  reason.
+- `runners.local` records `{"ok": false, "blocked": {...}}` on the stage and `blocked_at` on the
+  report, and logs `BLOCKED` rather than `FAILED`.
+- The CLI labels it `BLOCK` (a third label beside `GATE` and `FAIL`, because the three want three
+  different responses) and exits **5** — not 1, and not 4 which is the human-review gate, so a
+  wrapper can tell "needs a human" from "is broken" without parsing text.
+- `execute_node` raises it as a **non-retryable** `ApplicationError` carrying the payload, and the
+  workflow's failure handler sets `RunState.BLOCKED` with the payload in the run report.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_blocked_state.py -q` | 6 passed. The mock backend fails `monochrome_honoured` for the real reason (it paints a saturated subject; the style asks for no colour), so: three attempts at three derived seeds, three candidates on disk with their findings, nothing written as if it had passed, `attempts == 1` and the lock's own seed in the ordinary case, `blocked_at` in `run.json`, `BLOCK` and exit 5 from `content-factory make single-image`, and the payload recovered through both Temporal wrappings |
+| anchors | `uv run pytest tests/unit/test_stages_anchor.py -q` | 6 passed |
+
+### 9. The third GPU tenant, and what a generation actually cost
+
+Two measurements were missing and one tenant was unmanaged.
+
+**Ollama.** It is the third thing on the card and the only one `services/local.py` did not know
+about. It keeps a model resident for five minutes after the last request, so a lane that drafts a
+hook with `qwen38-ridge` (12.6 GB) and then generates an anchor arrives at HiDream's ~19.4 GB load
+with the text model still holding its weights — and that does not fail cleanly: the caching
+allocator fragments and dies on a 238 MB allocation, which is the entire reason
+`PYTORCH_CUDA_ALLOC_CONF=expandable_segments` is set in `start` at 30 % of the throughput
+(STATUS 1213, 1361, 1380, 1657, 3346). `LocalServices.unload_ollama()` posts
+`{"model": …, "keep_alive": 0}` to `/api/generate` for every catalogued Ollama model, and `ensure`
+calls it — but only past the `ready` check, so a fully cached rerun never disturbs a model somebody
+else is using. A refused connection is not an error; it is the common case on a box that only
+renders.
+
+New `free_the_gpu()` for the stages that load a model inside their own uv environment through a
+subprocess and therefore never went near `_ensure_backend_ready`: the post chain (Cutie,
+ProPainter, SeedVR2, RIFE), `sound_design` (MMAudio, Stable Audio) and `restore_speech` (Resemble
+Enhance, ClearerVoice). Each calls it lazily, on the uncached path only.
+
+**Telemetry.** `gpu_memory_used_mib()` reads `nvidia-smi --query-gpu=memory.used` before and after
+every uncached generation; `_generation_telemetry` puts that, the stage's wall clock and — new —
+the *server's own* `elapsed_s` into the marker and onto the `executions.log` line (tab-separated
+after the unit name, so the log stays greppable by prefix). Keeping both timings is the point: they
+disagreed by a factor of three on the thirty-anchor run and the gap was recorded as "unexplained"
+because nothing held the two numbers side by side. The HiDream server has reported `elapsed_s`
+since it was written and nothing read it, so `HiDreamReferenceEditBackend.last_facts` now keeps it.
+`copywriter.gateway_facts` turns a `GatewayResult` into tokens, wall clock, dollars and attempts,
+and `write_copy` puts them in its stage facts — the gateway has always returned all four and every
+caller kept only the model alias.
+
+| What | Command | Result |
+| --- | --- | --- |
+| services | `uv run pytest tests/unit/test_local_services.py -q` | 11 passed, 3 new: `ensure` unloads exactly the catalogued Ollama models with `keep_alive: 0` and does **not** when the tenant is already healthy; no Ollama on the machine is not an error; `free_the_gpu` stops both tenants and the text models and is idempotent |
+| telemetry | `uv run pytest tests/unit/test_stages_anchor.py -q` | 6 passed, 2 new: the marker carries `vram_before_mib`/`vram_after_mib`/`seconds`, the same numbers land on the `executions.log` line after a tab, and a backend that reports its own `elapsed_s` has both timings kept side by side (385 s wall against 114 s server) |
+| copywriter | `uv run pytest tests/unit/test_copywriter.py -q` | 2 passed |
+
+### 7. Styled identity sheets — code built and tested, live measurement NOT run
+
+`ImageSequenceSettings.anchor_references` has said, in its own comment, to add `identity` only once
+a character has a *styled* sheet rather than a clay turnaround — and there was no way to make one,
+so the slot was unusable and identity was carried by nothing at all. Both failures behind that
+comment were measured: HiDream-O1's IP pipeline treats every reference as subject material, so the
+clay render made it draw clay people and the untextured MPFB turnaround made it draw a nude
+mannequin (STATUS 1339, 1379-1381). `_identity_reference` was sending exactly that clay front view.
+Over one thirty-anchor run the model held one world in every frame and changed the character's
+outfit four times inside it (STATUS 1627).
+
+Built:
+
+- **`IdentitySheet`** on `CharacterAssetReview.sheets` (an internal contract — not in the schema
+  registry, so no TS export): style, slug, png digest, the mesh digest it was drawn from, seed,
+  backend, prompt version, and which turnaround views conditioned it.
+- **`controls/identity_sheets.py`**: `sheet_prompt` (style first, for the measured reason
+  `_anchor_prompt` leads with it; two views, clothed, plain ground, no text), `build_sheet` cached
+  by `(blend sha256, style, seed, backend, views, prompt version)` under
+  `<assets>/characters/<asset>/sheets/<style>.png`, `style_slug` (a preset name stays readable, a
+  written-out style becomes a digest), and digest-addressed lookup. A missing turnaround view is
+  named, not dropped: a sheet built from the front alone is one whose depth the model invented and
+  it would be indistinguishable on disk from one that had both.
+- **`assets_build/build_identity_sheet.py`**: the build step, with `--dry-run`. Not a lane node —
+  one call per character per style, when the asset is built or the film's style changes.
+- **`review_assets`** now covers the sheets. `check_identity_sheets` is advisory (a film that sends
+  no identity reference needs no sheet) but flags a sheet drawn from a since-rebuilt mesh; the
+  *stage* blocks when the run asks for an identity slot and there is no sheet for the film's style,
+  or when the sheet is not the one the approval covered. Same discipline as the mesh and the frame
+  batch: a redrawn image is unreviewed.
+- **`plan_shots`** fills `CharacterSpec.reference_image_sha256` with the sheet digest for the film's
+  style, so a plan says which image it was made against; `_identity_reference` resolves by digest
+  and never falls back to the turnaround.
+- **`reference_slots`** — `[{slot, role, subject_id, sha256, box}]` — is written into every anchor
+  `.done.json`. The count matters more than it looks: upstream branches on
+  `len(ref_images) == 1`, so the number of filled slots selects the whole editing recipe, and a run
+  whose identity sheet was missing silently became a one-reference run on a different scheduler.
+
+**`anchor_references` is deliberately unchanged at `("pose_skeleton", "depth")`.** Adding
+`identity` makes every anchor a three-reference request — a third of the reference budget and, at
+that count, still the `flash` branch but a different composition problem from the measured
+two-reference recipe. Changing the channel default on an unmeasured basis is what the comment
+already warns against, so it stays a per-lane value until the measurement below is run.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_identity_sheets.py -q` | 6 passed: the slug keeps presets readable and long styles unique; the prompt leads with the style and asks for two clothed views; a sheet is conditioned on the asset's own two turnaround renders and is cached by the mesh (a rebuilt mesh, a new style and a new seed each rebuild it, nothing else does); a missing view is refused by name; the anchor sends the sheet and **never** the clay render, and a digest nothing matches sends nothing; `plan_shots` names the digest and `review_assets` blocks an unapproved sheet, passes an approved one, and blocks again once it is redrawn |
+| the real asset store | `build_identity_sheet.py --asset man_01 --style watercolour --dry-run` | resolves `/mnt/fast/models/blender-assets/characters/man_01/sheets/watercolour.png`, views `front,right45`, and prints the compiled prompt |
+| conditioning slots | `uv run pytest tests/unit/test_node_params.py -q` | 13 passed, including the slot roles and order |
+
+**The live measurement was not run, and this is what it needs.** Every prerequisite is present and
+verified on this host: `flux2-dev` and `hidream-o1` weights are in `/mnt/fast/models`,
+`make picture-story --plan` reports `missing_models: []` and no blocked stages, and
+`fixtures/shots/two_hander_mocap.json` is 6 shots / 12 anchor frames / `man_01`+`woman_01`. What
+stopped it was the box, not the code: 21.7 GB of 24 GB VRAM free but only **22 GB of 31 GB system
+RAM**, and STATUS 3238 records a thirty-anchor run on this machine killed for low system memory
+because "an 8B model load and a full `pytest` run from the other session do not fit in 31 GB with
+swap already full" — this session had the full suite running and the working tree carries
+uncommitted work from other sessions. At the server's own 114 s per two-reference request the
+measurement is ~50 minutes of generation for HiDream alone, and 2.5+ hours at the 6 min 25 s per
+anchor the pipeline actually delivered, times two backends, across a HiDream→ComfyUI tenant swap.
+Running that unattended against another session's card was the wrong call.
+
+The sequence to run when the box is free:
+
+```
+# 1. the sheets, once, both characters, the film's style
+uv run python skills/video/blender_scene/assets_build/build_identity_sheet.py \
+    --asset man_01 --style watercolour --appearance "..."   # and again for woman_01
+content-factory assets approve man_01 --as <name>           # and woman_01
+
+# 2. HiDream, identity + skeleton + depth, same seeds
+content-factory make picture-story --shots fixtures/shots/two_hander_mocap.json \
+    --set anchor.references=identity,pose_skeleton,depth --set anchor.model=hidream-o1 \
+    --until anchor --project-dir output/id-sheets/hidream
+
+# 3. flux2, everything else identical
+content-factory make picture-story --shots fixtures/shots/two_hander_mocap.json \
+    --set anchor.references=identity,pose_skeleton,depth --set anchor.model=flux2-dev \
+    --until anchor --project-dir output/id-sheets/flux2
+```
+
+What to record, and where it now comes from without a separate probe: identity drift from
+`scripts/score_staging.py` over the two runs' anchors; **seconds per anchor** and **VRAM before and
+after** from each anchor's `.done.json` `telemetry` block and the `executions.log` lines (item 9);
+the server's own `elapsed_s` alongside the wall clock in the same block; and `reference_slots` to
+confirm three slots were actually filled rather than two — because that count, not a setting, is
+what selects the editing recipe. Do not assume the reference count keeps HiDream on `flash`;
+measure it, as STATUS 3238 had to.
+
+### Priority 2, taken: a credentials scan over the words a film ships
+
+The one missing QC line in the playbook that is also a disclosure risk. The software-tutorial
+recipe has carried "no credentials in output" since it was written and nothing in this repo
+implemented it — and it is the only check whose failure cannot be undone: a caption or an on-screen
+line carrying an API key is published the moment the file leaves the machine, and rotating the key
+afterwards is damage control, not a fix.
+
+`python/content_factory/qc/secrets.py` scans the story plan's display and spoken text (the
+deliverable's **own** plan, so a documentary short reads its short's plan — item 5b), its
+`visual_subject` and `hook_text`, the SRT/VTT/ASS caption cues, `copy.json`, the locked script, and
+any text sidecar beside a capture. Nine named patterns — each a shape that is a credential and
+cannot be anything else — plus an entropy test that fires **only** on the right-hand side of a
+key-shaped assignment, because a bare high-entropy string in a script is a hash, an id or a digest.
+`stage_qc_deliverable` runs it as a blocker.
+
+Two limits are stated in the report rather than implied. `facts["ocr"]` is `false` and
+`facts["unscanned_images"]` lists the captures, so a pass cannot be read as "no key is visible in
+the video" — there is no OCR in the offline core. And a finding never repeats the value it found: a
+QC report is itself an artifact that gets read, pasted into a ticket and into chat.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_secret_scan.py -q` | 8 passed. Every named pattern has a case that fires it; a finding never quotes the secret; `api_key = <20 high-entropy chars>` fires and `sha256 = <the same string>` does not; `password = REPLACE_ME` does not; and eight ordinary lines from this repo's own fixtures, docs and commit messages (a git sha, a full sha256, a weights filename, a `CF__…=` env line, "password reset takes thirty seconds") all pass — the false-positive budget is half the file, because a check that blocks a film for a git sha gets turned off |
+| QC path | `uv run pytest tests/unit/test_secret_scan.py tests/unit/test_delivery_and_accessibility_qc.py tests/e2e -q` | 13 passed |
+
+### Final gates, and what is NOT done
+
+| Gate | Command | Result |
+| --- | --- | --- |
+| format + lint | `just lint` | `ruff format --check` 533 files formatted, `ruff check` clean, `pnpm -r lint` clean |
+| typecheck | `just typecheck` (`uv run pyright`) | **6 errors, all pre-existing and none in code written here.** `scripts/make_mocap_shot_plan.py:273,275` reads `.name`/`.actor` off a `PoseRef` union that has included `BonePose` since before this session, and `scripts/score_staging.py:198` subtracts two `object`-inferred numpy arrays past an `any(x is None …)` guard that does not narrow. Both files are **untracked** — another session's work in progress — so per CLAUDE.md they were not edited. The fixes are one line each: narrow with `isinstance(pose, SegmentClipPose)`, and rebind `a, b = shapes` after the guard |
+| Python core | `uv run pytest -m "not integration and not gpu and not live" -q` | **915 passed**, 34 deselected, 0 failures, 333 s. Was 864 at the start of the session (STATUS 3238); the 51 new tests are the six new suites (37) plus additions to `test_local_runner`, `test_local_services`, `test_stages_anchor`, `test_node_params`, `test_shot_router`, `test_documentary` and `test_workflow_definitions` |
+| TS/web suites | `pnpm -r test` | 9 packages + 2 apps, **252 passed, 0 failed**. `apps/renderer` needed `fixtures/demo/timeline-bundle.json` to gain `visual_subject`: every property of a closed contract is `required` in the generated schema by design (`registry._normalize` — strict models always serialize every field), so a new optional Pydantic field is a required JSON property and the committed bundle failed Ajv until it carried one |
+| contracts | `just schemas` twice, diffing `git status` in between | identical both times — regeneration is idempotent. 67 schemas / 245 defs, 55 node types, 15 templates |
+| contract drift | `uv run python scripts/export_schemas.py --check` | **reports drift, as it did before this session.** It is a `git status --porcelain` check: 10 tracked schema files are modified in this working tree and 29 are untracked, all of them from concurrent sessions plus this one's field additions. It is a commit-time gate and passes once committed (same note as STATUS 240) |
+| lane definitions | `content-factory workflows validate` · `scripts/export_workflows.py --check` | 15 checked / 0 problems · 15 templates / 0 stale |
+| every lane has a brief | `_brief_for(<lane>, None)` over all 15 | every lane resolves a non-empty topic; `--subject` overrides it |
+
+**Not done, and why.**
+
+1. **Item 7's live measurement.** The code is built and covered offline; the GPU run is not. Every
+   prerequisite is verified present on this host — the reason, the exact command sequence and what
+   to record are in item 7 above. Short version: 22 GB of 31 GB system RAM free, and STATUS 3238
+   records a run of exactly this shape killed on this machine for low memory.
+2. **Priority 2, all but one item.** Only the credentials scan was taken. Untouched: gateway
+   options (`response_format` → Ollama `format`, `think`, `num_ctx`, `keep_alive`, the catalogue's
+   digest/quantization, the Heretic tier); language validation in `_tts_executor` and honouring
+   `VisualBeat.spoken_text`; real `ingest` and `compile_datasets` executors; `verify_claims`
+   emitting real `ClaimRecord`s plus a post-plan `script_claim_gate`; `draft_story_plan` behind an
+   execution flag; `ImageScene`/`ComparisonScene`/the diagram kinds; `RenderBundle.assets` (with
+   the `staticFile()` trap); `SoundCue`/`CueSheet` in `mix_audio`; ComfyUI `submitted.json`
+   reconciliation; the guided start+end anchor pair and Union-Control.
+3. **Small items not taken**: `source_ids` on `ChartScene`; enforcing
+   `EvidenceRequirement.requires_independent_sources` with publisher/syndication dedupe;
+   per-style/shot-class drift thresholds (and un-hardcoding `scripts/generate_holding_hands.py`);
+   the chart-values-equal-dataset check; the versioned prompt-template registry under `prompting/`
+   — which is now *unblocked*, since item 1 gives the compiled-prompt digest something to point at.
+   `stage_render_animation` taking kind/size/fps for real **was** done, inside item 3: a vertical
+   maths short is reachable (verified: `size=1080x1920 fps=30 duration_s=1.0` → a 30-frame 1080x1920
+   spec, where it was hardcoded 1280x720 count_up), and `kind=equation` takes its steps from the
+   story or says what is missing.
+4. **Found, recorded, not widened into**: on `photo-sequence-video` the `frames_gate` node is wired
+   from `drift` (the eight keyframes) but `review_frames` reads `anchors/manifest.json`, so it gates
+   **one anchor** rather than the eight drawings. Same defect class as the dead widgets — a stage
+   reading somewhere other than where the graph says. Asserted, with the reason, in
+   `tests/unit/test_silent_lanes.py`.
+5. **A pre-existing environment gap, hit while measuring item 2 live**: `make image-to-video` gets
+   through `generate_anchor` and `generate_video` and then fails at `interpolate` because
+   `external/GIMM-VFI/.venv` has no `tensorboard`, which `src/utils/writer.py` imports at module
+   scope. Nothing to do with this session's changes; it blocks every lane whose `interpolate` uses
+   `gimm_vfi`.
+
+**Behaviour changes an operator will notice**, all argued in their items above: `single-image`,
+`photo-sequence-video` and `picture-story` now honour their own `model: hidream-o1` instead of
+drawing mock rectangles (a configured `image_sequences.backend` still outranks it); the router sends
+only `image` beats to the generative chain; `plan_shots` refuses a frame-rate mismatch instead of
+letting `compose_video` conform it; `generate_video` refuses a single-clip run with no subject; and
+a lane with `identity` in its references is blocked until a styled sheet is built and approved.
+
+**Next smallest task.** Item 7's live measurement, on a quiet box — it is the only priority-1 item
+with an outstanding acceptance, everything it needs is on disk, and its result decides whether
+`anchor_references` gains `identity` by default. After that, the prompt-template registry under
+`prompting/`: item 1 created the digest it exists to name, and prompt text is still scattered
+across `style/editorial.py`, `sequences/instructions.py`, `stages.py`, `ltx_packages.py`,
+`copywriter.py` and now `shots/prompt_compile.py` and `controls/identity_sheets.py`.
+
+## 2026-09-08 — priority 2, in the operator's order (session auto-content-p1, continued)
+
+### Gateway: one options object, and the schema stops being prose
+
+**The precondition first, because the task said to check it before building anything larger.**
+`qwen38-ridge:latest` really does carry `TEMPLATE {{ .Prompt }}` — the raw template, with no
+`.Messages` and no `.System`. On the face of it that means a system message is dropped. It is not,
+and the answer had to be measured rather than reasoned about:
+
+| Probe | Result |
+| --- | --- |
+| `/api/chat` with `system: "answer every question with the single word BANANA"`, user: "capital of France?" | `BANANA` — **the system message renders** |
+| `/api/chat` with `think: true` | `thinking` comes back as its own field and `content` is `42`, so Ollama is applying real chat handling, not concatenating text |
+
+So no Modelfile rebuild is needed, and that is worth having written down: this snap Ollama renders
+the GGUF's own chat template when the Modelfile's is the trivial one.
+
+Then the four things the note said were missing, each verified against the running server and
+litellm 1.99.0 before being coded:
+
+| Probe | Result |
+| --- | --- |
+| Ollama `format: <JSON Schema>` on `/api/chat` | returns exactly `{"city": "Paris", "millions": 2.5}` — constrained decoding, not a request |
+| litellm `response_format={"type":"json_schema","json_schema":{"schema":…}}` | the outgoing payload carries the raw schema as Ollama's top-level `format`. **Verified**, spying on `HTTPHandler.post` |
+| a **nested** Pydantic schema (`$defs`/`$ref`) through the same path | validates first time — so this is usable for the scriptwriter's whole `StoryPlan`, not just flat replies |
+| `think`, `num_ctx`, `max_tokens`, `keep_alive` as litellm kwargs | all four land: `think` top-level, `num_ctx` inside `options`, `keep_alive` top-level (and it actually unloaded the model). With thinking left **on** and 80 max tokens the same call returned `''` — the reasoning had eaten the answer's budget, which is why `think=False` is the default for a structured call |
+
+`GatewayOptions` is one frozen object on `complete_structured`: `structured_output`, `think`,
+`num_ctx`, `max_tokens`, `keep_alive`, `temperature`, `seed`. It exists because the five are not
+independent — a schema sent as a constraint needs no schema in the prompt, thinking left on eats
+the answer's budget, and `num_ctx` decides whether the prompt arrived at all. `EndpointConfig`
+gains `supports_json_schema` / `supports_think` (both true for Ollama, both with the verification
+date in the docstring), so a provider that would ignore the fields still gets the schema as prose.
+`DEFAULT_NUM_CTX = 16384`, clamped to the model's declared window: **Ollama uses 4096 whatever the
+model declares**, so a request carrying a schema plus a brief plus claim cards was being silently
+truncated with the schema the likeliest part to fall off the end. `GatewayResult` now reports
+`schema_enforced` and `num_ctx` — the difference between "cannot emit invalid JSON" and "was asked
+nicely" changes what a retry means.
+
+The copywriter uses one `COPY_OPTIONS` with `keep_alive=0`, which is the cleaner half of item 9's
+fix: the 12 GB text model is released *when the copy is written*, so `free_the_gpu` finds nothing
+to evict before the anchor stage instead of racing it.
+
+**Catalog, read off `ollama show` rather than remembered.** Two recorded values were wrong: the
+primary's context was `32768` (it declares **262144**) and its quantisation was not recorded at
+all — which is the fact that justifies the quality tier, because it is **IQ2_M, a two-bit quant**.
+
+| alias | model | revision | quant | ctx | VRAM |
+| --- | --- | --- | --- | --- | --- |
+| `local_structured` | qwen38-ridge:latest (27.3B) | `8616ca6ccf4c` | IQ2_M | 262144 | 14 GiB |
+| `local_structured_small` | qwen3:8b (8.2B) | `500a1f067a9f` | Q4_K_M | 40960 | 6 GiB |
+| `local_structured_quality` | Qwen3.6-27B-Heretic (26.9B) | `b4e3402d4cb0` | Q4_K_M | 262144 | 19 GiB |
+
+The Heretic tier is the one the 2026-09-05 decision queued. It is `commercial_use=False` with
+`license="Qwen3 derivative (Apache-2.0 upstream); DavidAU fine-tune, licence unstated"` — a
+community fine-tune with no licence file of its own does not get to claim commercial use, and
+`ollama show` reports a clip projector on it, so `vision` is declared because it is true and not
+because anything uses it. A skill has to name it in `required_models`; it is never chosen by
+default, and at 17 GB it does not share the card with HiDream or LTX.
+
+| What | Command | Result |
+| --- | --- | --- |
+| gateway + catalog + copywriter | `uv run pytest tests/unit/test_model_gateway.py tests/unit/test_default_catalog.py tests/unit/test_copywriter.py tests/unit/test_documentary.py tests/unit/test_skills_and_routing.py -q` | 35 passed. 4 new tests: a capable endpoint gets the schema as a constraint and sends all five settings; a plain one gets it as prose and is sent none of them; `num_ctx` is clamped to a 4096-declared model; `think=None` leaves the model's default alone |
+| **live, through the real Ollama** | `copywriter.draft_caption(sample_campaign())` | a caption and an alt text back in **12.3 s**, `schema_enforced: true`, `num_ctx: 16384`, `attempts: 1`, 95 in / 86 out tokens. `/api/ps` empty afterwards and the card back to 2.5 GB — `keep_alive=0` released the 12 GB itself |
+
+One thing the live run showed that belongs in the next item rather than this one: the model wrote
+"about 18%" where the brief says a fifth. Nothing in the copy path checks a number against a
+claim — which is exactly what the research lane's `verify_claims` is for, and it is next.
+
+### Research lane: the library had everything except a line through it
+
+Every part of this existed and was tested. `ingest.uploads` has had size caps, magic-number
+sniffing and an allowlist that never accepts SVG since phase 4; `research.fetch.safe_fetch`
+re-validates every redirect hop against SSRF, caps the body, allowlists content types and flags
+injection markers as data; `research.claims.build_claim` verifies a number against evidence and a
+dataset. **Nothing called any of it.** So `data-story-video` was the one lane the catalogue marked
+unfinished, and `--plan` now reports `with_unrunnable_stages: []` for the whole catalogue.
+
+Four defects, in the task's order:
+
+1. **`stage_ingest` did not exist.** It now walks `<project>/uploads`, sniffs every file by magic
+   number through the existing library, stores it immutably and records it as an
+   `operator_upload` `SourceRecord` whose URL is the file's own path — inventing an `http` one
+   would be inventing provenance. A rejected upload **fails the stage by name**: a film built from
+   three of an operator's four files, silently, is worse than one that stopped. Images, video,
+   audio and documents are also offered as `asset_id -> path` in the shape `RenderBundle.assets`
+   takes, which is what unblocks Map/Screenshot/Manim assets from any lane.
+2. **`stage_compile_datasets` returned `sample_dataset()`** — the committed wind-power fixture — so
+   a data-led film could only ever be about Swedish wind power whatever was uploaded. New
+   `content_factory/datasets/compile.py`: polars (already pinned) reads the CSV or JSON, and the
+   transforms are **declared, not written** — a closed set of seven typed steps (select, rename,
+   filter, sort, head, share_of_total, round) from a `<file>.transforms.json` sidecar beside the
+   upload, so the derivation lives with the data and nothing executes operator text. The
+   classification is *inferred*: a table read straight from a file is `SOURCE_DATA`, and the moment
+   a transform computes a value the file did not contain it is `DERIVED_DATA` — getting that wrong
+   would put a computed number on a chart claiming to be measured. An unnamed derived column is
+   refused, because a number nobody can trace does not belong on screen.
+3. **`stage_verify_claims` verified the wrong thing in the wrong place.** It re-derived the
+   *fixture* claims rather than reading what `research` wrote, and it gated `sample_story_plan()`
+   — a film nobody was rendering — and it runs *before* `plan_story`, so there was no script to
+   gate. Now: it re-runs `build_claim` over the evidence and datasets **on disk**, so an operator's
+   own sources reach it and a re-ingested spreadsheet re-verifies; and the script gate moved to
+   `lock_script`, the last moment before words are spoken and pictures are drawn from them. A
+   hand-written StoryPlan with no claims is not gated into the ground — every picture-story lane is
+   one — and the gate says so in its own note rather than inventing a failure.
+4. **Claims are hashed without `checked_at`.** It is when the verification ran, not what it
+   concluded. Folding it into the digest made every stage downstream of research re-run at
+   midnight; a cache key that changes with the clock is not a cache key.
+
+Then `research/pipeline.py`: search → fetch → extract → claim, wired from the existing modules and
+**behind `execution.live_research`, off by default**, because it is the one thing in this repo that
+reaches the public internet and `just test` must not. It decides nothing: the supporting-sentence
+choice is token overlap and the verdict is `build_claim`'s arithmetic, because a pipeline that
+asked a model "is this supported?" would be a pipeline whose citations mean nothing — and because
+`build_claim` verifying a number against a sentence a *model* chose for containing that number
+proves nothing at all. Unreachable results are reported, not dropped: "three of eight sources were
+unreachable" is something an operator has to know before deciding the film has enough behind it.
+
+**And the independence gate, computed since section 10 and read nowhere.**
+`compile_requirements` has set `requires_independent_sources=2` on high-stakes claims (dosage,
+diagnosis, investment returns, elections) since it was written, and nothing enforced it. New
+`claims.independence_findings`, called by `verify_claims`: independence is not "two source ids", it
+is two **publishers** that are not each other's syndication. `independent_publishers` dedupes by
+publisher name (falling back to the registrable host) and collapses any excerpt crediting a wire
+service to that wire — a claim carried by two outlets that both credit Reuters has **one** piece of
+reporting behind it. It fires only where the requirement asks for two, and never on a claim that
+already failed, because a second finding on an unsupported claim buries the first.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_research_lane.py -q` | 16 passed: the compiler (typed columns, recorded derivations, `DERIVED_DATA` on a computed share summing to 100.0, a missing column refused by name, all three JSON export shapes); the stages (three uploads sniffed to `data`/`text`/`image`, a declared `.svg` refused whatever the bytes say, an empty uploads dir a no-op, the fixture as the fallback, an operator's file reaching `sources.json`); the digest ignoring the check date but not a changed verdict; **two outlets reprinting one Reuters report counting as one publisher** and two doing their own reporting counting as two; the script gate refusing a broken claim its script references and staying silent for a claim-free film |
+| library regression | `uv run pytest tests/unit/test_claims_and_citations.py tests/unit/test_search_and_extract.py -q` | 11 passed |
+| catalogue | `content-factory workflows validate` · `export_workflows.py` | 15 checked / 0 problems · **`with_unrunnable_stages: []`** (was `["data-story-video"]`) |
+| **live, a real upload through the real lane** | `content-factory make data-story-video --until data` | `ingest` 1 upload / 1 source / 1 sidecar recognised as metadata; `research` 3 sources (2 fixture + the operator's); `verify_claims` 2 supported, 0 independence findings; `compile_datasets` 1 `DERIVED_DATA` table / 4 transforms. The table: hydro 44.1 %, nuclear 32.1 %, wind 23.8 % — summing to 100.0 — labelled `energy.csv (filter year eq 2025; share_pct = twh / sum(twh); round share_pct to 1dp; sort by share_pct desc)` |
+
+One defect found by running it: the `.transforms.json` sidecar is itself JSON, so `ingest` recorded
+it as a data upload and `compile_datasets` compiled it as a second dataset. `TRANSFORMS_SUFFIX`
+is now named in one place both stages read, and the sidecar count is a stage fact.
+
+`data-story-video`'s caveat is down to one line (`draft_article` still has no executor, which is
+why `write_copy` drafts the narration), and its `ingest`, `data` and `verify` notes now describe
+what those stages do rather than what they were going to do.
+
+### Script writer: one call, typed scenes, and a floor it does not yet clear
+
+`plan_story` loaded a hand-written `StoryPlan` fixture or fell back to the demo's, so a topic an
+operator actually has became a film only if somebody wrote the twenty-one-kind scene grammar, the
+claim links and the beat timings by hand. `models/scriptwriter.py:draft_story_plan` is the missing
+piece, and four design decisions in it are load-bearing:
+
+**One call, not two.** The playbook's separate `plan_remotion`/`plan_visuals` calls resend every
+beat as context and pay for it twice — and worse, they let the second answer disagree with the
+first: a beat whose sentence says "three drivers" and whose scene turns out to be a big number.
+Here a beat and its scene are one object in one response.
+
+**The model picks a kind and fills a flat payload; Python builds the `SceneSpec`.** A discriminated
+union of twenty-one branches is not a schema a local 8-to-27B model satisfies reliably even under
+constrained decoding, and the branch choice is exactly the part that must not be approximated.
+`_build_scene` is deterministic code that either produces a valid scene or records a gap — and
+every one of the thirteen kinds the writer may ask for has a test proving it builds.
+
+**Nothing unsupported reaches generation.** Four validators run before a plan exists:
+a `claim_id` that was never shown (a model cannot cite a claim into being); a figure in no dataset
+row and no cited claim, within a **2 % rounding tolerance** — 34.9 may be said as "about 35", not
+as 40; a `scene_kind` with no renderer; an asset, source or dataset id that does not exist. A
+`quote` **must** name its source, because a quote attributed to a source that does not exist is a
+fabricated citation. Each refusal is a line in `story/gaps.json` with its reason — the operator's
+next task, not a silently shorter film — and `plan_story` **never falls back to the fixture** when
+the writer is on: an operator who turned it on and got Swedish wind power would have no way to tell.
+
+**`VisualBeat.spoken_text` is finally read.** It has existed since the scene grammar was written
+and every caller normalised `display_text` instead, so a plan that carefully spelled "twenty-one
+per cent" for a line displayed as "21%" was thrown away and the TTS was handed "21%" to guess at.
+New `spoken_line(beat)` is used by `synthesize_narration`, `voice_over` and `lock_script` — which
+now locks the spoken strings too, since the alignment and the caption timings are measured against
+those and not against the display text.
+
+`VisualBeat.section` carries the `EpisodeSectionKind` (as a string, because `schemas.scenes` must
+not import `schemas.documentary` — the arc is a documentary concept and a beat is a general one),
+and beat durations come from the outline's own word budgets at its words-per-minute.
+
+New `scenes/kinds.py` is the single source of truth both languages check: **fourteen kinds had a
+renderer and seven fell through to a labelled placeholder — and a placeholder passes QC**, so a
+plan naming `ranking` ships a grey card where a chart was meant to be. The writer may not ask for
+one, and (next item) QC now says so.
+
+**The evaluation pack, and the honest result.** `models/scriptwriter_eval.py` scores
+`DraftResult.raw` — what the *model* returned — because scoring the surviving plan would report a
+perfect "no invented numbers" by construction: the beats that invented one are exactly the beats
+that are no longer there. Seven arithmetic scorers, no model grading another model, and the metric
+is the **worst** axis rather than the mean, because a total failure on one must not hide behind
+successes on the others.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_scriptwriter.py -q` | 14 passed. Each of the four refusals has its own test; all thirteen writer kinds build a valid scene; a scene the builder cannot fill becomes a gap rather than a crash; the surviving beats are renumbered contiguously; and `IMPLEMENTED_KINDS ∪ PLACEHOLDER_KINDS` is asserted to be the whole declared grammar — a kind in neither is a kind nobody decided about, which is how `ranking` came to ship as a grey card |
+| **live, the real model, scored** | `draft_story_plan(...)` + `score_draft(...)` on the demo campaign and a 600 s outline | 7 beats in **30 s** (665 in / 1027 out tokens, `schema_enforced: true`). `grounded 1.0`, `cited 1.0`, `drawable 1.0`, `arc 1.0`, `spoken 1.0` — **it invented no numbers, cited nothing false, named only drawable kinds and covered all seven arc sections**. `usable 0.571` (4 of 7 survived: `big_number` omitted its dataset_id, `timeline` gave bullets without the `date:` shape, `comparison` gave one side) and `budget 0.143` (the beats are 1-2 sentences against 40-200-word section budgets). **Worst axis 0.143 against a floor of 0.8 — it does not clear, so `execution.local_scriptwriter` stays off.** |
+
+That result is the point of having a floor. The model is trustworthy on the things that would put a
+false number in front of a viewer and weak on filling scene payloads and hitting a length, so the
+next move is prompt work — per-kind required fields stated explicitly, and the word budget repeated
+per beat — not a lower floor.
+
+One flaw the live run found in **my own scorer**, fixed before the number above was recorded: the
+`spoken` axis counted any digit in the display line, so a beat saying "since 2018" and supplying no
+spoken line scored 0. A bare year reads correctly without help, and `parse_numbers` already
+declines to treat one as a quantity — which is exactly the distinction the scorer wanted. It scored
+0.0 before the fix and 1.0 after, on the same draft.
+
+### Remotion: three kinds that existed only in the contract, and the assets to feed them
+
+`comparison`, `flow_diagram` and `image` had been in the scene grammar since it was written and
+none had a component, so the switch sent all three to `PlaceholderScene`. That is worse than it
+sounds in two specific places: `image` is **twenty of the twenty-six scenes** across this repo's
+own `fixtures/story/*.json` (counted, just now, over all nine files), and `comparison` is what the editorial arc's `change_variable` section —
+"what if it were otherwise" — is built around, with `SCENE_KIND_PRESET` already assigning it a
+`pan_left` camera. A camera move for a scene nobody could draw.
+
+**Contract first, then `just schemas`.** Four additions, all optional so no existing plan changes:
+
+| Addition | Why |
+| --- | --- |
+| `ChartKind.step` | A line between two monthly readings claims the value passed through every point on the slope. For a tariff, a policy rate or a headcount that claim is false; a staircase says "this held, then it changed" |
+| `ChartScene.source_ids` | `DatasetTable.source_ids` says where the *table* came from. This says what the *chart* claims, which is what a viewer has to be able to check |
+| `background_asset_id` on title/quote/callout/outro | So a shot's own anchor frame can sit under its title or closing line, instead of a generative lane cutting from a photograph to a white card |
+| `RenderBundle` dataset refs now include `left_value`/`right_value` | The validator collected `value` and `data` only, so a bundle could promise a side-by-side against a table it did not carry — and the scene would render two em dashes rather than fail |
+
+**`ingest` → `RenderBundle.assets` was two gaps, not one.** `stage_ingest` already recorded an
+`asset_id → path` map; `_project_assets` now carries it into the timeline bundle. That alone still
+renders nothing, because the renderer resolves an asset through Remotion's `staticFile()`, which is
+relative to the bundle's own public directory — and Remotion copies that directory in at bundle
+time. An absolute path to an operator's upload is a **404 with no error on screen**. Measured, not
+assumed: the first render of an `image` scene failed with
+`Failed to load resource: 404 (/public/tmp/.../still.png)`.
+
+So `video.render.stage_assets` copies each asset into `apps/renderer/public/assets/<sha256><ext>`
+(tmp + replace) and rewrites the bundle to name the staged copy. Content-addressed and never
+cleaned, which buys two things beyond serving: a rerun with the same uploads reuses the cached
+webpack bundle instead of paying a rebundle for a public directory that changed, and **a render's
+recorded bundle hash stops depending on where the project lives on disk** — a property a
+provenance record should have. `narrated-video` gains an `ingest` node, since it is the lane whose
+whole content is cards and an uploaded screenshot or map is the only way to get a picture into it.
+`hybrid-video` was left alone deliberately (see the note at the end).
+
+**The persistent ILLUSTRATIVE label.** `DatasetTable.classification` has carried `ESTIMATE` and
+`ILLUSTRATIVE` since the contract was written and **no renderer read it**, so the caveat existed
+only in the JSON while a figure lifted out of an illustrative table sat on screen in 200-point type
+looking exactly like a measurement. `refClassification` + `DataNotice` put it under the safe area
+for the scene's whole duration, on `big_number`, `chart`, `map` and `comparison`. Persistent is the
+whole point: a caveat that fades in, or shows for the first second, is the same as no caveat, since
+the frame someone screenshots or the clip someone re-cuts will not contain it. It renders at fixed
+opacity from frame 0, pinned to the frame rather than flowing with the content, and takes the light
+`onInk` accent on a dark ground where the warning tone would vanish.
+
+**What the frames showed, which the types could not.** The three components typechecked and their
+pure helpers passed unit tests, and the first render was still wrong in five places. Each was found
+by looking at an extracted frame:
+
+| Defect | Fix |
+| --- | --- |
+| The comparison showed `12` against `34` for a table measured in per cent — dropping the only thing that made the two numbers mean anything. A comparison has no `unit` field | Take the unit off the table each side points at |
+| Flow arrows came out as flat stubs a few pixels long — boxes that happen to be stacked, not boxes that lead to each other | `FLOW_GAP_RATIO = 3`: the flow axis needs room for an arrow, the cross axis only needs a seam. Capped at half a lane so a six-layer flow still has boxes to put labels in |
+| On a 48-frame beat the **last arrow never finished**: drawn to 55 % with no arrowhead, a chain stopping in mid-air. It was paced off `theme.motion.duration.countUp`, which is longer than a short beat | `flowRevealStep` paces off the scene's own duration, like `bulletRevealFrame` already did |
+| The step chart's final riser landed on the frame edge, so the newest value — the one the chart is usually about — was a line of **zero length**; and the labels were spread edge to edge, putting "after" at the right while its riser began two thirds across | A step's readings are intervals, not instants: `n` readings need `n` intervals, the last holds to the plot edge, and each label sits under the interval it names |
+| The image was inset into 64 % of the phone frame — a photograph with a paper border. The safe-area rule keeps cards out of the lower third because burned-in captions land there, but captions read *better* over a picture than over a card | `ImageScene` is full-bleed; only its own caption stays inside the safe area, in a shrink-wrapped ink pill |
+
+`SceneBackdrop` also gained the render hold it should always have had: without `delayRender`, a
+card whose backdrop is still in flight renders on paper for its first frames — a hole at the top of
+a film, and an intermittent one, which is the worst kind of render bug to chase.
+
+**The gap I had opened, closed.** `scenes/kinds.py` listed all three kinds as implemented before
+their components existed, and its docstring promised a cross-language test that did not exist. New
+`tests/unit/test_scene_kinds.py` reads the TypeScript — both `mapping.ts`'s `IMPLEMENTED_KINDS` and
+the `case` labels of the actual `SceneSwitch`, because those two can disagree with each other as
+well as with Python — and asserts all three agree, that the two Python sets partition the whole
+declared grammar, and that nothing is drawn without being declared (a component wired up but left
+out of the list is a capability the writer is refused permission to use). The QC half of the item,
+`scene_kinds_implemented`, was already in `stage_qc_deliverable`: a plan using `ranking`,
+`data_table`, `relationship_diagram` or `manim_asset` now fails QC instead of shipping a grey card.
+
+| What | Command | Result |
+| --- | --- | --- |
+| cross-language wiring | `uv run pytest tests/unit/test_scene_kinds.py -q` | 7 passed |
+| assets, staging, new fields | `uv run pytest tests/unit/test_scene_assets.py -q` | 12 passed. Staging is idempotent across two paths holding the same bytes (same bundle hash); a URL and a missing file are both left alone; an oversized asset is refused rather than copied into every webpack bundle from then on |
+| scene components | `pnpm --filter @content-factory/video-ui test` | 5 files, **49 passed** (was 4 files / 44). New: the three kinds report implemented; `imageScale` never crops beyond the declared 6 % at any `t`; a pull's last frame is the clean one; `flowLayers` layers by longest path, terminates on a cycle with every node placed once, and ignores an edge naming a node that is not in the scene; `flowRevealStep` finishes inside the beat for every duration × layer count; `stepPath` is axis-aligned only and holds the last reading |
+| generated contracts | `just schemas` then re-run | byte-identical the second time — the 67 schemas and both fixture files match the Pydantic source |
+| fixtures | `pnpm --filter @content-factory/content-schema-ts test` | 37 passed. New valid fixture `sample_new_kinds_plan` covers all three kinds, the step chart, `source_ids` and `background_asset_id`; three new invalid ones: `"step_chart"` as a chart kind, a third figure on a comparison, and `"../../etc/passwd"` as an asset id |
+| lanes | `uv run content-factory workflows validate` · `scripts/export_workflows.py` | `{"checked": 15, "problems": 0}` · `with_unrunnable_stages: []` |
+| **the render itself** | `render_timeline` on a purpose-built 6-scene bundle (title over a still, image with `slow_push`, comparison, 4-node flow, step chart, big number off an illustrative table) | **296 frames, 1080×1920@30, QC passed, no findings.** Frames extracted per scene and inspected — that is how all five defects above were found |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean (544 files) · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **966 passed**, 37 deselected · all 9 TS packages pass (18 files / 78 in apps/web, 2 files / 6 in apps/renderer) |
+
+**Two things my contract change broke elsewhere, both real staleness:**
+
+* `fixtures/demo/timeline-bundle.json` failed the renderer's Ajv validation for missing `section`
+  and `background_asset_id`. Not a bug in the fixture — this repo's schemas make **every** property
+  of a closed object required by design (`registry._normalize`), so an optional field with a
+  default is still required in JSON. Patched textually rather than re-dumped, because another
+  session has that file open.
+* `apps/web/test/templates.test.tsx` carried `const executorless = ["ingest"]` with a comment
+  saying it mirrored Python's `STAGE_EXECUTORS` by hand. It went stale the moment `ingest` got an
+  executor, and it caught `narrated-video` for a caveat about a stage that runs. It now reads
+  `stages_without_executor`, which `export_workflows.py` computes per template from the real
+  `STAGE_EXECUTORS` — the same class of hand-mirrored list that this pass added a test *for* on the
+  scene-kind side.
+
+### Audio: the wrong language, a dead lexicon, and 49 unused sounds
+
+**The silent failure first.** `skills/audio/kokoro/run.py` mapped its language argument with
+
+```python
+lang_code = "a" if args.lang.startswith("en") else "b"
+```
+
+and `"b"` is Kokoro's **British English**. Every non-English locale therefore produced a British
+voice reading foreign words as if they were English — a whole film narrated in the wrong language,
+with nothing anywhere in the run reporting it.
+
+Both language tables were then **measured on this host**, not remembered:
+
+| Probe | Result |
+| --- | --- |
+| `qwen3tts/run.py --list`, CustomVoice weights | `auto, chinese, english, french, german, italian, japanese, korean, portuguese, russian, spanish` |
+| the same, Base weights | identical — so a voice clone speaks the same eleven and no more |
+| `kokoro.pipeline.LANG_CODES` from the installed package | `a` American English, `b` British English, `e` es, `f` fr-fr, `h` hi, `i` it, `p` pt-br, `j` Japanese, `z` Mandarin Chinese |
+
+`audio/languages.py` holds those sets with the measurement date, and `check_narration_language`
+runs in `_tts_executor` **before the executor is constructed** — so a config typo costs nothing
+instead of a 1.7B model load and a GPU eviction. It also refuses `locale` and `qwen_language`
+*disagreeing*: a run set to `sv-SE` with `qwen_language: english` would speak English and label it
+Swedish, and everything downstream believes the label. `en-GB` is the one case where the region
+subtag decides anything, and it now picks Kokoro's British front end on purpose rather than by
+accident. The skill's runner refuses too, so calling it by hand behaves the same way, and a test
+asserts the two tables agree locale by locale.
+
+**There is no local Swedish TTS.** Qwen3-TTS does not list it, Kokoro has no code for it, and
+Breeze-TTS-2 is Mandarin and English. Recorded in `audio/languages.py` and named in the refusal
+message itself, with Chatterbox Multilingual as the thing to evaluate *if* Swedish narration is
+ever actually asked for. Nothing was downloaded.
+
+**The lexicon, and a live failure that made the case for it.** `NarrationRequest.lexicon` and
+`normalize_for_speech`'s `lexicon` argument have existed since phase 15 and **nothing ever passed
+one**. Running `content-factory make narrated-video` against the real Qwen3-TTS:
+
+```
+FAIL synthesize_narration  qwen3-tts did not speak the locked script (similarity 0.33 < 0.80);
+     diff: - energimyndigheten + energym and de hetten - kraftnät + craft name
+```
+
+A `<project>/story/lexicon.json` of three entries fixed the audio, and then the run failed *again*
+at **0.22** — because the aligner compares its transcript against the spoken string, and a
+respelling is deliberately not orthographic, so `base.en` transcribed "Ener-gee-mund-ig-heten" as
+"energi mundinghen". Both numbers measure the aligner's vocabulary, not whether the model obeyed.
+So a beat carrying a respelling now has its similarity check **skipped and recorded**
+(`script_checks: ["beat_000000004: skipped: respelled Energimyndigheten, kraftnät"]`) rather than
+failed; every beat without one is gated exactly as before. The lane then passed end to end.
+
+The lexicon is per story, not per repo — a pronunciation is a fact about *this* film's subject
+matter, and a repo-wide list would be a guess about films nobody has made. It is applied in
+`spoken_line`, so it reaches `lock_script`, `synthesize_narration` and `voice_over` from one place,
+and it is in the take cache key, so adding a respelling re-speaks the beats it changes. Entries
+whose locale does not match the read are skipped.
+
+One bug the tests found in existing code, now that the path is live: `normalize_for_speech`
+applied one substitution **per entry**, so with rules for both "kraft" and "kraftnät" the long rule
+correctly produced "kraft-nate" and the short rule then rewrote the inside of its own output to
+"KRAFT-nate". It is one pass over a longest-first alternation now, so a respelling can never be
+re-respelled.
+
+**A seed on the TTS, measured before any retry loop exists.**
+
+| Runs | Result |
+| --- | --- |
+| `--seed 7`, twice, same sentence | **byte-identical** wav (`3ad5a0ae…`), 5920 ms both times |
+| no seed, twice | different bytes, and **5440 ms against 4960 ms** — a 480 ms swing on one sentence |
+
+That half-second is the beat length the timeline compiles from and the captions are cut to, so
+without a seed a cache key over (voice, text) was a lie and "run it again, that take was odd" was
+an untraceable change. `narration.qwen_seed` defaults to 7 and is in the executor fingerprint;
+`None` lets it sample freely, for deliberately auditioning several reads of a line.
+
+**49 curated sounds, placed for the first time.** `assets/sfx` has held them since 2026-09-07 —
+recorded or generated, each loudness-measured to a common bed target, each with provenance and a
+one-line `use` — and **nothing placed a single one**. A chart drew itself in silence, a hard cut
+between two cards had nothing on it, and the fifteen `ui` sounds written for exactly those moments
+were files with a manifest entry and no caller.
+
+`SoundCue` / `CueSheet` are the contract; `audio/cues.py` cuts a sheet from rules over the film's
+scene spans; `place_sfx` renders it in one ffmpeg call. Every cue carries the **reason** it exists,
+because a cue sheet is the one part of a mix a person reads rather than hears.
+
+One design point worth recording, because getting it wrong would have made the whole feature dead
+code: the cutter takes **scene spans, not a `CompiledTimeline`**. `mix_audio` runs *before*
+`compile_timeline` in every lane that has both — it has to, because the timeline's scene durations
+are compiled *from* the mix's measurements — so a cutter wanting a compiled timeline would have
+found none and placed nothing, on every run, for ever. It uses the beat boundaries this stage just
+laid out, which is the same information the compiler is about to use.
+
+The rules are deliberately conservative: one bed matched to the plan's own `visual_subject`, one
+soft mark on each cut (never on the first scene, never on a scene under 800 ms), and an accent only
+on the ten scene kinds whose sound is unambiguous. `quote` and `image` get nothing — an invented
+sound on a quote card is worse than a silent one.
+
+The bed choice scores the matched **fraction** of a sound's subject tags rather than a raw count.
+A raw count tied three candidates on the demo plan ("a Swedish coastal wind farm under a flat
+overcast sky") at one match each and picked `park_wind_trees_loop`, because `place` is scanned
+before `weather`. The fraction picks `wind_open_loop` (wind, exterior, landscape) at 0.500 against
+`storm_bed_loop` 0.333 and the park 0.250.
+
+**The sidechain was keyed off the wrong signal.** `add_music_bed` ducked its bed against whatever
+it was mixing *into*. Beds are added one after another, so by the time the effects bed arrived the
+first input already carried the music — and a -18 dB music bed is comfortably above the
+compressor's -34 dBFS threshold, so it held the effects ducked for the whole film. The key is now
+the narration stem, so "duck under speech" means under speech.
+
+**The MMAudio default prompt was one lane's.** It read `"footsteps on wet stone, distant sea wind,
+cloth rustle"` — the ambience of one coastal walk, applied as the default to every lane in the
+catalogue, so a film about interest rates got footsteps and sea wind. It is lane-neutral now
+(`"the natural ambience of whatever is shown, quiet and unobtrusive"`), which lets the model follow
+what is actually on screen. Per-shot prompts are the right answer and wait on a live MMAudio run,
+exactly as the task said.
+
+| What | Command | Result |
+| --- | --- | --- |
+| language refusals | `uv run pytest tests/unit/test_narration_language.py -q` | 12 passed. Includes the assertion the bug needed: an unsupported locale resolves to **no** Kokoro code rather than a default, and the skill runner and the control plane agree locale by locale |
+| lexicon + sidechain | `uv run pytest tests/unit/test_narration_lexicon.py -q` | 8 passed. One of them found the `normalize_for_speech` substitution bug above |
+| cue sheets | `uv run pytest tests/unit/test_sound_cues.py -q` | 16 passed. Every accent id is asserted against the real manifest; a non-loopable 16.5 s thunder cannot be stretched over a 60 s bed; a sheet cut against a different library is refused |
+| **live, the real TTS** | `uv run --project skills/audio/qwen3tts python .../run.py --seed 7` ×2, then without | byte-identical with the seed; 5920 / 5440 / 4960 ms across the three takes |
+| **live, the whole lane** | `uv run content-factory make narrated-video` | **passed, 14 stages, 35.3 s.** `lexicon_terms: 3`, `library_cues: 7`, `lufs: -14.3`. Cue sheet: `wind_open_loop` bed, three `whoosh_soft` cuts, `data_ticks` on the figure, `pop_small` on the bullets, `page_change` on the sources |
+| the mix chain, measured | `ffmpeg ... ebur128` on each intermediate | stem **-24.6 LUFS** → with music -24.6 → cue track alone **-32.8** → with cues -24.6 → mastered **-14.3**. The library sits under the programme without moving it |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean (549 files) · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **1002 passed**, 37 deselected · all 9 TS packages pass |
+
+One thing `just schemas` caught that is worth naming: `packages/content-schema-ts/src/index.ts`
+keeps a **hand-written** import and map entry per contract, so adding `CueSheet` to the registry
+broke the Ajv setup at import time with `schema must be object or boolean`. `tsc` reports it
+properly (`Property 'CueSheet' is missing in type ... required in type Record<SchemaName, object>`)
+— the guard exists and works; it just has to be run after `just schemas` rather than before.
+
+### Generative control: the guided path ran, and the control-video half is blocked upstream
+
+**The first live guided run.** LTX-2.5 distilled GGUF through `ltx-2.5.i2v-guided1`, 49 frames at
+704x384, start anchor as the first frame and an end anchor pinned at frame 48 — two real anchors
+from `runner-final` (the same runner and track from a side view and head-on). **40.5 s.** Measured
+against the end anchor, frame by frame:
+
+| frame | similarity | structural |
+| --- | --- | --- |
+| 0 | 0.783 | 0.828 |
+| 12 | 0.779 | 0.811 |
+| 24 | 0.828 | 0.850 |
+| 36 | 0.887 | 0.960 |
+| **48** (the guide) | **0.972** | **0.998** |
+
+Against the *start* anchor the same clip runs the other way: 0.971 → 0.887 → 0.851 → 0.817 → 0.786.
+So the guided package honours a start+end anchor pair: the clip begins at one and arrives at the
+other. That is the item's first step, answered with numbers rather than an opinion.
+
+**But look at frame 24.** The panel below is why the contact sheet is next to the scorers: at the
+midpoint the model draws **two runners**. It got from A to B by cross-dissolving the two anchors,
+not by moving a camera — frames 0 and 12 are a clean single runner in the side-view world, 24 is a
+double exposure, 48 is clean and head-on. The similarity curve of a dissolve is monotone and
+indistinguishable from that of a move, so **no threshold on either measure can catch this**. It is
+recorded in `guide_adherence`'s docstring as what the metric cannot tell you.
+
+The lesson for the scene-control layer, and it argues *for* the control-video ambition rather than
+against it: two anchors have to be close enough in camera space that "get from A to B" is a move.
+A side view and a head-on view of the same subject is a dissolve's worth of distance apart.
+
+**The guide-adherence metric, calibrated by that run.** `LTXVAddGuide` pins an anchor at a frame
+index and nothing checked the clip went anywhere near it — a guide whose strength was too low, or
+whose index the 8k+1 length rule snapped past the end of the clip, produced exactly the same "ok"
+as one the model honoured. `sequences/drift.py:guide_adherence` extracts the clip's frame at each
+guide index and compares it with the anchor; `generate_video` writes
+`video/<shot>/guide-adherence.json` per shot and reports the worst guide across the film.
+
+Two findings that changed the code:
+
+* **The floor is ~0.78, not zero.** The existing luminance similarity is not a composition
+  measure: measured on six unrelated rendered cards, completely different pictures sharing a flat
+  ground scored **0.86-0.93**, and on the live clip a frame of the same world that looks nothing
+  like the anchor still scored 0.78. So the 0.60 the constant started at was not a loose bar, it
+  was **no bar** — a clip that ignored its guide entirely would have passed it. It is 0.90 now,
+  which sits between the guide frame's 0.972 and its neighbour's 0.887.
+* A second measure was needed. `structural_similarity` correlates the two frames' 8x8 block
+  grids, so it sees *where* the light is rather than how much — the guide frame scored 0.9972-0.9979
+  across three seeds against 0.960 for the nearest non-guide frame. Bar at **0.98**.
+
+My first attempt at that second bar was 0.95, and the test I wrote to assert each bar falls inside
+its own measured gap is what caught it: 0.95 is *below* the 0.960 that a non-guide frame scored, so
+it would have passed the frame it exists to reject.
+
+**Per style and per camera drift thresholds.** One global pair was never right for twelve art
+directions and nine camera moves — a watercolour wash legitimately varies more between frames than
+a photograph, and a push-in legitimately moves the whole composition where a static shot does not.
+`DriftThresholds` gains `by_style` and `by_camera`, layered **per field** (a camera move has an
+opinion about composition and says nothing about style, so an override states only what it means),
+with style winning a same-field tie because it is the more specific art direction.
+`GenerationLock` freezes the style *prompt*, so `styles.style_name_for` recovers the preset name
+to key by; a hand-written prompt has no name and takes the defaults, which is the honest answer —
+nobody has measured it.
+
+Both tables **start empty**. An override has to come from a measured run, and shipping invented
+per-style numbers would be the hardcoded pair again with more places to look for it.
+`scripts/generate_holding_hands.py` no longer carries `0.30`/`0.60` inline: those are
+`sequences.drift.UNCALIBRATED`, the one named "observe, do not gate" profile in the repo.
+
+**The seed panel.** `scripts/seed_panel.py` generates one shot at several seeds and scores every
+clip the same way — `qc/frame_review.py`'s findings (tonal collapse, half-applied colour, edge
+intrusion, background churn) plus guide adherence — then builds the contact sheet. Run live at
+three seeds, and the result makes the script's own case:
+
+| seed | seconds | findings | guide similarity | structural |
+| --- | --- | --- | --- | --- |
+| 7 | 40.4 | 0 | 0.9717 | 0.9975 |
+| 11 | 38.3 | 0 | 0.9714 | 0.9979 |
+| 13 | 42.4 | 0 | 0.9697 | 0.9972 |
+
+**Every deterministic number is effectively identical, and the pictures are not.** On the sheet,
+seeds 7 and 13 show two runners at the midpoint and **seed 11 shows one**. Seed 11 is the take you
+would choose and nothing in the table says so — two plausibly-lit runners on a track is tonally
+and structurally unremarkable. That is the argument for a panel a person looks at rather than a
+score to sort by, and it is why the script's ranking is documented as "look here first" and not a
+verdict.
+
+**The control-video half: blocked upstream, and not by our inference.** The task said the
+"incompatible" status on the LTX-2.3 IC-LoRAs was inferred from metadata and that Lightricks now
+states most 2.3 adapters run on 2.5. Checked against the upstream documentation vendored in this
+repo at `external/LTX-2` (1.3.0, 2026-08-25), and it says the opposite, twice:
+
+* `README.md`, "Legacy: LTX-2.3": *"Files are not interchangeable between the two models, and **a
+  LoRA only works with the model it was trained on**."*
+* `MODELS-LTX-2.3.md`: *"**The LoRAs at the end of this page were trained on LTX-2.3, so pair them
+  with an LTX-2.3 checkpoint.**"* — and `LTX-2.3-22b-IC-LoRA-Union-Control` is one of the LoRAs
+  listed there.
+
+The only LTX-2.5 IC-LoRA Lightricks publishes is `Pixel-Spatial-Upscaler`, a *detailing* adapter
+for `DFRPipeline`'s refinement stage. There is no 2.5 depth, canny, pose, union or motion-track
+adapter to download.
+
+So **I did not download Union-Control**: ~10 GB of a weight the 2.5 distilled GGUF on this host
+cannot load, and a control package built against it could not be validated on the GGUF graph the
+item asks for. The wording *was* worth fixing though, and that is what I amended — ADR-0006 and
+ADR-0012 now carry the quotations, their source and the date, and `models/video_stack.py`'s
+`ltx-2.3-ic-loras` entry says "not our inference from a base_model field: Lightricks states it"
+rather than leaving a reader to guess where the status came from. The Blender control passes are
+still compiled and stored per shot; they are what a 2.5 control adapter would consume the day one
+exists, and they already drive Wan-Animate-2's pose video today.
+
+**One thing the run turned up that is worth its own line:** no run in this repo had *ever* produced
+a two-anchor shot. `anchor_frames_for` returns `(0, last)` for eight of the nine camera presets and
+`stage_generate_anchor` loops over them, but every existing run went through the motion-plan
+controls compiler, which hardcodes `anchor_frames=(0,)` ("the 2D plan is a stand-in"). So the
+guided packages had been buildable and unexercised since they were written — which is exactly why
+the operator's "run it first" was the right instruction.
+
+| What | Command | Result |
+| --- | --- | --- |
+| **live, guided, start+end pair** | `ComfyUIVideoBackend` + `ltx-2.5.i2v-guided1`, ComfyUI 0.33.0, LTX-2.5 22B distilled Q5_K_M | 49 frames in **40.5 s**, guide honoured at **0.972 / 0.998**; frames extracted and inspected, which is how the midpoint dissolve was found |
+| **live, seed panel** | `uv run python scripts/seed_panel.py --anchor … --end-anchor … --seeds 7,11,13` | 3 clips, 121 s total, 0 findings each, `output/seed-panels/runner-pair/panel.png` |
+| guide adherence + thresholds | `uv run pytest tests/unit/test_guide_adherence.py -q` | 15 passed. Includes the same content mirrored (identical luminance, fails on arrangement), a guide index past the end of the clip, a flat frame scoring 0 rather than 1 against a structured one, and the assertion that caught my own 0.95 |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean (551 files) · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **1017 passed**, 37 deselected · all 9 TS packages pass |
+
+ComfyUI was launched against the existing `~/git/ComfyUI` workspace for the two live runs and
+stopped afterwards; the card is back to 2.5 GB.
+
+### Cache and jobs: a submitted prompt is written down, and a reused file is verified
+
+Four holes, all the same shape — something was believed without being checked.
+
+**The prompt id lived only in memory.** `run_package` POSTed to `/prompt`, kept the returned
+`prompt_id` in a local, and waited. A process that died after that POST — Ctrl-C, an OOM, a worker
+restart — left **no record of the job it had queued**, so a rerun submitted the identical workflow
+again: another forty seconds of exclusive GPU on the LTX GGUF stack, and if the first prompt was
+still running, two prompts competing for a card that fits one.
+
+`run_package` now takes a `journal` path and writes it the instant the prompt is accepted
+(tmp + replace, because a crash halfway through *that* write is the crash the journal exists for).
+On the next run `_adopt_submitted` tells four cases apart:
+
+| journal state | what happens |
+| --- | --- |
+| absent | submit |
+| present, different workflow digest | submit — a rerun that changed a parameter is a different job, and handing back the old clip would hand back the parameter the operator just changed |
+| present, prompt unknown to `/history` and `/queue` | submit — ComfyUI restarted, so the id is worthless |
+| present, prompt in the history or the queue | **adopt**: a finished prompt's outputs are imported without generating anything, a running one is waited on |
+
+Both video and image backends pass `workdir/submitted.json`. The journal is deleted once the prompt
+has an outcome, failure included — a failed prompt *has* a status in `/history`, so leaving its
+journal would make the next run adopt it and re-import the same failure.
+
+**The clip key did not include the graph.** It carried `backend.name` and a settings string, so
+editing a node in `media/ltx_packages.py` — a sampler, a cfg, a sigma schedule, a decoder tile
+size — produced the **identical key**, and every cached clip in every project on disk was reused
+with the new graph. That is the cache mistake nobody notices, because the file is a plausible clip
+of the right length. `VideoBackend.graph_fingerprint()` now contributes the package id, its version
+and a sha256 of the **un-parameterised** graph. Un-parameterised on purpose: `width`, `seed` and
+the prompt are injected at run time and are already in the request half of the key, so putting
+them in the digest as well would invalidate a whole film because one shot's prompt changed. (Its
+test pins both directions, including that `length` is the one bound parameter that *does* move the
+digest, because the package is built for a fixed clip length.)
+
+**A file was reused because a marker said so.** A clip truncated by a full disk, half-copied by a
+rerun, or edited by hand all satisfy "the marker matches and the file exists"; the failure then
+surfaces stages later as a QC finding about a container. `_cached_output` requires the marker, the
+file **and** the recorded sha256 to agree — milliseconds of hashing against forty seconds of not
+regenerating. Markers written before the sha was recorded still hit, so nothing on disk today is
+invalidated by the change.
+
+**Writes are atomic now.** `_write_atomic` goes through a temp file in the same directory and
+renames, for clips and anchors alike. A generation written straight to its final name leaves a
+truncated but *present* file when the process dies mid-write, and the next run's `clip.exists()`
+calls that a cache hit.
+
+**And the single-clip path had no marker at all**, so it regenerated on every rerun of the lane —
+forty seconds of GPU to produce a file already on disk. It has the same `.done.json` discipline as
+the per-shot path now, and reports `cache_hit` either way.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the journal, against the fixture ComfyUI | `uv run pytest tests/unit/test_submit_journal.py -q` | 7 passed. All four adoption cases, plus a journal from another endpoint (a prompt id means nothing to a server that did not issue it) and a half-written one (a cache, not a contract) |
+| cache discipline | `uv run pytest tests/unit/test_generation_cache.py -q` | 11 passed. Four node edits that must move the digest, the bound parameter that must not, bytes changing under a marker, and an atomic write leaving no temp file behind |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean (553 files) · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **1035 passed**, 37 deselected · all 9 TS packages pass |
+
+One thing ruff caught that was worth listening to rather than silencing: `ASYNC240`, a blocking
+`Path.read_text` inside a coroutine. The journal reader is a module-level function now — it is one
+small file and the cost is nil, but the smell is real and moving it out is free.
+
+### Durable parity: a timeout that means something, and gates a person can actually answer
+
+**`resource_class` was carried by the DAG and thrown away by the workflow.** `StageNode` has had
+it since the DAG was written; `NodePlan` did not, so every activity got the same 240-second
+`start_to_close`. That is minutes of slack for a node that writes a JSON file, and **far too little
+for a GPU stage** — one LTX-2.5 anchor pair measured 100-330 s on this host and a `render-gpu` node
+holds several shots. When the deadline passed mid-generation, Temporal retried the *whole activity*,
+so the failure mode was not "this timed out" but "the GPU work restarts for ever".
+
+`NodePlan` carries the class now and `node_opts()` sizes the activity from it. Every number has a
+measurement or a stated reason behind it:
+
+| class | seconds | why |
+| --- | --- | --- |
+| `control` | 120 | writes a file, hashes a plan. **Below** the old 240: a control node that hangs for four minutes was hiding a bug behind a generous deadline |
+| `research` | 900 | reaches the network when `live_research` is on |
+| `render-cpu` | 3600 | ffmpeg and Remotion; a ten-minute episode's render is the long pole |
+| `render-gpu` | 5400 | Blender, and the compositing chain over a whole film |
+| `inference-llm` | 900 | measured: 30 s for the scriptwriter's seven beats, plus a cold model load |
+| `inference-image` | 3600 | measured: 100-330 s per anchor pair, several per node |
+| `inference-video` | 7200 | measured: 40 s per clip at 704x384, tens of clips per shot list, post chain per clip on top |
+| `inference-audio` | 1800 | measured: 8 s per beat plus alignment, dozens of beats |
+| `publish` | 300 | deliberately tight — nothing publishes in development, so an hour here is a hang |
+
+The heartbeat stays 6 s for every class, and that is the point of it: it distinguishes a *stuck*
+activity from a slow one. A GPU stage heartbeats through its generation, so one that has stopped
+heartbeating has died — raising it along with the timeout would hide exactly that.
+
+**The workflow parked on human gates without running them.** `review_frames` and `review_assets`
+each have a deterministic half that writes the contact sheet and the findings a person looks at,
+and then blocks on a verdict. The durable path went straight to the signal wait, so the ActionItem
+said *"drop the finished asset onto the node"* and pointed at a sheet that **did not exist** — a
+durable run and a local run of the same lane asked a person for different things.
+
+`ExecuteNodeInput.prepare` runs those two for their side effects: the sheet, the manifest and the
+findings land on disk, the stage's "blocked the run" error is the *expected* outcome rather than a
+failure, and **no `.done.json` is written** so the real gating execution still happens after the
+approval. The ActionItem body now names the sheet, the measured counts and what is blocking.
+`write_copy` is deliberately not preparable — the person *is* its executor, so preparing it would
+run the model the human slot exists to replace.
+
+**And the two gates had no validator at all**, so a durable run parked on them for ever: there was
+no way to submit the verdict the stage reads. Both validators check the thing that actually matters
+— *which artefact was this a verdict about*:
+
+* a frame verdict is refused if it reviewed images that have since been regenerated (which is why
+  `FrameRecord` carries `png_sha256` at all), if it covers frames this deliverable does not have,
+  if it leaves any frame unreviewed, or if it is unsigned; accepted, it lands at
+  `reviews/frames/verdict.json`, which is where `review_frames` reads it;
+* an asset approval is refused if its `blend_sha256` is not the build on disk, because a rebuild
+  withdraws an approval; accepted, it lands in `controls.asset_approvals_dir`, outside the run,
+  because an approved character outlives the run that first built it.
+
+**`to_workspace_graph` is typed.** It returned a bare `dict` in a shape that was **not**
+`WorkspaceGraph`'s — `workflow_id` for `graph_id`, `edges` for `links`, `from`/`to` for
+`from_node`/`to_node` — so the one adapter between the fifteen committed lane definitions and the
+document the compiler executes was untyped *and* differently spelled, and none of the contract's
+invariants applied: duplicate node ids, a link to a node not in the graph, two links into one input
+slot, a node linked to itself. Every one of those is a graph the canvas would refuse to load and
+this function would happily emit. It returns the contract now, so constructing it *is* the
+assertion, and all fifteen definitions pass. Node ids are truncated to the contract's own 64
+characters rather than a guessed 40 — truncating shorter than the contract needs is how two long
+node keys collide into a duplicate id.
+
+| What | Command | Result |
+| --- | --- | --- |
+| parity | `uv run pytest tests/unit/test_durable_parity.py -q` | 18 passed. Every `ResourceClass` has a timeout (a missing one silently gets the old 240, which is the bug), the GPU classes exceed it and `control` is below it, the video budget covers a measured twenty-clip shot list, and both validators refuse a stale digest |
+| definitions | `uv run pytest tests/unit/test_workflow_definitions.py -q` | 102 passed; all fifteen lanes now construct a valid `WorkspaceGraph` |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean (554 files) · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **1053 passed**, 37 deselected · all 9 TS packages pass |
+
+**One bug pyright caught that a test would not have.** My prepare-mode clause was
+`except RuntimeError` placed *before* `except BlockedError` — and `BlockedError` subclasses
+`RuntimeError`, so the blocked handler became unreachable. A blocked stage would have raised a
+plain error instead of the non-retryable `ApplicationError` the BLOCKED state machine reads,
+quietly undoing priority-1 item 4. `Except clause is unreachable because exception is already
+handled`, in as many words. The handlers are the other way round now, with a comment saying why.
+
+### Delivery: the right file, a promise that can fail, and a manifest with digests
+
+**The delivery-promise check was measuring the wrong file, against a promise that could not fail,
+without knowing how anything was made.** Three defects in one call, and the third is why the other
+two were invisible.
+
+* It read `exports/bnd_run000000001.mp4` — the Remotion bundle. On the hybrid path that is only the
+  typeset half; the picture that ships is `composed.mp4`, which interleaves the generated clips. So
+  it read a file with **none of the generated motion in it** and then reported on the motion. It
+  reads `composed.mp4` when there is one now, and `final.mp4` deliberately never: that carries
+  burned-in captions, and caption animation registers as scene animation in exactly the scenes that
+  have none.
+* The promise came from `spec.intent.startswith("animated")` over a 1000-character free-text field
+  an operator writes a sentence into. False for every real brief, so the promise was **always
+  `chart_led`** — the one value that makes the check unable to fail. `promised_delivery` derives it
+  from what the film is *made of* (`compose.json`'s route counts), with prose that names motion as
+  one signal rather than the only one: ≥50 % generated is `animated_explainer`, any generated is
+  `mixed`, none is `chart_led`.
+* It had no route counts, so it could not tell a card that does not move (fine, it is a card) from
+  a generated clip that does not move (a wasted generation). A `mixed` film is judged on its
+  generated segments only.
+
+Measured on a real hybrid run (`wind_2024.json` through `hybrid-video`, 8 beats, 2 generated):
+
+| scene | route | residual | animated |
+| --- | --- | --- | --- |
+| scn_wind2024_01 | generate | 0.000 | no |
+| scn_wind2024_02 | render | 0.073 | yes |
+| scn_wind2024_03 | render | 0.041 | yes |
+| scn_wind2024_04 | render | 0.064 | yes |
+| scn_wind2024_05 | render | 0.044 | yes |
+| scn_wind2024_06 | render | 0.010 | yes |
+| scn_wind2024_07 | generate | 0.000 | no |
+| scn_wind2024_08 | render | 0.079 | yes |
+
+`measured: exports/composed.mp4`, `promised: mixed`, `route_counts: {generate: 2, render: 6}` — and
+the two generated segments are exactly the stills. On the **mock** backend, which is what produced
+them, a generated clip *is* a static test pattern, so the finding is recorded at advisory severity
+rather than blocking: failing an offline run for that measures the backend, not the film. With a
+real generator it is critical.
+
+**`DeliveryPackage`, because the last stage before a destination recorded nothing.** It wrote
+
+    {"destination": "youtube", "visibility": "private", "status": "packaged"}
+
+`"packaged"` as a string, and not one word about *what*. A package for a film that had failed to
+render looked exactly like one for a film that had not. The contract now carries a `DeliveryFile`
+per file — role, relative path, sha256, bytes, content type — and refuses three things outright: a
+duplicate path (which makes `total_bytes` a lie), an absolute or escaping path (a manifest is meant
+to survive the project being moved), and a package with **nothing to publish** — captions and a QC
+report with no film in it, which is precisely the case `"packaged"` could not distinguish.
+
+Files are scanned rather than declared, because what a lane produces depends on the lane and a
+hand-written list would go stale the first time one changed. A zero-byte export is skipped: that is
+a failed render that left a file behind, and in a manifest it looks like a deliverable. From the
+`narrated-video` run:
+
+| role | path | bytes |
+| --- | --- | --- |
+| video | exports/final.mp4 | 2,019,634 |
+| audio | audio/narration-mastered.wav | 2,185,998 |
+| caption | captions/captions.srt | 484 |
+| caption | captions/captions.vtt | 476 |
+| metadata | qc/report.json | 2,139 |
+| metadata | exports/compose.json | 147 |
+
+The stage's own output hash is over the digests and **not** `built_at`, or it would cache-miss on
+every run.
+
+**Two bugs the hybrid run turned up on the way, both worth more than the item they blocked.**
+
+`generate_video` handed ffmpeg an **empty concat list** when the routing sent every beat to the
+renderer — a legitimate state for the hybrid lane on a story of typeset cards — and the lane died
+on `No files to concat`: nine words naming neither the stage's problem nor the routing that caused
+it. It is a no-op now, and `compose_video` already takes its plain path when nothing was generated.
+
+And the alignment gate was **failing beats the model read correctly**. Against the real aligner:
+
+| script | transcript | score |
+| --- | --- | --- |
+| `40.8 terawatt-hours` | `40 8 terawatt hours` | **0.73** |
+| `twelve hundred` … `four fifty` | `1200` … `450` | **0.73** |
+
+Both are correct reads. Two systems render a figure differently and neither is wrong, so comparing
+the renderings measured the aligner's number formatting rather than whether the model said the
+script — and the run died at `synthesize_narration` with a diff that looks exactly like a
+hallucination. `spoken_word_shape` masks each *run* of digits or number words to one sentinel on
+both sides and splits hyphens (which the aligner does not write), so `40.8 terawatt-hours` against
+`40 8 terawatt hours` is now **1.0**, and so is `twenty-one per cent` against `21 per cent` — the
+commonest phrase in this repo's scripts.
+
+It deliberately does **not** parse spoken numbers into values. "twelve hundred and four fifty"
+parses to 1254 or to 1200-and-450 depending on which reading you pick, and a mis-parse would make
+the gate compare wrong values — passing a bad take or failing a good one, with a confident number
+attached. An ASR transcript is not reliable evidence of *which* figure was spoken; it is reliable
+evidence of how many were, and of the words around them. The run count is compared, so a beat that
+**drops** a figure still fails, and that is the failure that matters.
+
+`wind_2024.json` now narrates all eight beats with **no lexicon at all**, where before it failed at
+beat 2 and then, with a lexicon entry, at beat 4.
+
+| What | Command | Result |
+| --- | --- | --- |
+| delivery contract + promise | `uv run pytest tests/unit/test_delivery_package.py -q` | 13 passed. A package of captions and metadata is refused; an absolute path is refused; a zero-byte file is refused; the promise is derived from route counts |
+| the alignment gate | `uv run pytest tests/unit/test_script_similarity.py -q` | 12 passed. Both measured false failures now score 1.0, and a dropped figure, a truncated read and a garbled read all still fail |
+| **live, the narrated lane** | `uv run content-factory make narrated-video` | passed, 14 stages, 25.3 s. `files: 6`, `bytes: 4,208,878`, `qc_passed: true` |
+| **live, the hybrid lane** | `uv run content-factory make hybrid-video --set story.story=fixtures/story/wind_2024.json` | passed, **18 stages**, 57.0 s. 8 beats narrated with no lexicon, `generate: 2 / render: 6`, `composed.mp4` measured, `files: 7`, 9.5 MB |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean (557 files) · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **1078 passed**, 37 deselected · all 9 TS packages pass |
+
+**The SeedVR2 measurement, and the reason it had never been possible.** My first note here said
+it was blocked for want of weights — wrong, and corrected before it stood: they are at
+`models/restoration/SeedVR2-{3B,7B}`, not under `models/video_upscaling` where I looked. The real
+blocker was something else, and it is the same shape as everything else in this pass.
+
+`skills/video/postchain/tools/seedvr2.py` **had never run**. Its default `dit_model` was
+`seedvr2_7b_int8_convrot.safetensors` — the filename this repo's downloader saved — and
+`inference_cli.py` rejected it with `invalid choice` on every invocation. The reason took some
+digging: the CLI computes `--dit_model`'s argparse *choices* from its own registry **plus whatever
+it discovers under `<checkout>/models/SEEDVR2/`**, and it does that before argparse parses
+anything. So passing `--model_dir` — which the tool did — cannot make a build nameable.
+
+And the two are genuinely different weights rather than one file under two names. The on-disk 3B
+hashes to `98669fd2…`; the CLI's registry pins `seedvr2_ema_3b_fp16.safetensors` at `2fd0e03a…`.
+So renaming would have been a lie. The fix is to let the CLI **discover** what is actually here,
+which it does — and then loads and runs it. `_stage_model` symlinks the requested DiT and the VAE
+into the discovery directory before the call (symlinks, because these are 6-8 GB files), and the
+default is now the 3B build this repo actually downloads.
+
+Then the measurement the item asked for — one SeedVR2 pass against the bicubic segment, on nine
+frames of the **real** LTX-2.5 clip from the guided run (not the mock), 704x384 to 1080:
+
+| | size | edge energy | frame_review findings |
+| --- | --- | --- | --- |
+| source | 704x384 | 4.991 | 0 |
+| bicubic | 1980x1080 | **4.853** | 0 |
+| SeedVR2 3B fp16 | 1980x1080 | **10.192** | 0 |
+
+Bicubic *loses* edge energy resampling up, as interpolation must. SeedVR2 more than doubles it —
+**2.1x the bicubic** — and the structural similarity between the two outputs is **0.9991**, so it
+reconstructs detail without moving the composition. That last number is the one that matters for
+this pipeline: the composition was approved upstream, and an upscaler that reimagined it would
+invalidate the approval. Checked by eye on a head-and-shoulders crop as well: hair strands, the
+ear, facial features and the track markings are reconstructed, not ringing.
+
+**The number that decides the wiring: ~12 s a frame** (110 s for 9, and 107.7 s on a second run
+with the same output sha256, so it is deterministic). A 49-frame clip is ~10 minutes; the
+`hybrid-video` run above had 2 generated shots, so ~20 minutes; a thirty-shot film is **six hours**
+on the 3B. That is the cost of putting it per clip on the hybrid path, and it is why the item said
+to measure before wiring. Not wired — the measurement is the deliverable, and the decision is the
+operator's with this number in hand.
+
+One thing worth naming from the hybrid run: `generate_anchor` produced **4 anchors for 2 shots** —
+the first start+end anchor *pairs* this repo has ever produced, because the Blender controls
+compiler passes `shot.anchor_frames` where the motion-plan stand-in hardcodes `(0,)`. Guide
+adherence duly reported 0.0 for both mock clips, which is correct and non-blocking.
+
+### The remaining small gaps
+
+**Chart values against the dataset.** The renderer is total by design — `chartPoints` maps a
+missing or non-numeric cell to `0` ("bad cells become 0, never a crash"), `resolveNumber` returns
+`null` for a row it cannot find and `formatNumber` draws that as an em dash. Both are right for a
+renderer: a bad row must not take a whole film down. Together they mean a `ChartScene` whose `y`
+column is misspelled draws a **flat line along zero**, under a real dataset's name, and passed
+every check there was. A plausible chart, of nothing.
+
+`qc/datarefs.py` resolves every `DataRef` in a plan the way the TypeScript does and
+`qc_deliverable` gains `chart_values_match_datasets`. It reports the difference that matters: a
+flat line is a *finding about the data* when the data is flat and a **lie** when the column is
+simply absent, and only the second is raised. The resolution rules are mirrored from
+`content-ui/src/format/number.ts` — `row_key` matches the first column (or one named
+`key`/`row_key`), `column` defaults to the **last** — and a test pins them, because a mirrored rule
+that drifts would report figures as sound that the renderer draws as dashes.
+
+**A prompt registry, and one system instruction sent from the gateway.** Prompts were f-strings
+inline in whichever module needed one: three in `copywriter.py`, a sixty-line builder in
+`scriptwriter.py`, another in `shots/prompt_compile.py`. Nothing shared, nothing versioned — and
+one consequence I did not expect to find:
+
+**When Ollama's constrained decoding went in on 2026-09-08, the schema stopped being pasted into a
+system message, and the system message went with it.** Including the parts that were never about
+the schema. So for a day, the shared rules about inventing figures and about house style were sent
+to nobody. `prompting/templates.py` holds `SYSTEM_INSTRUCTION` and the versioned templates, and
+`_with_system_instruction` attaches it **in the gateway** — not at each call site, because a call
+site can forget and this one just had. A caller's own system message is kept with the shared text
+in front of it (the shared part is a floor, not a replacement), and `system_instruction=""` opts
+out entirely, which is what a probe measuring the raw model wants.
+
+One thing my own test caught: the shared instruction said "discarded along with the **beat** it was
+in", and a beat is the scriptwriter's unit. The test asserts the shared text carries no
+role-specific vocabulary; it now says "sentence".
+
+**Re-measured live, because the prompt changed.** The copywriter still works — a caption in
+**12.0 s**, 303 in / 122 out, `schema_enforced: true`, and `keep_alive=0` released the card back to
+2.5 GB. And it **still invented figures**: "about 16%", "the 2025 figure is not yet published",
+"under 10% in 2015", none of which are in the brief. Worth recording plainly rather than quietly
+hoping: a system instruction is necessary and nowhere near sufficient, and the thing that actually
+stops an invented number reaching a viewer is `lock_script`'s claim gate and the scriptwriter's
+validators. The prompt makes the gates' job smaller; it does not do their job.
+
+**One collision with a concurrent session, caught and repaired.** `python/content_factory/prompting/`
+already existed as another session's untracked `learn.py`, with no `__init__.py` — and their
+`cli/main.py` imports `lessons_from_review`, `load_batches`, `write_proposal`,
+`ProposalRefusedError`, `apply_proposal` and `load_proposal` **from the package**, which could not
+have worked. Writing my registry as that `__init__.py` would have taken the file their design
+needs. It is `prompting/templates.py` now, and `__init__.py` re-exports both halves explicitly —
+which fixes their import as a side effect. Nothing of theirs was changed or removed.
+
+| What | Command | Result |
+| --- | --- | --- |
+| both gaps | `uv run pytest tests/unit/test_prompting_and_chart_values.py -q` | 18 passed. A misspelled series column, a misspelled x column, a column of text, a missing dataset, a row that is not there, and the mirrored resolution rules |
+| **live, the copywriter with the shared instruction** | `draft_caption(sample_campaign())` | caption + alt text in **12.0 s**, 303 in / 122 out, `attempts: 1`, card back to 2.5 GB |
+| the demo fixture | in the same suite | `plan_problems(sample_story_plan(), …) == []` — if that ever fails, the demo ships a chart of nothing |
+| everything | `just lint` · `just typecheck` · `uv run pytest -q` · `pnpm -r test` | lint clean · **6 errors, all in `scripts/make_mocap_shot_plan.py` and `scripts/score_staging.py`, both untracked files from a concurrent session — not touched** · **1096 passed**, 37 deselected · all 9 TS packages pass |
+
+### Priority 2: what is done, and what is not
+
+Every row of the operator's table, in the order given:
+
+| # | Item | State |
+| --- | --- | --- |
+| 1 | Gateway — options object, catalog revision, Heretic tier | **done**, `{{ .Prompt }}` verified empirically first |
+| 2 | Research lane — ingest, compile_datasets, real ClaimRecords, script gate, pipeline behind a flag | **done** |
+| 3 | Script writer — one call, typed scenes, gaps.json, spoken_text, section, evaluation pack | **done**; the floor is measured and **not met** (worst axis 0.143 vs 0.8), so it stays off |
+| 4 | Remotion — Image/Comparison/FlowDiagram, ingest→assets, background stills, ILLUSTRATIVE label, step chart, QC finding | **done**, rendered and inspected frame by frame |
+| 5 | Audio — language validation, lexicon, SoundCue/CueSheet + place_sfx, neutral MMAudio prompt, sidechain, `--seed` | **done**; no local Swedish TTS, recorded |
+| 6 | Generative control — guided run, guide adherence, drift thresholds, seed panel, ADR wording | **done** except the control package: **blocked upstream**, with Lightricks' own words quoted in ADR-0006 |
+| 7 | Cache and jobs — submitted.json, .done.json, graph digest, tmp+replace, sha on reuse | **done** |
+| 8 | Durable parity — resource_class, timeouts by class, prepare mode, two validators, typed adapter | **done** |
+| 9 | Delivery — pristine picture, route counts, real intent, DeliveryPackage manifest | **done**; SeedVR2 measured at ~12 s/frame, **not wired** — that is the operator's call |
+| — | Small gaps: credentials scan, chart `source_ids`, animation aspect, chart-values check, independent sources, per-style drift thresholds, prompt registry | **all seven done** |
+
+Two things are deliberately not done, both stated above with their reasons: the LTX-2.3
+Union-Control download (upstream says its adapters do not apply to 2.5, quoted) and wiring SeedVR2
+into the hybrid post chain (measured at six hours for a thirty-shot film, so the decision needs the
+number rather than a default).
+
+## Repo review + fixes: the JS lint gate, two GPU-service defects, a frame gate that gated one picture (2026-09-09)
+
+Reviewed the whole tree against the CLAUDE.md rules and ran every gate. Nine findings; eight fixed,
+one deferred with a reason. The gate sequence is green except `schemas-check`, which is commit-time
+by construction (below).
+
+**1. `just lint` never linted any JavaScript or TypeScript, and STATUS recorded it as green.**
+No workspace package defined a `lint` script and there was no eslint/oxlint/biome/prettier anywhere
+in the repo, so `pnpm -r --if-present run lint` matched nothing and exited 0 — over 28k lines of
+TS/TSX with no linter, in CI too (`ci.yml` ran only `ruff check`). The root `lint` script recursed
+into the same nothing and `pnpm -r` excludes the workspace root anyway, so it could never have run.
+This was a false green rather than a missing gate, which is why it is first.
+
+Fixed with **oxlint 1.82.0** (version resolved from the registry), pinned exactly at the workspace
+root: one fast binary with a large built-in rule set, the same shape of choice as ruff on the Python
+side, rather than a plugin tree to assemble across eleven packages. `.oxlintrc.json` turns on the
+react / import / promise / vitest / jsx-a11y plugins over the default typescript + unicorn + oxc set
+and makes `correctness` an **error**. `just lint`, the root `lint` script and CI's lint step all call
+it. `pnpm install --frozen-lockfile` verified against the updated lockfile.
+
+The first full pass found 93 findings, of which 20 were `correctness` errors. All 20 are fixed:
+
+| What | Where | Why it mattered |
+| --- | --- | --- |
+| A component declared inside its own render | `video-ui/scenes/ComparisonScene.tsx` | `Side` was a fresh component *type* every frame, so React remounted both subtrees each render instead of updating them. Lifted to module scope, closed-over geometry passed as one `layout` prop |
+| A ref written during render | `node-graph/useGraphEditor.ts` | The latest-ref write is unsafe under concurrent rendering and was not needed: `lastNotified` already makes a re-run for a changed callback identity a no-op, so `options.onChange` is now a plain dependency |
+| `useMemo`/`useCallback` reading more than they declared | `apps/web/app.tsx`, `apps/web/i18n/index.tsx`, `video-ui/scenes/MapScene.tsx` | All three narrowed deliberately (`session?.account.id`, `save.mutate`, `scene.projection`). Kept the narrowing and made each body read the same local the deps name, so there is nothing left to suppress |
+| `setState` inside an effect on a render path | `video-ui/scenes/MapScene.tsx` | A missing asset is known during render; it is derived there now and the effect owns only the fetch and the `delayRender` handle |
+| A test with no assertions | `apps/web/test/shell.test.tsx` | The workspace-switch test ended on a bare `findByRole`. Made explicit, like its neighbours |
+| Dead imports, a useless spread fallback, a non-inline `useMemo`, redundant alt text | `video-ui/test/chartTimeline.test.tsx`, `node-graph/graphModel.ts`, `apps/web/workspace/ModelsPanel.tsx`, `apps/web/pages/AssetsPage.tsx` | Cleanups. The alt change moved a matching query in `assets.test.tsx` |
+| A menu that could not take focus | `node-graph/NodeContextMenu.tsx` | `role="menu"` with no `tabIndex`; its own Escape handling had nowhere to land |
+
+Nine rules are demoted in `.oxlintrc.json`, each with its reason written beside it, because a rule
+turned off silently is indistinguishable from a rule nobody ran. Two groups are worth naming:
+
+* **`vitest/valid-expect` is off.** It reports "expect takes at most 1 argument", which is a Jest
+  rule: `expect(actual, message)` is Vitest's own documented two-argument form (4.1.11) and this
+  repo uses it deliberately — `expect(r.status, r.stderr).toBe(0)` puts ffprobe's stderr into the
+  failure. "Fixing" those seven sites would have deleted diagnostics.
+* **Four `jsx-a11y` rules are warnings.** They fire on composite widgets built the way the W3C ARIA
+  Authoring Practices say to build them, and which `eslint-plugin-jsx-a11y` permits by default:
+  `div[role="application"]` with `tabIndex` + `onKeyDown` (the node-graph canvas — the role exists
+  precisely to hand keyboard control to a custom widget), and `ul[role="listbox"]` / `li[role="option"]`
+  (the add-node combobox; both mappings are in that plugin's own allow-list).
+
+**Still open, and tracked rather than silenced:** 21 `prefer-tag-over-role` sites across 29
+components, 7 `no-autofocus`, and 3 remaining reset-derived-state-in-effect sites. Each conversion
+changes rendered markup or event semantics, so it needs the accessibility pack re-run to verify —
+its own task, not a lint cleanup.
+
+**2. `just typecheck` was red; now 0 errors.** The six pyright errors were in two untracked scripts.
+`scripts/score_staging.py` declared `_silhouette() -> object` to keep numpy out of module scope, so
+`shapes[0] - shapes[1]` was `object - object`; numpy and pillow are exact-pinned hard dependencies
+imported at module scope elsewhere, so they are hoisted and the return type is
+`NDArray[np.float32] | None`. `any(x is None for x in shapes)` does not narrow elements, so the pair
+is unpacked and tested individually. `scripts/make_mocap_shot_plan.py` read `.name`/`.actor` off the
+whole `PoseRef` union; every character this script builds is `kind="segments"`, so it narrows to
+`SegmentClipPose` and says so. Both scripts still run (`--help` verified).
+
+**3. Two defects in `services/local.py`, both now covered by regression tests.**
+
+* **`os.killpg` could signal a process group we do not own.** `stop()` fell back to
+  `pgrep -f "ComfyUI/main.py"` when there was no state file — the normal path when the operator
+  started ComfyUI themselves — and a pgrep pid need not lead its process group, so `killpg(pid)`
+  signalled whichever group happened to share that number. On this host that can be the operator's
+  own shell job, since the pattern matches any checkout including `~/git/ComfyUI`. Provenance now
+  decides: `_terminate(pid, own_group=)` uses `killpg` only for a pid we recorded ourselves
+  (`start()` passes `start_new_session=True`, so it really does lead its group) and a plain `kill`
+  for anything pgrep found.
+* **The `httpx.Client` was never closed.** `ensure_service()` and `free_the_gpu()` build a fresh
+  `LocalServices` per call and the stages call them once per stage, so a long run leaked one
+  connection pool per stage. `LocalServices` gained `close()` plus context-manager support; both
+  entry points and the `services` CLI command now own the client's lifetime.
+
+**4. A frame gate that gated one picture instead of eight.** `photo-sequence-video` wires
+`drift_qc -> review_frames`, but `stage_review_frames` read `anchors/manifest.json`
+unconditionally, so it asked for a verdict on the single anchor rather than the eight keyframes the
+wire carries — and the eight are what `compose_video` cuts. STATUS 4768 recorded this and left it.
+It now reviews `sequence/frames` when the lane produced keyframes and falls back to the anchor
+manifest for the Blender/scene lanes, whose per-shot anchors *are* their frames; the facts carry
+`reviewed_from` so a run record answers "eight or one?" on its own. The assertion in
+`test_silent_lanes.py` that recorded the wrong number now asserts 8.
+
+**5. `flux2` had no tests.** It is selectable in production (`image_sequences.backend`) at 558 lines
+across `media/flux2_packages.py` + `sequences/flux2_backend.py`, while both siblings
+(`ltx_packages`, `wan_packages`) had suites. `tests/unit/test_flux2_packages.py` (7 tests) covers
+what makes it different: the chained `ReferenceLatent` conditioning, and specifically that
+`FluxGuidance` ends up after the whole chain rather than on the bare text — get that wrong and the
+composed references are guided as if they were not there. Also the reference cap being enforced
+rather than truncated, node ids never renumbering the base graph, turbo-vs-full steps/guidance/LoRA,
+and uploaded filenames binding to their own `LoadImage` nodes.
+
+**6. CI's schema-drift step was a weaker copy of `just schemas-check`.** It reimplemented a subset
+inline — `export_schemas.py --check`, then `generate`, then `git diff --exit-code -- fixtures/schema`
+— skipping `export_workflows.py --check` and `dump_node_catalog.mjs`, and `git diff` is blind to
+untracked files, which is the exact trap `schemas.sh` was written to catch. CI now calls
+`scripts/schemas.sh --check`, so there is one rulebook.
+
+**7. Hygiene.** `.claude/settings.local.json` was untracked but not ignored; it is now ignored, with
+a note that `.claude/settings.json` and `.mcp.json` stay tracked because neither holds a secret (the
+MCP entry sources `./.env` for its token at launch). The STATUS header said 2026-09-03 while the
+body carried sections through 2026-09-08.
+
+**8. Deferred, deliberately: splitting `workflows/stages.py`.** It is 5,359 lines and 113 top-level
+functions spanning research, story, copy, artboards, 3D shot control, anchors, TTS, speech
+restoration, voice-over, music, animation, video and publish, with per-domain packages already
+beside it and clean `# ---` seams to split along. It was also being actively edited by another
+session while this review ran (4,356 -> 5,359 lines mid-review), and a whole-file restructure of a
+file someone else is a thousand lines deep into trades a maintainability nit for a merge conflict.
+The surgical fix in item 4 was made; the split is the operator's call on timing.
+
+### Workflows in the UI, and the pipeline
+
+| What | Command | Result |
+| --- | --- | --- |
+| Lane definitions | `content-factory workflows validate` | 15 checked / 0 problems |
+| Generated template data | `scripts/export_workflows.py --check` | 15 templates / 0 stale |
+| Every lane reaches the panel | `pnpm test` (apps/web) | **parity, not a floor.** `templates.test.tsx` asserted `ids.length >= 10`, which would have shrugged at a dropped lane — and its hand-written id list was already missing `data-story-video`. It now compares the panel's ids against `fixtures/schema/workflow_templates.json`, the tracked contract the Python side asserts equals the definition ids exactly |
+| Every stage has a node | `pyright` + `test_node_catalog_covers_every_stage` | 52 stages, 52 catalogue entries (55 node types with the 3 non-stage ones). `Record<Stage, NodeDefinition>` means a new stage fails typecheck until it has a node |
+| Every lane can actually run | `runnable_missing_executor` over all 15 | **0 lanes blocked** — the sequence/article/newsletter executor gaps recorded at STATUS 3494 are closed |
+| Contracts regenerate idempotently | `just schemas` | 69 schemas / 250 defs, 55 node types, 15 templates, `with_unrunnable_stages: []` |
+
+### A regression the core suite could not see: 4 integration tests, and a package with no film in it
+
+`just test` was green while `pytest -m integration` had **4 failures**, all in
+`stage_compile_destination_packages`. They are not from this review's changes: `DeliveryPackage`
+does not exist at HEAD and `stages.py` at HEAD has zero references to it, so the delivery manifest
+work landed in this working tree without the integration suite being re-run against it. The core
+suite cannot catch this class — `ProductionWorkflow` needs postgres and Temporal.
+
+The `DeliveryPackage` validator was right and `_delivery_files` was wrong. **Two output naming
+schemes reach that stage.** A lane run through the local runner writes the fixed names the scanner
+looked for (`exports/final.mp4`, `exports/artboard.png`, `exports/card_*.png`). A campaign run
+through `ProductionWorkflow` writes one file per *render bundle* instead — `bnd_card000000001.png`,
+`bnd_art000000001.png`, `bnd_tl0000000001.narrated.mp4` — because `render_artboard` names its
+output after the bundle it rendered. So a three-card carousel produced three PNGs on disk, the scan
+matched none of them, the package carried only `['metadata']` from `qc/report.json`, and the
+validator refused it. Exactly the failure that validator was written to catch, arriving from the
+scanner rather than from a failed render — and the same defect class recorded twice already: a
+stage reading somewhere other than where the work actually landed.
+
+`_delivery_files` now scans both schemes, skips the JSON sidecars the renderer drops beside each
+export, prefers a muxed `<stem>.narrated.mp4` over the silent `<stem>.mp4` it was made from (two
+films in one package is not a package), and sorts by role so the documented reading order — the
+film first, metadata last — survives files arriving from two scans instead of one ordered list.
+Two unit tests pin it, so the next regression fails in the core suite rather than only under
+compose.
+
+**Worth stating plainly:** `just test` being green is not evidence that a run works. The four
+tests that caught this are `integration`-marked, and nothing in the documented gate sequence
+(`just fmt && just lint && just typecheck && just test`) runs them. `just test-integration` needs
+to be part of closing any phase that touches a stage executor or a contract a stage writes.
+
+### Gates after the fixes (commands actually run, 2026-09-09)
+
+| Gate | Command | Result |
+| --- | --- | --- |
+| format | `just fmt` / `ruff format --check` | clean |
+| lint (Python) | `uv run ruff check .` | 0 findings |
+| **lint (JS/TS)** | `pnpm run lint` → `oxlint -c .oxlintrc.json apps packages` | **0 errors**, 37 warnings in the tracked buckets. This gate ran for the first time in this repo's history |
+| typecheck | `just typecheck` | `pyright` **0 errors** (was 6); `tsc --noEmit` across 11 packages 0 errors |
+| Python core | `just test` (marker from `pyproject.toml`, not hand-typed) | **1107 passed**, 37 deselected, 340 s |
+| Node suites | `pnpm -r test` | **276 passed / 0 failed** across 9 packages (schema-ts 37, node-graph 29, content-ui 24, editor-core 8, pipeline-canvas 13, web-ui 32, video-ui 49, web 78, renderer 6) |
+| **integration** | `just test-integration` (compose: postgres + temporal) | **31 passed / 0 failed** — was 4 failed / 27 passed before the delivery-scanner fix |
+| render smoke | `just render-smoke` | passes: h264 / size / fps / yuv420p / frame count / faststart all asserted, duration 3.000000 |
+| contracts | `just schemas` twice, diffing in between | idempotent; 69 schemas / 250 defs, 55 node types, 15 templates, `with_unrunnable_stages: []` |
+| lane definitions | `content-factory workflows validate` · `export_workflows.py --check` | 15 checked / 0 problems · 15 templates / 0 stale |
+| contract drift | `just schemas-check` | **still reports drift, and correctly.** It is a `git status --porcelain` check, so it is red for anything differing from HEAD — which is the whole 350-path tree. The 31 generated contracts that were *untracked* are now staged, which was the half regenerating could never fix; the rest clears on commit |
+| frozen install | `pnpm install --frozen-lockfile` | clean with `oxlint@1.82.0` in the lockfile, so CI's install step still works |
+
+**Next smallest task.** Unchanged from the previous session's answer — item 7's live measurement on a
+quiet box. After that, and now with a reason: **make `just test-integration` part of closing a
+phase.** A delivery contract landed with a validator that four durable-workflow tests failed on,
+and every documented gate stayed green for it, because nothing in `just fmt && just lint &&
+just typecheck && just test` starts Temporal.
+
+## Keybinds, appearance/workspace preferences, and a templates panel that crushed its own cards (2026-09-09)
+
+Operator request: rebindable keyboard shortcuts, settings to go with them, and "in the templates ui
+make it scrollable right now each of the menus are stuck".
+
+### The templates panel: implicit `auto` rows divided the panel instead of sizing to content
+
+**The first diagnosis was wrong and is worth recording as the wrong one.** `.cf-templates__grid` was
+missing `min-height: 0`, so it looked like the textbook flex case where a scroll child cannot shrink.
+It was not: a scroll container's automatic minimum size is *already* zero, so that line was a no-op.
+Measured in a real engine, the grid scrolled identically with and without it. It has been removed
+again rather than left in to look like a fix.
+
+What was actually wrong: the grid's rows were implicit `auto` tracks, and they came out as
+`(panel - padding - gaps) / rows` — five equal 143.85px rows in an 815px grid. Every card was crushed
+from its natural **620px to 144px**, which squashed each graph thumbnail from 146px to **1px** and
+clipped **330px** off every card. `.cf-tpl { overflow: hidden }` hid that this had happened, so the
+symptom was cards truncated mid-sentence with no thumbnails, no Models expander and no "Use template"
+button — and, because everything had been crushed to fit, nothing left for the grid to scroll.
+
+`grid-auto-rows: max-content` pins each row to its content. Measured before/after, Firefox 155 and
+Chromium 1243, at 900px and 700px viewports:
+
+| | card height | thumbnail | clipped per card | grid | scrolls |
+| --- | --- | --- | --- | --- | --- |
+| before | 144px | **1px** | **330px** | 815 / 815 | **no** |
+| after | 620px | 146px | 0px | 815 / 3272 | yes |
+
+All 15 cards report zero clipped content afterwards, and the Models expander and Use-template button
+are inside the card box in both engines. The category rail was separately unable to scroll — it had
+no overflow rule at all, measured 210px of list in a 210px box — and now has `.cf-templates__catnav`.
+
+**This class of defect is invisible to `just test`.** jsdom has no layout engine, so every scroll,
+clip and track-sizing assertion above is unreachable from the unit suites; all 97 `apps/web` tests
+passed against the broken panel. It was found by serving the real `TemplatesPanel` from the dev
+server on a throwaway harness page and measuring it with Playwright — worth repeating whenever a
+panel "does not scroll", because reading the CSS produced a confident and incorrect answer twice.
+
+### Keymap engine (`packages/web-ui/src/keys/`)
+
+A chord is one keypress normalised to a string (`"Mod+k"`, `"g"`, `"?"`); a binding is one or two
+chords, so `g` then `i` is `["g","i"]`. Ctrl and Meta both fold to one `Mod` token so a keymap
+survives moving between machines, and Shift is recorded **only** for non-printable keys, because the
+browser already reports `?` for Shift+/ — `"Shift+?"` could never match a real event. The first draft
+shipped `defaultBinding: ["Shift+T"]`, which was exactly that bug and was unmatchable.
+
+Only *overrides* are persisted, never the whole table, so changing a shipped default or adding an
+action reaches existing accounts instead of being frozen by a snapshot taken on first visit; an
+explicit `null` means "unbound on purpose" and is distinct from absent. Storage mirrors the theme's:
+localStorage immediately, account (`/v1/prefs/keymap`) debounced, strict-parsed, failure non-fatal.
+Conflicts are reported rather than prevented — duplicates, and the shadow case where `g` would always
+fire before `g i` could complete.
+
+`Mod+K` moved out of `useCommandPaletteHotkey` into the keymap as a `locked` action so exactly one
+listener dispatches it; the hook stays exported and tested for standalone use, documented as
+not-to-be-combined with `KeymapProvider`. `shell/commands.ts` had advertised `shortcut: "C"` on the
+Create command, rendered as a `<kbd>`, with nothing bound — that is now real, alongside `?`, `a`, `t`,
+`[` and `g`-then-letter for all 15 areas. The letters live on `NavArea.key`, and `nav.test.ts` fails
+if an area lacks one, if two collide, or if anything binds the bare `g` prefix.
+
+### A second real defect the tests caught: typing in the palette fired shortcuts
+
+The dispatcher suppressed modifier-free shortcuts by checking `event.target`. Typing "c" into the
+command palette navigated to /create anyway: react-aria's `Autocomplete` handles keys on a wrapper,
+and the event reaching `window` carries that **div** as its target while the search field still holds
+focus. `isTypingContext` now consults `document.activeElement` as well. Separately `isEditableTarget`
+treated every `<input>` as text entry, so a focused Switch or slider swallowed shortcuts; non-text
+input types are excluded. Both pinned by unit tests.
+
+### Settings: three new sections
+
+- **Keyboard** — every action, its binding, Record (next key, or two in a row for a sequence; Escape
+  cancels), Clear, Reset, reset-all, inline conflict warnings. Recording runs on a capture-phase
+  listener with the global dispatcher suspended, so binding `c` does not also fire what `c` does now.
+- **Appearance** — density, motion, collapse-rail-to-icons, painted onto `<html>` as `data-density` /
+  `data-motion`; `data-motion` is set only when overriding `prefers-reduced-motion`, never when
+  following it.
+- **Workspace** — landing area and default workspace, applied at sign-in only so a mid-session switch
+  still sticks. Both read localStorage at that moment, which the UI states plainly.
+
+Both new keys ride the existing generic `/v1/prefs/{key}` store; no backend change was needed.
+
+### Gates (commands actually run, 2026-09-09)
+
+| Gate | Command | Result |
+| --- | --- | --- |
+| typecheck | `pnpm -r --if-present run typecheck` | 10 packages, **0 errors** |
+| lint (JS/TS) | `pnpm run lint` | **0 errors**, 41 warnings (4 new, all the existing `prefer-tag-over-role` bucket) |
+| Python core | `uv run pytest -q` | **1107 passed**, 37 deselected, 325.63s |
+| Node suites | `pnpm -r test` | **334 passed / 0 failed** across 9 packages (was 276): web-ui 71 (+39), apps/web 97 (+19) |
+| layout | Playwright, Firefox 155 + Chromium 1243, real `TemplatesPanel` | before/after table above; 0 of 15 cards clipped after |
+
+**Next smallest task.** Unchanged: item 7's live measurement on a quiet box, then making
+`just test-integration` part of closing a phase. Newly worth considering: the templates regression
+above passed every existing gate, so a small Playwright layout check would cover a class the unit
+suites structurally cannot — it needs a browser, so it belongs beside `render-smoke`, not in
+`just test`.
+
+### Settings crashed on a preference row written by an older build (2026-09-09)
+
+`can't access property "length", state.customThemes is undefined` on opening Settings. The account's
+`/v1/prefs/theme` row held `{"preset": "midnight", "scale": 1.1}` — no `version`, `mode`, `customId`,
+`customThemes` or `reducedTransparency`. `themeSyncAdapter.load()` returned `r.value` typed as
+`ThemeState | null` but never validated it, so that object became state directly and
+`ThemeCustomizer` read `undefined.length` on the default tab.
+
+Three things were wrong and all three are fixed:
+
+- **The API type lied.** `ThemePrefs.value` claimed `ThemeState | null` for a free-form JSON column.
+  It is now `unknown`, which is what a key/value preference store actually returns.
+- **Validation was in the wrong place, then briefly in two.** The adapter is transport again and the
+  provider is the single validation point — the first attempt had the adapter repair the value, which
+  meant the provider could not tell a complete row from a repaired one and never wrote the fix back.
+- **Rejecting the row would have thrown away real settings.** `coerceThemeState` keeps every field
+  that validates on its own and defaults the rest, so "midnight" at 1.1 survives; a row that pinned a
+  preset before `mode` existed is read as pinning it rather than following the system. A repaired
+  load marks itself dirty, so the complete state is written back and the row stops being broken at
+  the source. A row stamped with an *unknown* `version` is refused instead of repaired — rewriting it
+  as version 1 would let an older build clobber a newer client's settings.
+
+`loadThemeState` (localStorage) heals the same way. 10 new tests, including the verbatim blob from
+`account_preferences` and the end-to-end path of opening Settings against that server response.
+
+**Concurrent work, not from this session:** `apps/web/test/modelsPanel.test.tsx` fails looking for a
+region named "Downloadable models". `ModelsPanel.tsx` was rewritten at 09:20 while this was in
+progress (its sections are now Installed models / Downloads / Add model from URL) and a new
+`apps/web/src/models/ModelStore.tsx` landed at 09:18. The test has not been updated to match; left
+for whoever is mid-refactor there.
+
+## 2026-09-09 — the model store, self-explanatory delivery nodes, and files dropped on the canvas (session auto-content-ui)
+
+Operator request, verbatim in three parts: *"we should be able to just press a button and it should
+install the models weights in the browser. See the skill's README for the fetch command. instead it
+says that"*; *"most of the templates has qc deliverable and destination packages that arent linked
+up to anything and its not self explanatory of what they do"*; *"i should be able to drag and drop a
+voice clip and it should tell which type of thing it is and place it in a correct node and spawn
+that node and also suggest to clean the audio"*. Plus the constraint the whole thing hangs off:
+*"you should never need to leave the webpage everything should be doable from there"*, with weights
+under `/mnt/fast/models` and *"link up correctly automatically"*.
+
+### 1. A missing weight could be *named* but not *installed*
+
+The Models panel and every template card showed a readiness column, and for 34 of the 40 declared
+requirements the only thing they could offer was prose: `"See the skill's README for the fetch
+command."` — a `kind: path` requirement carried no source at all, and three of the six `kind: comfy`
+ones had no pinned URL either, so their "download command" printed `<https source on
+huggingface.co — not pinned yet>`.
+
+The reason was that the knowledge was in the wrong place. `workflows/*.yaml` declares *what* a lane
+needs (a filename, a folder, a directory substring). `models/video_stack.py` knows what a family is
+*for*. The two download scripts knew the only thing the browser needed and could not see: the
+repository, the pinned revision, and the destination.
+
+`python/content_factory/models/weights.py` is that missing half as data: 24 families, each with its
+store directory, its pinned Hugging Face sources (40-hex commits — eleven copied from
+`download_video_stack_extras.sh`, the rest resolved from the Hub API on 2026-09-09 together with
+their licence and gating), the files it lands with the ComfyUI folder each must appear in, and the
+`models/<category>/<Name>` index link. Nine skill environments sit beside them. **All 33 distinct
+declared requirements now resolve to something installable** — `tests/unit/test_weight_registry.py`
+fails if a new workflow adds one that does not.
+
+Two families deliberately cannot be installed and say so instead of showing a button: Practical-RIFE
+(the author publishes weights on Google Drive; the Hub mirrors are untrusted zero-download copies)
+and SAM 3.1 (gated on a human decision at Meta — the row reads "access must be granted").
+
+`models/weight_install.py` acts on the registry and nothing else. One click becomes `hf download
+<repo> <files> --revision <sha> --local-dir <store>/<family>`, then a declared `strip_prefix` is
+flattened (Comfy-Org publishes under `split_files/`), then the index symlink is created, then every
+file ComfyUI loads is linked into its `models/<folder>` tree through the existing
+`services.local.link_required_models` (so GGUF files still land in both the modern and legacy loader
+folders). A job ends `complete` only when every declared file is present at its declared minimum
+size — a transfer that returns 0 and produces nothing fails with the list of what is still missing.
+
+**Proven live, not just in tests.** One real install into a throwaway store on this host:
+
+| | |
+| --- | --- |
+| `WeightInstaller.start("gimm-vfi")` | 4 files, 288.3 MB, from `GSean/GIMM-VFI@ab7735cdcfbd` |
+| files verified | `gimmvfi_r_arb.pt` 79.3 MB · `gimmvfi_f_arb.pt` 122.8 MB · `flowformer_sintel.pth` 65.1 MB · `raft-things.pth` 21.1 MB |
+| index link created | `…/models/frame_interpolation/GIMM-VFI -> …/store/gimm-vfi` |
+| final state | `complete` / `ready`, `index: ok` |
+
+`/v1/models/*` serves it: `GET /catalog` (every family with its state, size on disk, free space in
+the store, index-link health, licence, pinned source, and which workflows want it), `POST /install`
+(a registry key — never a URL, so nothing a browser or a model sends can redirect a download),
+`GET /jobs`, `POST /relink` (re-create every index and ComfyUI link for what is already on disk).
+
+**Models is now a nav area** (`/models`, `g m`): missing first, with per-family Install and one
+"Install all", progress from bytes-on-disk against the declared size, and the store's own facts —
+path, free space, index root, ComfyUI models dir — visible rather than implied. The workspace's
+Models panel shows the same missing list, from the same endpoint, with the same buttons; the
+template cards install from the card. Every requirement in the generated template data now carries
+the registry key that installs it (`install_key`, resolved by `scripts/export_workflows.py`), so the
+canvas never re-implements the match.
+
+**Gated repositories can be authenticated from the page too.** LTX-2.5, Stable Audio 3 and SAM 3.1
+answer 401 without a token, so the page takes one: `PUT /v1/models/hf-access` (owner only) seals it
+in the same vault, with the same workspace-bound AAD, as every other connected credential. It is
+never returned, never logged, and reaches a transfer only as that subprocess's `HF_TOKEN`
+environment variable — never in argv, which is world-readable through `/proc`. Two tests assert
+exactly that.
+
+### 2. The delivery nodes said nothing, and their output went nowhere
+
+Both halves of the complaint were real, and the second was worse than it looked.
+
+**"Not linked up to anything."** `pack.packages` — the output of Destination Packages, the last thing
+a lane produces — was consumed by nothing in **13 of 15** workflows, so the canvas flagged it as an
+unused output and the operator had no way to see where the files went. Worse, in the two audio lanes
+the delivery nodes' *inputs* were unwired: their `deliverable` slot accepted `VIDEO,IMAGE,SEQUENCE,
+TEXT,PACKAGE` but **not `AUDIO`**, so an audio master could not be wired into its own QC, and both
+definitions carried a caveat admitting it.
+
+Fixed at the cause: `AUDIO` is now a deliverable type (an audio master *is* a deliverable, and
+`compile_destination_packages` already shipped `audio/narration-mastered.wav`), `stage_qc_deliverable`
+grew an audio layer that measures the delivered WAV — integrated loudness against the target the mix
+recorded, true peak, and dead air — and both audio lanes are wired end to end. A 2.5 s pause is
+recorded as a fact, not a failure: `QCResult.passed` fails on blockers and criticals only, so a
+missing audio stream or a truncated master fails the stage while a pause in a read take does not.
+
+And every lane now ends somewhere named: `output.deliverables` ("Deliverables") is a terminal marker
+that takes the packages, the master or the caption file and says where the run writes them. It is
+non-runnable by contract and skipped by the compiler with a reason, because the run writes that
+folder either way — the node's job is to stop the graph ending in mid-air.
+
+| dangling outputs | before | after |
+| --- | --- | --- |
+| `pack.packages` | 13 lanes | 0 |
+| `pack_qc.report` / `originality.verdict` | 3 lanes | 0 |
+| unwired delivery inputs (audio lanes) | 4 | 0 |
+
+Remaining dangling outputs are honest ones — `controls.mask`, `motion.audio`, `research.sources` —
+outputs a lane genuinely does not consume, which is information rather than a defect.
+
+**"Not self explanatory."** A node's one-line summary existed only as a `title` tooltip; selecting a
+node showed Title, Mode, Note and slot types and not one word about what it does. `NodeDefinition`
+gained `help`, the properties panel now leads with the summary, the help and the executor kind
+("deterministic: same input, same output" / "runs a model" / "waits for a person"), and the four
+delivery nodes plus the preflight gate carry real explanations — what QC Deliverable reads and what
+it can fail, what a destination package contains and that it uploads nothing, what Package QC checks
+that QC Deliverable does not.
+
+### 3. Drop a file on the canvas
+
+`POST /v1/uploads` is one call that does what an operator expects from a drop: the bytes are sniffed
+through the existing `ingest.uploads` allowlist (never the extension — an SVG renamed `.png` is
+refused, and the refusal says the sniff decided), stored content-addressed in the artifact store,
+measured with ffprobe, and answered with what the canvas needs: the node type that holds this kind
+of file, one line describing what actually arrived, and the type-correct next steps.
+
+The suggestions are specific because they read the measurements: a 16 kHz mono take is offered
+"Clean the voice" with `band_extension: clearervoice_sr` and the reason *"16 kHz mono: band extension
+puts the top octaves back before delivery"*; a 48 kHz one gets the same node with band extension off
+and says why. `tests/unit/test_dropped_files.py` checks every suggestion against
+`fixtures/schema/node_catalog.json` — the node type exists, the slot exists, the types are
+compatible, and every widget value it sets is a widget that node declares. **It caught a real bug on
+its first run**: the CSV suggestion wired `ingest.sources` (SOURCES) into `compile_datasets.evidence`
+(EVIDENCE), which the graph would have refused. Data files now offer that node unwired, because it
+reads the uploads folder itself, and a suggestion that produces a refused link is worse than none.
+
+Three node types hold dropped media (`input.audio`, `input.image`, `input.video`); data, documents
+and text go to `ingest`, which already turns everything in the uploads folder into typed sources.
+A source node carries the artifact key, not a path, and the compiler derives kind, hash and
+workspace *from the key* — an `input.image` holding an audio key blocks the run, as does a key from
+another workspace. They become the campaign's `staged_uploads`, and the production workflow's first
+activity copies them into `<project>/uploads/` (idempotent by name and size), which is where the
+`ingest` stage reads. Add-and-wire is one atomic commit: `addConnectedNode` gained a target slot and
+widget values, because add-then-connect asks this render's graph about a node it has not seen yet —
+which produced exactly the "unknown node" refusal until it was fixed.
+
+**What a dropped voice clip cannot do yet, stated plainly:** it cannot stand in for a per-beat take.
+`voice_over` discovers recordings as `<beat_id>.wav` and beat ids come from the story plan, which
+does not exist until `plan_story` has run, so a clip reaches a run as a source file rather than as
+narration. The `input.audio` node's help says this. Closing it means either a take slot that names
+its beat after planning or a single-beat lane that adopts the one staged recording — the next task.
+
+### The new stylesheets referenced tokens that do not exist
+
+Worth recording because every gate passed with it broken. The Models page and the drop strip were
+written against `--cf-color-border`, `--cf-color-surface`, `--cf-color-text-muted` and six more
+names of the same shape. **None of them exist**: this app's tokens are `--cf-border`, `--cf-panel`,
+`--cf-muted`, `--cf-accent`, `--cf-warn`, `--cf-success`, `--cf-danger`, `--cf-panel-2`, `--cf-fg`
+(`packages/web-ui/src/styles/index.css`). Every rule using one fell back to its hardcoded fallback
+or to nothing, so rows had no panel, no border and no state colour — and jsdom has no layout or
+cascade, so all 358 Node tests passed against it.
+
+Found by serving the real `ModelsPage` from a throwaway harness page with fixture responses and
+screenshotting it with the renderer's own `capture-screenshot.mjs` (Playwright 1.63, Chromium,
+1400 x 1000 @2x). Fixed by remapping to the real tokens and dropping the fallbacks that were hiding
+the mistake; the same pass moved the state dot onto the name's line, indented the per-row prose past
+the dot, and replaced a size of `~-` with "size unknown" for the one family whose size is unknown.
+The harness was deleted afterwards - it is the third session to build one, which is an argument for
+the Playwright layout check that has been "next smallest task" twice now.
+
+### Commands actually run (2026-09-09)
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest -q` (core) | **1143 passed**, 45 deselected, 346.8s |
+| `uv run pytest -m integration -q` | **39 passed**, 207.9s (production workflow, workspace graph run, model store, uploads, HF token) |
+| `pnpm -r test` | **358 passed** across 9 packages (apps/web 112, node-graph 29, …) |
+| `just typecheck` | 0 errors (pyright + tsc, all packages) |
+| `just lint` | ruff clean; oxlint 45 warnings, 0 errors (all pre-existing categories) |
+| `just schemas` | 69 schemas / 251 defs, 59 node types, 15 templates |
+| live install | `gimm-vfi` 288 MB fetched, verified and index-linked into a throwaway store (table above) |
+| live store scan | `catalog_status()` on `/mnt/fast/models`: 22 families ready, `rife` manual, `sam-3.1` absent-gated; all 9 skill envs ready |
+
+`just schemas-check` gates on a **committed** tree (`git status --porcelain` over the generated
+files), so it reports this session's regenerated contracts as drift until they are committed; the
+generators themselves are idempotent (`export_workflows.py --check` → `{"stale": []}`).
+
+**Next smallest task.** A dropped recording that can *be* a take: either a take slot that names its
+beat after planning, or a single-beat lane that adopts the one staged recording (see part 3 above).
+After that, still open from earlier sessions: item 7's live measurement on a quiet box, and a small
+Playwright layout check beside `render-smoke` for the class of defect jsdom cannot see.
+
+### Media the pipeline could not read now converts on the way in (2026-09-09, later)
+
+Operator: *"add the audio and video pipeline so they can convert the different types of video and
+audio files automatically when a user adds them /home/vega/Videos/2026-09-09 13-35-29.mkv eg this
+to mp4"*.
+
+The upload allowlist is eight types wide (`mp4 mov wav mp3 flac png jpg webp`) because every stage
+downstream assumes them. That narrowness was also a wall: their file is a Matroska screen
+recording, so dropping it answered *"file type 'video/x-matroska' is not accepted"* and the next
+move was a terminal.
+
+`python/content_factory/ingest/convert.py` is the step between those facts. Eight more MIMEs are
+accepted **on condition they are converted first** — and the MIME strings were read off
+`magic.from_file(mime=True)` on this host rather than assumed, because a wrong one silently
+re-closes the door:
+
+| dropped | sniffed | becomes | how |
+| --- | --- | --- | --- |
+| `.mkv` (OBS, ffmpeg) | `video/x-matroska` | MP4 | streams **copied** when H.264/AAC |
+| `.webm` | `video/webm` | MP4 | re-encoded (VP9/Opus cannot be delivered) |
+| `.avi` | `video/x-msvideo` | MP4 | re-encoded |
+| `.m4a` | `audio/x-m4a` | WAV | decoded to 16-bit PCM at the source's own rate |
+| `.opus`, `.ogg` | `audio/ogg` | WAV | decoded |
+| `.aiff` | `audio/x-aiff` | WAV | decoded |
+| `.tiff`, `.bmp` | `image/tiff`, `image/bmp` | PNG | rewritten with Pillow, not ffmpeg |
+
+Three properties make it cheap and honest:
+
+* **Remux before re-encode.** A screen recording is already H.264 with AAC, so the streams are
+  copied into an MP4 container. Their real file: **2.48 MB in, 2.53 MB out, 0.2 s, no pixel
+  re-encoded**. Only codecs that cannot be delivered are actually transcoded.
+* **Only the first video and audio stream are mapped.** Matroska carries subtitles, chapters and
+  font attachments MP4 cannot hold, and a blind `-c copy` fails on them. Dropping them is a real
+  loss, so the detail line names what was dropped instead of staying quiet.
+* **Conversion never touches a file the pipeline can already read.** `CONVERTIBLE` and `ALLOWED`
+  are asserted disjoint: re-encoding an MP4 would cost a generation of quality for nothing.
+
+Not accepted, deliberately: MPEG-TS, whose bytes `python-magic` reports as
+`application/octet-stream` here. Accepting that MIME would accept every unidentifiable file in
+exchange for one container.
+
+Wired into both doors, because a file can arrive either way: `POST /v1/uploads` converts before
+storing (so the artifact store holds what the stages will open, and the response carries
+`conversion: {action, from_mime, to_mime, detail}` which the drop strip shows — *"converted to mp4:
+h264/aac copied into MP4 — no re-encode"*), and `stage_ingest` does the same step for a file copied
+into `<project>/uploads/` by hand. The stage converts into a temp dir and throws it away: the
+operator's own file is never modified, the manifest records `converted_from` / `conversion` /
+`stored_as` beside the original name, and a render asset points at the converted copy in the
+artifact store rather than at the `.mkv` no renderer can open.
+
+The end-to-end path on their actual file, timed: sniff → remux → content-addressed store → probe →
+node + suggestions, **0.31 s total**, `input.video` spawned, described as *"video · 1920x1080 ·
+60.0 fps · 51.9 s"*. Which exposed one more thing worth fixing: it offered "Smooth the motion"
+first for 60 fps footage. Interpolating already-smooth footage spends a GPU pass to buy a
+slow-motion option, so above 48 fps that suggestion moves last and says what it is actually for.
+
+Suites after the change: `uv run pytest -q` **1160 passed**, `uv run pytest -m integration -q`
+**41 passed**, `pnpm -r test` **359 passed**, pyright 0 errors, ruff clean.
+
+Tests: `tests/unit/test_media_convert.py` (12) builds every fixture with ffmpeg in the test,
+because what is being checked is a decision about real codecs — copyable vs not, a subtitle track
+that would break a blind copy, an audio-only `.mkv` treated as audio, a file with EBML magic and
+garbage behind it failing rather than producing an empty MP4. Plus the mkv round trip through the
+API (`tests/api/test_uploads.py`) and the hand-copied case in the ingest stage
+(`tests/unit/test_research_lane.py`).
+
+**Known limit, stated:** conversion runs inside the upload request. A remux is instant and a short
+clip re-encodes in seconds, but a long VP9 file will hold the request for the length of the
+encode — the timeout scales with duration (4x realtime, capped at an hour) and the browser shows
+"uploading…" throughout. Moving a real transcode onto the same job machinery the model installs
+use is the follow-up if it ever bites.
+
+## 2026-09-09 — one button stop: `just stop`, and stopping the run that is executing (session auto-content-stop)
+
+Five kinds of thing run in the background on this box and each was stopped its own way: the
+workflow (a local run holding the 3090, or a durable run inside Temporal), the Temporal worker,
+the API and web dev servers, the GPU servers the stages start for themselves (HiDream, ComfyUI,
+Ollama's resident models), and compose. Stopping "everything" meant remembering all five in the
+right order, and `pgrep`-ing for the ones nothing tracked. Worse, the run itself — the thing
+actually using the card — was the one thing with no handle on it at all: `services stop` gave the
+GPU back but the run kept going and started the next stage on a server that had just gone away.
+
+`just stop` is now the whole thing, and `just stop-run` is the run alone. One line per thing it
+acted on — the shape, on a fully occupied machine:
+
+```
+durable  run-93cf0c22ed07                    stopped
+run      picture-story-2979922 (pid …, 0m37s at generate_anchor)   stopped
+worker   Temporal worker (pid 812)           stopped
+api      API server (pid 830)                stopped
+gpu      hidream                             stopped
+gpu      ollama qwen38-ridge:latest          unloaded
+mcp      MCP server (pid 2309226)            left running (an assistant is connected through it)
+docker   compose                             down
+```
+
+`--dry-run` prints the same list with "would" in it and touches nothing, which makes it the
+answer to "what is still running?" as well.
+
+**What it will and will not touch.** A process qualifies only when it is running from *this*
+checkout (cwd inside it, or the path in its argv) **and** its argv names one of six commands.
+Matching is on argv entries, never on a joined command line, because `grep "content-factory make"`
+contains every word of a run and must not be mistaken for one. The chain of ancestors of the stop
+itself is protected and never descended through, or `just stop` would kill the shell it was typed
+into. The MCP server is reported and left alone: it is the stdio server an assistant is connected
+through, so killing it ends the session that asked for the stop and stops nothing. `pytest` is not
+in the table either — a test run is not a background program.
+
+**Stopping a local run.** Every run now publishes itself in `.services/runs/<key>.json` (pid,
+workflow, project dir, the step it is on) for as long as it executes; `runners/registry.py`. A stop
+writes `stop_requested` into that file *and* signals the process tree, in that order, because the
+request is what stops the *next* stage and the signal is what stops the one in flight — a single
+video stage holds the card for ten minutes, so "stop" that waits for a stage boundary is not stop.
+SIGTERM is turned into `RunStopped` inside the run (main thread only, previous handler restored),
+so the run writes its report and exits with a sentence instead of dying silently: `run.json` gains
+`"stopped": {"reason": ..., "before"|"during": <node>}`, every finished stage stays on disk, and
+`--from <node>` carries on. A stage that dies because the stop killed *its* subprocess is reported
+as stopped, not FAILED — FAILED is the label that invites reaching for a retry. `--after-stage`
+asks without signalling, for when the stage in flight is worth finishing.
+
+**Stopping a durable run.** `ProductionWorkflow` gained a `request_stop` signal, a `stop_requested`
+query, and one check at the top of `run_node`, in the approval wait and in the human-task wait. On
+a stop it closes itself the way a rejected preflight does: ActionItems resolved, run recorded
+CANCELLED with who stopped it and where, Temporal sees an ordinary completion. A run parked on an
+approval or on a human task stops too — waiting for an asset nobody is going to drop is the state
+an operator is most likely to want out of.
+
+Three things had to be measured rather than assumed, and each changed the design:
+
+* **temporalio 1.32 has no `CancellationScope`.** A spike against the dev server confirmed what
+  that costs: a cancelled workflow's cleanup activity — even `asyncio.shield`ed — never runs. So
+  cancelling cannot be the primary mechanism, or every stopped run's row would stay at PRODUCING
+  with nothing left alive to correct it. Hence signal first; cancel only when the signal cannot
+  land, and correct the row from the client afterwards (`services/runs.record_cancelled`, which
+  also flips nodes still claiming to be `running`, since nothing is).
+* **A cancelled activity arrives in the workflow as an ordinary exception**, not as
+  `CancelledError`. The first integration run of the mid-production case proved it: the run
+  finished **FAILED**, with a "Run failed" ActionItem, for something the operator did on purpose.
+  The generic failure handler now checks for a pending stop first and closes the run as CANCELLED
+  with the activity's error as detail.
+* **Cancellation is a request a worker has to process.** `content-factory runs stop` reported 31
+  stale dev-Temporal runs "cancelled" and `open_run_ids()` listed all 31 as Running immediately
+  afterwards: their workers were long gone, so nobody was there to act on the cancel — and
+  `just stop` kills the worker in the same breath, which is precisely when this bites. `stop_run`
+  is now three rungs — signal, cancel, **terminate** — and reports which one it took, so
+  "stopped" / "cancelled" / "terminated" each mean what they say. The 31 stale runs then closed
+  in one 29-second pass (all runs are stopped concurrently: in sequence, each waiting its turn
+  for a run that will never answer, the same pass was minutes of a stop button doing nothing).
+
+**`just down` was leaving containers up.** `docker compose down --dry-run` lists postgres and
+temporal only: a container started with `just up search` (searxng, and the same for s3/notify) is
+outside the profiles compose was given, so `just down` never touched it. Both `just down` and the
+stop now use `--profile "*"`.
+
+Also: `POST /v1/runs/{id}/stop` (editor, audited as `run.stop`) for the product surface,
+`content-factory runs stop [run-id]` for the durable side alone, and `CF_SERVICES_DIR` so the test
+suite's registrations never land in the checkout's `.services/` beside the real HiDream pid.
+
+**Not done:** no Stop button in the web UI yet — the API route is there for it, but the run detail
+page still only offers approve/reject.
+
+Commands run: `uv run pytest -q` **1172 passed** (329 s), `uv run pytest -q -m integration`
+**46 passed** (326 s, and 46 again in 328 s after the terminate rung was added), `pnpm -r test`
+**359 passed**, `uv run pyright` **0 errors**, `just lint` clean. `just schemas-check` fails on
+this tree — not from this work, which touches no contract: the `schemas/*.py` changes already
+uncommitted in the checkout have not been regenerated.
+
+End to end on this host, with real processes rather than a described machine:
+`content-factory stop --runs` on a run inside a 90-second stage printed
+`run stop-smoke-2979922 (pid 2979922, 0m37s at slow_a) stopped`, and the run exited 130 having
+written `"stopped": {"during": "slow_a"}` and cleared its registration. `--after-stage --run
+<key>` on a two-stage run let the 20-second stage finish, then stopped: `STOPPED before slow_b`,
+`"stages": ["slow_a"]`, the stage's `shots/plan.json` still on disk. And the same command,
+run while an integration test happened to be executing, signalled that test's durable run, which
+closed itself CANCELLED at its next node boundary (`stopped by vega at verify_claims`) — an
+accident, and the best evidence in this entry that the durable half works from the CLI.
+
+Tests: `tests/unit/test_stop.py` (14) describes a machine instead of having one — a process table,
+recorded signals, a fake clock — and pins the decisions that matter: another project's uvicorn and
+an operator's grep are untouched, a launcher and the process it launched are one stop rather than
+two, a `uv run` wrapper around a registered run is not a second run, SIGTERM is followed by SIGKILL
+after the grace period, a dead run's registration is pruned rather than reported, and the command
+line's target arithmetic (nothing means all four, `--no-docker` subtracts, `--run` means that run).
+`tests/integration/test_run_stop.py` (3) runs a worker against real Temporal for both stop paths,
+and proves the row correction is exact and idempotent. `tests/api/test_runs_stop.py` (2) pins the
+route: 401 without a session, 404 for a run that is not there, and an engine with nothing to stop
+reported as `{"outcome": "not running"}` with a `run.stop` audit event rather than a 500 — a stop
+button that 500s when the run already ended teaches people not to press it.
+
+## 2026-09-09 — two GPU hosts on one sequence: an endpoint pool for the frame loop
+
+A second machine joined the tailnet: **nova**. As first probed (Pop!_OS 24.04): RTX 3090 24 GB on
+the proprietary 580.173 module, 20 cores, **78 GB RAM**, an unmounted 3.6 TB SSD, 107 MB/s measured
+direct to vegaserv over gigabit. Its card is idle where vegaserv's is shared with the showcase
+ComfyUI and a Chatterbox co-tenant, and its RAM is 2.5x — the constraint that dropped MiniMax H3.
+
+**The box was rebuilt the same day** to Ubuntu 26.04 and re-registered at a new tailnet address
+(100.82.150.94; the old `pop-os` node at 100.67.110.70 is stale and should be removed from the
+tailnet). CPU, RAM and the card are the same silicon, but **the driver, the disk layout and the
+356 GB Ollama library are all a fresh install and none of them has been re-verified**. The single
+thing to check before any GPU work: `modinfo -F license nvidia` must print `NVIDIA`, not
+`Dual MIT/GPL` — the `-open` module hard-freezes these boxes under load (see the GPU-fault
+write-up), and a clean Ubuntu install is exactly where `ubuntu-drivers autoinstall` picks it.
+
+**Where the wall clock actually is, and why the fan-out went where it did.** Measured on this repo:
+100–385 s per HiDream anchor/drawing (a 30-drawing film is 52 min – 2.75 h), 40–74 s per LTX clip
+with tens of clips per shot list, 12 s/frame for SeedVR2 (six hours a film, still not wired) — against
+13.5 s for a Remotion render and 5–22 s for compose/TTS/captions. The cost is **N independent GPU
+items**, so the parallelism has to be per-item, and everything was serial: `runners/local.py:181`
+(`for node_key, stage, ...` calling `STAGE_EXECUTORS[stage](ctx)` one at a time),
+`production.py:1128`/`1194` for the durable DAG, `sequences/engine.py:297` for frames,
+`stages.py:4438` for clips. The worker already had 100 unused Temporal activity slots; nothing ever
+offered it two.
+
+**What landed.** `services/gpu_pool.py`: a `WorkerPool` that holds interchangeable workers, keeps
+**one item in flight per worker** and returns results in item order. One worker takes the serial
+path with no threads at all, which is what preserves the byte-identical output the sequence tests
+pin. Assignment is dynamic, not round-robin, because a frame that fails drift is regenerated up to
+three times and a static split would leave a card idle. `build_sequence` was split into a serial
+prepare pass (instructions, cache decisions), a pooled generate pass, and a serial collect pass, so
+the frames a run produces do not depend on which host drew them. Frames are safe to spread because
+they are hub-and-spoke by construction: each is an edit of the **anchor**, `drift_report` measures
+each against the **anchor**, and each carries its own `input_hash` marker. Each frame's record now
+carries `served_by`.
+
+Config: `image_sequences.hidream_endpoints` / `flux2_endpoints`, each replacing (not extending) its
+singular field, defaulting to empty = today's behaviour. `skills/image/hidream/server.py` gained
+`CF_HIDREAM_HOST`, defaulting to `127.0.0.1` — the server has no auth, so exposure is opt-in and
+the documented value is the host's *tailnet* address, never `0.0.0.0`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| pool + fan-out | `uv run pytest tests/unit/test_gpu_pool.py -q` | **8 passed**. A two-party `threading.Barrier` makes the concurrency test fail by timeout on any implementation that is secretly serial; pooled frames are byte-identical to serial ones (same shas, order, drift, regenerated/failed lists); `served_by` reaches the on-disk marker; cached frames are never redispatched |
+| no regression | `uv run pytest -m "not integration and not gpu and not live" -q` | **1185 passed**, 49 deselected, 355 s |
+| after removing the unwired ComfyUI pool field | `uv run pytest tests/security tests/unit/test_gpu_pool.py tests/unit/test_image_sequences.py tests/unit/test_stages_anchor.py tests/unit/test_local_services.py -q` | 62 passed |
+| gates | `just fmt && just lint && just typecheck` | clean (580 files unchanged, ruff clean, all tsc Done; oxlint jsx-a11y warnings pre-existing) |
+| gates | `just schemas-check` | **fails — pre-existing.** 55 contract/schema files were already dirty at HEAD; none of the eight files changed here is a registered contract |
+
+**Deliberately not done, and why.** `generate_video`'s clip loop (`stages.py:4438`) is still serial,
+so "a different clip per machine" is not yet true. Its per-clip body calls
+`_ensure_backend_ready(backend, warmed)` against a shared mutable set, and that reaches
+`services/local.ensure_service`, which with `auto_start=true` will `Popen` and `pgrep`-kill GPU
+servers. Fanning that out without first making the start/stop arbitration thread-safe is how you
+get two threads thrashing one card, which on this hardware has already cost a hard reboot once. The
+clip fan-out wants: a `_video_backends` pool mirroring `_reference_backends`, the same
+prepare/dispatch/collect split, and per-host readiness instead of one `warmed` set.
+
+Also left alone: Remotion's `concurrency` is hardcoded to 4 and never passed from Python
+(`video/render.py:160-163`), and the per-scene `frameRange` split exists but is never called
+(`stages.py:3323` passes no `scene_id`). Both are real, both are ~13.5 s of a multi-hour film, so
+neither earns settings surface yet.
+
+**Still the operator's, on nova:** mount `/dev/sda1` at `/mnt/fast` (identical path — five constants
+have no env escape), `apt install ffmpeg git-lfs build-essential python3-dev libcairo2-dev
+libpango1.0-dev`, Node 22/24, `./setup.sh`, then `rsync -aHAX /mnt/fast/models/ nova:/mnt/fast/models/`
+(278 GB, ~45 min at the measured 107 MB/s; nova's own 356 GB of models is all Ollama, no overlap).
+nova has no nvcc, exactly like vegaserv, so the prebuilt flash-attn wheel in
+`skills/image/hidream/README.md` applies unchanged. Do not move it to the `-open` nvidia module.

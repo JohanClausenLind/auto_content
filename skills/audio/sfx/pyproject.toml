@@ -1,0 +1,32 @@
+[project]
+name = "cf-skill-sfx"
+version = "0.1.0"
+description = "Isolated environment for the Stable Audio 3 Small-SFX sound-effect library builder. Inference code (MIT) is the stable-audio-3 checkout under external/ inside this repo (git-ignored); weights are models/sound_effects/StableAudio3-Small-SFX under the Stability AI Community License. Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # constraints copied verbatim from external/stable-audio-3/pyproject.toml @ 779434a
+    "einops>=0.8.2",
+    "einops-exts>=0.0.4",
+    "numpy>=2.2.6",
+    "packaging>=26.0",
+    "safetensors>=0.7.0",
+    "torch==2.7.1",
+    "torchaudio==2.7.1",
+    "tqdm>=4.67.3",
+    "huggingface-hub>=1.7.1",
+    "transformers>=5.8.0",
+    "soundfile>=0.13.1",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu126", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
+]
+torchaudio = [
+  { index = "pytorch-cu126", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" }
+]

@@ -1,0 +1,15 @@
+[project]
+name = "cf-skill-qwen3tts"
+version = "0.1.0"
+description = "Isolated environment for Qwen3-TTS 12Hz 1.7B (Apache-2.0 code and weights): CustomVoice (9 built-in timbres, instruction control) and Base (3-second voice clone). Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # Same verified-working set as skills/audio/breeze (qwen-tts is the shared runtime for both
+    # Breeze-TTS-2 and Qwen3-TTS); qwen-tts pins transformers==4.57.3 itself.
+    "torch==2.9.1",
+    "torchaudio==2.9.1",
+    "qwen-tts==0.1.1",
+    "transformers==4.57.3",
+    "numpy>=2.0",
+    "soundfile>=0.13",
+]

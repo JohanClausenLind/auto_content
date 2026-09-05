@@ -1,0 +1,47 @@
+[project]
+name = "cf-skill-resemble-enhance"
+version = "0.1.0"
+description = "Isolated environment for the Resemble Enhance speech restorer (MIT code AND MIT weights: resemble-ai/resemble-enhance @ 8e97814, ResembleAI/resemble-enhance @ 4e3510c). Denoiser + latent conditional flow-matching + UnivNet vocoder at 44.1 kHz — the main restoration stage for TTS speech that sounds metallic, muffled or band-limited. Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # Same torch pair as skills/audio/breeze and skills/audio/qwen3tts: proven on this host's
+    # driver, and upstream only requires >=2.1.1. Everything below is imported at module scope by
+    # resemble_enhance.{hparams,enhancer.enhancer,enhancer.lcfm} even on the inference path
+    # (upstream keeps training and inference in the same modules), so the exact versions do not
+    # matter — uv.lock records what this host resolved.
+    "torch==2.9.1",
+    "torchaudio==2.9.1",
+    "omegaconf>=2.3",
+    "rich>=13.7",
+    "pandas>=2.1",
+    "matplotlib>=3.8",
+    "librosa>=0.10",
+    # numpy 1.x on purpose: the CFM solver does `float(scipy.optimize.fsolve(...))` on a shape-(1,)
+    # array (enhancer/lcfm/cfm.py:73), which numpy 2 turns from a deprecation into a TypeError.
+    # Verified 2026-09-07: with numpy 2.3 `--mode enhance` raises, with 1.26 it runs.
+    "numpy>=1.26,<2",
+    "scipy>=1.11",
+    "soundfile>=0.12",
+    "tqdm>=4.66",
+    # pandas.to_markdown() in the enhancer's logging path
+    "tabulate>=0.8.10",
+    # A hard import of resemble_enhance.utils.{distributed,engine}, which
+    # resemble_enhance.enhancer.enhancer pulls in even though nothing here trains.
+    "deepspeed==0.19.6",
+    # deepspeed's sdist build needs these in the target env (see [tool.uv] below).
+    "setuptools>=80",
+    "wheel>=0.45",
+]
+
+[tool.uv]
+# deepspeed ships an sdist only and its setup.py imports torch, so it cannot build in an isolated
+# environment; uv installs torch/setuptools first and then builds it against this environment.
+# DS_BUILD_OPS is unset, so no CUDA op is compiled — nothing here needs nvcc.
+no-build-isolation-package = ["deepspeed"]
+
+[tool.uv.extra-build-variables]
+# deepspeed's setup.py asks for the installed CUDA version (to pick a cupy for extras this skill
+# never installs) whenever the torch accelerator is CUDA, and this host has no nvcc. Building it
+# as a CPU accelerator skips that branch; it has no effect on the installed package, which reads
+# the accelerator at import time.
+deepspeed = { DS_ACCELERATOR = "cpu" }

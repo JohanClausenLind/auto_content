@@ -11,6 +11,7 @@ import io
 import json
 import subprocess
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,10 +28,43 @@ from content_factory.schemas.sequences import (
 from content_factory.sequences.control_compile import compile_control_assets, interpolate_box
 from content_factory.sequences.drift import DriftReport, drift_report
 from content_factory.sequences.instructions import compile_edit_instruction
+from content_factory.services.gpu_pool import WorkerPool
 
 
 class SequenceError(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class ControlConditioning:
+    """Everything a frame is conditioned on besides the anchor and the text:
+
+    * ``reference_pngs`` — ordered reference images. Identity references (one per layout box)
+      come first, then structural references (the Blender rough render, the OpenPose skeleton).
+    * ``layout_boxes`` — where each identity reference goes (relative x, y, w, h), at most as
+      many as there are references.
+    * ``control_png`` — the legacy 2D control raster; kept in the cache key, sent as one more
+      reference only when the backend opts in.
+    """
+
+    control_png: bytes | None = None
+    reference_pngs: tuple[bytes, ...] = ()
+    layout_boxes: tuple[Box, ...] = ()
+
+    def sha256(self) -> str:
+        return sha256_hex(
+            canonical_dumps(
+                {
+                    "control": sha256_hex(self.control_png) if self.control_png else None,
+                    "refs": [sha256_hex(r) for r in self.reference_pngs],
+                    "boxes": [b.model_dump(mode="json") for b in self.layout_boxes],
+                }
+            ).encode()
+        )
+
+    @property
+    def empty(self) -> bool:
+        return not (self.control_png or self.reference_pngs or self.layout_boxes)
 
 
 class ReferenceEditBackend(ABC):
@@ -48,6 +82,27 @@ class ReferenceEditBackend(ABC):
         *,
         attempt: int,
     ) -> bytes: ...
+
+    def edit_conditioned(
+        self,
+        anchor_png: bytes,
+        conditioning: ControlConditioning,
+        instruction: str,
+        lock: GenerationLock,
+        *,
+        attempt: int,
+    ) -> bytes:
+        """Edit with a full conditioning bundle. Backends that only understand the legacy control
+        raster get it through ``edit``; richer backends override this."""
+        return self.edit(
+            anchor_png, conditioning.control_png or b"", instruction, lock, attempt=attempt
+        )
+
+    def generate(
+        self, prompt: str, conditioning: ControlConditioning, lock: GenerationLock, *, seed: int
+    ) -> bytes:
+        """Generate an anchor (no existing image to edit) from text plus conditioning."""
+        raise NotImplementedError(f"{self.name} cannot generate anchors")
 
 
 class MockReferenceEditBackend(ReferenceEditBackend):
@@ -102,6 +157,58 @@ class MockReferenceEditBackend(ReferenceEditBackend):
         out.save(buf, format="PNG", compress_level=6)
         return buf.getvalue()
 
+    def generate(
+        self, prompt: str, conditioning: ControlConditioning, lock: GenerationLock, *, seed: int
+    ) -> bytes:
+        """Deterministic anchor: the mock canvas plus one filled rectangle per layout box, so a
+        conditioned anchor is visibly different from an unconditioned one."""
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "seed": seed,
+                "conditioning": conditioning.sha256(),
+                "generate": True,
+            }
+        )
+        first = conditioning.layout_boxes[0] if conditioning.layout_boxes else None
+        png = make_anchor(
+            lock.model_copy(update={"seed": seed}),
+            width=lock.width,
+            height=lock.height,
+            subject_box=first,
+        )
+        img = Image.open(io.BytesIO(png)).convert("RGB")
+        draw = ImageDraw.Draw(img)
+        w, h = img.size
+        # A different prompt has to give a different picture, or every cache test that turns a
+        # prompt knob is vacuous: the anchor comes back byte-identical, its sha256 is unchanged,
+        # and the clip generated from it is served from cache even though a real backend would
+        # have drawn something else. One deterministic row of colour keyed on the prompt is enough
+        # to make that real while leaving the frame's tonal statistics where they were.
+        tint = sha256_hex(prompt.encode())
+        draw.rectangle(
+            [0, 0, w, 0],
+            fill=(int(tint[0:2], 16), int(tint[2:4], 16), int(tint[4:6], 16)),
+        )
+        if len(conditioning.layout_boxes) <= 1:
+            buf = io.BytesIO()
+            img.save(buf, format="PNG", compress_level=6)
+            return buf.getvalue()
+        for i, box in enumerate(conditioning.layout_boxes[1:], start=1):
+            colour = (60 + 40 * i % 160, 90, 150)
+            draw.rectangle(
+                [
+                    int(w * box.x),
+                    int(h * box.y),
+                    int(w * (box.x + box.w)),
+                    int(h * (box.y + box.h)),
+                ],
+                fill=colour,
+            )
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", compress_level=6)
+        return buf.getvalue()
+
 
 @dataclass(frozen=True)
 class SequenceResult:
@@ -137,16 +244,49 @@ def make_anchor(
     return buf.getvalue()
 
 
-def _frame_marker_hash(lock: GenerationLock, control_sha: str, instruction: str) -> str:
-    return sha256_hex(
-        canonical_dumps(
-            {
-                "lock": lock.model_dump(mode="json"),
-                "control": control_sha,
-                "instruction": instruction,
-            }
-        ).encode()
-    )
+def _frame_marker_hash(
+    lock: GenerationLock,
+    control_sha: str,
+    instruction: str,
+    *,
+    conditioning_sha: str | None = None,
+) -> str:
+    key: dict = {
+        "lock": lock.model_dump(mode="json"),
+        "control": control_sha,
+        "instruction": instruction,
+    }
+    if conditioning_sha is not None:  # absent -> identical to the pre-conditioning hash
+        key["conditioning"] = conditioning_sha
+    return sha256_hex(canonical_dumps(key).encode())
+
+
+@dataclass(frozen=True)
+class _FrameJob:
+    """One frame's inputs, resolved before any GPU is touched.
+
+    Everything here is computed in a single serial pass so the pool only ever sees independent
+    work: no job reads another job's output, and the cache decision is already made."""
+
+    idx: int
+    control_png: bytes
+    control_sha256: str
+    instruction: str
+    conditioning: ControlConditioning | None
+    marker_hash: str
+    marker_path: Path
+    boxes: list[Box]
+
+
+@dataclass(frozen=True)
+class _FrameOutcome:
+    png: bytes
+    report: DriftReport
+    attempts: int
+    regenerated: int
+    """How many attempts drifted. The caller expands this back into one entry per failure so the
+    ``regenerated`` list keeps the shape the serial loop gave it."""
+    served_by: str
 
 
 def build_sequence(
@@ -155,11 +295,20 @@ def build_sequence(
     backend: ReferenceEditBackend,
     workdir: Path,
     *,
+    backends: Sequence[ReferenceEditBackend] | None = None,
     frame_instructions: dict[int, str] | None = None,
+    conditioning_for: Callable[[int], ControlConditioning] | None = None,
     max_regen_attempts: int = 3,
     locked_region_similarity_min: float = 0.92,
     style_delta_max: float = 0.15,
 ) -> SequenceResult:
+    """Build every frame of a hub-and-spoke sequence from one anchor.
+
+    ``backends``, when given, is a pool of interchangeable servers -- one per GPU host -- and the
+    frames are spread over it. It REPLACES ``backend`` for the frame work (``backend`` still makes
+    the anchor), so the local server has to be in the list to take a share. Frames never read each
+    other and ``drift_report`` measures each against the *anchor*, so which host serves which frame
+    changes the wall clock and nothing else. Omit it and the serial path runs untouched."""
     workdir.mkdir(parents=True, exist_ok=True)
     frames_dir = workdir / "frames"
     frames_dir.mkdir(exist_ok=True)
@@ -182,12 +331,15 @@ def build_sequence(
     regenerated: list[int] = []
     failed: list[int] = []
 
+    from content_factory.sequences.control_compile import _bracket  # deterministic helper
+
+    order: list[int] = []
+    done_already: dict[int, dict] = {}
+    jobs: list[_FrameJob] = []
     for compiled in controls:
         idx = compiled.asset.frame_index
         subject = plan.subjects[0]
         # The frame's motion region: the interpolated layout box for drift masking.
-        from content_factory.sequences.control_compile import _bracket  # deterministic helper
-
         prev, nxt, t = _bracket(subject, idx)
         box = interpolate_box(prev.layout, nxt.layout, t) or Box(x=0.3, y=0.3, w=0.4, h=0.4)
         base_instruction = frame_instructions.get(
@@ -199,50 +351,107 @@ def build_sequence(
         )
         instruction = compile_edit_instruction(delta, lock)
         marker_path = frames_dir / f"{idx:04d}.done.json"
-        marker_hash = _frame_marker_hash(lock, compiled.asset.png_sha256, instruction)
+        conditioning = conditioning_for(idx) if conditioning_for is not None else None
+        marker_hash = _frame_marker_hash(
+            lock,
+            compiled.asset.png_sha256,
+            instruction,
+            conditioning_sha=conditioning.sha256() if conditioning is not None else None,
+        )
+        order.append(idx)
         if marker_path.exists():
             cached = json.loads(marker_path.read_text())
             if cached["input_hash"] == marker_hash:
-                frames.append({**cached, "cache_hit": True})
+                done_already[idx] = {**cached, "cache_hit": True}
                 continue
+        jobs.append(
+            _FrameJob(
+                idx=idx,
+                control_png=compiled.png,
+                control_sha256=compiled.asset.png_sha256,
+                instruction=instruction,
+                conditioning=conditioning,
+                marker_hash=marker_hash,
+                marker_path=marker_path,
+                # The motion region: where the subject IS this frame plus where it started
+                # (it legitimately leaves its anchor position). Everything else is locked.
+                boxes=[b for b in (box, first_box) if b],
+            )
+        )
+
+    def _render(worker: ReferenceEditBackend, job: _FrameJob) -> _FrameOutcome:
         report: DriftReport | None = None
         png: bytes | None = None
         attempts = 0
+        regen = 0
         for attempt in range(1, max_regen_attempts + 1):
             attempts = attempt
-            png = backend.edit(anchor_png, compiled.png, instruction, lock, attempt=attempt)
+            if job.conditioning is not None:
+                full = ControlConditioning(
+                    control_png=job.control_png,
+                    reference_pngs=job.conditioning.reference_pngs,
+                    layout_boxes=job.conditioning.layout_boxes,
+                )
+                png = worker.edit_conditioned(
+                    anchor_png, full, job.instruction, lock, attempt=attempt
+                )
+            else:
+                png = worker.edit(
+                    anchor_png, job.control_png, job.instruction, lock, attempt=attempt
+                )
             report = drift_report(
-                idx,
+                job.idx,
                 anchor_png,
                 png,
-                # The motion region: where the subject IS this frame plus where it started
-                # (it legitimately leaves its anchor position). Everything else is locked.
-                [b for b in (box, first_box) if b],
+                job.boxes,
                 locked_region_similarity_min=locked_region_similarity_min,
                 style_delta_max=style_delta_max,
             )
             if report.passed:
                 break
-            regenerated.append(idx)
+            regen += 1
         assert png is not None and report is not None
-        if not report.passed:
+        return _FrameOutcome(
+            png=png,
+            report=report,
+            attempts=attempts,
+            regenerated=regen,
+            served_by=getattr(worker, "endpoint", worker.name),
+        )
+
+    outcomes = WorkerPool(list(backends) if backends else [backend]).map_ordered(jobs, _render)
+    by_idx = {job.idx: (job, outcome) for job, outcome in zip(jobs, outcomes, strict=True)}
+
+    for idx in order:
+        cached_record = done_already.get(idx)
+        if cached_record is not None:
+            frames.append(cached_record)
+            continue
+        job, outcome = by_idx[idx]
+        # One entry per failed attempt, in frame order: the shape the serial loop produced.
+        regenerated.extend([idx] * outcome.regenerated)
+        if not outcome.report.passed:
             failed.append(idx)
             continue
         frame_path = frames_dir / f"{idx:04d}.png"
-        frame_path.write_bytes(png)
+        frame_path.write_bytes(outcome.png)
         record = {
             "frame_index": idx,
-            "input_hash": marker_hash,
-            "png_sha256": sha256_hex(png),
-            "control_sha256": compiled.asset.png_sha256,
+            "input_hash": job.marker_hash,
+            "png_sha256": sha256_hex(outcome.png),
+            "control_sha256": job.control_sha256,
             "lock_sha256": sha256_hex(canonical_dumps(lock.model_dump(mode="json")).encode()),
             "reference": "anchor",
             "anchor_sha256": anchor_sha,
-            "attempts": attempts,
-            "drift": {"locked": report.locked_region_similarity, "style": report.style_delta},
+            "attempts": outcome.attempts,
+            "drift": {
+                "locked": outcome.report.locked_region_similarity,
+                "style": outcome.report.style_delta,
+            },
+            "served_by": outcome.served_by,
             "cache_hit": False,
         }
-        marker_path.write_text(json.dumps(record, indent=1, sort_keys=True))
+        job.marker_path.write_text(json.dumps(record, indent=1, sort_keys=True))
         frames.append(record)
 
     packaging = package_sequence(plan, workdir) if not failed else {}

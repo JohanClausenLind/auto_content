@@ -86,7 +86,7 @@ async def test_traversal_and_disallowed_types_are_refused(seq_client, sessionmak
         assert r.status_code == 404, path
     # Unauthenticated access gets nothing.
     fresh = httpx.AsyncClient(
-        transport=seq_client._transport,  # noqa: SLF001 - same app, no cookies
+        transport=seq_client._transport,
         base_url="http://localhost:3000",
     )
     assert (await fresh.get("/v1/sequences/holding-hands/files/anchor.png")).status_code == 401

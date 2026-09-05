@@ -100,6 +100,119 @@ def create_server() -> MCPServer:
         }
 
     @mcp.tool()
+    async def list_graphs(workspace_id: str = "ws_demo00000001") -> list[dict[str, Any]]:
+        """List saved workspace node-graphs (the editor's documents)."""
+        _guard()
+        from sqlalchemy import select
+
+        from content_factory.db.models import WorkspaceGraphDoc
+        from content_factory.db.session import session_scope
+
+        async with session_scope() as db:
+            rows = (
+                (
+                    await db.execute(
+                        select(WorkspaceGraphDoc)
+                        .where(WorkspaceGraphDoc.workspace_id == workspace_id)
+                        .order_by(WorkspaceGraphDoc.updated_at.desc())
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        return [
+            {
+                "graph_id": r.id,
+                "name": r.name,
+                "nodes": len(r.doc.get("nodes", [])),
+                "links": len(r.doc.get("links", [])),
+            }
+            for r in rows
+        ]
+
+    @mcp.tool()
+    async def run_graph(
+        graph_id: str, quality: str = "demo", workspace_id: str = "ws_demo00000001"
+    ) -> dict[str, Any]:
+        """Compile a saved workspace graph onto the production DAG and start a durable run.
+        Refused (with per-node reasons) when any node cannot execute; the run then parks at
+        WAITING_FOR_APPROVAL like every production run — approve with approve_preflight."""
+        _guard()
+        if quality not in {"smoke", "demo"}:
+            msg = "quality must be smoke or demo"
+            raise ValueError(msg)
+        from content_factory.db.models import WorkspaceGraphDoc
+        from content_factory.db.session import session_scope
+        from content_factory.schemas.fixtures import sample_campaign
+        from content_factory.schemas.workspace_graph import WorkspaceGraph
+        from content_factory.services.runs import start_run
+        from content_factory.workspace import compile_graph
+
+        async with session_scope() as db:
+            row = await db.get(WorkspaceGraphDoc, graph_id)
+            if row is None or row.workspace_id != workspace_id:
+                msg = f"no graph {graph_id!r} in workspace {workspace_id!r}"
+                raise ValueError(msg)
+            doc = row.doc
+        template = sample_campaign().model_copy(update={"workspace_id": workspace_id})
+        template = template.model_copy(
+            update={"brief": template.brief.model_copy(update={"workspace_id": workspace_id})}
+        )
+        compilation = compile_graph(WorkspaceGraph.model_validate(doc), template)
+        if not compilation.ok or compilation.campaign is None or compilation.dag is None:
+            return {
+                "started": False,
+                "problems": compilation.problems,
+                "dispositions": [
+                    {"node_id": d.node_id, "kind": d.kind, "reason": d.reason}
+                    for d in compilation.dispositions
+                    if d.kind != "executes"
+                ],
+            }
+        run_id = await start_run(
+            compilation.campaign, quality=quality, dag_json=compilation.dag.model_dump_json()
+        )
+        return {
+            "started": True,
+            "run_id": run_id,
+            "deliverable_type": compilation.deliverable_type,
+            "dag_nodes": len(compilation.dag.nodes),
+            "next": "the run parks at WAITING_FOR_APPROVAL; approve with approve_preflight",
+        }
+
+    @mcp.tool()
+    async def get_run_outputs(run_id: str, workspace_id: str = "ws_demo00000001") -> dict[str, Any]:
+        """Locate a run's produced artifacts on disk (videos, audio masters, animation frames,
+        captions). Paths are inside the project directory; nothing is uploaded anywhere."""
+        _guard()
+        from content_factory.db.session import session_scope
+        from content_factory.services.runs import projects_root, run_view
+
+        async with session_scope() as db:
+            view = await run_view(db, workspace_id, run_id)
+        if view is None:
+            msg = f"no run {run_id!r} in workspace {workspace_id!r}"
+            raise ValueError(msg)
+        project_dir = projects_root() / view["project_id"]
+        patterns = (
+            "exports/*.mp4",
+            "audio/*-mastered.wav",
+            "captions/*.srt",
+            "animation/preview.mp4",
+        )
+        outputs = [
+            {"path": str(f), "bytes": f.stat().st_size}
+            for pattern in patterns
+            for f in sorted(project_dir.glob(f"deliverables/*/{pattern}"))
+        ]
+        return {
+            "run_id": run_id,
+            "state": view["state"],
+            "project_dir": str(project_dir),
+            "outputs": outputs,
+        }
+
+    @mcp.tool()
     async def approve_preflight(
         run_id: str, revision_hash: str, workspace_id: str = "ws_demo00000001"
     ) -> dict[str, str]:

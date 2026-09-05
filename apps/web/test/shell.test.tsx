@@ -52,7 +52,7 @@ describe("shell", () => {
     renderApp("/");
     await user.click(await screen.findByRole("button", { name: /Workspace: Acme Studio/ }));
     await user.click(await screen.findByRole("menuitemradio", { name: /Side Project/ }));
-    await screen.findByRole("button", { name: /Workspace: Side Project/ });
+    expect(await screen.findByRole("button", { name: /Workspace: Side Project/ })).toBeInTheDocument();
   });
 
   it("settings themes tab renders the customizer with presets", async () => {

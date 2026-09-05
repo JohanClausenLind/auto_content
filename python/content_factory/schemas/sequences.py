@@ -87,8 +87,18 @@ class MotionPlan(VersionedModel):
 
 
 class ControlKind(StrEnum):
+    """Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest
+    are rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec."""
+
     pose_skeleton = "pose_skeleton"
     layout_boxes = "layout_boxes"
+    rough_rgb = "rough_rgb"
+    depth = "depth"
+    depth16 = "depth16"
+    depth_exr = "depth_exr"
+    normals = "normals"
+    segmentation = "segmentation"
+    canny = "canny"
 
 
 class ControlAsset(SchemaModel):
@@ -100,7 +110,10 @@ class ControlAsset(SchemaModel):
     height: int = Field(ge=1)
     png_sha256: Sha256Hex
     motion_plan_hash: Sha256Hex
+    """Content hash of the plan that produced the asset: a MotionPlan or a ShotSpec."""
     compiler_version: SemVer
+    compiler: Literal["motion_plan", "blender"] = "motion_plan"
+    shot_id: OpaqueId | None = None
 
 
 class GenerationLock(SchemaModel):

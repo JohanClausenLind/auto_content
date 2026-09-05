@@ -1,4 +1,5 @@
-"""FastAPI dependencies: DB session, current session/account, workspace scope, RBAC, step-up."""
+"""FastAPI dependencies: DB session, current session/account, workspace scope, RBAC, step-up,
+and the app's Settings."""
 
 from __future__ import annotations
 
@@ -8,11 +9,20 @@ from dataclasses import dataclass
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from content_factory.config import Settings, get_settings
 from content_factory.db.models import Account, Role, Session
 from content_factory.db.session import get_sessionmaker
 from content_factory.services import accounts as svc
 
 COOKIE_NAME = "cf_session"
+
+
+def app_settings(request: Request) -> Settings:
+    """The Settings this app was created with (tests inject them); process defaults otherwise."""
+    stored = getattr(request.app.state, "settings", None)
+    return stored if isinstance(stored, Settings) else get_settings()
+
+
 _ROLE_RANK = {Role.viewer: 0, Role.reviewer: 1, Role.editor: 2, Role.owner: 3}
 
 

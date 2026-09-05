@@ -29,7 +29,27 @@ def main(argv: list[str]) -> int:
             text=True,
         ).stdout
         if diff.strip():
-            print("Schema drift detected — regenerate and commit:\n" + diff, file=sys.stderr)
+            # `git status --porcelain` reports two very different problems here, and calling
+            # both "drift" sends the operator to regenerate files that regenerating cannot fix.
+            untracked, changed = [], []
+            for line in diff.splitlines():
+                if not line.strip():
+                    continue
+                (untracked if line.startswith("??") else changed).append(line[3:])
+            if changed:
+                print(
+                    "Schema drift: generated contracts differ from the Pydantic source.\n"
+                    "Run `just schemas` and commit the result.\n  " + "\n  ".join(changed),
+                    file=sys.stderr,
+                )
+            if untracked:
+                print(
+                    "Generated contracts are not tracked, so this repo cannot regenerate its\n"
+                    "contracts from a clean clone (`just schemas` and CI's schema-drift step\n"
+                    "both depend on them). Regenerating will NOT fix this — commit them:\n  "
+                    + "\n  ".join(untracked),
+                    file=sys.stderr,
+                )
             return 1
     print(json.dumps({"schemas": len(list(SCHEMA_OUT.glob("*.json"))), "fixtures": True}))
     return 0

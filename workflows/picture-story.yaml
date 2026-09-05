@@ -1,0 +1,197 @@
+# A story told in drawings, cut into a film.
+#
+# This is the lane that was called handdrawn-love-story on the canvas and handdrawn-two-hander in
+# the runner. It is named for what it does to the material rather than for the first story it told:
+# nothing here is specific to a romance, and the same lane makes a fable, a memory, or a product
+# story depending only on the script.
+#
+# The stills variant is not a second workflow. Set generate_video.motion to "hold" and each drawing
+# sits on screen for its shot; leave it at "ltx" and LTX moves between the anchors. That was two
+# near-identical definitions before, which is exactly the duplication that makes a catalogue rot.
+schema_version: 1
+id: picture-story
+name: Picture story
+description: >
+  A written or drafted script becomes staged 3D shots, then drawings, then a film. Blender holds the
+  cinematography and the bodies so the same characters appear shot after shot; the image model draws
+  the look; LTX moves between the drawings or holds them. Your own recording carries the voice.
+category: video
+tags: [pictures, story, 3d, consistency, voice, review]
+prerequisite: >
+  A script (fixtures/story/<name>.json) and, for voice_over, recordings under takes/. Without
+  recordings, swap voice_over for synthesize_narration.
+models:
+  - kind: skill
+    label: Blender scene controller
+    skill: skills/video/blender_scene
+  - kind: path
+    label: Baked mocap clip library (two-person CMU contact)
+    path_includes: blender-assets
+    filename: manifest.json
+    optional: true
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+  - kind: comfy
+    label: LTX-2.5 transformer
+    folder: diffusion_models
+    filename: ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 text encoder
+    folder: text_encoders
+    filename: gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 video VAE
+    folder: vae
+    filename: ltx-2.5-video-vae-conv-bf16.safetensors
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "two people, one small moment", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    note: The script. plan_story freezes the written story rather than drafting one.
+  - key: reference
+    type: find_reference
+    values: {affection: affection, usage: pose_derivable, require_pose: true}
+    note: >
+      Asks the reference library, in the beat's own words, for the real interaction to stage from.
+      affection: affection is the setting that keeps a shove out of a tender scene; half the
+      labelled material on disk is aggression. With no library on disk this selects nothing and the
+      lane still runs.
+  - key: shots
+    type: plan_shots
+    values: {planner: reference, size: 1024x576, fps: 24}
+    note: >
+      One 3D shot per beat, each staged from the mocap clip retrieval chose, so the contact on
+      screen is contact that was captured rather than contact that was guessed. A beat with no
+      match falls back to the preset staging. Pass --shots to override the whole plan with a
+      hand-authored fixture, e.g. fixtures/shots/two_hander_mocap.json.
+  - key: assets_gate
+    type: review_assets
+    note: Nothing is drawn from a character nobody has looked at.
+  - key: controls
+    type: compile_controls
+    values: {compiler: blender, rough_rgb: true, depth: true, normals: true, segmentation: true, skeleton: true}
+    note: Headless Blender writes the control passes the drawing is conditioned on.
+  - key: anchor
+    type: generate_anchor
+    values:
+      model: hidream-o1
+      prompt: "the two of them, staged exactly as the control passes show"
+      style: >
+        hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper
+        texture, consistent character design, no 3D render look, no photographic lighting
+  - key: frames_gate
+    type: review_frames
+    note: Rejecting one drawing costs one drawing, not the film.
+  - key: motion
+    type: generate_video
+    values: {motion: ltx, size: 1024x576, prompt: "camera and characters move exactly as staged in the 3D scene"}
+    note: 'motion: hold turns the same lane into held drawings; ltx animates between them.'
+  - key: smooth
+    type: interpolate
+    values: {engine: rife, factor: 2x}
+    note: >
+      Ignored on a held cut, and deliberately so: with motion set to hold the stage sees the hold
+      marker, skips itself and records skipped="held cut". Interpolating held drawings invents
+      frames nobody drew or reviewed, which destroys the one property that mode exists for. So
+      both values can stay set and switching motion to hold still gives a held film.
+  - key: script
+    type: lock_script
+  - key: voice
+    type: voice_over
+    values: {takes_dir: takes, aligner: even_split}
+  - key: clean_voice
+    type: restore_speech
+    values: {cleanup: clearervoice, band_extension: clearervoice_sr, enhancer: resemble_enhance}
+  - key: timings
+    type: align_words
+  - key: captions
+    type: compile_captions
+    note: >
+      No format value: the stage writes the SRT, the WebVTT and the styled ASS burn-in track every
+      time, because the sidecars cost nothing and compose_video burns from the SRT. It used to
+      carry `format: srt`, which the executor never read.
+  - key: music
+    type: select_music
+    values: {mood: calm}
+  - key: foley
+    type: sound_design
+    values: {backend: mmaudio}
+  - key: mix
+    type: mix_audio
+    values: {target_lufs: -14.0}
+  - key: cut
+    type: compose_video
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: reference, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: shots, to_slot: story}
+  - {from_key: reference, from_slot: reference, to_key: shots, to_slot: reference}
+  - {from_key: shots, from_slot: shots, to_key: assets_gate, to_slot: shots}
+  - {from_key: assets_gate, from_slot: shots, to_key: controls, to_slot: shots}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: controls, from_slot: controls, to_key: anchor, to_slot: controls}
+  - {from_key: anchor, from_slot: anchor, to_key: frames_gate, to_slot: frames}
+  - {from_key: frames_gate, from_slot: frames, to_key: motion, to_slot: first_frame}
+  - {from_key: controls, from_slot: controls, to_key: motion, to_slot: controls}
+  - {from_key: motion, from_slot: video, to_key: smooth, to_slot: frames}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: voice, to_slot: script}
+  - {from_key: voice, from_slot: audio, to_key: clean_voice, to_slot: audio}
+  - {from_key: clean_voice, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: story, from_slot: story, to_key: music, to_slot: story}
+  - {from_key: smooth, from_slot: frames, to_key: foley, to_slot: frames}
+  - {from_key: clean_voice, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: music, from_slot: music, to_key: mix, to_slot: music}
+  - {from_key: foley, from_slot: sfx, to_key: mix, to_slot: sfx}
+  - {from_key: smooth, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: captions, from_slot: captions, to_key: cut, to_slot: captions}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - reference
+  - shots
+  - assets_gate
+  - controls
+  - anchor
+  - frames_gate
+  - motion
+  - smooth
+  - script
+  - voice
+  - clean_voice
+  - timings
+  - captions
+  - music
+  - foley
+  - mix
+  - cut
+  - qc
+  - pack

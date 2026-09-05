@@ -1,6 +1,7 @@
-// Inter is the only font. Faces come from the pinned @fontsource/inter package, materialized into
-// public/fonts by the render scripts and served by Remotion via staticFile(). No remote fonts.
-import { INTER_FACES, INTER_FAMILY } from "@content-factory/content-ui";
+// Pinned local fonts only: Inter (body) and Sora (optional display face). Faces come from the
+// pinned @fontsource packages, materialized into public/fonts by the render scripts and served by
+// Remotion via staticFile(). No remote fonts.
+import { FONT_FACES } from "@content-factory/content-ui";
 import { loadFont } from "@remotion/fonts";
 import { staticFile } from "remotion";
 
@@ -10,9 +11,9 @@ export const interReady: Promise<void> =
   typeof FontFace === "undefined"
     ? Promise.resolve()
     : Promise.all(
-        INTER_FACES.map((face) =>
+        FONT_FACES.map((face) =>
           loadFont({
-            family: INTER_FAMILY,
+            family: face.family,
             url: staticFile(`fonts/${face.file}`),
             weight: String(face.weight),
             style: face.style,
@@ -20,3 +21,4 @@ export const interReady: Promise<void> =
           }),
         ),
       ).then(() => undefined);
+export const fontsReady = interReady;

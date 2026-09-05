@@ -628,3 +628,12 @@
   color: var(--cf-muted);
   font-size: 0.75rem;
 }
+
+/* Settings ▸ Appearance and ▸ Workspace: stacked fields with room to breathe. */
+.cf-settings-group { display: flex; flex-direction: column; gap: var(--cf-space-5); max-width: 32rem; }
+.cf-settings-group__sync { color: var(--cf-warn); font-size: 0.85rem; margin: 0; }
+.cf-linkbtn {
+  align-self: flex-start; border: none; background: transparent; color: var(--cf-muted);
+  font: inherit; font-size: 0.85rem; text-decoration: underline; cursor: pointer; padding: 0;
+}
+.cf-linkbtn:hover { color: var(--cf-fg); }

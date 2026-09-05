@@ -1,0 +1,259 @@
+{
+  "$defs": {
+    "Affection": {
+      "enum": [
+        "affection",
+        "neutral",
+        "aggression",
+        "staging"
+      ],
+      "title": "Affection",
+      "type": "string"
+    },
+    "ContactTag": {
+      "enum": [
+        "none",
+        "hands",
+        "arm",
+        "shoulder",
+        "torso",
+        "back",
+        "head_shoulder",
+        "head_chest",
+        "face",
+        "lap",
+        "object"
+      ],
+      "title": "ContactTag",
+      "type": "string"
+    },
+    "InteractionTag": {
+      "enum": [
+        "handshake",
+        "hug",
+        "kiss",
+        "hold_hands_walk",
+        "hand_on_shoulder",
+        "hands_on_shoulders",
+        "comfort_kneeling",
+        "shoulder_rub",
+        "shelter_child",
+        "link_arms_walk",
+        "lead_by_arm",
+        "help_up",
+        "meet_and_sit",
+        "walk_together",
+        "conversation",
+        "swing_partner",
+        "dance_novelty",
+        "ring_around",
+        "high_five",
+        "low_five",
+        "pass_object",
+        "exchange_object",
+        "throw_catch",
+        "exercise_together",
+        "march",
+        "blindfold_tag",
+        "race_for_seat",
+        "stumble_into",
+        "approach",
+        "depart",
+        "no_contact",
+        "pull_resist",
+        "pull_by_elbow",
+        "arm_wrestle",
+        "quarrel",
+        "stare_down",
+        "threaten",
+        "kick",
+        "punch",
+        "push",
+        "point",
+        "head_on_shoulder",
+        "cuddle",
+        "slow_dance",
+        "carry_child",
+        "stroke_hair",
+        "hold_face"
+      ],
+      "title": "InteractionTag",
+      "type": "string"
+    },
+    "Posture": {
+      "enum": [
+        "standing",
+        "sitting",
+        "kneeling",
+        "walking",
+        "running",
+        "crouching",
+        "lying",
+        "dancing",
+        "leaning"
+      ],
+      "title": "Posture",
+      "type": "string"
+    },
+    "ReferenceSource": {
+      "enum": [
+        "cmu_mocap",
+        "harmony4d",
+        "sbu_kinect",
+        "ut_interaction",
+        "tv_human_interactions",
+        "motionhub_egobody",
+        "motionhub_grab",
+        "motionhub_humanml3d",
+        "pexels",
+        "operator_recording"
+      ],
+      "title": "ReferenceSource",
+      "type": "string"
+    },
+    "UsageClass": {
+      "description": "What the material is good for, measured rather than assumed.",
+      "enum": [
+        "reference_only",
+        "pose_derivable",
+        "pixels_usable"
+      ],
+      "title": "UsageClass",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ReferenceQuery.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A question in words plus the constraints that are not words.",
+  "properties": {
+    "limit": {
+      "default": 10,
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "max_duration_s": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Duration S"
+    },
+    "min_duration_s": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Min Duration S"
+    },
+    "people_count": {
+      "anyOf": [
+        {
+          "maximum": 8,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "People Count"
+    },
+    "require_affection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Affection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "require_contact": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ContactTag"
+      },
+      "title": "Require Contact",
+      "type": "array"
+    },
+    "require_interaction": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/InteractionTag"
+      },
+      "title": "Require Interaction",
+      "type": "array"
+    },
+    "require_pose": {
+      "default": false,
+      "title": "Require Pose",
+      "type": "boolean"
+    },
+    "require_posture": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Posture"
+      },
+      "title": "Require Posture",
+      "type": "array"
+    },
+    "require_usage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/UsageClass"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "sources": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReferenceSource"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "text": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "limit",
+    "max_duration_s",
+    "min_duration_s",
+    "people_count",
+    "require_affection",
+    "require_contact",
+    "require_interaction",
+    "require_pose",
+    "require_posture",
+    "require_usage",
+    "sources",
+    "text"
+  ],
+  "title": "ReferenceQuery",
+  "type": "object"
+}

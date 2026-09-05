@@ -1,0 +1,3340 @@
+{
+ "deliverable_id": "dlv_runner_film",
+ "plan_id": "shp_runner_mocap",
+ "planner": "fixture",
+ "planner_version": "0.1.0",
+ "schema_version": 1,
+ "shots": [
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.1554,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0,
+       0.0,
+       0.9118
+      ],
+      "position": [
+       4.1452,
+       0.0,
+       1.2016
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 0,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 0, camera at 0 deg azimuth / 4 deg elevation on a 40 mm lens, framed at 0.82 body height [corrected from a measured 0.80 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 35.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 0,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4000,
+   "shot_id": "sht_run_0000",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.9023,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       0.0032,
+       -0.1215,
+       0.9394
+      ],
+      "position": [
+       4.6559,
+       0.8674,
+       2.1255
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 1,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 1, camera at 12 deg azimuth / 14 deg elevation on a 50 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 47.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 1,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4001,
+   "shot_id": "sht_run_0001",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.8674,
+      "frame_index": 0,
+      "lens_mm": 58.0,
+      "look_at": [
+       0.0094,
+       -0.2558,
+       0.9644
+      ],
+      "position": [
+       4.827,
+       1.8892,
+       3.5365
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 2,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 2, camera at 24 deg azimuth / 26 deg elevation on a 58 mm lens, framed at 0.82 body height [corrected from a measured 0.79 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 59.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 2,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4002,
+   "shot_id": "sht_run_0002",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.8019,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0149,
+       -0.3965,
+       0.9258
+      ],
+      "position": [
+       3.8618,
+       2.3985,
+       1.5941
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 3,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 3, camera at 36 deg azimuth / 8 deg elevation on a 45 mm lens, framed at 0.86 body height [corrected from a measured 0.84 at centre 0.499]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 71.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 3,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4003,
+   "shot_id": "sht_run_0003",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.771,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0192,
+       -0.5337,
+       0.9424
+      ],
+      "position": [
+       3.0622,
+       2.8459,
+       4.4953
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 4,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 4, camera at 48 deg azimuth / 38 deg elevation on a 55 mm lens, framed at 0.82 body height [corrected from a measured 0.84 at centre 0.484]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 83.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 4,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4004,
+   "shot_id": "sht_run_0004",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.3467,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0209,
+       -0.6662,
+       0.9372
+      ],
+      "position": [
+       2.0879,
+       2.9139,
+       2.2804
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 5,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 5, camera at 60 deg azimuth / 18 deg elevation on a 40 mm lens, framed at 0.86 body height [corrected from a measured 0.85 at centre 0.493]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 95.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 5,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4005,
+   "shot_id": "sht_run_0005",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.3695,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       0.0201,
+       -0.7946,
+       0.9392
+      ],
+      "position": [
+       1.6754,
+       4.2996,
+       1.3137
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 6,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 6, camera at 72 deg azimuth / 4 deg elevation on a 50 mm lens, framed at 0.82 body height [corrected from a measured 0.80 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 107.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 6,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4006,
+   "shot_id": "sht_run_0006",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.9064,
+      "frame_index": 0,
+      "lens_mm": 58.0,
+      "look_at": [
+       0.0185,
+       -0.9211,
+       0.9345
+      ],
+      "position": [
+       0.6175,
+       4.7786,
+       2.3634
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 7,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 7, camera at 84 deg azimuth / 14 deg elevation on a 58 mm lens, framed at 0.86 body height [corrected from a measured 0.84 at centre 0.499]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 119.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 7,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4007,
+   "shot_id": "sht_run_0007",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.5989,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0186,
+       -1.0368,
+       0.9545
+      ],
+      "position": [
+       -0.4136,
+       3.0741,
+       2.9706
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 8,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 8, camera at 96 deg azimuth / 26 deg elevation on a 45 mm lens, framed at 0.82 body height [corrected from a measured 0.81 at centre 0.492]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 131.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 8,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4008,
+   "shot_id": "sht_run_0008",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.562,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0199,
+       -1.1517,
+       0.8912
+      ],
+      "position": [
+       -1.6822,
+       4.0867,
+       1.6653
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 9,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 9, camera at 108 deg azimuth / 8 deg elevation on a 55 mm lens, framed at 0.86 body height [corrected from a measured 0.84 at centre 0.499]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 143.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 9,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4009,
+   "shot_id": "sht_run_0009",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.9831,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0221,
+       -1.2768,
+       0.9779
+      ],
+      "position": [
+       -1.5474,
+       1.4415,
+       3.4302
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 10,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 10, camera at 120 deg azimuth / 38 deg elevation on a 40 mm lens, framed at 0.82 body height [corrected from a measured 0.86 at centre 0.468]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 155.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 10,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4010,
+   "shot_id": "sht_run_0010",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.096,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       0.024,
+       -1.4124,
+       0.9486
+      ],
+      "position": [
+       -3.2189,
+       2.1892,
+       2.5233
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 11,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 11, camera at 132 deg azimuth / 18 deg elevation on a 50 mm lens, framed at 0.86 body height [corrected from a measured 0.84 at centre 0.497]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 167.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 11,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4011,
+   "shot_id": "sht_run_0011",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.4273,
+      "frame_index": 0,
+      "lens_mm": 58.0,
+      "look_at": [
+       0.0271,
+       -1.5549,
+       0.9259
+      ],
+      "position": [
+       -5.1601,
+       2.2139,
+       1.3742
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 12,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 12, camera at 144 deg azimuth / 4 deg elevation on a 58 mm lens, framed at 0.82 body height [corrected from a measured 0.80 at centre 0.499]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 179.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 12,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4012,
+   "shot_id": "sht_run_0012",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.7398,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0304,
+       -1.697,
+       0.9651
+      ],
+      "position": [
+       -4.171,
+       0.1736,
+       2.1118
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 13,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 13, camera at 156 deg azimuth / 14 deg elevation on a 45 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 191.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 13,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4013,
+   "shot_id": "sht_run_0013",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.4814,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0307,
+       -1.8306,
+       1.0073
+      ],
+      "position": [
+       -4.7882,
+       -0.8063,
+       3.4102
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 14,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 14, camera at 168 deg azimuth / 26 deg elevation on a 55 mm lens, framed at 0.82 body height [corrected from a measured 0.79 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 203.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 14,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4014,
+   "shot_id": "sht_run_0014",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.052,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0319,
+       -1.9621,
+       0.9746
+      ],
+      "position": [
+       -3.9807,
+       -1.962,
+       1.5385
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 15,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 15, camera at 180 deg azimuth / 8 deg elevation on a 40 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 215.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 15,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4015,
+   "shot_id": "sht_run_0015",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.2566,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       0.0308,
+       -2.091,
+       0.9943
+      ],
+      "position": [
+       -3.2502,
+       -2.7884,
+       3.615
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 16,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 16, camera at 192 deg azimuth / 38 deg elevation on a 50 mm lens, framed at 0.82 body height [corrected from a measured 0.78 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 227.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 16,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4016,
+   "shot_id": "sht_run_0016",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.5503,
+      "frame_index": 0,
+      "lens_mm": 58.0,
+      "look_at": [
+       0.0294,
+       -2.2127,
+       0.9297
+      ],
+      "position": [
+       -4.7928,
+       -4.3597,
+       2.6449
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 17,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 17, camera at 204 deg azimuth / 18 deg elevation on a 58 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 239.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 17,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4017,
+   "shot_id": "sht_run_0017",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.7152,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0255,
+       -2.3296,
+       0.9204
+      ],
+      "position": [
+       -3.78,
+       -5.0943,
+       1.2494
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 18,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 18, camera at 216 deg azimuth / 4 deg elevation on a 45 mm lens, framed at 0.82 body height [corrected from a measured 0.80 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 251.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 18,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4018,
+   "shot_id": "sht_run_0018",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.2225,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0264,
+       -2.4576,
+       0.9516
+      ],
+      "position": [
+       -3.3643,
+       -6.2234,
+       2.215
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 19,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 19, camera at 228 deg azimuth / 14 deg elevation on a 55 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.502]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 263.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 19,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4019,
+   "shot_id": "sht_run_0019",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.7714,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0304,
+       -2.5911,
+       0.9867
+      ],
+      "position": [
+       -1.6645,
+       -5.5267,
+       2.64
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 20,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 20, camera at 240 deg azimuth / 26 deg elevation on a 40 mm lens, framed at 0.82 body height [corrected from a measured 0.78 at centre 0.505]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 275.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 20,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4020,
+   "shot_id": "sht_run_0020",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.2037,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       0.0353,
+       -2.736,
+       0.9636
+      ],
+      "position": [
+       -1.5571,
+       -7.6368,
+       1.6878
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 21,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 21, camera at 252 deg azimuth / 8 deg elevation on a 50 mm lens, framed at 0.86 body height [corrected from a measured 0.84 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 287.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 21,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4021,
+   "shot_id": "sht_run_0021",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.791,
+      "frame_index": 0,
+      "lens_mm": 58.0,
+      "look_at": [
+       0.039,
+       -2.8799,
+       0.8757
+      ],
+      "position": [
+       -0.438,
+       -7.4182,
+       4.441
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 22,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 22, camera at 264 deg azimuth / 38 deg elevation on a 58 mm lens, framed at 0.82 body height [corrected from a measured 0.79 at centre 0.507]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 299.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 22,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4022,
+   "shot_id": "sht_run_0022",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.8884,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0429,
+       -3.0162,
+       0.9251
+      ],
+      "position": [
+       0.5289,
+       -7.6398,
+       2.4357
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 23,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 23, camera at 276 deg azimuth / 18 deg elevation on a 45 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 311.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 23,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4023,
+   "shot_id": "sht_run_0023",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 6.1869,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0448,
+       -3.149,
+       0.9361
+      ],
+      "position": [
+       1.952,
+       -9.0187,
+       1.3677
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 24,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 24, camera at 288 deg azimuth / 4 deg elevation on a 55 mm lens, framed at 0.82 body height [corrected from a measured 0.80 at centre 0.499]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 323.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 24,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4024,
+   "shot_id": "sht_run_0024",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.2322,
+      "frame_index": 0,
+      "lens_mm": 40.0,
+      "look_at": [
+       0.0426,
+       -3.2778,
+       0.9156
+      ],
+      "position": [
+       2.0958,
+       -6.8341,
+       1.9395
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 25,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 25, camera at 300 deg azimuth / 14 deg elevation on a 40 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 335.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 25,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4025,
+   "shot_id": "sht_run_0025",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 4.916,
+      "frame_index": 0,
+      "lens_mm": 50.0,
+      "look_at": [
+       0.0418,
+       -3.4015,
+       0.9164
+      ],
+      "position": [
+       2.9983,
+       -6.685,
+       3.0714
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 26,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 26, camera at 312 deg azimuth / 26 deg elevation on a 50 mm lens, framed at 0.82 body height [corrected from a measured 0.79 at centre 0.503]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 347.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 26,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4026,
+   "shot_id": "sht_run_0026",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.7814,
+      "frame_index": 0,
+      "lens_mm": 58.0,
+      "look_at": [
+       0.0406,
+       -3.5173,
+       0.9081
+      ],
+      "position": [
+       4.6724,
+       -6.8824,
+       1.7127
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 27,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 27, camera at 324 deg azimuth / 8 deg elevation on a 58 mm lens, framed at 0.86 body height [corrected from a measured 0.84 at centre 0.500]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 359.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 27,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4027,
+   "shot_id": "sht_run_0027",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 3.5965,
+      "frame_index": 0,
+      "lens_mm": 45.0,
+      "look_at": [
+       0.0409,
+       -3.6375,
+       0.9976
+      ],
+      "position": [
+       2.6299,
+       -4.7902,
+       3.2118
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 28,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 28, camera at 336 deg azimuth / 38 deg elevation on a 45 mm lens, framed at 0.82 body height [corrected from a measured 0.77 at centre 0.502]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 11.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 28,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4028,
+   "shot_id": "sht_run_0028",
+   "width": 1024
+  },
+  {
+   "anchor_frames": [
+    0
+   ],
+   "beat_id": "bea_run_take00",
+   "camera": {
+    "clip_end": 100.0,
+    "clip_start": 0.05,
+    "keyframes": [
+     {
+      "easing_to_next": "ease_in_out",
+      "focus_distance": 5.2075,
+      "frame_index": 0,
+      "lens_mm": 55.0,
+      "look_at": [
+       0.0421,
+       -3.7685,
+       0.9678
+      ],
+      "position": [
+       4.8865,
+       -4.7983,
+       2.577
+      ],
+      "rotation_euler_deg": null
+     }
+    ],
+    "preset": "static",
+    "sensor_width_mm": 36.0
+   },
+   "characters": [
+    {
+     "asset": "man_01",
+     "id": "runner",
+     "pose": {
+      "actor": "a",
+      "kind": "segments",
+      "loop": false,
+      "name": "cmu_35_18",
+      "offset_frames": 29,
+      "speed": 1.0
+     },
+     "reference_image_sha256": [],
+     "seg_id": 1,
+     "transform": {
+      "position": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "scale": 1.0,
+      "yaw_deg": 0.0
+     }
+    }
+   ],
+   "description": "a runner mid-stride, cmu_35_18 frame 29, camera at 348 deg azimuth / 18 deg elevation on a 55 mm lens, framed at 0.86 body height [corrected from a measured 0.83 at centre 0.501]",
+   "environment": {
+    "background_color": [
+     0.07,
+     0.08,
+     0.11
+    ],
+    "ground": {
+     "color": [
+      0.09,
+      0.1,
+      0.12
+     ],
+     "enabled": true,
+     "seg": false,
+     "size": 60.0
+    },
+    "walls": null
+   },
+   "fps": 24,
+   "frame_count": 24,
+   "height": 576,
+   "lighting": {
+    "intensity": 1.0,
+    "key_azimuth_deg": 23.0,
+    "key_elevation_deg": 42.0,
+    "preset": "studio",
+    "shadows": true
+   },
+   "motion_prompt": "the runner keeps running at the same pace",
+   "order": 29,
+   "props": [],
+   "render": {
+    "canny": {
+     "high": 200,
+     "low": 100
+    },
+    "depth_range": "auto",
+    "engine": "workbench",
+    "frames": [
+     0
+    ],
+    "passes": [
+     "rough_rgb",
+     "depth",
+     "normals",
+     "segmentation",
+     "pose_skeleton",
+     "layout_boxes"
+    ]
+   },
+   "schema_version": 1,
+   "seed": 4029,
+   "shot_id": "sht_run_0029",
+   "width": 1024
+  }
+ ],
+ "story_plan_hash": null
+}

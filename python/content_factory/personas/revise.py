@@ -7,7 +7,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from content_factory.schemas.base import canonical_dumps, sha256_hex
 from content_factory.schemas.personas import (
     Persona,
     PersonaFieldChange,
@@ -196,7 +195,3 @@ def consistency_check(diff: PersonaRevisionDiff, items: list[QueuedItem]) -> lis
                 )
             )  # type: ignore[arg-type]
     return proposals
-
-
-def persona_hash(persona: Persona) -> str:
-    return sha256_hex(canonical_dumps(persona.model_dump(mode="json")).encode())

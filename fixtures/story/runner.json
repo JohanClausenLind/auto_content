@@ -1,0 +1,40 @@
+{
+ "beats": [
+  {
+   "beat_id": "bea_run_take00",
+   "claim_ids": [],
+   "display_text": "I ran because standing still was worse.",
+   "measured_end_ms": null,
+   "measured_start_ms": null,
+   "order": 0,
+   "planned_duration_ms": 6000,
+   "spoken_text": null,
+   "words": []
+  }
+ ],
+ "deliverable_id": "dlv_runner_film",
+ "fps": 24,
+ "handle_ms": 250,
+ "height": 576,
+ "hook_text": null,
+ "min_scene_ms": 1200,
+ "plan_id": "plan_runner_v1",
+ "scenes": [
+  {
+   "alt_text": "A runner crossing a wet plaza at dusk, seen from a moving camera.",
+   "asset_id": "ast_run_still00",
+   "beat_id": "bea_run_take00",
+   "caption": {
+    "claim_ids": [],
+    "text": "I ran because standing still was worse."
+   },
+   "emphasis": [],
+   "kind": "image",
+   "motion": "none",
+   "scene_id": "scn_run_scene00",
+   "variant": "default"
+  }
+ ],
+ "schema_version": 1,
+ "width": 1024
+}

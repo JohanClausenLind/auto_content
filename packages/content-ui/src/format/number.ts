@@ -113,3 +113,29 @@ export function resolveNumber(ref: DataRef, datasets: Readonly<Record<string, Da
   const n = typeof v === "number" ? v : Number(String(v).replace(/[,\s]/g, ""));
   return Number.isFinite(n) ? n : null;
 }
+
+export type DataClassification = DatasetTable["classification"];
+
+/**
+ * The classification of the dataset a DataRef points at, or `undefined` when the table is absent.
+ *
+ * The reason this exists is the pair `ESTIMATE` and `ILLUSTRATIVE`. A table marked either of those
+ * is not a measurement — an illustrative table is a *shape*, drawn to explain a mechanism, and a
+ * figure lifted out of one and set in 200-point type is indistinguishable on screen from a figure
+ * that came off a source. `DatasetTable.classification` has carried that distinction since the
+ * contract was written and no renderer read it, so the caveat existed only in the JSON.
+ */
+export function refClassification(
+  ref: DataRef | null | undefined,
+  datasets: Readonly<Record<string, DatasetTable>>,
+): DataClassification | undefined {
+  if (!ref) return undefined;
+  return datasets[ref.dataset_id]?.classification;
+}
+
+/** The words shown on screen for a classification that needs a caveat; `null` for measured data. */
+export function classificationNotice(c: DataClassification | undefined): string | null {
+  if (c === "ILLUSTRATIVE") return "illustrative — not measured";
+  if (c === "ESTIMATE") return "estimate";
+  return null;
+}

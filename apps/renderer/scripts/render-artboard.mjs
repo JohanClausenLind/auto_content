@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Render an artboard RenderBundle to a PNG still.
-// usage: node scripts/render-artboard.mjs --bundle <path.json> --out <path.png> [--concurrency N]
+// usage: node scripts/render-artboard.mjs --bundle <path.json> --out <path.png> [--concurrency N] [--scale N]
 // Prints one JSON line {"out","width","height","sha256"}; on error {"error"} to stderr, exit 1.
 import { ensureBrowser, renderStill, selectComposition } from "@remotion/renderer";
 import path from "node:path";
@@ -22,9 +22,11 @@ try {
   const composition = await selectComposition({ serveUrl, id: "Artboard", inputProps, logLevel: "error" });
   // A still is a single frame: --concurrency is accepted for symmetry but has nothing to parallelize.
   await writeAtomically(out, (tmp) =>
-    renderStill({ composition, serveUrl, output: tmp, inputProps, imageFormat: "png", scale: 1, logLevel: "error" }),
+    renderStill({ composition, serveUrl, output: tmp, inputProps, imageFormat: "png", scale: args.scale, logLevel: "error" }),
   );
-  emit({ out, width: composition.width, height: composition.height, sha256: sha256File(out) });
+  // The reported size is what came out, not what the composition declares: --scale 2 writes a PNG
+  // twice as large in each dimension, and the still QC is checked against these numbers.
+  emit({ out, width: composition.width * args.scale, height: composition.height * args.scale, sha256: sha256File(out) });
 } catch (err) {
   fail(err);
 }

@@ -70,7 +70,7 @@ function RunDetailInner({ runId }: { runId: string }) {
 
       <section className="cf-rundag" aria-label="Pipeline">
         <div className="cf-rundag__main">
-          <RunCanvas nodes={detail.nodes} onSelect={onSelectNode} selectedNodeId={selectedId} aria-label="Pipeline graph" />
+          <RunCanvas nodes={detail.nodes} edges={detail.edges ?? null} onSelect={onSelectNode} selectedNodeId={selectedId} aria-label="Pipeline graph" />
           <h2 className="cf-rundag__heading">Steps</h2>
           <RunNodeList nodes={detail.nodes} onSelect={onSelectNode} selectedNodeId={selectedId} />
         </div>

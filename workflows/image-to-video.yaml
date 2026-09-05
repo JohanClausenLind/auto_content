@@ -1,0 +1,111 @@
+# One image becomes a moving shot.
+#
+# This replaces image-to-video-ltx. The id carries no model name on purpose: the lane is the idea,
+# a still turned into motion, and LTX-2.5 is only the engine that does it today. Swapping the video
+# model should not rename the workflow, and an id that names the weight makes every operator who
+# learned the old name relearn it the day the weight changes.
+#
+# It is the short lane on purpose. There is no shot plan, no script and no audio branch, because a
+# single shot needs none of them: one anchor, one clip, smoothed, checked, packed. Reach for
+# picture-story when the material is a story told across several shots.
+schema_version: 1
+id: image-to-video
+name: Image to video
+description: >
+  A single still becomes a short moving shot. The anchor fixes the opening frame, LTX-2.5 invents
+  the motion out of it, frame interpolation smooths the result, and QC and packaging turn the clip
+  into something deliverable. No script, no voice, no cut between shots.
+category: video
+tags: [video, motion, single-shot, ltx]
+prerequisite: >
+  A subject written into the brief topic. With no shot plan in the run, the runner takes both the
+  anchor prompt and the motion prompt from that topic, so it is the one field that has to be right.
+  A starting image of your own cannot be wired in yet; see the caveat.
+caveat: >
+  Every stage here has an executor, but two inputs are unwired on purpose. generate_anchor gets no
+  STORY because this lane has no script, so it draws the first frame from the brief topic and its
+  own prompt instead. And no node type ingests a supplied still, so starting from an image you
+  already have is not expressible in the graph today.
+models:
+  - kind: comfy
+    label: LTX-2.5 transformer
+    folder: diffusion_models
+    filename: ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 text encoder
+    folder: text_encoders
+    filename: gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf
+  - kind: comfy
+    label: LTX-2.5 video VAE
+    folder: vae
+    filename: ltx-2.5-video-vae-conv-bf16.safetensors
+  # The interpolate node runs its engine through the postchain skill, so the lane needs both the
+  # GIMM-VFI checkpoint and the env that can call it.
+  - kind: path
+    label: GIMM-VFI interpolation weights
+    path_includes: gimm-vfi
+    filename: gimmvfi_r_arb.pt
+  - kind: skill
+    label: Post chain skill env
+    skill: skills/video/postchain
+  # Optional because the anchor backend defaults to the deterministic mock: only a run that wants
+  # a real drawn first frame needs HiDream.
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+    optional: true
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+    optional: true
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "one image brought into motion by a slow camera push", audience: general, quality: demo}
+    note: Unwired because generate_anchor reads a STORY, not a BRIEF. The runner still takes the topic from here.
+  - key: anchor
+    type: generate_anchor
+    values: {prompt: "the opening frame of the shot, as it should look before anything moves"}
+    note: >
+      The first frame the whole clip grows out of. No style is frozen here: the look belongs to the
+      shot the operator asked for, not to the lane.
+  - key: motion
+    type: generate_video
+    values: {prompt: "hold the framing of the first frame and let the motion develop out of it"}
+    note: >
+      With no shot plan the runner prompts from the brief topic and sizes the clip from the anchor,
+      so keep this prompt saying the same thing as the topic rather than fighting it.
+  - key: smooth
+    type: interpolate
+    values: {engine: gimm_vfi}
+    note: >
+      The quality tier, not the fast one. One short clip is cheap enough to interpolate well, and a
+      camera push is where the fast tier's warping shows.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: anchor, from_slot: anchor, to_key: motion, to_slot: first_frame}
+  - {from_key: motion, from_slot: video, to_key: smooth, to_slot: frames}
+  - {from_key: smooth, from_slot: frames, to_key: qc, to_slot: deliverable}
+  - {from_key: smooth, from_slot: frames, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - anchor
+  - motion
+  - smooth
+  - qc
+  - pack

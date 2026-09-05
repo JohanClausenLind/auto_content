@@ -1,0 +1,202 @@
+{
+  "$defs": {
+    "WorkspaceLink": {
+      "additionalProperties": false,
+      "properties": {
+        "from_node": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "From Node",
+          "type": "string"
+        },
+        "from_slot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "From Slot",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "to_node": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "To Node",
+          "type": "string"
+        },
+        "to_slot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "To Slot",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_node",
+        "from_slot",
+        "id",
+        "to_node",
+        "to_slot"
+      ],
+      "title": "WorkspaceLink",
+      "type": "object"
+    },
+    "WorkspaceNode": {
+      "additionalProperties": false,
+      "properties": {
+        "collapsed": {
+          "default": false,
+          "title": "Collapsed",
+          "type": "boolean"
+        },
+        "id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "mode": {
+          "default": "always",
+          "enum": [
+            "always",
+            "muted",
+            "bypass"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 5000,
+          "title": "Note",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "type": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        },
+        "values": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Values",
+          "type": "object"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "collapsed",
+        "id",
+        "mode",
+        "note",
+        "title",
+        "type",
+        "values",
+        "width",
+        "x",
+        "y"
+      ],
+      "title": "WorkspaceNode",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/WorkspaceGraph.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "graph_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Graph Id",
+      "type": "string"
+    },
+    "links": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WorkspaceLink"
+      },
+      "title": "Links",
+      "type": "array"
+    },
+    "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "nodes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WorkspaceNode"
+      },
+      "title": "Nodes",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "graph_id",
+    "links",
+    "name",
+    "nodes",
+    "schema_version"
+  ],
+  "title": "WorkspaceGraph",
+  "type": "object"
+}

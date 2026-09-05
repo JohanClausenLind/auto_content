@@ -1,0 +1,274 @@
+{
+ "schema_version": 1,
+ "plan_id": "plan_wind2024v2",
+ "deliverable_id": "dlv_short0000001",
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "beats": [
+  {
+   "beat_id": "beat_wind2024_01",
+   "order": 0,
+   "display_text": "In late 2024, Swedish wind out-produced nuclear for a whole quarter.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 4600
+  },
+  {
+   "beat_id": "beat_wind2024_02",
+   "order": 1,
+   "display_text": "A record: 40.8 terawatt-hours of wind power in one year.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 3600
+  },
+  {
+   "beat_id": "beat_wind2024_03",
+   "order": 2,
+   "display_text": "Its grid share doubled in six years: 10 percent to 21.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 4200
+  },
+  {
+   "beat_id": "beat_wind2024_04",
+   "order": 3,
+   "display_text": "Then the orders collapsed, from twelve hundred megawatts to under four fifty.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 4600
+  },
+  {
+   "beat_id": "beat_wind2024_05",
+   "order": 4,
+   "display_text": "Higher costs, slow grid connections and political uncertainty froze new investment.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 5200
+  },
+  {
+   "beat_id": "beat_wind2024_06",
+   "order": 5,
+   "display_text": "Sweden used to add two gigawatts a year. Now it expects two by 2027, in total.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 5000
+  },
+  {
+   "beat_id": "beat_wind2024_07",
+   "order": 6,
+   "display_text": "The record is real. The pipeline behind it is shrinking.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 4000
+  },
+  {
+   "beat_id": "beat_wind2024_08",
+   "order": 7,
+   "display_text": "Follow for the next number.",
+   "spoken_text": null,
+   "claim_ids": [],
+   "measured_start_ms": null,
+   "measured_end_ms": null,
+   "words": [],
+   "planned_duration_ms": 2400
+  }
+ ],
+ "scenes": [
+  {
+   "scene_id": "scn_wind2024_01",
+   "beat_id": "beat_wind2024_01",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "image",
+   "asset_id": "ast_wind_hook00001",
+   "alt_text": "Aerial dawn view of a snow-covered Swedish wind farm, turbines turning, low winter sun.",
+   "caption": null,
+   "motion": "slow_push"
+  },
+  {
+   "scene_id": "scn_wind2024_02",
+   "beat_id": "beat_wind2024_02",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "big_number",
+   "value": {
+    "dataset_id": "ds_wind2024_key01",
+    "claim_id": null,
+    "column": "value",
+    "row_key": "generation_2024_twh"
+   },
+   "unit": " TWh",
+   "label": {
+    "text": "record wind output, 2024",
+    "claim_ids": []
+   },
+   "context": {
+    "text": "More than nuclear over the whole fourth quarter",
+    "claim_ids": []
+   }
+  },
+  {
+   "scene_id": "scn_wind2024_03",
+   "beat_id": "beat_wind2024_03",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "chart",
+   "chart": "bar",
+   "data": {
+    "dataset_id": "ds_wind2024_share1",
+    "claim_id": null,
+    "column": null,
+    "row_key": null
+   },
+   "x": "year",
+   "y": [
+    "share_pct"
+   ],
+   "title": {
+    "text": "Wind share of Swedish electricity, %",
+    "claim_ids": []
+   },
+   "caption": {
+    "text": "2018 to 2023",
+    "claim_ids": []
+   },
+   "zero_baseline": true,
+   "dual_axis": false,
+   "truncation_disclosure": null,
+   "encoding": {}
+  },
+  {
+   "scene_id": "scn_wind2024_04",
+   "beat_id": "beat_wind2024_04",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "big_number",
+   "value": {
+    "dataset_id": "ds_wind2024_key01",
+    "claim_id": null,
+    "column": "value",
+    "row_key": "orders_2024_mw"
+   },
+   "unit": " MW",
+   "label": {
+    "text": "of turbines ordered in 2024",
+    "claim_ids": []
+   },
+   "context": {
+    "text": "Down from 1,244 MW ordered in 2023",
+    "claim_ids": []
+   }
+  },
+  {
+   "scene_id": "scn_wind2024_05",
+   "beat_id": "beat_wind2024_05",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "bullet_sequence",
+   "title": {
+    "text": "Why the orders stopped",
+    "claim_ids": []
+   },
+   "bullets": [
+    {
+     "text": "Rising costs",
+     "claim_ids": []
+    },
+    {
+     "text": "Grid-connection delays",
+     "claim_ids": []
+    },
+    {
+     "text": "Political uncertainty",
+     "claim_ids": []
+    }
+   ]
+  },
+  {
+   "scene_id": "scn_wind2024_06",
+   "beat_id": "beat_wind2024_06",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "timeline",
+   "events": [
+    {
+     "date_label": "2020\u201322",
+     "text": {
+      "text": "about 2 GW added every year",
+      "claim_ids": []
+     }
+    },
+    {
+     "date_label": "2024",
+     "text": {
+      "text": "446 MW ordered",
+      "claim_ids": []
+     }
+    },
+    {
+     "date_label": "by 2027",
+     "text": {
+      "text": "about 2 GW more, in total",
+      "claim_ids": []
+     }
+    }
+   ],
+   "title": {
+    "text": "The build-out slows",
+    "claim_ids": []
+   }
+  },
+  {
+   "scene_id": "scn_wind2024_07",
+   "beat_id": "beat_wind2024_07",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "image",
+   "asset_id": "ast_wind_outro0001",
+   "alt_text": "Close-up of a white turbine blade sweeping past against a golden sunset sky.",
+   "caption": null,
+   "motion": "slow_pull"
+  },
+  {
+   "scene_id": "scn_wind2024_08",
+   "beat_id": "beat_wind2024_08",
+   "variant": "default",
+   "emphasis": [],
+   "kind": "outro",
+   "text": {
+    "text": "Sources: Svensk Vindenergi Q4 2024 statistics \u00b7 Renewables Now \u00b7 Wikipedia (Energimyndigheten data)",
+    "claim_ids": []
+   },
+   "cta": {
+    "text": "Follow for the next number",
+    "claim_ids": []
+   }
+  }
+ ],
+ "handle_ms": 150,
+ "min_scene_ms": 1200,
+ "hook_text": "Wind beat nuclear. Then Sweden stopped building.",
+ "visual_subject": "a snow-covered Swedish wind farm in a pine-forest clearing, low winter sun"
+}

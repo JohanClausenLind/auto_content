@@ -61,7 +61,10 @@ export async function layoutGraph(graph: RunGraph): Promise<LaidOutGraph> {
   return { nodes, edges: graph.edges, width: result.width ?? 0, height: result.height ?? 0 };
 }
 
-/** Convenience: build the implicit DAG from the API node list and lay it out. */
-export async function layoutRunNodes(nodes: readonly RunNode[]): Promise<LaidOutGraph> {
-  return layoutGraph(buildGraph(nodes));
+/** Convenience: build the DAG from the API node list (+ real edges when given) and lay it out. */
+export async function layoutRunNodes(
+  nodes: readonly RunNode[],
+  edges?: readonly import("./graph").ProvidedEdge[] | null,
+): Promise<LaidOutGraph> {
+  return layoutGraph(buildGraph(nodes, edges));
 }

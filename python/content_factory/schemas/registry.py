@@ -10,20 +10,32 @@ from pydantic import BaseModel, TypeAdapter
 from pydantic.json_schema import GenerateJsonSchema
 
 from content_factory.schemas import (
+    animation,
     artboards,
     audio,
     comfyui,
     content,
     dag,
+    delivery,
+    documentary,
     editing,
+    energy,
     hardware,
+    nodes,
+    offers,
+    placement,
+    reference,
     render,
     research,
     scenes,
     sequences,
+    shots,
     skills,
+    storage_plan,
+    style_kit,
+    workflow_template,
+    workspace_graph,
 )
-from content_factory.schemas.base import canonical_dumps
 
 SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "EditBatch": editing.EditBatch,
@@ -36,6 +48,18 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "ControlAsset": sequences.ControlAsset,
     "GenerationLock": sequences.GenerationLock,
     "FrameSpec": sequences.FrameSpec,
+    "ShotSpec": shots.ShotSpec,
+    "ShotPlan": shots.ShotPlan,
+    "ControlBundle": shots.ControlBundle,
+    "ShotRouting": shots.ShotRouting,
+    "WorkflowTemplate": workflow_template.WorkflowTemplate,
+    "ReferenceClip": reference.ReferenceClip,
+    "ReferenceLibrary": reference.ReferenceLibrary,
+    "ReferenceQuery": reference.ReferenceQuery,
+    "ReferenceMatchSet": reference.ReferenceMatchSet,
+    "WorkspaceGraph": workspace_graph.WorkspaceGraph,
+    "AnimationSpec": animation.AnimationSpec,
+    "MusicTrack": audio.MusicTrack,
     "ComfyWorkflowPackage": comfyui.ComfyWorkflowPackage,
     "ComfyProvenance": comfyui.ComfyProvenance,
     "HardwareInventory": hardware.HardwareInventory,
@@ -61,6 +85,23 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "CaptionTrack": audio.CaptionTrack,
     "LoudnessReport": audio.LoudnessReport,
     "AudioMixSpec": audio.AudioMixSpec,
+    "AudioArtifactReport": audio.AudioArtifactReport,
+    "SpeechRestorationSpec": audio.SpeechRestorationSpec,
+    "SpeechRestorationReport": audio.SpeechRestorationReport,
+    "MasterChainSpec": audio.MasterChainSpec,
+    "SoundConditionSpec": audio.SoundConditionSpec,
+    "SoundConditionReport": audio.SoundConditionReport,
+    "CueSheet": audio.CueSheet,
+    "DeliveryPackage": delivery.DeliveryPackage,
+    "NodeCapabilityReport": nodes.NodeCapabilityReport,
+    "ComputeOffer": offers.ComputeOffer,
+    "PlacementDecision": placement.PlacementDecision,
+    "StoragePlan": storage_plan.StoragePlan,
+    "EnergyReport": energy.EnergyReport,
+    "EpisodeOutline": documentary.EpisodeOutline,
+    "ShortsPlan": documentary.ShortsPlan,
+    "EpisodeMetadata": documentary.EpisodeMetadata,
+    "EditorialStyleKit": style_kit.EditorialStyleKit,
     "SourceRecord": research.SourceRecord,
     "EvidenceRecord": research.EvidenceRecord,
     "ClaimRecord": research.ClaimRecord,
@@ -123,13 +164,3 @@ def export_json_schemas(out_dir: Path) -> list[Path]:
         path.write_text(text + "\n", encoding="utf-8")
         written.append(path)
     return written
-
-
-def registry_digest() -> str:
-    """Hash over all exported schemas — used to detect drift."""
-    import hashlib
-
-    h = hashlib.sha256()
-    for name in sorted(SCHEMA_REGISTRY):
-        h.update(canonical_dumps(json_schema_for(name)).encode("utf-8"))
-    return h.hexdigest()

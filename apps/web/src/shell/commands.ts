@@ -6,6 +6,7 @@ export interface CommandDeps {
   navigate: (to: string) => void;
   toggleScheme: () => void;
   openCustomizer: () => void;
+  openShortcuts: () => void;
   signOut: () => void;
   switchWorkspace: (id: string) => void;
   workspaces: readonly { id: string; name: string }[];
@@ -27,6 +28,7 @@ export function buildCommands(d: CommandDeps): Command[] {
   }));
   return [
     { id: "create", title: "Create something new", group: "Actions", shortcut: "C", run: () => d.navigate("/create") },
+    { id: "shortcuts", title: "Keyboard shortcuts", group: "Actions", shortcut: "?", keywords: "keys keybinds bindings", run: d.openShortcuts },
     ...nav,
     ...ws,
     { id: "theme:toggle", title: "Toggle light / dark theme", group: "Appearance", run: d.toggleScheme },

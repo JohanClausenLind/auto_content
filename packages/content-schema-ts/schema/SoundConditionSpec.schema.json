@@ -1,0 +1,204 @@
+{
+  "$defs": {
+    "AudioArtifactThresholds": {
+      "additionalProperties": false,
+      "description": "Where \"this asset has a problem\" begins. One place, so the detector, the QC gate and the\nprocessing chains all agree on the same numbers.\n\nUse :meth:`for_profile` rather than the bare defaults: the defaults are the speech ones, and\napplying them to a sound effect would flag rain as hiss and a whoosh as harsh.",
+      "properties": {
+        "band_limit_hz_min": {
+          "default": 14000.0,
+          "exclusiveMinimum": 0,
+          "title": "Band Limit Hz Min",
+          "type": "number"
+        },
+        "clipped_sample_ratio_max": {
+          "default": 0.0005,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Clipped Sample Ratio Max",
+          "type": "number"
+        },
+        "dc_offset_max": {
+          "default": 0.002,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Dc Offset Max",
+          "type": "number"
+        },
+        "noise_floor_dbfs_max": {
+          "default": -55.0,
+          "maximum": 0,
+          "title": "Noise Floor Dbfs Max",
+          "type": "number"
+        },
+        "peak_dbfs_min": {
+          "default": -30.0,
+          "maximum": 0,
+          "title": "Peak Dbfs Min",
+          "type": "number"
+        },
+        "sibilance_ratio_max": {
+          "default": 0.12,
+          "exclusiveMinimum": 0,
+          "title": "Sibilance Ratio Max",
+          "type": "number"
+        },
+        "spectral_flatness_max": {
+          "default": 0.35,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Spectral Flatness Max",
+          "type": "number"
+        }
+      },
+      "required": [
+        "band_limit_hz_min",
+        "clipped_sample_ratio_max",
+        "dc_offset_max",
+        "noise_floor_dbfs_max",
+        "peak_dbfs_min",
+        "sibilance_ratio_max",
+        "spectral_flatness_max"
+      ],
+      "title": "AudioArtifactThresholds",
+      "type": "object"
+    },
+    "AudioProfile": {
+      "description": "What kind of material this is, which decides what counts as a defect.\n\nThe same numbers mean different things: a flat spectrum is hiss in a narration take and it is\nthe entire point of a rain bed. Nothing here is cosmetic — the profile selects which checks run\nand at what limits, and (in :mod:`content_factory.audio.condition`) which processing is even\nallowed to touch the audio.",
+      "enum": [
+        "speech",
+        "sound_effect",
+        "music"
+      ],
+      "title": "AudioProfile",
+      "type": "string"
+    }
+  },
+  "$id": "https://content-factory.local/schema/SoundConditionSpec.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "How a *generated non-speech* asset is conditioned before it reaches the mix.\n\nSame shape as the speech chain — measure, repair only what is broken, normalise, cap the true\npeak, land at the delivery rate, same length out as in — and deliberately none of its models.\nMeasured on this host 2026-09-07, on sounds from ``assets/sfx``:\n\n* ClearerVoice ``MossFormer2_SE_48K`` (speech enhancement) left **0.5-1.0 %** of the energy of\n  a whoosh, a rain bed and an impact. To a speech enhancer a sound effect *is* the noise.\n* Resemble Enhance took a 2 s whoosh from -24.0 to -73.4 dBFS with a waveform correlation of\n  **0.002** against its input — it did not restore the sound, it replaced it with unrelated\n  sub-200 Hz rumble.\n\nSo there is no field here for either of them, and there will not be one. What non-speech\nmaterial actually needs is damage repair and a predictable level, which is what this does.",
+  "properties": {
+    "declick": {
+      "default": true,
+      "title": "Declick",
+      "type": "boolean"
+    },
+    "declip": {
+      "default": true,
+      "title": "Declip",
+      "type": "boolean"
+    },
+    "denoise": {
+      "default": false,
+      "title": "Denoise",
+      "type": "boolean"
+    },
+    "denoise_nr_db": {
+      "default": 6.0,
+      "maximum": 97.0,
+      "minimum": 0.01,
+      "title": "Denoise Nr Db",
+      "type": "number"
+    },
+    "high_pass_hz": {
+      "default": 25,
+      "maximum": 200,
+      "minimum": 0,
+      "title": "High Pass Hz",
+      "type": "integer"
+    },
+    "loudness_metric": {
+      "default": "integrated",
+      "enum": [
+        "integrated",
+        "max_momentary",
+        "off"
+      ],
+      "title": "Loudness Metric",
+      "type": "string"
+    },
+    "low_pass_hz": {
+      "default": 0,
+      "maximum": 24000,
+      "minimum": 0,
+      "title": "Low Pass Hz",
+      "type": "integer"
+    },
+    "max_duration_drift_ms": {
+      "default": 10,
+      "maximum": 200,
+      "minimum": 0,
+      "title": "Max Duration Drift Ms",
+      "type": "integer"
+    },
+    "max_gain_db": {
+      "default": 24.0,
+      "maximum": 60,
+      "minimum": 0,
+      "title": "Max Gain Db",
+      "type": "number"
+    },
+    "profile": {
+      "$ref": "#/$defs/AudioProfile",
+      "default": "sound_effect"
+    },
+    "remove_dc": {
+      "default": true,
+      "title": "Remove Dc",
+      "type": "boolean"
+    },
+    "sample_rate_hz": {
+      "default": 48000,
+      "enum": [
+        44100,
+        48000
+      ],
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "target_lufs": {
+      "default": -23.0,
+      "maximum": 0,
+      "minimum": -40,
+      "title": "Target Lufs",
+      "type": "number"
+    },
+    "target_true_peak_dbtp": {
+      "default": -1.0,
+      "maximum": 0,
+      "minimum": -12,
+      "title": "Target True Peak Dbtp",
+      "type": "number"
+    },
+    "thresholds": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AudioArtifactThresholds"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "declick",
+    "declip",
+    "denoise",
+    "denoise_nr_db",
+    "high_pass_hz",
+    "loudness_metric",
+    "low_pass_hz",
+    "max_duration_drift_ms",
+    "max_gain_db",
+    "profile",
+    "remove_dc",
+    "sample_rate_hz",
+    "target_lufs",
+    "target_true_peak_dbtp",
+    "thresholds"
+  ],
+  "title": "SoundConditionSpec",
+  "type": "object"
+}

@@ -1,0 +1,208 @@
+# A researched explainer: sources in, a film out.
+#
+# This is the documentary lane. The material is somebody else's numbers, so the front of the graph
+# is about evidence rather than imagery: research pulls sources, verify_claims refuses to let a
+# claim through that no source supports, and compile_datasets turns the surviving evidence into
+# typed tables the renderer can chart. Everything after that is typesetting and narration. No image
+# or video model appears in this lane on purpose: a chart that a diffusion model drew is a picture
+# of a chart, not the data.
+#
+# The lane carries two picture branches because they check each other. compile_cards / render_cards
+# typeset each beat as its own still, cached per card, and qc_deliverable reads those card bundles
+# back for accessibility (contrast, alt text, reading order). compile_timeline / render_scenes then
+# lay the same beats out over the measured narration and render the moving version. The stills are
+# also the thumbnail and carousel set, which is why they are kept rather than thrown away.
+#
+# Narration is the clock. lock_script freezes the words, synthesize_narration speaks them,
+# align_words measures where each word actually landed, and compile_timeline lays the beats to those
+# measurements. That is the ordering constraint behind the wires: nothing visual is timed before the
+# voice exists.
+schema_version: 1
+id: data-story-video
+name: Data story video
+description: >
+  Sources become verified claims, claims become charted tables, and the tables become a narrated
+  explainer over typeset cards. Research and verification run first so nothing gets said that the
+  evidence does not carry; the voice is synthesized and measured, and the timeline is laid to the
+  measured words rather than to a guess.
+category: video
+tags: [research, evidence, charts, narration, captions, explainer]
+prerequisite: >
+  A topic in the brief, and the sources it should be held to. Numbers must arrive as tables
+  (CSV/JSON), not as prose, or there is nothing to chart. Music is picked from the local library at
+  fixtures/music; an empty library selects no bed rather than failing.
+caveat: >
+  draft_article has no executor, which is why write_copy drafts the narration here. Everything else
+  in the lane now runs: uploads are ingested, tables are compiled from them through declared
+  transforms, and claims are verified against the evidence on disk.
+models:
+  - kind: path
+    label: Qwen3-TTS narration voice
+    path_includes: qwen3-tts-1.7b-base
+    filename: model.safetensors
+  - kind: skill
+    label: Qwen3-TTS skill env
+    skill: skills/audio/qwen3tts
+  - kind: path
+    label: Resemble Enhance speech restoration
+    path_includes: resemble-enhance
+  - kind: skill
+    label: Resemble Enhance skill env
+    skill: skills/audio/resemble_enhance
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "what a public dataset actually shows", audience: general, quality: demo}
+  - key: uploads
+    type: ingest
+    note: >
+      Optional, and the place to start. Drop files in <project>/uploads and they are sniffed by
+      magic number, stored immutably and recorded as operator_upload sources. A CSV or JSON lands
+      as a dataset in compile_datasets; put a <file>.transforms.json beside it to declare how to
+      shape it. With an empty uploads dir this is a no-op and research finds its own sources.
+  - key: research
+    type: research
+    values: {depth: deep}
+    note: Deep, not standard. An explainer is only worth making if the sourcing survives a reader
+      who checks it.
+  - key: verify
+    type: verify_claims
+    note: >
+      Re-verifies every claim against the evidence and datasets on disk, and enforces the
+      independent-source requirement: a high-stakes claim carried by two outlets that both credit
+      the same wire has ONE publisher behind it. The script's own gate is at lock_script, where
+      there is a script to gate.
+  - key: data
+    type: compile_datasets
+    note: >
+      Uploaded CSV/JSON to typed tables through declared transforms, which is what makes a chart
+      reproducible rather than drawn. A table read straight from a file is SOURCE_DATA; one whose
+      transforms computed a value is DERIVED_DATA, and the renderer labels the difference. With no
+      uploads it falls back to the sample table so the lane still runs.
+  - key: story
+    type: plan_story
+    values: {beats: 7}
+    note: Seven beats rather than five. A claim needs setup, number and consequence, so an
+      explainer runs longer than a short.
+  - key: copy
+    type: write_copy
+    values: {tone: direct}
+    note: The narration draft. Direct because a documentary voice states the finding and stops.
+  - key: script
+    type: lock_script
+    note: Freezes the words so the measured timings stay valid. Both the plan and the copy draft
+      are wired; the copy is what gets spoken.
+  - key: narration
+    type: synthesize_narration
+    values: {voice: qwen3tts, instruct: "calm documentary narrator, unhurried, no hype", speed: 0.95}
+    note: Slightly under speed so a listener can carry a number from one sentence to the next.
+  - key: clean_voice
+    type: restore_speech
+    values: {enhancer: resemble_enhance, device: cuda}
+    note: Gated on detected artifacts by default, so a clean take passes through untouched.
+  - key: timings
+    type: align_words
+  - key: captions
+    type: compile_captions
+    note: Not optional in this lane. A number said aloud has to be readable too.
+  - key: music
+    type: select_music
+    note: The documentary mood and the -18 dB bed are already the defaults, so nothing is set here.
+  - key: mix
+    type: mix_audio
+    note: No sound_design in this lane. Foley over charts is decoration, and it competes with the
+      one thing the viewer has to hear.
+  - key: cards
+    type: compile_cards
+    note: One typeset still per beat. The card count follows the run's deliverable spec, not a
+      widget, so the cards widget is deliberately left unset.
+  - key: card_stills
+    type: render_cards
+    note: Cached per card, so fixing one number re-renders one card. The images stay as the
+      thumbnail and carousel set; qc_deliverable reads the card bundles back for accessibility.
+  - key: timeline
+    type: compile_timeline
+    note: Milliseconds to whole frames against the measured narration, which is why it runs after
+      align_words rather than after the story.
+  - key: scenes
+    type: render_scenes
+  - key: cut
+    type: compose_video
+  - key: originality
+    type: originality_gate
+    note: Checked against the archive after the cut, so a rerun of the same topic is caught before
+      packaging rather than after publishing.
+  - key: qc
+    type: qc_deliverable
+  - key: pack
+    type: compile_destination_packages
+  - key: pack_qc
+    type: package_qc
+    note: The last gate looks at what would actually be shipped, not at the master it came from.
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: research, to_slot: brief}
+  - {from_key: uploads, from_slot: sources, to_key: research, to_slot: sources}
+  - {from_key: research, from_slot: claims, to_key: verify, to_slot: claims}
+  - {from_key: research, from_slot: evidence, to_key: data, to_slot: evidence}
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: verify, from_slot: claims, to_key: story, to_slot: claims}
+  - {from_key: data, from_slot: dataset, to_key: story, to_slot: dataset}
+  - {from_key: story, from_slot: story, to_key: copy, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: copy, from_slot: text, to_key: script, to_slot: text}
+  - {from_key: script, from_slot: script, to_key: narration, to_slot: script}
+  - {from_key: narration, from_slot: audio, to_key: clean_voice, to_slot: audio}
+  - {from_key: clean_voice, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: story, from_slot: story, to_key: music, to_slot: story}
+  - {from_key: clean_voice, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: music, from_slot: music, to_key: mix, to_slot: music}
+  - {from_key: story, from_slot: story, to_key: cards, to_slot: story}
+  - {from_key: cards, from_slot: artboards, to_key: card_stills, to_slot: artboards}
+  - {from_key: story, from_slot: story, to_key: timeline, to_slot: story}
+  - {from_key: timings, from_slot: timings, to_key: timeline, to_slot: timings}
+  - {from_key: timeline, from_slot: timeline, to_key: scenes, to_slot: timeline}
+  - {from_key: scenes, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: captions, from_slot: captions, to_key: cut, to_slot: captions}
+  - {from_key: cut, from_slot: video, to_key: originality, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+  - {from_key: pack, from_slot: packages, to_key: pack_qc, to_slot: packages}
+
+  - {from_key: pack_qc, from_slot: report, to_key: deliver, to_slot: files}
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - uploads
+  - research
+  - verify
+  - data
+  - story
+  - copy
+  - script
+  - narration
+  - clean_voice
+  - timings
+  - captions
+  - music
+  - mix
+  - cards
+  - card_stills
+  - timeline
+  - scenes
+  - cut
+  - originality
+  - qc
+  - pack
+  - pack_qc

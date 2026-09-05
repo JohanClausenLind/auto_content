@@ -1,0 +1,130 @@
+# A set of pictures, cut into a film.
+#
+# This replaces the canvas template stitch-sequence-video, which was named for the mechanism
+# (stitching) and for the weight it happened to use. The lane is named for what it does to the
+# material instead: the pictures carry the story and the cut carries the pace. Nothing here is
+# specific to one subject, and nothing is specific to HiDream either - the anchor node's model
+# widget picks the drawer.
+#
+# It is deliberately silent. No voice, no music, no foley: whatever a viewer feels comes from the
+# images and their timing. The two lanes next door add what this one leaves out. picture-story is
+# the same idea with a recorded voice over it, and silent-video is the same idea with a music bed.
+# Adding audio nodes here would just make a worse copy of one of those.
+#
+# There is no interpolate node on purpose. Interpolation invents the frames between two drawings,
+# which is exactly what a lane built on held pictures and hard cuts does not want. The lanes that
+# animate between anchors are the ones that need it.
+schema_version: 1
+id: photo-sequence-video
+name: Photo sequence video
+description: >
+  A brief or a written story becomes one anchor picture, then a whole sequence held to that
+  picture, then a silent clip. The generation lock freezes model and seed so the frames cannot
+  drift apart, drift QC throws out the ones that wander anyway, a reviewer looks at the contact
+  sheet, and ffmpeg cuts what survives. There is no voice and no music on this lane.
+category: video
+tags: [sequence, pictures, consistency, silent, review]
+caveat: >
+  The length of the cut is fixed at the 8 frames of the builtin motion plan, so you cannot yet ask
+  this lane for a specific number of pictures. generate_keyframes declares no widget for it, which
+  is honest rather than helpful: the count comes from the control plan.
+prerequisite: >
+  A brief, or a written story at fixtures/story/<name>.json named in the story node's story
+  fixture widget. The pictures are drawn by this lane, so there is nothing to record or supply.
+models:
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+
+nodes:
+  - key: brief
+    type: input.brief
+    values: {topic: "a place changing over a day", audience: general, quality: demo}
+  - key: story
+    type: plan_story
+    note: One beat per picture. A written story fixture skips the drafting entirely.
+  - key: anchor
+    type: generate_anchor
+    values:
+      model: hidream-o1
+      prompt: "the opening picture of the sequence, the frame every later one is judged against"
+      style: >
+        consistent illustration, one palette, one light direction, flat even composition, no
+        text, no borders
+    note: The look of the whole film is decided once, here, and nowhere else.
+  - key: lock
+    type: lock_generation
+    note: Model, seed and controls frozen. Without this the sequence is a pile of related pictures.
+  - key: controls
+    type: compile_controls
+    values: {compiler: motion_plan}
+    note: >
+      The compiler is pinned rather than left silent. stage_compile_controls falls back to the
+      global controls.compiler setting when the node sets nothing, and on the blender compiler
+      generate_keyframes and drift_qc both skip themselves - which would leave compose_video with
+      no frames to cut. This lane has no 3D scene anyway; scene-controlled-video is the variant
+      where Blender stages the shots.
+  - key: keyframes
+    type: generate_keyframes
+    note: >
+      No frames value is set, because the runner does not read one: stage_generate_keyframes takes
+      its length from the builtin motion plan, which holds 8 frames. Setting the widget would look
+      like it chose the length of the cut and would not.
+  - key: drift
+    type: drift_qc
+    note: Frames that stopped looking like the anchor are regenerated before anyone sees them.
+  - key: frames_gate
+    type: review_frames
+    note: A machine measure of drift is not the same as a person looking at the contact sheet.
+  - key: cut
+    type: compose_video
+    note: >
+      Frames only: the audio and captions inputs stay empty, and the cut comes out with no audio
+      stream rather than a silent one. The approved PNGs are cut at 8 fps into
+      exports/generated.mp4 — this lane has no generate_video to make a picture for it.
+  - key: qc
+    type: qc_deliverable
+    note: >
+      Slideshow detection matters more here than anywhere else, since a held sequence really is
+      a slideshow and the report has to say so rather than fail it.
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. Not a step - the deliverable folder is written either way - but
+      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+
+wires:
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: anchor, from_slot: anchor, to_key: lock, to_slot: anchor}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: lock, from_slot: lock, to_key: controls, to_slot: lock}
+  - {from_key: lock, from_slot: lock, to_key: keyframes, to_slot: lock}
+  - {from_key: controls, from_slot: controls, to_key: keyframes, to_slot: controls}
+  - {from_key: keyframes, from_slot: frames, to_key: drift, to_slot: frames}
+  - {from_key: drift, from_slot: frames, to_key: frames_gate, to_slot: frames}
+  - {from_key: frames_gate, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+order:
+  - story
+  - anchor
+  - lock
+  - controls
+  - keyframes
+  - drift
+  - frames_gate
+  - cut
+  - qc
+  - pack

@@ -1,5 +1,4 @@
 import type { RunNode } from "@content-factory/pipeline-canvas";
-import type { ThemeState } from "@content-factory/web-ui";
 
 export interface Account {
   id: string;
@@ -44,7 +43,8 @@ export interface Meta {
 }
 
 export interface ThemePrefs {
-  value: ThemeState | null;
+  /** Free-form JSON from /v1/prefs/theme: validated by the ThemeProvider, never trusted here. */
+  value: unknown;
 }
 
 // --- Pipeline runs ---
@@ -52,6 +52,204 @@ export interface ThemePrefs {
 export type RunState = "CREATED" | "PREFLIGHTING" | "WAITING_FOR_APPROVAL" | "APPROVED" | "PRODUCING" | "COMPLETE" | "BLOCKED" | "FAILED" | "CANCELLED";
 
 export type RunQuality = "smoke" | "demo";
+
+export interface ComfyModelRoot {
+  path: string;
+  source: "settings" | "comfy-cli" | "extra" | (string & {});
+  exists: boolean;
+}
+
+export interface ComfyModelFile {
+  kind: string;
+  filename: string;
+  relative_path: string;
+  size_bytes: number;
+  root: string;
+}
+
+export interface ComfyModelsInventory {
+  roots: ComfyModelRoot[];
+  models: ComfyModelFile[];
+}
+
+/** One file a weight family puts in the store, and whether ComfyUI can see it. */
+export interface ModelFileStatus {
+  store_rel: string;
+  filename: string;
+  state: "present" | "missing" | "partial";
+  size_bytes: number;
+  comfy_folder: string;
+  comfy_linked: boolean;
+}
+
+export interface ModelSource {
+  repo_id?: string;
+  url?: string;
+  revision: string;
+  gated: "no" | "auto" | "manual";
+  note: string;
+}
+
+/** A weight family as the store page sees it: what it is for, what it costs, what is on disk. */
+export interface ModelPackage {
+  key: string;
+  name: string;
+  purpose: string;
+  license: string;
+  approx_bytes: number;
+  installable: boolean;
+  manual: string;
+  gating: "no" | "auto" | "manual";
+  caveat: string;
+  sources: ModelSource[];
+  build_command: string[];
+  state: "ready" | "partial" | "absent" | "manual";
+  files: ModelFileStatus[];
+  bytes_on_disk: number;
+  store_path: string;
+  index_path: string;
+  index_state: "ok" | "missing" | "broken" | "not_indexed";
+  wanted_by: string[];
+  required: boolean;
+  labels: string[];
+}
+
+export interface SkillEnvEntry {
+  key: string;
+  skill: string;
+  name: string;
+  purpose: string;
+  caveat: string;
+  state: "ready" | "absent";
+  path: string;
+  wanted_by: string[];
+  required: boolean;
+  labels: string[];
+}
+
+export interface InstallStep {
+  label: string;
+  state: "pending" | "running" | "done" | "failed" | "skipped";
+  detail: string;
+}
+
+export interface InstallJob {
+  key: string;
+  kind: "weights" | "skill_env";
+  name: string;
+  state: "running" | "complete" | "failed" | "already_installed" | "needs_access";
+  detail: string;
+  steps: InstallStep[];
+  bytes_expected: number;
+  bytes_done: number;
+  started_at: number;
+  finished_at: number | null;
+}
+
+export interface ModelCatalog {
+  store: string;
+  store_exists: boolean;
+  store_free_bytes: number;
+  store_total_bytes: number;
+  index_root: string;
+  comfy_models_dir: string;
+  packages: ModelPackage[];
+  skill_envs: SkillEnvEntry[];
+  jobs: InstallJob[];
+}
+
+export interface HuggingFaceAccess {
+  present: boolean;
+  handle: string;
+  stored_at: string | null;
+}
+
+export interface RelinkReport {
+  index: string[];
+  comfy: string[];
+  skipped: string[];
+}
+
+/** What the server made of a file dropped on the canvas. */
+export interface DropSuggestion {
+  node_type: string;
+  title: string;
+  why: string;
+  to_slot: string;
+  values: Record<string, string | number | boolean>;
+}
+
+/** What was done to a dropped file to make it readable, when anything was. */
+export interface DropConversion {
+  action: "remux" | "transcode" | "rewrite" | "none";
+  from_mime: string;
+  to_mime: string;
+  detail: string;
+}
+
+export interface UploadedDrop {
+  asset_id: string;
+  filename: string;
+  kind: "image" | "video" | "audio" | "document" | "data" | "text";
+  mime: string;
+  size_bytes: number;
+  /** What arrived, before conversion; differs from size_bytes when it was re-encoded. */
+  uploaded_bytes: number;
+  conversion: DropConversion | null;
+  sha256: string;
+  facts: Record<string, string | number>;
+  /** One line describing what actually arrived, measured rather than guessed. */
+  description: string;
+  node_type: string;
+  node_slot: string;
+  suggestions: DropSuggestion[];
+}
+
+export interface GraphSummary {
+  graph_id: string;
+  name: string;
+  nodes: number;
+  links: number;
+  updated_at: string;
+}
+
+export interface GraphDisposition {
+  node_id: string;
+  type: string;
+  kind: "executes" | "skipped" | "blocks" | (string & {});
+  reason: string;
+  dag_node_id: string | null;
+}
+
+export interface GraphCompileResult {
+  ok: boolean;
+  problems: string[];
+  deliverable_type: string | null;
+  dispositions: GraphDisposition[];
+  dag_nodes: number;
+}
+
+export interface GraphRunStarted extends GraphCompileResult {
+  run_id: string;
+}
+
+export type DownloadJobState = "running" | "complete" | "failed" | "already_installed" | (string & {});
+
+export interface ModelDownloadBody {
+  url: string;
+  relative_path: string;
+  filename: string;
+}
+
+export interface DownloadJob {
+  job_id: string;
+  url: string;
+  relative_path: string;
+  filename: string;
+  state: DownloadJobState;
+  detail: string;
+  started_at: number;
+}
 
 export interface RunSummary {
   run_id: string;
@@ -67,6 +265,8 @@ export interface RunDetail extends RunSummary {
   approved_by: string | null;
   error: string | null;
   report: unknown;
+  /** Real dependency edges (compiled workspace graphs); null for legacy/campaign chains. */
+  edges: { source: string; target: string }[] | null;
   nodes: RunNode[];
 }
 

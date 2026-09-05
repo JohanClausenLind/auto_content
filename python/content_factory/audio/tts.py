@@ -2,7 +2,12 @@
 
 * MockTTS      — deterministic offline audio + synthetic timings (core CI).
 * ElevenLabsTTS — premium, character-level alignment → word timings (respx-tested).
-* KokoroTTS    — local Apache-2.0 model with token timestamps, run in an isolated environment.
+* Qwen3TTS     — the local narration voice: Apache-2.0 weights, nine built-in timbres, style
+                 control, ten languages. It returns **no** timings, so the word boundaries come
+                 from forced alignment against the audio it just produced (ADR-0004 precedence:
+                 provider → forced alignment → ASR).
+* KokoroTTS    — the local fallback: smaller, English-leaning, and the only executor here whose
+                 timings come from the model itself, which makes it the offline-cheap option.
 """
 
 from __future__ import annotations
@@ -14,6 +19,7 @@ import math
 import os
 import struct
 import subprocess
+import tempfile
 import wave
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -42,6 +48,12 @@ class TTSExecutor(ABC):
 
     @abstractmethod
     def synthesize(self, request: NarrationRequest) -> SynthesisResult: ...
+
+    def fingerprint(self) -> dict[str, object]:
+        """Everything about this executor that changes the audio or the timings, for the caller's
+        cache key. The ``NarrationRequest`` covers the voice and the text; this covers the rest —
+        a delivery instruction or a different aligner has to re-speak the beat, not reuse it."""
+        return {}
 
 
 def _wav_bytes(samples: list[int], sample_rate: int) -> bytes:
@@ -213,15 +225,228 @@ class ElevenLabsTTS(TTSExecutor):
         return SynthesisResult(seg, audio)
 
 
+class Qwen3TTS(TTSExecutor):
+    """Runs `skills/audio/qwen3tts/run.py` in its own uv environment, then times what came back.
+
+    Two things make this different from :class:`KokoroTTS`. The voice is chosen by timbre name
+    (``ryan``, ``serena``, …) with an optional natural-language ``instruct`` for delivery, or
+    cloned from a reference clip on the Base weights. And Qwen3-TTS prints ``tokens: []`` — it has
+    no word timestamps at all — so the timings are measured here by forced alignment and snapped
+    onto the locked script, exactly the way a human recording is timed in
+    :mod:`content_factory.audio.takes`. ``even_split`` is the offline stand-in; it apportions the
+    measured duration by word length and records itself as ``estimated``, never as measured.
+
+    The transcript the aligner produces is also compared with the script, so a beat the model
+    garbled or truncated fails by name instead of shipping with captions that drift against it.
+    """
+
+    provider = "qwen3tts"
+
+    def __init__(
+        self,
+        skill_dir: Path,
+        *,
+        device: str = "cuda:0",
+        language: str = "english",
+        instruct: str = "",
+        ref_audio: Path | None = None,
+        ref_text: str = "",
+        aligner: str = "faster_whisper",
+        faster_whisper_model: str = "base.en",
+        compute_type: str = "int8",
+        timeout_s: int = 900,
+        aligner_timeout_s: int = 600,
+        script_similarity_min: float = 0.8,
+        seed: int | None = None,
+    ) -> None:
+        self.skill_dir = skill_dir
+        self.device = device
+        self.seed = seed
+        self.language = language
+        self.instruct = instruct
+        self.ref_audio = ref_audio
+        self.ref_text = ref_text
+        self.aligner = aligner
+        self.faster_whisper_model = faster_whisper_model
+        self.compute_type = compute_type
+        self.timeout_s = timeout_s
+        self.aligner_timeout_s = aligner_timeout_s
+        self.script_similarity_min = script_similarity_min
+        self.last_script_check = ""
+        """How the most recent beat's script check went, for the stage's run record. Set by
+        `_time_words`; empty until a beat has been timed by the aligner."""
+
+    def fingerprint(self) -> dict[str, object]:
+        return {
+            "language": self.language,
+            # In the cache key on purpose: a take is only reusable if it would be regenerated the
+            # same way, and the seed is what decides that for a sampling model.
+            "seed": self.seed,
+            "instruct": self.instruct,
+            "ref_audio": self.ref_audio.name if self.ref_audio else "",
+            "ref_text": self.ref_text,
+            "aligner": self.aligner,
+            "aligner_model": self.faster_whisper_model if self.aligner != "even_split" else "",
+        }
+
+    def _generate(self, request: NarrationRequest, out_wav: Path) -> dict:
+        cmd = [
+            "uv",
+            "run",
+            "--project",
+            str(self.skill_dir),
+            "python",
+            str(self.skill_dir / "run.py"),
+            "--language",
+            self.language,
+            "--device",
+            self.device,
+            "--out",
+            str(out_wav),
+        ]
+        if self.seed is not None:
+            cmd += ["--seed", str(self.seed)]
+        if self.ref_audio is not None:
+            # Base weights: clone the reference voice. It declares no built-in speakers at all.
+            cmd += ["--ref-audio", str(self.ref_audio), "--ref-text", self.ref_text]
+        else:
+            cmd += ["--speaker", request.voice.voice_id]
+            if self.instruct:
+                cmd += ["--instruct", self.instruct]
+        proc = subprocess.run(  # noqa: S603
+            cmd,
+            input=request.spoken_text,
+            capture_output=True,
+            text=True,
+            timeout=self.timeout_s,
+            check=False,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+        )
+        if proc.returncode != 0:
+            raise TTSError(f"qwen3-tts failed: {proc.stderr[-1000:]}")
+        lines = [ln for ln in proc.stdout.strip().splitlines() if ln.strip()]
+        if not lines:
+            raise TTSError("qwen3-tts printed no result line")
+        try:
+            return json.loads(lines[-1])
+        except json.JSONDecodeError as exc:
+            raise TTSError(f"qwen3-tts printed {lines[-1][:200]!r}, not JSON") from exc
+
+    def _time_words(
+        self, wav: Path, request: NarrationRequest, duration_ms: int
+    ) -> tuple[list[WordTiming], TimingSource]:
+        from content_factory.audio.takes import (
+            TakeError,
+            even_split,
+            faster_whisper_words,
+            snap_to_script,
+        )
+
+        script_words = tokenize_words(request.spoken_text)
+        if not script_words:
+            raise TTSError("nothing to speak")
+        if self.aligner == "even_split":
+            return even_split(script_words, duration_ms), TimingSource.estimated
+        if self.aligner != "faster_whisper":
+            raise TTSError(
+                f"aligner {self.aligner!r} is not installed on this host;"
+                " use faster_whisper or even_split"
+            )
+        from content_factory.human_tasks.validation import validate_take
+
+        try:
+            heard, spans = faster_whisper_words(
+                wav,
+                model=self.faster_whisper_model,
+                compute_type=self.compute_type,
+                timeout_s=self.aligner_timeout_s,
+            )
+        except TakeError as exc:
+            raise TTSError(f"alignment failed for {request.beat_id}: {exc}") from exc
+        # A beat whose script carries a pronunciation respelling cannot be checked this way, and
+        # the check has to be skipped rather than failed. Measured on the narrated-video lane
+        # (2026-09-08): the beat "Sources: Energimyndigheten, Svenska kraftnät." scored **0.33**
+        # with the raw spelling — the model said "energym and de hetten" — and **0.22** with the
+        # respelling that fixed the audio, because the respelling is deliberately not orthographic
+        # and `base.en` transcribed it as "energi mundinghen". Both numbers measure the aligner's
+        # vocabulary, not whether the model obeyed. Skipped, recorded, and every beat without a
+        # respelling is still gated exactly as before.
+        respelled = tuple(
+            e.term for e in request.lexicon if e.respelling and e.respelling in request.spoken_text
+        )
+        if respelled:
+            self.last_script_check = f"skipped: respelled {', '.join(respelled)}"
+        else:
+            review = validate_take(
+                wav,
+                request.spoken_text,
+                transcriber=lambda _p: " ".join(heard),
+                tolerance=self.script_similarity_min,
+                # A narration beat can legitimately be well under the one second a recorded take
+                # is held to; what matters here is whether the model said the script.
+                min_duration_s=0.2,
+            )
+            if review.similarity < self.script_similarity_min:
+                raise TTSError(
+                    f"{request.beat_id}: qwen3-tts did not speak the locked script"
+                    f" (similarity {review.similarity:.2f} < {self.script_similarity_min:.2f});"
+                    f" diff: {' '.join(review.diff)[:200]}"
+                )
+            self.last_script_check = f"similarity {review.similarity:.2f}"
+        return snap_to_script(script_words, spans, duration_ms), TimingSource.forced_alignment
+
+    def synthesize(self, request: NarrationRequest) -> SynthesisResult:
+        with tempfile.TemporaryDirectory(prefix="cf-qwen3tts-") as tmp:
+            wav = Path(tmp) / f"{request.beat_id}.wav"
+            out = self._generate(request, wav)
+            audio = wav.read_bytes()
+            sample_rate = int(out["sample_rate"])
+            duration_ms = int(out["duration_ms"])
+            words, source = self._time_words(wav, request, duration_ms)
+        seg = NarrationSegment(
+            beat_id=request.beat_id,
+            audio_sha256=sha256_hex(audio),
+            sample_rate_hz=sample_rate,
+            duration_ms=duration_ms,
+            words=tuple(words),
+            timing_source=source,
+            voice=request.voice.model_copy(
+                update={"model_revision": str(out.get("model_revision", "Qwen3-TTS-12Hz-1.7B"))}
+            ),
+            spoken_text=request.spoken_text,
+            display_text=request.display_text,
+            normalization_version=request.normalization_version,
+        )
+        return SynthesisResult(seg, audio)
+
+
 class KokoroTTS(TTSExecutor):
     """Runs `skills/audio/kokoro/run.py` in its own uv environment (torch pins never touch the
-    control plane). The script prints one JSON line with wav path + token timestamps."""
+    control plane). The script prints one JSON line with wav path + token timestamps.
+
+    Kept as the fallback after Qwen3-TTS took the narration role (2026-09-07): it is 82M
+    parameters against 1.7B, needs no aligner because it times its own tokens, and runs on CPU in
+    seconds — which is exactly what you want when the card is busy or the aligner is unavailable.
+    """
 
     provider = "kokoro"
 
-    def __init__(self, skill_dir: Path, *, python: str | None = None) -> None:
+    def __init__(
+        self,
+        skill_dir: Path,
+        *,
+        python: str | None = None,
+        device: str = "cpu",
+        lang_code: str = "",
+    ) -> None:
         self.skill_dir = skill_dir
         self.python = python
+        self.device = device  # cpu by default: the GPU is held by the image/video models
+        # Kokoro's own single-letter G2P code, resolved and validated by the control plane
+        # (`audio.languages.check_narration_language`). Empty leaves the resolution to run.py,
+        # which applies the same table — one of the two has to be authoritative, and it is this
+        # one, because it is the side that can refuse a run before the weights load.
+        self.lang_code = lang_code
 
     def synthesize(self, request: NarrationRequest) -> SynthesisResult:
         cmd = (
@@ -236,7 +461,9 @@ class KokoroTTS(TTSExecutor):
             "--speed",
             str(request.voice.speed),
             "--lang",
-            request.voice.locale,
+            self.lang_code or request.voice.locale,
+            "--device",
+            self.device,
         ]
         proc = subprocess.run(  # noqa: S603
             cmd,
@@ -251,6 +478,8 @@ class KokoroTTS(TTSExecutor):
             raise TTSError(f"kokoro failed: {proc.stderr[-1000:]}")
         out = json.loads(proc.stdout.strip().splitlines()[-1])
         audio = Path(out["wav"]).read_bytes()
+        # Kokoro times punctuation as its own tokens ("," "."); word timings are words only, or
+        # the alignment validator counts them as words the script never had.
         words = [
             WordTiming(
                 word=t["text"],
@@ -258,7 +487,7 @@ class KokoroTTS(TTSExecutor):
                 end_ms=round(t["end_ts"] * 1000),
             )
             for t in out["tokens"]
-            if t.get("start_ts") is not None
+            if t.get("start_ts") is not None and any(ch.isalnum() for ch in t["text"])
         ]
         seg = NarrationSegment(
             beat_id=request.beat_id,

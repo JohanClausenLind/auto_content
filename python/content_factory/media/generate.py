@@ -104,7 +104,12 @@ class ComfyUIMediaBackend(MediaBackend):
         async def _run():
             client = ComfyUIClient(self.endpoint, client_id=f"media-{request.request_id}")
             try:
-                return await client.run_package(self.package, params, output_dir=workdir / "comfy")
+                return await client.run_package(
+                    self.package,
+                    params,
+                    output_dir=workdir / "comfy",
+                    journal=workdir / "submitted.json",
+                )
             finally:
                 await client.aclose()
 

@@ -79,3 +79,37 @@ def test_signed_urls_expire_and_reject_tampering() -> None:
     assert not signer.verify(key, exp, sig, now=1_000_061)  # expired
     assert not signer.verify(key.replace("txt", "mp4"), exp, sig, now=1_000_030)  # different key
     assert not signer.verify(key, exp + 1, sig, now=1_000_030)  # tampered expiry
+
+
+def test_open_store_honors_the_backend_setting(tmp_path: Path, monkeypatch) -> None:
+    """`object_store.backend` must actually select the backend.
+
+    Regression: every production caller used to construct FilesystemArtifactStore directly, so
+    setting backend="s3" was inert and artifacts silently kept landing on local disk.
+    """
+    from content_factory.artifacts import open_store
+    from content_factory.config import get_settings
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    fs = open_store(tmp_path / "artifacts")
+    assert isinstance(fs, FilesystemArtifactStore)
+    assert fs.root == tmp_path / "artifacts"  # the per-run root override still wins
+
+    from moto import mock_aws
+
+    ctx = mock_aws()
+    ctx.start()
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    monkeypatch.setenv("OBJECT_STORE_ACCESS_KEY", "test")
+    monkeypatch.setenv("OBJECT_STORE_SECRET_KEY", "test")
+    monkeypatch.setenv("CF__OBJECT_STORE__BACKEND", "s3")
+    monkeypatch.setenv("CF__OBJECT_STORE__BUCKET", "cf-backend-switch")
+    monkeypatch.setenv("CF__OBJECT_STORE__REGION", "us-east-1")
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    try:
+        s3 = open_store(tmp_path / "artifacts")  # root is meaningless for object storage
+        assert isinstance(s3, S3ArtifactStore)
+        assert s3.bucket == "cf-backend-switch"
+    finally:
+        ctx.stop()
+        get_settings.cache_clear()  # type: ignore[attr-defined]

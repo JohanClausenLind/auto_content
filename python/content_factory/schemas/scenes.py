@@ -25,6 +25,7 @@ class ChartKind(StrEnum):
     histogram = "histogram"
     waterfall = "waterfall"
     donut = "donut"
+    step = "step"
 
 
 class DataRef(SchemaModel):
@@ -54,6 +55,12 @@ class TitleScene(SceneBase):
     kind: Literal["title"] = "title"
     title: TextRef
     subtitle: TextRef | None = None
+    background_asset_id: OpaqueId | None = None
+    """A still from `RenderBundle.assets` to sit behind the type, dimmed for contrast.
+
+    Optional and unset by default: these four are typeset cards and read best on paper. What
+    it buys is a shot's own anchor frame under its title or closing line, so a generative lane
+    can open on its subject instead of cutting from a photograph to a white card."""
 
 
 class SectionIntroScene(SceneBase):
@@ -81,6 +88,10 @@ class ChartScene(SceneBase):
     zero_baseline: bool = True
     dual_axis: bool = False
     truncation_disclosure: str | None = None
+    source_ids: tuple[OpaqueId, ...] = ()
+    """Cards to credit under the plot. `DatasetTable.source_ids` says where the *table* came
+    from; this says what the *chart* claims, which is what a viewer has to be able to check.
+    Empty means the dataset's own sources are credited instead."""
     encoding: dict[str, str | int | float | bool] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -190,6 +201,12 @@ class QuoteScene(SceneBase):
     quote: TextRef
     attribution: TextRef
     source_id: OpaqueId
+    background_asset_id: OpaqueId | None = None
+    """A still from `RenderBundle.assets` to sit behind the type, dimmed for contrast.
+
+    Optional and unset by default: these four are typeset cards and read best on paper. What
+    it buys is a shot's own anchor frame under its title or closing line, so a generative lane
+    can open on its subject instead of cutting from a photograph to a white card."""
 
 
 class DefinitionScene(SceneBase):
@@ -208,6 +225,12 @@ class CalloutScene(SceneBase):
     kind: Literal["callout"] = "callout"
     text: TextRef
     tone: Literal["neutral", "warning", "positive"] = "neutral"
+    background_asset_id: OpaqueId | None = None
+    """A still from `RenderBundle.assets` to sit behind the type, dimmed for contrast.
+
+    Optional and unset by default: these four are typeset cards and read best on paper. What
+    it buys is a shot's own anchor frame under its title or closing line, so a generative lane
+    can open on its subject instead of cutting from a photograph to a white card."""
 
 
 class SourceCardScene(SceneBase):
@@ -230,6 +253,12 @@ class OutroScene(SceneBase):
     kind: Literal["outro"] = "outro"
     text: TextRef
     cta: TextRef | None = None
+    background_asset_id: OpaqueId | None = None
+    """A still from `RenderBundle.assets` to sit behind the type, dimmed for contrast.
+
+    Optional and unset by default: these four are typeset cards and read best on paper. What
+    it buys is a shot's own anchor frame under its title or closing line, so a generative lane
+    can open on its subject instead of cutting from a photograph to a white card."""
 
 
 SceneSpec = Annotated[
@@ -285,6 +314,13 @@ class VisualBeat(SchemaModel):
     words: tuple[WordTiming, ...] = ()
     # Silent deliverables (no narration) use a planned duration instead.
     planned_duration_ms: int | None = Field(default=None, ge=200)
+    section: str | None = Field(default=None, max_length=40)
+    """Which editorial section of an ``EpisodeOutline`` this beat belongs to.
+
+    A plain string rather than the enum, because ``schemas.scenes`` must not import
+    ``schemas.documentary`` — the arc is a documentary concept and a beat is a general one. It is
+    validated against ``EpisodeSectionKind`` by the writer that sets it, and it is what lets a
+    later pass ask "which beat is the cold open" without re-deriving the arc from timings."""
 
 
 class StoryPlan(VersionedModel):
@@ -297,6 +333,14 @@ class StoryPlan(VersionedModel):
     scenes: tuple[SceneSpec, ...] = Field(min_length=1)
     handle_ms: int = Field(default=250, ge=0, le=2000)  # padding after speech before the cut
     min_scene_ms: int = Field(default=1200, ge=200)
+    # Shorts: the on-screen headline shown over the opening seconds (most viewers decide in the
+    # first 1-3 s, muted) — the claim of the film in one line, not the first narration sentence.
+    hook_text: str | None = Field(default=None, min_length=1, max_length=120)
+    # One sentence naming the film's world, for the image and video models only: "a coastal wind
+    # farm under an overcast sky". Never narration and never display text — an anchor prompt built
+    # from a beat's spoken words asks the model to illustrate a sentence instead of describing a
+    # frame, which is the measured defect this field exists to remove (STATUS 1627, 1704).
+    visual_subject: str | None = Field(default=None, min_length=1, max_length=400)
 
     @model_validator(mode="after")
     def _scenes_anchor_beats(self) -> StoryPlan:

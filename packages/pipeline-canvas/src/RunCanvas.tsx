@@ -1,6 +1,6 @@
 import { ReactFlow, type Edge } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
-import { buildGraph } from "./graph";
+import { buildGraph, type ProvidedEdge } from "./graph";
 import { layoutGraph, type LaidOutGraph } from "./layout";
 import { StageNode, type StageFlowNode } from "./StageNode";
 import type { RunNode } from "./types";
@@ -8,6 +8,8 @@ import type { RunNode } from "./types";
 export interface RunCanvasProps {
   /** Nodes exactly as returned by `GET /v1/runs/{run_id}`. */
   nodes: readonly RunNode[];
+  /** Real dependency edges from the same response; without them the implicit chains apply. */
+  edges?: readonly ProvidedEdge[] | null;
   /** When present, nodes are clickable/focusable; when absent the canvas is read-only. */
   onSelect?: (node: RunNode) => void;
   selectedNodeId?: string | null;
@@ -20,8 +22,8 @@ const nodeTypes = { stage: StageNode };
  * Left-to-right run DAG rendered with React Flow, positioned by ELK (layered).
  * Pair it with `<RunNodeList>` for screen readers and small screens.
  */
-export function RunCanvas({ nodes, onSelect, selectedNodeId = null, "aria-label": ariaLabel = "Pipeline graph" }: RunCanvasProps) {
-  const graph = useMemo(() => buildGraph(nodes), [nodes]);
+export function RunCanvas({ nodes, edges = null, onSelect, selectedNodeId = null, "aria-label": ariaLabel = "Pipeline graph" }: RunCanvasProps) {
+  const graph = useMemo(() => buildGraph(nodes, edges), [nodes, edges]);
   const [layout, setLayout] = useState<LaidOutGraph | null>(null);
 
   useEffect(() => {

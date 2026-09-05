@@ -19,12 +19,32 @@ function chainEdges(chain: readonly RunNode[], edges: GraphEdge[]): void {
   }
 }
 
+/** An edge as reported by the run API (real dependencies from the compiled DAG). */
+export interface ProvidedEdge {
+  source: string;
+  target: string;
+}
+
 /**
- * Build the implicit DAG from the flat node list:
+ * Build the graph. When the API provides real edges (compiled workspace graphs), they are the
+ * truth; otherwise fall back to the implicit chains campaign runs follow:
  * shared nodes form one chain in array order; each deliverable's nodes form a
  * chain in array order that hangs off the last shared node.
  */
-export function buildGraph(nodes: readonly RunNode[]): RunGraph {
+export function buildGraph(nodes: readonly RunNode[], provided?: readonly ProvidedEdge[] | null): RunGraph {
+  // A provided-but-empty edge list is a real answer (an all-parallel DAG), not "unknown":
+  // only null/undefined — the compiled dag.json was unavailable — falls back to guessing.
+  if (provided) {
+    const ids = new Set(nodes.map((n) => n.node_id));
+    const edges: GraphEdge[] = provided
+      .filter((e) => ids.has(e.source) && ids.has(e.target))
+      .map((e) => ({ id: `${e.source}->${e.target}`, source: e.source, target: e.target }));
+    return { nodes: [...nodes], edges };
+  }
+  return buildImplicitGraph(nodes);
+}
+
+function buildImplicitGraph(nodes: readonly RunNode[]): RunGraph {
   const edges: GraphEdge[] = [];
   const shared = nodes.filter((n) => isSharedNode(n));
   chainEdges(shared, edges);
