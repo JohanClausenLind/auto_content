@@ -18,6 +18,7 @@
     "audio",
     "script"
    ],
+   "requires_one_of": [],
    "input_types": {
     "audio": "AUDIO",
     "script": "SCRIPT"
@@ -50,6 +51,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },
@@ -72,6 +74,7 @@
    "required_inputs": [
     "timings"
    ],
+   "requires_one_of": [],
    "input_types": {
     "timings": "DATASET"
    },
@@ -94,6 +97,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },
@@ -130,6 +134,7 @@
     "mask"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "shots": "SHOTS",
     "lock": "IMAGE",
@@ -153,6 +158,7 @@
     "dataset"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "evidence": "EVIDENCE"
    },
@@ -176,6 +182,7 @@
    "required_inputs": [
     "deliverable"
    ],
+   "requires_one_of": [],
    "input_types": {
     "deliverable": "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,PACKAGE",
     "qc": "QC"
@@ -199,6 +206,7 @@
    "required_inputs": [
     "text"
    ],
+   "requires_one_of": [],
    "input_types": {
     "text": "TEXT"
    },
@@ -223,6 +231,7 @@
    "required_inputs": [
     "text"
    ],
+   "requires_one_of": [],
    "input_types": {
     "text": "TEXT"
    },
@@ -245,6 +254,7 @@
    "required_inputs": [
     "text"
    ],
+   "requires_one_of": [],
    "input_types": {
     "text": "TEXT"
    },
@@ -262,7 +272,8 @@
    "widget_options": {},
    "inputs": [
     "story",
-    "timings"
+    "timings",
+    "sources"
    ],
    "outputs": [
     "timeline"
@@ -270,9 +281,11 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY",
-    "timings": "DATASET"
+    "timings": "DATASET",
+    "sources": "SOURCES"
    },
    "output_types": {
     "timeline": "TIMELINE"
@@ -293,6 +306,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },
@@ -316,8 +330,12 @@
    "outputs": [
     "video"
    ],
-   "required_inputs": [
-    "frames"
+   "required_inputs": [],
+   "requires_one_of": [
+    [
+     "frames",
+     "clips"
+    ]
    ],
    "input_types": {
     "frames": "SEQUENCE",
@@ -348,6 +366,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY",
     "claims": "CLAIMS"
@@ -371,6 +390,7 @@
    "required_inputs": [
     "frames"
    ],
+   "requires_one_of": [],
    "input_types": {
     "frames": "SEQUENCE"
    },
@@ -393,6 +413,7 @@
    "required_inputs": [
     "package"
    ],
+   "requires_one_of": [],
    "input_types": {
     "package": "PACKAGE"
    },
@@ -423,6 +444,7 @@
    "required_inputs": [
     "text"
    ],
+   "requires_one_of": [],
    "input_types": {
     "text": "TEXT"
    },
@@ -464,6 +486,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },
@@ -490,8 +513,9 @@
    "required_inputs": [
     "frames"
    ],
+   "requires_one_of": [],
    "input_types": {
-    "frames": "SEQUENCE,VIDEO",
+    "frames": "SEQUENCE,VIDEO,IMAGE",
     "mask": "MASK"
    },
    "output_types": {
@@ -503,6 +527,7 @@
    "category": "image sequence",
    "executor": "ai",
    "widgets": [
+    "source",
     "prompt",
     "style",
     "model",
@@ -510,6 +535,10 @@
     "megapixels"
    ],
    "widget_options": {
+    "source": [
+     "generate",
+     "upload"
+    ],
     "model": [
      "hidream-o1",
      "krea2-turbo",
@@ -520,17 +549,20 @@
    },
    "inputs": [
     "story",
-    "controls"
+    "controls",
+    "still",
+    "brief"
    ],
    "outputs": [
     "anchor"
    ],
-   "required_inputs": [
-    "story"
-   ],
+   "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY",
-    "controls": "CONTROLS"
+    "controls": "CONTROLS",
+    "still": "IMAGE",
+    "brief": "BRIEF"
    },
    "output_types": {
     "anchor": "IMAGE"
@@ -553,6 +585,7 @@
     "lock",
     "controls"
    ],
+   "requires_one_of": [],
    "input_types": {
     "lock": "IMAGE",
     "controls": "CONTROLS"
@@ -568,6 +601,7 @@
    "widgets": [
     "prompt",
     "motion",
+    "subject",
     "size",
     "duration",
     "guide_strength",
@@ -611,6 +645,7 @@
    "required_inputs": [
     "first_frame"
    ],
+   "requires_one_of": [],
    "input_types": {
     "first_frame": "IMAGE",
     "last_frame": "IMAGE",
@@ -632,6 +667,7 @@
     "sources"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {},
    "output_types": {
     "sources": "SOURCES"
@@ -652,6 +688,7 @@
     "audio"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {},
    "output_types": {
     "audio": "AUDIO"
@@ -677,6 +714,7 @@
     "brief"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {},
    "output_types": {
     "brief": "BRIEF"
@@ -697,6 +735,7 @@
     "image"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {},
    "output_types": {
     "image": "IMAGE"
@@ -717,6 +756,7 @@
     "video"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {},
    "output_types": {
     "video": "VIDEO"
@@ -750,6 +790,7 @@
    "required_inputs": [
     "frames"
    ],
+   "requires_one_of": [],
    "input_types": {
     "frames": "SEQUENCE,VIDEO"
    },
@@ -772,6 +813,7 @@
    "required_inputs": [
     "text"
    ],
+   "requires_one_of": [],
    "input_types": {
     "text": "TEXT"
    },
@@ -794,6 +836,7 @@
    "required_inputs": [
     "anchor"
    ],
+   "requires_one_of": [],
    "input_types": {
     "anchor": "IMAGE"
    },
@@ -815,6 +858,7 @@
     "script"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY",
     "text": "TEXT"
@@ -842,6 +886,7 @@
    "required_inputs": [
     "audio"
    ],
+   "requires_one_of": [],
    "input_types": {
     "audio": "AUDIO",
     "music": "AUDIO",
@@ -866,6 +911,7 @@
    "required_inputs": [
     "deliverable"
    ],
+   "requires_one_of": [],
    "input_types": {
     "deliverable": "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,PACKAGE"
    },
@@ -888,6 +934,7 @@
    "required_inputs": [
     "brief"
    ],
+   "requires_one_of": [],
    "input_types": {
     "brief": "BRIEF"
    },
@@ -903,13 +950,16 @@
    "widget_options": {},
    "inputs": [
     "packages",
-    "files"
+    "files",
+    "reports"
    ],
    "outputs": [],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "packages": "DELIVERABLE",
-    "files": "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,CAPTIONS,PACKAGE,QC"
+    "files": "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,CAPTIONS,PACKAGE",
+    "reports": "QC"
    },
    "output_types": {}
   },
@@ -928,6 +978,7 @@
    "required_inputs": [
     "packages"
    ],
+   "requires_one_of": [],
    "input_types": {
     "packages": "DELIVERABLE"
    },
@@ -950,6 +1001,7 @@
    "required_inputs": [
     "frames"
    ],
+   "requires_one_of": [],
    "input_types": {
     "frames": "SEQUENCE"
    },
@@ -998,6 +1050,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY",
     "reference": "SHOTS"
@@ -1018,7 +1071,8 @@
    "inputs": [
     "brief",
     "claims",
-    "dataset"
+    "dataset",
+    "transcript"
    ],
    "outputs": [
     "story"
@@ -1026,10 +1080,12 @@
    "required_inputs": [
     "brief"
    ],
+   "requires_one_of": [],
    "input_types": {
     "brief": "BRIEF",
     "claims": "CLAIMS",
-    "dataset": "DATASET"
+    "dataset": "DATASET",
+    "transcript": "TEXT"
    },
    "output_types": {
     "story": "STORY"
@@ -1051,6 +1107,7 @@
    "required_inputs": [
     "brief"
    ],
+   "requires_one_of": [],
    "input_types": {
     "brief": "BRIEF",
     "story": "STORY"
@@ -1060,19 +1117,31 @@
    }
   },
   "publish.social": {
-   "title": "Publish to Social",
+   "title": "Publish",
    "category": "delivery",
    "executor": "hybrid",
    "widgets": [
-    "destination",
+    "destinations",
+    "visibility",
     "profile",
     "require_approval"
    ],
    "widget_options": {
-    "destination": [
+    "destinations": [
+     "export",
      "bluesky",
      "mastodon",
-     "discord-webhook"
+     "discord",
+     "wordpress",
+     "ghost",
+     "listmonk"
+    ],
+    "visibility": [
+     "draft",
+     "unlisted",
+     "public",
+     "private",
+     "export_only"
     ]
    },
    "inputs": [
@@ -1082,6 +1151,7 @@
    "required_inputs": [
     "packages"
    ],
+   "requires_one_of": [],
    "input_types": {
     "packages": "DELIVERABLE"
    },
@@ -1102,6 +1172,7 @@
    "required_inputs": [
     "deliverable"
    ],
+   "requires_one_of": [],
    "input_types": {
     "deliverable": "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,PACKAGE"
    },
@@ -1143,6 +1214,7 @@
     "frames"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },
@@ -1165,6 +1237,7 @@
    "required_inputs": [
     "artboards"
    ],
+   "requires_one_of": [],
    "input_types": {
     "artboards": "ARTBOARD"
    },
@@ -1187,6 +1260,7 @@
    "required_inputs": [
     "timeline"
    ],
+   "requires_one_of": [],
    "input_types": {
     "timeline": "TIMELINE"
    },
@@ -1216,6 +1290,7 @@
    "required_inputs": [
     "artboards"
    ],
+   "requires_one_of": [],
    "input_types": {
     "artboards": "ARTBOARD"
    },
@@ -1249,6 +1324,7 @@
    "required_inputs": [
     "brief"
    ],
+   "requires_one_of": [],
    "input_types": {
     "brief": "BRIEF",
     "sources": "SOURCES"
@@ -1307,6 +1383,7 @@
    "required_inputs": [
     "audio"
    ],
+   "requires_one_of": [],
    "input_types": {
     "audio": "AUDIO"
    },
@@ -1329,6 +1406,7 @@
    "required_inputs": [
     "shots"
    ],
+   "requires_one_of": [],
    "input_types": {
     "shots": "SHOTS"
    },
@@ -1351,6 +1429,7 @@
    "required_inputs": [
     "frames"
    ],
+   "requires_one_of": [],
    "input_types": {
     "frames": "SEQUENCE,IMAGE"
    },
@@ -1383,6 +1462,7 @@
     "story",
     "shots"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY",
     "shots": "SHOTS"
@@ -1414,6 +1494,7 @@
     "music"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },
@@ -1447,6 +1528,7 @@
     "sfx"
    ],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {
     "video": "VIDEO",
     "frames": "SEQUENCE"
@@ -1499,10 +1581,52 @@
    "required_inputs": [
     "script"
    ],
+   "requires_one_of": [],
    "input_types": {
     "script": "SCRIPT"
    },
    "output_types": {
+    "audio": "AUDIO"
+   }
+  },
+  "transcribe_audio": {
+   "title": "Transcribe Recording",
+   "category": "audio",
+   "executor": "ai",
+   "widgets": [
+    "engine",
+    "model",
+    "language",
+    "transcript",
+    "source"
+   ],
+   "widget_options": {
+    "engine": [
+     "faster_whisper",
+     "fixture"
+    ],
+    "model": [
+     "tiny.en",
+     "base.en",
+     "small.en",
+     "medium.en",
+     "large-v3"
+    ]
+   },
+   "inputs": [
+    "audio"
+   ],
+   "outputs": [
+    "text",
+    "audio"
+   ],
+   "required_inputs": [],
+   "requires_one_of": [],
+   "input_types": {
+    "audio": "AUDIO"
+   },
+   "output_types": {
+    "text": "TEXT",
     "audio": "AUDIO"
    }
   },
@@ -1530,11 +1654,12 @@
    "required_inputs": [
     "frames"
    ],
+   "requires_one_of": [],
    "input_types": {
-    "frames": "SEQUENCE,VIDEO"
+    "frames": "SEQUENCE,VIDEO,IMAGE"
    },
    "output_types": {
-    "frames": "SEQUENCE"
+    "frames": "SEQUENCE,IMAGE"
    }
   },
   "utility.note": {
@@ -1546,6 +1671,7 @@
    "inputs": [],
    "outputs": [],
    "required_inputs": [],
+   "requires_one_of": [],
    "input_types": {},
    "output_types": {}
   },
@@ -1564,6 +1690,7 @@
    "required_inputs": [
     "claims"
    ],
+   "requires_one_of": [],
    "input_types": {
     "claims": "CLAIMS"
    },
@@ -1576,10 +1703,15 @@
    "category": "audio",
    "executor": null,
    "widgets": [
+    "source",
     "takes_dir",
     "aligner"
    ],
    "widget_options": {
+    "source": [
+     "takes",
+     "recording"
+    ],
     "aligner": [
      "even_split",
      "faster_whisper",
@@ -1587,7 +1719,8 @@
     ]
    },
    "inputs": [
-    "script"
+    "script",
+    "recording"
    ],
    "outputs": [
     "audio"
@@ -1595,8 +1728,10 @@
    "required_inputs": [
     "script"
    ],
+   "requires_one_of": [],
    "input_types": {
-    "script": "SCRIPT"
+    "script": "SCRIPT",
+    "recording": "AUDIO"
    },
    "output_types": {
     "audio": "AUDIO"
@@ -1626,6 +1761,7 @@
    "required_inputs": [
     "story"
    ],
+   "requires_one_of": [],
    "input_types": {
     "story": "STORY"
    },

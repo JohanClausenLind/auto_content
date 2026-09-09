@@ -153,10 +153,51 @@ async def test_crud_validates_and_scopes(client, sessionmaker):
     listing = (await client.get("/v1/graphs")).json()
     assert [g["graph_id"] for g in listing] == [doc["graph_id"]]
     fetched = (await client.get(f"/v1/graphs/{doc['graph_id']}")).json()
-    assert fetched == doc
+    # Byte-for-byte what was stored, plus the fields the contract fills in. `groups` is one: a
+    # document written before folded groups existed — this one, and every graph already in a
+    # browser's localStorage — comes back with an empty list rather than being refused.
+    assert fetched == {**doc, "groups": []}
 
     assert (await client.delete(f"/v1/graphs/{doc['graph_id']}")).status_code == 204
     assert (await client.get(f"/v1/graphs/{doc['graph_id']}")).status_code == 404
+
+
+async def test_a_folded_graph_round_trips_and_a_broken_group_is_refused(client, sessionmaker):
+    """A group is how the canvas draws a lane, and the canvas writes its document here on every
+    edit — so a document with folded groups has to survive the trip, and one whose group names a
+    node that is not in it has to be refused rather than stored for the editor to choke on."""
+    await seed(sessionmaker)
+    await login(client)
+    doc = graph_doc()
+    doc["groups"] = [
+        {
+            "id": "gr1",
+            "name": "Render and check",
+            "template": "check-deliver",
+            "collapsed": True,
+            "members": ["r", "v"],
+            "x": 600.0,
+            "y": 0.0,
+        }
+    ]
+    r = await client.put(f"/v1/graphs/{doc['graph_id']}", json=doc)
+    assert r.status_code == 200, r.text
+    assert (await client.get(f"/v1/graphs/{doc['graph_id']}")).json() == doc
+
+    # Folding changes nothing about what would run.
+    body = (await client.post(f"/v1/graphs/{doc['graph_id']}/compile")).json()
+    assert body["ok"] is True and body["dag_nodes"] == 5
+
+    ghost = {**doc, "groups": [{**doc["groups"][0], "members": ["nope"]}]}
+    assert (await client.put(f"/v1/graphs/{doc['graph_id']}", json=ghost)).status_code == 422
+    twice = {
+        **doc,
+        "groups": [
+            {**doc["groups"][0], "id": "gr1", "members": ["r"]},
+            {**doc["groups"][0], "id": "gr2", "members": ["r"]},
+        ],
+    }
+    assert (await client.put(f"/v1/graphs/{doc['graph_id']}", json=twice)).status_code == 422
 
 
 async def test_compile_preview_reports_dispositions(client, sessionmaker):

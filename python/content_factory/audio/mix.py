@@ -416,8 +416,67 @@ def master(
     return measure_loudness(out_wav, target_lufs=target_lufs, target_tp=target_tp)
 
 
-def mux(video: Path, audio_wav: Path, out_mp4: Path) -> None:
-    """One delivery encode: copy the video stream, AAC the stem, fast start."""
+MUX_PAD_TOLERANCE_MS = 60
+"""How far the picture may fall short of the last spoken word before the last frame is held.
+
+A few frames of a word's decay is not worth a re-encode; a sentence is.
+"""
+
+
+def _media_ms(path: Path) -> int:
+    """Duration in whole milliseconds, from the container. 0 when it cannot be read."""
+    from content_factory.qc.media import ffprobe
+
+    try:
+        seconds = float(ffprobe(path)["format"]["duration"])
+    except (KeyError, ValueError, TypeError, subprocess.CalledProcessError):
+        return 0
+    return max(0, round(seconds * 1000))
+
+
+def mux(video: Path, audio_wav: Path, out_mp4: Path, *, min_video_ms: int | None = None) -> None:
+    """One delivery encode: the video stream copied, the stem as AAC, fast start.
+
+    ``min_video_ms`` is how long the picture has to last for the film to carry everything that is
+    said — the end of the last spoken word, as the mix laid it out. Given it, the **last frame is
+    held** until then instead of ``-shortest`` cutting the words off.
+
+    That flag alone was fine for as long as every lane's picture came from the timeline compiler,
+    which sizes itself to the speech: what it cut was the stem's ``tail_ms`` of silence. A lane
+    whose picture is its own length — drawings held for the spans of speech they illustrate —
+    loses *sentences* to it instead, which is what a live run of ``audio-picture-story`` measured
+    as "audio shorter than the narration it should carry" from the composer's own QC.
+
+    Without ``min_video_ms`` nothing changes: the copy-and-truncate path is taken exactly as
+    before, which is what keeps the timeline lanes' frame counts identical to the frame.
+    """
+    pad_ms = (min_video_ms - _media_ms(video)) if min_video_ms is not None else 0
+    if pad_ms <= MUX_PAD_TOLERANCE_MS:
+        ffmpeg(
+            [
+                "-i",
+                str(video),
+                "-i",
+                str(audio_wav),
+                "-map",
+                "0:v:0",
+                "-map",
+                "1:a:0",
+                "-c:v",
+                "copy",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "160k",
+                "-ar",
+                "48000",
+                "-shortest",
+                "-movflags",
+                "+faststart",
+                str(out_mp4),
+            ]
+        )
+        return
     ffmpeg(
         [
             "-i",
@@ -428,17 +487,39 @@ def mux(video: Path, audio_wav: Path, out_mp4: Path) -> None:
             "0:v:0",
             "-map",
             "1:a:0",
+            # tpad clones the last decoded frame, so the film holds on its final picture instead
+            # of cutting to black — and the colour tags are re-declared because the re-encode
+            # would otherwise write an untagged stream for players to guess at.
+            "-vf",
+            f"tpad=stop_mode=clone:stop_duration={pad_ms / 1000:.3f}",
+            # Whatever is left of the audio after the last word is still trimmed: the picture is
+            # held to carry the words, not to sit on a still through a second of silence.
+            "-shortest",
+            "-pix_fmt",
+            "yuv420p",
+            "-color_range",
+            "tv",
+            "-colorspace",
+            "bt709",
+            "-color_primaries",
+            "bt709",
+            "-color_trc",
+            "bt709",
             "-c:v",
-            "copy",
+            "libx264",
+            "-crf",
+            "16",
+            "-preset",
+            "slow",
             "-c:a",
             "aac",
             "-b:a",
             "160k",
             "-ar",
             "48000",
-            "-shortest",
             "-movflags",
             "+faststart",
             str(out_mp4),
-        ]
+        ],
+        timeout=3600,
     )

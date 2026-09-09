@@ -21,22 +21,68 @@ beforeEach(() => {
 
 describe("workflow templates", () => {
   it("every template builds a graph the canvas accepts, or says why it cannot", () => {
-    // A lane whose first stage reads its input from the run directory rather than from a wire
-    // opens with an unconnected input. That is a real limitation of the canvas, not a typo, so it
-    // is allowed only when the definition declares a caveat -- and nothing else is allowed at all.
+    // Exactly two kinds of error are allowed in a freshly opened lane, and both are the
+    // operator's next move rather than a defect in the definition:
+    //
+    // 1. a file input with nothing dropped on it — the lane's declared entry point, which must
+    //    say what to put there;
+    // 2. an unconnected input on a lane that declares a caveat explaining it.
+    //
+    // Everything else is a wiring or value mistake in the YAML, and there is nowhere left for one
+    // to hide: the Python loader refuses an unwired required input outright now.
     for (const template of WORKFLOW_TEMPLATES) {
       const graph = template.build();
       const errors = validateGraph(graph, workspaceCatalog).filter((p) => p.severity === "error");
+      const fileInputs = new Set(
+        graph.nodes
+          .filter((n) => n.type === "input.audio" || n.type === "input.image" || n.type === "input.video")
+          .map((n) => n.id),
+      );
+      const waitingForMaterial = errors.filter((e) => e.node_id !== null && fileInputs.has(e.node_id));
       const unconnected = errors.filter((e) => /is not connected/.test(e.message));
       expect(
-        errors.length - unconnected.length,
+        errors.length - unconnected.length - waitingForMaterial.length,
         `${template.id}: ${errors.map((e) => e.message).join("; ")}`,
       ).toBe(0);
+      for (const problem of waitingForMaterial) {
+        // "dropped file is empty" says what is wrong. A lane opens on this, so it also has to say
+        // what to do about it.
+        expect(problem.message, `${template.id}: ${problem.message}`).toMatch(/--input|drop/);
+        expect(
+          template.prerequisite,
+          `${template.id} needs material and does not say so in prerequisite`,
+        ).toBeTruthy();
+      }
       if (unconnected.length > 0) {
         expect(template.caveat, `${template.id} opens with unconnected inputs and no caveat`).toBeTruthy();
       }
       expect(parseGraph(JSON.parse(JSON.stringify(graph)))).toEqual(graph);
       expect(graph.nodes.length).toBeGreaterThan(1);
+    }
+  });
+
+  it("folds the steps every lane repeats, and a folded group hides nothing that is wrong", () => {
+    // The point of a group is that a lane opens readable. The point of THIS test is that folding
+    // can never be a way to hide a hole: a group's ports are derived from the links, so an
+    // unconnected required input inside a folded group still shows on the folded node.
+    const folded = WORKFLOW_TEMPLATES.filter((t) => t.build().groups.length > 0);
+    expect(folded.length, "no lane folds anything, so the catalogue reads as raw nodes").toBeGreaterThan(10);
+    for (const template of WORKFLOW_TEMPLATES) {
+      const graph = template.build();
+      const owner = new Map<string, string>();
+      for (const group of graph.groups) {
+        expect(group.members.length, `${template.id}: ${group.name} folds nothing`).toBeGreaterThan(1);
+        for (const member of group.members) {
+          expect(graph.nodes.some((n) => n.id === member)).toBe(true);
+          expect(owner.has(member), `${template.id}: ${member} is in two groups`).toBe(false);
+          owner.set(member, group.id);
+        }
+      }
+      // Every lane ends in the same three steps, so every lane should fold them.
+      const hasDelivery = graph.nodes.some((n) => n.type === "compile_destination_packages");
+      if (hasDelivery) {
+        expect(graph.groups.length, `${template.id} folds nothing`).toBeGreaterThan(0);
+      }
     }
   });
 

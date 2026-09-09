@@ -468,7 +468,82 @@
    * `auto` tracks they collapsed to (panel - padding - gaps) / rows: measured in Firefox and
    * Chromium alike, five cards per column came out 144px tall instead of 620px, which squashed
    * each thumbnail to 1px and clipped 330px off every card — the Models expander and the "Use
-   * template" button among it — while `.cf-tpl { overflow: hidden }` hid that it had happened.
+   * template" button among it — while `/*
+ * Block cards: the parts of a lane you add to the graph you are already editing.
+ *
+ * Visually the opposite of a template card — no thumbnail, a numbered list of the steps, and the
+ * boundary stated in words — because a template replaces what you have and a block joins it. The
+ * stacked mark is the same one a folded group wears on the canvas, so the card and the node it
+ * becomes are recognisably the same object.
+ */
+.cf-templates__lead {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.cf-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem 1rem;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-bg);
+}
+.cf-block__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.cf-block__mark {
+  color: var(--cf-accent);
+}
+.cf-block__name {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.cf-block__count {
+  color: var(--cf-muted);
+  font-size: 0.75rem;
+}
+.cf-block__desc {
+  margin: 0;
+  color: var(--cf-fg);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.cf-block__steps {
+  margin: 0;
+  padding-left: 1.35rem;
+  color: var(--cf-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.cf-block__ports {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.5rem;
+  margin: 0;
+  font-size: 0.75rem;
+}
+.cf-block__ports dt {
+  color: var(--cf-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cf-block__ports dd {
+  margin: 0;
+  font-family: var(--cf-mono, ui-monospace, monospace);
+}
+.cf-block__foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cf-tpl { overflow: hidden }` hid that it had happened.
    * The grid then had nothing left to overflow, so it could not scroll either.
    */
   grid-auto-rows: max-content;

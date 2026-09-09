@@ -20,12 +20,8 @@ description: >
 category: utility
 tags: [upscale, stills, restore, seedvr2, delivery]
 prerequisite: >
-  The images to upscale, staged in the run's input frame directory. This lane produces no material
-  of its own, so with no pictures in place there is nothing for it to do.
-caveat: >
-  The first stage takes no wire. upscale.frames is a required input left unwired on purpose: the
-  operator's images are read from the run directory rather than handed over by an upstream node, so
-  the graph starts from a slot the canvas shows as empty. Every stage in the lane has an executor.
+  The images to upscale: --input <file or folder>, or dropped on the canvas's Image File node.
+  This lane produces no material of its own, so with no pictures in place there is nothing to do.
 models:
   - kind: path
     label: SeedVR2 7B upscaler transformer
@@ -45,6 +41,11 @@ models:
     skill: skills/video/postchain
 
 nodes:
+  - key: pictures
+    type: input.image
+    note: >
+      Your pictures. One node stands for the whole set: --input takes a folder and the stage picks
+      up everything in the run's uploads, so a hundred stills are one wire rather than a hundred.
   - key: upscale
     type: upscale_video
     values: {resolution: "2160"}
@@ -65,11 +66,19 @@ nodes:
       the lane's last output has somewhere to go, and the canvas can stop calling it unused.
 
 wires:
+  - {from_key: pictures, from_slot: image, to_key: upscale, to_slot: frames}
   - {from_key: upscale, from_slot: frames, to_key: qc, to_slot: deliverable}
   - {from_key: upscale, from_slot: frames, to_key: pack, to_slot: deliverable}
   - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
 
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
 
 order:
   - upscale

@@ -303,6 +303,94 @@ def _resolve_boundary(steps: Sequence[Step], name: str, which: str) -> int:
     raise ValueError(msg)
 
 
+# What a lane's file-input nodes stand for: the node type, and the sniffed kind that fits it.
+SOURCE_NODE_KINDS: dict[str, str] = {
+    "input.audio": "audio",
+    "input.image": "image",
+    "input.video": "video",
+}
+
+
+def workflow_inputs(workflow: str) -> tuple[str, ...]:
+    """The kinds of file this lane needs supplied, from its declared file-input nodes.
+
+    A lane that reads the operator's material used to say so only in prose, in ``prerequisite``,
+    which meant the fact was unavailable to `workflows list`, to the preflight, and to `--input`.
+    The nodes carry it now, so one declaration answers all three.
+    """
+    template = load_definition(workflow)
+    kinds = [SOURCE_NODE_KINDS[n.type] for n in template.nodes if n.type in SOURCE_NODE_KINDS]
+    return tuple(dict.fromkeys(kinds))
+
+
+def stage_inputs(
+    project_dir: Path, paths: Sequence[Path], *, wanted: Sequence[str] = (), log=print
+) -> list[dict[str, object]]:
+    """Copy the operator's material into the run's uploads folder, sniffed and checked.
+
+    One rule for every lane: **the material goes in ``<project>/uploads``**. The stages that need
+    it look there — ``ingest`` turns it into typed sources, ``transcribe_audio`` reads the
+    recording, the post chain picks up a clip or a folder of stills — so a lane's entry point is a
+    directory an operator can also fill by hand, with a flag, or by dropping a file on the canvas.
+    Nothing is converted here: the type is decided from the bytes and the file is copied as it is,
+    because the stages that read it convert on their own terms (and `ingest` keeps the operator's
+    original untouched by design).
+
+    A file whose sniffed kind is not one the lane asked for is refused by name. That check is the
+    whole reason ``wanted`` exists: ``make audio-restore --input holiday.mp4`` is a mistake worth
+    catching in the first second rather than in the first stage.
+    """
+    from content_factory.ingest.convert import CONVERTIBLE
+    from content_factory.ingest.uploads import ALLOWED, MAX_UPLOAD_BYTES, sniff_mime
+
+    files: list[Path] = []
+    for path in paths:
+        resolved = path.expanduser()
+        if resolved.is_dir():
+            inner = sorted(p for p in resolved.iterdir() if p.is_file())
+            if not inner:
+                msg = f"--input {path} is an empty directory"
+                raise ValueError(msg)
+            files.extend(inner)
+            continue
+        if not resolved.is_file():
+            msg = f"--input {path} is neither a file nor a directory"
+            raise ValueError(msg)
+        files.append(resolved)
+
+    uploads = project_dir / "uploads"
+    uploads.mkdir(parents=True, exist_ok=True)
+    staged: list[dict[str, object]] = []
+    for source in files:
+        mime = sniff_mime(source)
+        kind = (ALLOWED.get(mime) or (CONVERTIBLE.get(mime), ""))[0]
+        if not kind:
+            msg = (
+                f"{source.name} is {mime}, which this pipeline does not read. Convert it to"
+                " mp4/mov, wav/mp3/flac or png/jpg first."
+            )
+            raise ValueError(msg)
+        size = source.stat().st_size
+        if size > MAX_UPLOAD_BYTES:
+            msg = f"{source.name} is {size / 1024**3:.1f} GiB; the limit is 2 GiB"
+            raise ValueError(msg)
+        if wanted and kind not in wanted:
+            msg = (
+                f"{source.name} is {kind}, and this lane takes {', '.join(wanted)}."
+                " Pick the lane that takes what you have (`workflows list`)."
+            )
+            raise ValueError(msg)
+        target = uploads / source.name
+        # An identical file already staged is left alone: `--from` resumes a run whose uploads
+        # folder is already correct, and copying gigabytes again to reach the same bytes is waste.
+        if not (target.exists() and target.stat().st_size == size):
+            target.write_bytes(source.read_bytes())
+        staged.append({"file": target.name, "kind": kind, "mime": mime, "bytes": size})
+    if staged:
+        log(f"==> input  {json.dumps(staged)}")
+    return staged
+
+
 def _brief_for(workflow: str, subject: str | None) -> dict[str, object]:
     """The lane's ``input.brief`` widget values, with ``--subject`` overriding the topic.
 
@@ -331,6 +419,7 @@ def run_workflow(
     shots: str | None = None,
     style: str | None = None,
     subject: str | None = None,
+    inputs: Sequence[Path] = (),
     params: Mapping[Stage, Mapping[str, str]] | None = None,
     node_params: Mapping[str, Mapping[str, str]] | None = None,
     log=print,
@@ -364,6 +453,12 @@ def run_workflow(
         quality=quality,
         brief=_brief_for(workflow, subject),
     )
+
+    # The operator's own material, before the first stage runs: a lane that reads a recording or
+    # a clip has to have it in place, and staging it here means `--input` works the same way for
+    # every lane instead of each one documenting a different directory.
+    if inputs:
+        stage_inputs(project_dir, inputs, wanted=workflow_inputs(workflow), log=log)
 
     by_stage: dict[Stage, dict[str, str]] = {}
     # Which film: the story fixture chooses the script, the shot fixture the staging.

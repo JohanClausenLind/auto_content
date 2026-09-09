@@ -3,6 +3,7 @@ manim skill is run: ``uv run --project <skill> python <skill>/render.py <spec> <
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -94,5 +95,33 @@ def run_blender_scene(
     if proc.returncode != 0 or not summary.get("ok"):
         detail = summary.get("error") or run.stderr_tail or run.stdout_tail
         msg = f"blender scene skill failed (exit {proc.returncode}): {detail}"
-        raise RuntimeError(msg)
+        raise RuntimeError(_diagnose(msg, blender_bin))
     return run
+
+
+def _diagnose(message: str, blender_bin: str) -> str:
+    """Name the one failure that is about *which* Blender ran rather than about the scene.
+
+    The data passes are read back out of multilayer EXR with Blender's bundled OpenImageIO. The
+    upstream builds carry it (verified against 5.2.1); the Ubuntu package does not, and
+    ``blender_bin`` defaults to the bare name, so PATH decides — and on a host with both, a
+    forty-line ModuleNotFoundError traceback out of Blender's own Python is the only thing that
+    says so. One line, naming the setting that fixes it, is worth more than the traceback.
+    """
+    if "OpenImageIO" not in message:
+        return message
+    found = shutil.which(blender_bin) or blender_bin
+    alternatives = [
+        candidate
+        for candidate in ("/snap/bin/blender", "/usr/local/bin/blender", "/opt/blender/blender")
+        if candidate != found and Path(candidate).exists()
+    ]
+    hint = (
+        f" Try CF__CONTROLS__BLENDER_BIN={alternatives[0]}."
+        if alternatives
+        else " Install an upstream Blender build (the distro package will not do)."
+    )
+    return (
+        f"{message}\n  This is the Blender, not the scene: {found} has no bundled OpenImageIO,"
+        f" which the skill needs to read its own multilayer EXR passes back.{hint}"
+    )

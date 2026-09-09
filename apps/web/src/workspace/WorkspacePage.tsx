@@ -26,6 +26,7 @@ import {
 import { api, isApiError } from "../api/client";
 import { queryKeys, runsQuery } from "../api/queries";
 import type { GraphRunStarted, RunSummary } from "../api/types";
+import { insertBlockOps, type WorkflowBlock } from "./blocks";
 import { workspaceCatalog } from "./catalog";
 import { DropSuggestions, useFileDrops } from "./DroppedFile";
 import { loadWorkspace, newUntitledGraph, saveActive, saveGraphs } from "./storage";
@@ -254,6 +255,19 @@ export function WorkspacePage() {
     });
     queuePut(graph);
     switchTo(graph);
+    setTemplatesOpen(false);
+  };
+
+  /**
+   * A block goes into the graph that is open, not into a new tab: it is a step, not a lane. It
+   * lands to the right of everything already there so it never covers a node, and folded, so the
+   * graph gains one node called "Clean up the voice" rather than three the operator has to read.
+   */
+  const insertBlock = (block: WorkflowBlock) => {
+    const nodes = editor.graph.nodes;
+    const right = nodes.length > 0 ? Math.max(...nodes.map((n) => n.x)) + 380 : 80;
+    const top = nodes.length > 0 ? Math.min(...nodes.map((n) => n.y)) : 80;
+    editor.apply(insertBlockOps(editor.graph, block, { x: right, y: top }), `add ${block.name}`);
     setTemplatesOpen(false);
   };
 
@@ -511,7 +525,13 @@ export function WorkspacePage() {
         )}
 
         {queueOpen && <QueuePanel runs={runs} onClose={() => setQueueOpen(false)} />}
-        {templatesOpen && <TemplatesPanel onUse={useTemplate} onClose={() => setTemplatesOpen(false)} />}
+        {templatesOpen && (
+          <TemplatesPanel
+            onUse={useTemplate}
+            onInsertBlock={insertBlock}
+            onClose={() => setTemplatesOpen(false)}
+          />
+        )}
       </div>
     </div>
   );

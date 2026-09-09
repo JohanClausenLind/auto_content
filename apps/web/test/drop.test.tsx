@@ -62,9 +62,9 @@ describe("dropping a file on the canvas", () => {
     // The reason comes from what was measured, so it is specific to this file.
     expect(within(dropped).getByText(/16 kHz mono/)).toBeInTheDocument();
 
-    await user.click(within(dropped).getByRole("button", { name: "Clean the voice" }));
+    await user.click(within(dropped).getByRole("button", { name: "Read what it says" }));
 
-    expect(await within(canvas).findByText("Restore Speech")).toBeInTheDocument();
+    expect(await within(canvas).findByText("Transcribe Recording")).toBeInTheDocument();
     // Wired, not merely placed: the link is in the document the server receives.
     type Doc = {
       nodes?: { id: string; type: string }[];
@@ -75,7 +75,7 @@ describe("dropping a file on the canvas", () => {
         const wired = [...graphStore.values()].some((raw) => {
           const doc = raw as Doc;
           const source = doc.nodes?.find((n) => n.type === "input.audio");
-          const clean = doc.nodes?.find((n) => n.type === "restore_speech");
+          const clean = doc.nodes?.find((n) => n.type === "transcribe_audio");
           return Boolean(
             source &&
               clean &&

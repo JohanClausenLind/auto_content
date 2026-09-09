@@ -24,6 +24,28 @@ const LTX_SIZES = [
   "1344x768",
 ] as const;
 
+/**
+ * Every destination this repo has a real publishing backend for, in the order the pills read.
+ *
+ * Taken from the backends themselves (`python/content_factory/distribution/`), not from a guess:
+ * bluesky, mastodon and discord post, wordpress, ghost and listmonk create drafts. `export` is
+ * the seventh and is not a platform — it writes the package into the run's own deliverable folder
+ * and sends nothing, which is what "publish" means during development and what an operator who
+ * wants to post by hand actually needs.
+ *
+ * The old list said "discord-webhook", which no backend answers to: `DiscordBackend.platform` is
+ * "discord".
+ */
+const PUBLISH_DESTINATIONS = [
+  "export",
+  "bluesky",
+  "mastodon",
+  "discord",
+  "wordpress",
+  "ghost",
+  "listmonk",
+] as const;
+
 type StageDef = Omit<NodeDefinition, "type" | "stage">;
 
 const STAGE_DEFS: Record<Stage, StageDef> = {
@@ -71,16 +93,37 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
   plan_story: {
     title: "Plan Story",
     category: "story",
-    summary: "Turns brief, claims and data into a beat-by-beat story plan",
+    summary: "Turns a brief, a written script or a transcribed recording into beats",
+    help:
+      "Three sources, and the most specific one wins: a story fixture you name, then a" +
+      " transcript from Transcribe Recording, then the brief. Given a transcript the beats ARE" +
+      " the recording — each one is a span of what was actually said, its duration measured from" +
+      " the word timings rather than planned — which is what makes every drawing downstream hold" +
+      " for exactly its own sentence. `beats` is how many drawings that becomes.",
     executor: "ai",
     inputs: [
       { name: "brief", type: "BRIEF" },
       { name: "claims", type: "CLAIMS", optional: true },
       { name: "dataset", type: "DATASET", optional: true },
+      {
+        name: "transcript",
+        type: "TEXT",
+        optional: true,
+        hint: "connect Transcribe Recording to plan the film out of what was said",
+      },
     ],
     outputs: [{ name: "story", type: "STORY" }],
     widgets: [
-      { name: "beats", kind: "int", default: 5, min: 1, max: 12 },
+      {
+        name: "beats",
+        kind: "int",
+        default: 5,
+        min: 1,
+        max: 60,
+        // Read only in transcript mode: a written plan's beat count is the plan's, and a
+        // researched one comes from the outline. The panel says so rather than the widget lying.
+        help: "How many beats a transcribed recording is cut into. A written story keeps its own.",
+      },
       {
         name: "story",
         kind: "text",
@@ -343,11 +386,46 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     summary: "The anchor image every frame must stay faithful to",
     executor: "ai",
     inputs: [
-      { name: "story", type: "STORY" },
+      {
+        // Optional in truth: the stage draws from the shot's staging when there are controls, and
+        // from its own prompt (or the brief's topic) when there are not. A lane that animates one
+        // supplied still has no script at all, and marking this required made that lane's graph
+        // permanently invalid over an input its stage never reads.
+        name: "story",
+        type: "STORY",
+        optional: true,
+        hint: "the plan whose beats become shots — a single-picture lane needs none",
+      },
       { name: "controls", type: "CONTROLS", optional: true },
+      {
+        name: "still",
+        type: "IMAGE",
+        optional: true,
+        hint: "source: upload — connect an Image File to start from a picture you already have",
+      },
+      {
+        // The stage really reads it: with an empty prompt widget the campaign brief's topic is
+        // the subject the picture is drawn from. Declared so a lane whose only source of subject
+        // is the brief can say so on the canvas instead of leaving the brief feeding nothing.
+        name: "brief",
+        type: "BRIEF",
+        optional: true,
+        hint: "the topic stands in as the subject when this node's prompt is empty",
+      },
     ],
     outputs: [{ name: "anchor", type: "IMAGE" }],
     widgets: [
+      {
+        // `upload` is what makes "start from a picture I already have" expressible. It skips the
+        // model entirely: the still in the run's uploads folder becomes anchors/anchor.png and
+        // the manifest a generated anchor would have written, so Generate Video moves the
+        // operator's photograph without knowing it was not drawn here.
+        name: "source",
+        kind: "combo",
+        default: "generate",
+        options: ["generate", "upload"],
+        label: "draw it, or use my picture",
+      },
       { name: "prompt", kind: "textarea", default: "", placeholder: "Visual style, subject, mood…", required: true, rows: 4 },
       // The look the whole run is locked to. The stage already reads it; without a widget it was
       // settable from a workflow definition but invisible on the canvas.
@@ -433,8 +511,17 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     title: "Fix Video (Cutie + ProPainter)",
     category: "video",
     summary: "Tracks chosen segmentation ids with Cutie and inpaints them away with ProPainter; a no-op until ids are chosen",
+    help:
+      "Removal needs two things the node cannot invent: the ids to remove, and a seed mask" +
+      " marking them in the first frame — which only a lane that ran Compile Controls with the" +
+      " Blender compiler writes. With either missing the frames pass through untouched and the" +
+      " run says so, which is why this node is safe to leave in a finishing lane.",
     inputs: [
-      { name: "frames", type: "SEQUENCE,VIDEO" },
+      {
+        name: "frames",
+        type: "SEQUENCE,VIDEO,IMAGE",
+        hint: "the footage to work on — a Video File you dropped, or a sequence from upstream",
+      },
       { name: "mask", type: "MASK", optional: true },
     ],
     outputs: [{ name: "frames", type: "SEQUENCE" }],
@@ -448,8 +535,24 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     title: "Upscale (SeedVR2)",
     category: "video",
     summary: "SeedVR2 7B restoration + upscale of a frame sequence, PNG out",
-    inputs: [{ name: "frames", type: "SEQUENCE,VIDEO" }],
-    outputs: [{ name: "frames", type: "SEQUENCE" }],
+    help:
+      "Runs frame by frame, which is what decides where it belongs in a lane. On an animated cut" +
+      " it goes after the motion. On a film of held drawings it goes BEFORE the hold: the cut of" +
+      " six drawings held for twenty seconds each is a few thousand identical frames, so" +
+      " finishing the cut would spend hours re-enlarging the same six pictures. Wired to the" +
+      " reviewed drawings it enlarges six, and the hold then assembles the enlarged ones.",
+    inputs: [
+      {
+        name: "frames",
+        type: "SEQUENCE,VIDEO,IMAGE",
+        hint: "the frames, the clip or the stills to enlarge — an Image File works, so does a clip",
+      },
+    ],
+    // SEQUENCE,IMAGE like Review Frames, and for the same reason: what comes out is a directory
+    // of PNGs, and the first of them is a still that Generate Video can hold or animate from.
+    // Declaring SEQUENCE alone made "enlarge the drawings, then hold them" a graph the canvas
+    // refused to draw while the runner did it anyway.
+    outputs: [{ name: "frames", type: "SEQUENCE,IMAGE" }],
     widgets: [
       { name: "resolution", kind: "combo", default: "1080", options: ["720", "1080", "1440", "2160"] },
     ],
@@ -467,6 +570,60 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     widgets: [],
   },
   // --- audio ------------------------------------------------------------------------------
+  transcribe_audio: {
+    title: "Transcribe Recording",
+    category: "audio",
+    summary: "Reads the words off a recording, with per-word timings",
+    help:
+      "The one stage whose input is speech and whose output is text, so a film can be made out" +
+      " of what somebody said instead of something somebody wrote. It normalises the recording" +
+      " to mono PCM (audio/source.wav), transcribes it, and writes audio/transcript.json — the" +
+      " text plus where every word is in the audio — and a plain audio/transcript.txt beside it." +
+      " Plan Story then cuts the transcript into beats and each drawing holds for exactly its own" +
+      " words, and Voice Over in recording mode cuts the beats' audio back out of the same file." +
+      " faster_whisper measures the timings in its own environment on the CPU, so it costs no" +
+      " VRAM; fixture takes a transcript you already have and apportions it by word length, and" +
+      " says so — it never claims to have measured anything.",
+    executor: "ai",
+    inputs: [
+      {
+        name: "audio",
+        type: "AUDIO",
+        optional: true,
+        hint: "connect an Audio File, or leave it and drop the recording in the run's uploads",
+      },
+    ],
+    outputs: [
+      { name: "text", type: "TEXT", label: "transcript" },
+      { name: "audio", type: "AUDIO", label: "recording" },
+    ],
+    widgets: [
+      { name: "engine", kind: "combo", default: "faster_whisper", options: ["faster_whisper", "fixture"] },
+      {
+        name: "model",
+        kind: "combo",
+        default: "base.en",
+        options: ["tiny.en", "base.en", "small.en", "medium.en", "large-v3"],
+        label: "whisper model",
+      },
+      { name: "language", kind: "text", default: "en", placeholder: "en, sv, de…" },
+      {
+        name: "transcript",
+        kind: "textarea",
+        default: "",
+        rows: 3,
+        placeholder: "engine: fixture — the transcript you already have, or a path to it",
+      },
+      {
+        name: "source",
+        kind: "text",
+        default: "",
+        placeholder: "a path, if the recording is not in the run's uploads folder",
+      },
+    ],
+    keywords: ["transcribe", "whisper", "asr", "speech to text", "interview", "lecture", "words"],
+    width: 300,
+  },
   lock_script: {
     title: "Lock Script",
     category: "audio",
@@ -519,10 +676,34 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
   voice_over: {
     title: "Voice Over (recorded)",
     category: "audio",
-    summary: "Human takes from <takes_dir>/<beat_id>.wav, force-aligned to the locked script",
-    inputs: [{ name: "script", type: "SCRIPT" }],
+    summary: "A real voice instead of a synthesized one: per-beat takes, or one recording cut up",
+    help:
+      "Produces exactly the same per-beat narration a TTS would, so captions, the timeline, the" +
+      " mix and the mux cannot tell which spoke. Two sources: `takes` expects one recording per" +
+      " beat at <takes_dir>/<beat_id>.wav and force-aligns each against the locked script —" +
+      " right for a film written before it was performed. `recording` cuts the beats out of the" +
+      " single continuous file Transcribe Recording measured, at the word boundaries it found," +
+      " which is what material that already exists needs: nobody re-records an interview into" +
+      " six numbered files. No aligner runs in that mode — the recording was measured once," +
+      " whole, and a beat is a window on that measurement.",
+    inputs: [
+      { name: "script", type: "SCRIPT" },
+      {
+        name: "recording",
+        type: "AUDIO",
+        optional: true,
+        hint: "source: recording — connect Transcribe Recording's own audio output",
+      },
+    ],
     outputs: [{ name: "audio", type: "AUDIO" }],
     widgets: [
+      {
+        name: "source",
+        kind: "combo",
+        default: "takes",
+        options: ["takes", "recording"],
+        label: "where the voice comes from",
+      },
       {
         name: "takes_dir",
         kind: "text",
@@ -651,9 +832,20 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     title: "Compile Timeline",
     category: "video",
     summary: "Milliseconds to integer frames; narration drives scene lengths",
+    help:
+      "Also the stage that assembles the render bundle: the compiled timeline plus the datasets," +
+      " sources, uploaded assets and brand tokens the scenes resolve against. That is why it" +
+      " takes the ingested sources — an image, screenshot or map scene looks its file up in" +
+      " bundle.assets, which Ingest wrote and this stage carries across.",
     inputs: [
       { name: "story", type: "STORY" },
       { name: "timings", type: "DATASET", optional: true },
+      {
+        name: "sources",
+        type: "SOURCES",
+        optional: true,
+        hint: "connect Ingest so a dropped image, screenshot or map file reaches the render bundle",
+      },
     ],
     outputs: [{ name: "timeline", type: "TIMELINE" }],
     widgets: [{ name: "fps", kind: "int", default: 30, min: 12, max: 60 }],
@@ -707,6 +899,16 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       // hold needs no model at all: the drawings are cut together, each held for its shot's
       // length, and every frame on screen is one you approved. The jump between them is the look.
       { name: "motion", kind: "combo", default: "ltx", options: ["ltx", "hold"] },
+      {
+        // Read by the stage and, until now, settable only through `make --subject`, so a canvas
+        // Run of a lane with no shot plan died at "generate_video has no subject" with no widget
+        // anywhere to answer it. A lane WITH shots never reads this: the shot's own compiled
+        // cinematography is the prompt.
+        name: "subject",
+        kind: "text",
+        default: "",
+        placeholder: "one sentence naming what is moving (lanes with no shot plan)",
+      },
       { name: "size", kind: "combo", default: "512x896", options: LTX_SIZES, label: "size (WxH)" },
       { name: "duration", kind: "float", default: 3.0, min: 1, max: 10, step: 0.5, precision: 1 },
       { name: "guide_strength", kind: "float", default: 1.0, min: 0, max: 10, step: 0.1, precision: 1, label: "keyframe guide strength" },
@@ -741,12 +943,27 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     category: "video",
     summary: "Mux frames, narration and captions into the final clip; with a shot routing, interleave Remotion segments and generated clips in beat order",
     inputs: [
-      { name: "frames", type: "SEQUENCE" },
+      {
+        name: "frames",
+        type: "SEQUENCE",
+        optional: true,
+        hint: "the drawings, from Review Frames or Interpolate — or wire a clip into clips instead",
+      },
       { name: "audio", type: "AUDIO", optional: true },
       { name: "captions", type: "CAPTIONS", optional: true },
-      { name: "clips", type: "VIDEO", optional: true },
+      {
+        name: "clips",
+        type: "VIDEO",
+        optional: true,
+        hint: "the moving picture, from Generate Video — or wire a sequence into frames instead",
+      },
       { name: "routing", type: "SHOTS", optional: true },
     ],
+    // A picture is a frame sequence or a clip, and neither slot alone is required. Marking
+    // `frames` required was a lie two lanes had to apologise for in their caveats: a lane that
+    // makes one clip has no sequence to give it, and the composer takes the picture off disk
+    // either way.
+    requires_one_of: [["frames", "clips"]],
     outputs: [{ name: "video", type: "VIDEO" }],
     // Delivery is H.264 in MP4 throughout: the artifact store, the ffprobe QC, the caption burn
     // and every destination package assume it. VP9 and ProRes are a delivery-format decision (a
@@ -856,24 +1073,71 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
  */
 const EXTRA_DEFS: readonly NodeDefinition[] = [
   {
+    // One post, every place it goes. This used to be a single-destination combo, which meant
+    // posting to three platforms was three Publish nodes wired to the same packages — a graph
+    // that says "three publishes" where the operator meant "this one thing, in three places",
+    // and three separate places to forget the approval toggle. The destinations are a set now,
+    // shown as a field of pills rather than a row each.
     type: "publish.social",
-    title: "Publish to Social",
+    title: "Publish",
     category: "delivery",
-    summary: "Publishes exactly once via the idempotent publisher — approval-gated, honours the kill switch",
+    summary: "One post, to every destination you light up — approval-gated, honours the kill switch",
+    help:
+      "Publishing is the one thing in this pipeline that reaches other people, so it is the most" +
+      " gated: nothing leaves without an approval bound to the exact package revision, the" +
+      " publisher is idempotent per (deliverable, revision, destination) so a retry cannot" +
+      " double-post, and the kill switch stops all of it. The destinations here are the ones this" +
+      " repo has real backends for — bluesky and mastodon post, discord goes through a webhook," +
+      " wordpress, ghost and listmonk create DRAFTS, and export writes the package to the run's" +
+      " own folder and sends nothing. During development nothing is uploaded at all: the runner" +
+      " stops after the destination packages and this node marks where they would go.",
     executor: "hybrid",
-    inputs: [{ name: "packages", type: "DELIVERABLE" }],
+    inputs: [
+      {
+        name: "packages",
+        type: "DELIVERABLE",
+        hint: "connect Destination Packages — this posts the parcels it built, not the raw cut",
+      },
+    ],
     outputs: [],
     widgets: [
       {
-        name: "destination",
+        name: "destinations",
+        kind: "chips",
+        label: "where it goes",
+        // `export` writes the package into the run's own folder and sends nothing, which is the
+        // only default a node that reaches other people may have. Lighting up a platform is a
+        // deliberate click, and it still cannot post without an approved distribution profile.
+        default: "export",
+        options: PUBLISH_DESTINATIONS,
+        required: true,
+        hint: "light up at least one destination, or delete the node",
+        help: "Every destination lit here gets the same post, once each.",
+      },
+      {
+        // Draft by default, and first in the list for the same reason: the visibility that cannot
+        // surprise anybody is the one a mis-click should land on.
+        name: "visibility",
         kind: "combo",
-        default: "bluesky",
-        options: ["bluesky", "mastodon", "discord-webhook"],
+        default: "draft",
+        options: ["draft", "unlisted", "public", "private", "export_only"],
       },
       { name: "profile", kind: "text", default: "", placeholder: "distribution profile id" },
       { name: "require_approval", kind: "toggle", default: true },
     ],
-    keywords: ["bluesky", "mastodon", "discord", "post", "distribution"],
+    keywords: [
+      "bluesky",
+      "mastodon",
+      "discord",
+      "wordpress",
+      "ghost",
+      "listmonk",
+      "post",
+      "publish",
+      "distribution",
+      "destinations",
+    ],
+    width: 300,
   },
   {
     type: "input.brief",
@@ -907,13 +1171,23 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
       { name: "packages", type: "DELIVERABLE", optional: true },
       {
         name: "files",
-        type: "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,CAPTIONS,PACKAGE,QC",
+        type: "VIDEO,IMAGE,SEQUENCE,AUDIO,TEXT,CAPTIONS,PACKAGE",
         optional: true,
+        hint: "the finished thing: the cut, the master, the card set, the captions",
+      },
+      {
+        // Verdicts ship with what they judged. Split from `files` because a lane commonly has
+        // both — a film and the decision that let it out — and one slot takes one link, so a
+        // shared slot left one of them wired to nothing and looking like a mistake.
+        name: "reports",
+        type: "QC",
+        optional: true,
+        hint: "a verdict that ships with the files: QC, the originality decision, the package check",
       },
     ],
     outputs: [],
     widgets: [],
-    keywords: ["output", "save", "deliver", "finish", "end", "files"],
+    keywords: ["output", "save", "deliver", "finish", "end", "files", "terminal"],
     width: 260,
   },
   {
@@ -933,7 +1207,16 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
     inputs: [],
     outputs: [{ name: "audio", type: "AUDIO" }],
     widgets: [
-      { name: "asset", kind: "text", default: "", placeholder: "set by the drop", label: "artifact key", required: true },
+      {
+        name: "asset",
+        kind: "text",
+        default: "",
+        placeholder: "set by the drop",
+        label: "dropped file",
+        required: true,
+        hint: "drop a recording on this node, or run the lane with --input <file>",
+        help: "A content-addressed artifact key, written by the drop. Transcribe Recording reads it; Voice Over in recording mode cuts the beats out of it.",
+      },
       { name: "filename", kind: "text", default: "", placeholder: "name in the uploads folder" },
       { name: "bytes", kind: "int", default: 0, min: 0, max: 2147483647, label: "size (bytes)" },
     ],
@@ -952,7 +1235,16 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
     inputs: [],
     outputs: [{ name: "image", type: "IMAGE" }],
     widgets: [
-      { name: "asset", kind: "text", default: "", placeholder: "set by the drop", label: "artifact key", required: true },
+      {
+        name: "asset",
+        kind: "text",
+        default: "",
+        placeholder: "set by the drop",
+        label: "dropped file",
+        required: true,
+        hint: "drop a picture on this node, or run the lane with --input <file>",
+        help: "A content-addressed artifact key, written by the drop. Generate Anchor with source: upload starts from it; Upscale and Fix Video finish it.",
+      },
       { name: "filename", kind: "text", default: "", placeholder: "name in the uploads folder" },
       { name: "bytes", kind: "int", default: 0, min: 0, max: 2147483647, label: "size (bytes)" },
     ],
@@ -971,7 +1263,16 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
     inputs: [],
     outputs: [{ name: "video", type: "VIDEO" }],
     widgets: [
-      { name: "asset", kind: "text", default: "", placeholder: "set by the drop", label: "artifact key", required: true },
+      {
+        name: "asset",
+        kind: "text",
+        default: "",
+        placeholder: "set by the drop",
+        label: "dropped file",
+        required: true,
+        hint: "drop a clip on this node, or run the lane with --input <file>",
+        help: "A content-addressed artifact key, written by the drop. Fix Video, Upscale, Interpolate and Sound Design all take it.",
+      },
       { name: "filename", kind: "text", default: "", placeholder: "name in the uploads folder" },
       { name: "bytes", kind: "int", default: 0, min: 0, max: 2147483647, label: "size (bytes)" },
     ],

@@ -72,7 +72,7 @@ nodes:
       enhancer: resemble_enhance
       device: cuda
     note: >
-      voice_over normalises every take to 16 kHz mono for alignment, so band extension is what puts
+      voice_over normalises every take to 24 kHz mono, so band extension is what puts
       the top octaves back before delivery. The gate stays on detected, unlike the repair lane: a
       take recorded for this script is usually clean. cuda because nothing else wants the GPU here
       and the enhancer is about 19x realtime on CPU.
@@ -108,6 +108,16 @@ wires:
   - {from_key: clean_voice, from_slot: audio, to_key: pack, to_slot: deliverable}
   - {from_key: captions, from_slot: captions, to_key: deliver, to_slot: files}
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: captions
+    name: Captions from the voice
+    members: [timings, captions]
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
 
 order:
   - story

@@ -5595,3 +5595,276 @@ libpango1.0-dev`, Node 22/24, `./setup.sh`, then `rsync -aHAX /mnt/fast/models/ 
 (278 GB, ~45 min at the measured 107 MB/s; nova's own 356 GB of models is all Ollama, no overlap).
 nova has no nvcc, exactly like vegaserv, so the prebuilt flash-attn wheel in
 `skills/image/hidream/README.md` applies unchanged. Do not move it to the `-open` nvidia module.
+
+## 2026-09-09 (later) — nova provisioned as a second GPU host, end to end
+
+The box was rebuilt to Ubuntu 26.04.1 and re-registered at 100.82.150.94. Driver checked first and
+it is the **proprietary** module (`modinfo -F license nvidia` → `NVIDIA`, 595.91.07) with Secure
+Boot off, so neither the `-open` freeze nor the DKMS-signing trap applies here. `/mnt/fast` was
+already mounted (3.6 TB, 3.1 TB free) and the weight store was already complete: **278 GB, 29
+entries, `cutie-base-mega.pth` included**.
+
+**"cutie is missing" was not a weights problem.** `external/` was empty. Cutie needs three separate
+things — the `.pth`, the source checkout, and its own venv — and a model download delivers only the
+first. Same for the other five tools.
+
+| What | Command | Result |
+| --- | --- | --- |
+| toolchain | `curl -LsSf https://astral.sh/uv/install.sh \| sh`; `uv sync --frozen` | uv 0.12.12; project env built. Docker and pnpm deliberately **not** installed: a GPU worker never reads the compose stack or builds the web app |
+| checkouts | `git clone` ×8 at vegaserv's exact commits (Cutie `ec5cdd4`, ProPainter `e870e79`, GIMM-VFI `dbc5644`, Practical-RIFE `bbfd2ea`, seedvr2 `4490bd1`, MMAudio `974010a`, hidream-o1-code `2c2d29f`, whisperX `2cfd7b7`) | 377 MB of source |
+| envs | `just setup-postchain` (now all six) | 6/6 venvs, **torch 2.14.0+cu130, `cuda True`** — identical to vegaserv. `external/` 13 GB with venvs |
+| index | `rsync models/` + `rsync external/Practical-RIFE/train_log/` | 26 symlinks, 0 broken; RIFE's Google-Drive `flownet.pkl` (24 MB) mirrored — it lives in the checkout, not the store |
+| flash-attn | prebuilt cp312 wheel into `skills/image/hidream/.venv` | was **absent** after `uv sync`, exactly as the skill README warns; `flash_attn 2.8.3.post1` |
+| server | `CF_HIDREAM_HOST=100.82.150.94 … server.py` | `{"loaded":true,…}` after **72 s**, 17.3 GB resident, reachable from vegaserv in 17 ms |
+| **real generation** | `HiDreamReferenceEditBackend(endpoint="http://100.82.150.94:8801").text_to_image(...)` | **2048² PNG in 32.7 s wall / 31.1 s server**, inspected — a real picture. Weights → flash-attn → server → tailnet → client all proven |
+| parity | `content-factory video-stack` on both, diffed | identical except PrismAudio (no weights on either host) and Blender (`sudo snap install blender --classic`, operator) |
+
+### Three defects found and fixed on the way
+
+1. **A test leaked into the live weight index.** `models/frame_interpolation/GIMM-VFI` pointed at
+   `/tmp/pytest-of-vega/pytest-197/test_the_gated_download_token_0/store/gimm-vfi` on vegaserv, and
+   was mirrored to nova before it was spotted. Both repointed at `/mnt/fast/models/gimm-vfi`.
+   `weight_install.ensure_index_link` needs test isolation so a test cannot write into `<repo>/models/`.
+2. **`setup_envs.sh` only covered three of six tools**, on the assumption that Practical-RIFE and
+   seedvr2 "already carry their own .venv on this host" — true where it was written, false on any
+   fresh machine, so "post chain installed" meant a chain that dies at its third tool. It now builds
+   all six, refuses with a named path when a checkout is absent, and documents why RIFE is Python
+   3.11 (`numpy<=1.23.5` has no 3.12 wheel).
+3. **The endpoint-pool docs had unquotable JSON.** `.env` is sourced by bash, which eats the inner
+   quotes and hands pydantic `[http://…,http://…]` → `SettingsError: error parsing value for field
+   "image_sequences"`, which never mentions quoting. Single-quoted now in `.env`, `.env.example` and
+   the guide, matching the existing `CF__COMFYUI__EXTRA_MODEL_ROOTS` convention.
+
+`docs/gpu-hosts.md` is the installation guide for all of it — adding a GPU host, the weights no
+download script fetches (GitHub releases, Google Drive, Meta-gated), the pinned checkouts, the
+flash-attn re-install, tailnet binding, wiring the pool, the verification checklist, and
+`content-factory gpu yield|resume|status`. `docs/setup.md` now points at it instead of carrying two
+sections of its own (367 → 283 lines).
+
+## 2026-09-09 (later still) — a film out of a recording, one node per destination, and lanes that fold
+
+The catalogue was read end to end, lane by lane, and audited for the two things an operator
+actually hits: whether the graph is *connected*, and whether the lane can be *run*. Both audits
+found real holes, and the same missing idea was under most of them — **the operator's own material
+had no way into a lane**.
+
+**Four lanes could not run, and one of them could not run at all.** `audio-restore` was the worst:
+`restore_speech` iterates the story plan's beats and reads `<deliverable>/audio/<beat_id>.wav`,
+which only `synthesize_narration` or `voice_over` writes — so the lane whose whole premise is "the
+operator drops a recording in the run directory" looked in a directory named after a generated
+deliverable id for files named after beats that did not exist. It failed on its first stage, every
+time, and its caveat described the empty slot on the canvas rather than the fact that nothing could
+fill it. `image-upscale` and `video-finish` had the same shape (the post chain reads
+`exports/generated.mp4`, per-shot clips, or `sequence/frames` — all written by *earlier stages of
+other lanes*, so the documented way to run a finishing lane was to run a generating one first), and
+`image-to-video`'s caveat said outright that starting from a picture you have "is not expressible
+in the graph today".
+
+**One rule now: the material goes in `<project>/uploads`.** `input.audio` / `input.image` /
+`input.video` became lane node types (they existed on the canvas for dropped files and the workflow
+contract refused them), so a lane's entry point is a node that says *your recording goes here*
+instead of an unexplained empty slot. `make --input <path>` copies the file there, sniffs the kind
+from the bytes, and refuses it against what the lane declares — `make audio-restore --input
+holiday.mp4` is `holiday.mp4 is video, and this lane takes audio`, in the first second. The post
+chain adopts an uploaded clip or a folder of stills; `generate_anchor source=upload` adopts a
+supplied still as the anchor and runs no model at all. `workflows list --json`, `workflows show`
+and `--plan` all report `needs_input`, and `make` refuses a lane that needs material and was given
+none rather than failing four stages in.
+
+**`transcribe_audio`, and a lane that makes a film out of what somebody said.** Every audio
+contract downstream of a voice in this repo is per-beat and carries word timings; that is what lets
+captions, the mix and the loudness report agree about one file. So a recording has to become a
+typed narration segment before anything can touch it, and a segment without words is not one. The
+new stage reads a recording into a `SpeechTranscript` (text + per-word timings + whether they were
+measured or estimated), `plan_story` gained a transcript mode whose beats are *spans of what was
+said* with **measured** durations, and `voice_over` gained a `source: recording` mode that cuts
+each beat's audio out of the one recording at those word boundaries. No aligner runs twice: the
+recording is measured once, whole, and a beat is a window on that measurement.
+
+`workflows/audio-picture-story.yaml` is the lane that follows from it: one recording → transcript →
+six beats → one drawing per beat → SeedVR2 over the drawings → each held for exactly its own
+sentences → the repaired recording as the voice → captions from the same timings → a mix, a cut,
+QC, packages. `audio-restore` was rebuilt on the same spine and now runs, delivering a transcript
+beside the mastered WAV.
+
+Two things had to change under it. `upscale_video` on a held film was a trap: the cut of six
+drawings held for twenty seconds each is a few thousand identical frames, so finishing the *cut*
+would spend hours re-enlarging six pictures. The anchors are a post-chain input now, so the chain
+runs on the drawings (six items) and `generate_video`'s hold assembles the finished ones. And
+`interpolate` — the chain's last step and therefore its muxer — returned the most-finished
+*existing* video when interpolation was declined, which silently threw away every earlier step: a
+lane that removed an object and upscaled and then declined to interpolate wrote its finished frames
+to disk, muxed nothing, and reported ok.
+
+**Two defects the live run found, which no test would have.** The lane got as far as
+`compose_video` and failed its own audio QC: *"audio shorter than the narration it should carry"*.
+`mix.mux` ends in `-shortest`, and the mix lays a narration out with `lead_in_ms` before the first
+beat, a pause between beats and `tail_ms` after the last one — so the stem is **always** longer
+than the sum of the beats, and a lane whose picture is exactly as long as its beats (drawings held
+for the spans of speech they illustrate) lost its ending to a flag. `mux` now takes
+`min_video_ms` — the end of the last spoken word, as the mix laid it out — and holds the last frame
+until then instead of cutting the words; the trailing silence is still trimmed. Only a picture
+whose length is its own is held: a Remotion bundle render *is* the compiled timeline frame for
+frame, three tests and the delivery QC rely on that count, and the timeline is itself compiled from
+the measured narration. (Which surfaced a smaller one, left alone and worth recording: a timeline
+film's picture ends about 130 ms before its last word, because `compile_timeline` does not account
+for the stem's 400 ms `lead_in_ms` and the 250 ms handle does not cover it. The audio QC tolerates
+it — it asks for 90 % of the words — and fixing it shifts every card lane's frame count.)
+
+The second: a story planned from a recording has no frame rate or aspect of its own, so it takes
+the deliverable's, and `plan_shots` refused the lane at *"the story is 30 fps and this shot plan is
+24 fps"* — which is the guard doing exactly its job, since a mismatch is otherwise corrected
+downstream by duplicating frames, silently.
+
+**Publishing is one node with every destination on it.** `publish.social` carried a
+single-destination combo, so posting to three platforms was three Publish nodes wired to the same
+packages — a graph that says "three publishes" where the operator meant "this one thing, in three
+places", and three places to forget the approval toggle. Destinations are a set now, rendered as a
+field of toggle pills (a new `chips` widget kind: one comma-separated value, real checkboxes under
+the styling, an all/none control), covering every platform this repo has a backend for plus
+`export`. The old list said `discord-webhook`, which no backend answers to — `DiscordBackend.platform`
+is `discord`.
+
+**Lanes fold.** Half of every lane is the same few steps, so a `WorkspaceGroup` is a named set of
+nodes the canvas draws as one: folded, a single node with the group's own boundary slots and a
+numbered list of what is inside; opened, the members exactly as they are with every widget on them.
+It is a **view** — the nodes, links, execution order and validation results are byte-identical, which
+is why the compiler, the runner and every existing test never had to learn what a group is
+(`test_folding_a_graph_compiles_to_exactly_the_same_run` pins that). The ports are derived from the
+links on every render, so folding cannot hide a hole: an unconnected required input inside a folded
+group still shows on the folded node. Definitions declare `groups:` and every lane folds its
+delivery tail; `video-finish` is seven nodes shown as four. The Templates panel gained a **Blocks**
+section — clean up the voice, captions from the voice, read the recording, finish the picture, check
+and deliver, package and publish — and adding one drops its nodes into the graph you are editing,
+wired, folded into one node, as a single undoable edit.
+
+**Every lane is now fully linked.** No unfed required input and no output nothing consumes, in all
+sixteen — and the loader no longer lets a `caveat` excuse an unwired input, which is how four of
+them hid. The wiring holes that were left: `data-story-video` threw away its card stills and its
+originality verdict (a second terminal, titled, holds both — and node titles from a definition
+never reached the canvas at all, they were parsed and dropped); `narrated-video`'s `ingest` fed
+nothing, so a dropped picture could never reach the film (`compile_timeline` is the stage that
+folds uploads into the render bundle, and now says so); `image-to-video`'s brief fed nothing
+(`generate_anchor` really does read the brief topic when its prompt is empty, so it declares that
+input); `compose_video`'s `frames` was marked required and two lanes apologised for it in prose —
+a picture is a frame sequence *or* a clip, which is now sayable (`requires_one_of`).
+
+The same defect had a smaller twin on the canvas: dropping a recording offered **Clean the voice**
+and **Master the loudness** wired straight to the file, and both stages read `<beat_id>.wav` files
+only a voice stage writes — so one click produced a graph that failed on its first stage. A dropped
+recording is offered **Read what it says** now, which is the door the rest goes through.
+
+Smaller things, in one breath: the folded-group thumbnail on a template card draws the group and
+not its members, because that card's whole claim is that it cannot lie about what opening the graph
+shows; right-clicking a folded group used to show no menu at all (the menu looked its target up as
+a node) and now offers open/fold, ungroup and delete-all; opening a group frames its members, so it
+feels like going in; the compile preview names the destinations a Publish node is set to, because
+"publishing is skipped" without saying where it would have gone is the half of the answer nobody
+needs; and the destinations widget defaults to `export` — the run's own folder — since the only
+default a node that reaches other people may have is the one that reaches nobody.
+
+Also: `generate_video` gained the `subject` widget it was already reading, so a canvas run of a
+lane with no shot plan no longer dies at "generate_video has no subject" with no widget anywhere to
+answer it; `generate_anchor.story` became optional, because the stage never reads it and marking it
+required made a one-picture lane permanently invalid; `plan_story.beats` left the unread-widget
+exemption table, because in transcript mode it is the number of drawings.
+
+| What | Command | Result |
+| --- | --- | --- |
+| the catalogue holds together | `uv run content-factory workflows validate` | **16 checked, 0 problems** (was 15) |
+| every lane, wiring and folding | `uv run pytest tests/unit/test_workflow_definitions.py -q` | **171 passed** |
+| the transcript chain | `uv run pytest tests/unit/test_transcribe_audio.py -q` | **19 passed** |
+| the mux holds its last frame | `uv run pytest tests/unit/test_captions_and_mix.py tests/unit/test_compose_mixed.py -q` | **11 passed** |
+| supplied material, both ends | `uv run pytest tests/unit/test_supplied_material.py -q` | **16 passed** |
+| a group cannot change a run | `uv run pytest tests/unit/test_workspace_compile.py -q` | **21 passed** |
+| core suite | `uv run pytest -q` | **1306 passed**, 53 deselected, 316 s (1197 before this work: +109). An earlier run came back `1 failed` on a pre-existing host problem — see below; the same test fails on a stashed, pristine HEAD, and it passes now |
+| folded groups | `pnpm --filter @content-factory/node-graph test` | **49 passed** (20 new: the model, and the canvas drawing one node for a group) |
+| blocks + templates | `pnpm --filter @content-factory/web test` | **120 passed** (7 new) |
+| every TS suite | `pnpm -r test` | **386 passed** |
+| gates | `just fmt && just lint && just typecheck` | clean (ruff clean, oxlint 0 errors / 46 pre-existing a11y warnings, pyright **0 errors**, every tsc Done) |
+| contracts | `just schemas` | 70 schemas, 60 node types, 16 templates |
+| integration (needs compose) | `just test-integration` | **47 passed**, 1310 deselected, 288 s. Required by CLAUDE.md for a change that touches a stage executor, and it earned it: `test_crud_validates_and_scopes` asserted a graph comes back byte-for-byte as it was PUT, and a document written before folded groups existed now comes back with `groups: []` — the migration behaviour, pinned rather than papered over. (It also re-records `fixtures/temporal/spike_production_run.history.json` on every run — event times, run ids and the worker build id — which is churn to revert, not a change) |
+| drift gate | `just schemas-check` | **passes** (70 schemas, 60 node types, 16 templates, `stale: []`) — but only once committed, which is worth knowing: it is a git gate, not a content diff. `export_schemas.py --check` regenerates and then runs `git status --porcelain` over the output, and `schemas.sh` ends in `git diff --exit-code`, so every regenerated file reads as drift while it is uncommitted — staged is not enough, because a staged file is still `M ` to `git status` |
+| the generated content itself | `uv run python scripts/export_workflows.py --check` | `{"templates": 16, "stale": []}` — the check that compares content rather than git says the generated contracts are current |
+
+End to end on this host, on real files rather than a described machine.
+`content-factory make audio-restore --input grandmother.wav --set transcribe.engine=fixture --set
+transcribe.transcript="…"`: **8 stages, all ok, 19.9 s**, the real repair chain running
+(`detect → cleanup:clearervoice → band_extension:clearervoice_sr → enhancer:resemble_enhance →
+voice_chain:de_ess+eq+compress`, band limit 281 Hz → 24 kHz), mastered to **-16.0 LUFS** against a
+-16.0 target, QC passed, one `export` package of an audio file and its metadata. This is the lane
+that could not complete a single stage that morning. `make audio-picture-story --until anchor` on
+the same recording with the mock image backend: **transcript → 6 beats → 6 shots → 6 control
+bundles → 6 drawings**, 414 frames at 30 fps = 13.8 s of picture against 14 s of recording — the
+film's length is the speech's length by construction, and `generate_video motion=hold` then wrote
+`exports/generated.mp4` from the six.
+
+**One pre-existing failure, found by verifying and fixed on the way.** The final core run came
+back `1 failed`: `test_hybrid_workflow_runs_end_to_end_on_mock_backends`, at `compile_controls`,
+with `ModuleNotFoundError: No module named 'OpenImageIO'` forty lines deep inside Blender's own
+Python. It is not this change set — stashing the whole tree and running the test against a
+pristine HEAD fails identically — and it is not the scene either. This host has **two** Blenders:
+`/usr/bin/blender` 4.0.2 from apt, which does not bundle OpenImageIO, and `/snap/bin/blender`
+5.2.1 LTS, which does (and is the build STATUS records the skill as verified against).
+`controls.blender_bin` is the bare name `blender`, so PATH decides — and the lane pins
+`controls.compiler: blender`, so the test's result came down to the order of two directories.
+
+Two fixes, both about honesty rather than convenience. `run_blender_scene` now diagnoses that one
+failure: *"This is the Blender, not the scene: /usr/bin/blender has no bundled OpenImageIO, which
+the skill needs to read its own multilayer EXR passes back. Try
+CF__CONTROLS__BLENDER_BIN=/snap/bin/blender."* — and passes every other failure through untouched,
+because a diagnosis that fires on everything is one nobody reads. And the test asks
+`tests/helpers/real_blender.py` for a Blender that can actually do the job, pins it, and **skips**
+where the host has none, instead of depending on PATH.
+
+**Deliberately not done.** faster-whisper is the default transcriber and is exercised by hand, not
+in the core suite: it downloads its own model, so the suite runs the `fixture` transcriber (an
+operator's own transcript, apportioned by word length, recorded as `estimated` and never as
+measured). The new lane's `review_frames` gate is kept — six drawings become a film, and the
+catalogue's two other picture lanes gate the same way — so an unattended run of it parks at `GATE`
+and exits 4 until `content-factory frames review --accept-all`. A group is a flat-graph view and
+not a subgraph: it cannot be reused as a definition, nested, or executed on its own, and the block
+catalogue in `apps/web/src/workspace/blocks.ts` is therefore a second place a fragment is written
+down (the lanes' own `groups:` name node keys instead). `package_qc` still writes
+`{"passed": true}` and checks nothing, which its node panel says in as many words.
+
+Not mine, and left alone: `.env.example` and `docs/setup.md` carry an uncommitted change quoting
+the endpoint-list JSON (`'["http://…"]'`) so bash does not eat the inner quotes. It is correct and
+unrelated to this work.
+
+### nova: ComfyUI installed, Blender still absent (2026-09-09, later)
+
+The operator reported ComfyUI and Blender were in place. Checked: **ComfyUI was a bare checkout**
+(`~/git/ComfyUI`, v0.35.0, git `4989cdd9`) with no venv, no custom nodes beyond the two stock
+examples, and 0 of the 22 model symlinks — and **Blender was not installed at all** (no snap, no
+flatpak, no apt, nothing on PATH).
+
+A checkout is not an install, and the missing piece was load-bearing: LTX-2.5, FLUX.2 and Wan are
+all GGUF, so every one of their workflows needs `UnetLoaderGGUF`/`CLIPLoaderGGUF` from
+**ComfyUI-GGUF** — which `ltx_packages.py` already pins as `PinnedNode(registry_name='ComfyUI-GGUF',
+commit='6ea2651')`. Without it the packages fail validation against `/object_info`.
+
+| What | Command | Result |
+| --- | --- | --- |
+| version floor | `comfyui_min_version="0.33.0"` in `ltx_packages.py` / `wan_packages.py` | a **minimum**, so nova's 0.35.0 needs no downgrade |
+| venv | `uv venv --python 3.12`; torch from the cu130 index; `-r requirements.txt` | torch **2.14.0+cu130, cuda True** |
+| custom nodes | cloned ComfyUI-GGUF `6ea2651` (the pinned commit) + ComfyUI-Conditioning-Rebalance `a0cd006` | both at the same commits vegaserv runs |
+| model links | 22 links generated from vegaserv's live layout and applied | **22 links, 0 broken** |
+| live check | `GET /object_info` vs every `class_type` in `ltx_i2v_package().api_workflow` | **16/16 present**, incl. both GGUF loaders; server reports 933 nodes, sees all three GGUF weights |
+| Blender | `snap list`, `flatpak list`, `dpkg -l`, `find` | **not installed** — needs `sudo snap install blender --classic` (operator) |
+
+**A near-miss worth recording.** The first version of that node check introspected the package with
+the wrong attribute, got an empty want-list, and printed "missing: none" — which reads exactly like
+a pass. The check now asserts the want-list is non-empty before comparing. Any verification that can
+succeed vacuously is not a verification.
+
+**The unit and the manual server fought.** Both the `setsid` one-liner and the systemd unit were
+started, so the manual instance held port 8801 and 16.66 GiB while the unit OOM-looped behind it —
+**13 restarts**, with `/healthz` passing the whole time because the *manual* server answered. Killed
+the manual tree, restarted the unit alone: `NRestarts=0`, 17.3 GB, one process. `docs/gpu-hosts.md`
+now carries the unit file and the warning.
+
+`pkill -f "skills/image/hidream/server.py"` also killed the controlling SSH session, because the
+pattern matches the searching shell's own argv — the same trap the guide already listed for `pgrep`.
+The guide now gives the fixes (`ss` for liveness, `[b]racketed` patterns, `systemctl stop` for
+services) rather than only naming the trap.

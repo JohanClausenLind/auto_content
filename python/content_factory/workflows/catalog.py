@@ -25,6 +25,7 @@ from content_factory.schemas.workflow_template import (
 )
 from content_factory.schemas.workspace_graph import (
     WorkspaceGraph,
+    WorkspaceGroup,
     WorkspaceLink,
     WorkspaceNode,
 )
@@ -107,9 +108,12 @@ def check_against_catalog(template: WorkflowTemplate, *, where: str = "") -> Non
                     f" produces {'/'.join(produced)} but that input accepts {'/'.join(accepted)}"
                 )
 
-    # Every required input of a runnable node should be fed, or the node relies on a settings
-    # default and the definition should say so. Reported, not fatal: several stages legitimately
-    # read their input from the run directory rather than from a wire.
+    # Every required input of a runnable node must be fed. This used to be waived for any
+    # definition that carried a ``caveat``, which meant one sentence of prose excused any number
+    # of unwired inputs — and it did: four lanes opened on an empty required slot and explained it
+    # instead of fixing it, because the thing they were missing (the operator's own recording,
+    # clip or stills) had no node type to arrive through. It has one now
+    # (``input.audio``/``image``/``video``), so the waiver is gone and the rule is the rule.
     fed = {(w.to_key, w.to_slot) for w in template.wires}
     unfed: list[str] = []
     for node in template.nodes:
@@ -119,10 +123,19 @@ def check_against_catalog(template: WorkflowTemplate, *, where: str = "") -> Non
         for slot in spec["required_inputs"]:
             if (node.key, slot) not in fed:
                 unfed.append(f"{node.key}.{slot}")
-    if unfed and not template.caveat:
+        # A node that takes one thing in two shapes (a picture is a frame sequence or a clip)
+        # declares the alternatives instead of marking both required. None of them fed is the
+        # same defect as an unfed required input, and reads the same way in the message.
+        for group in spec.get("requires_one_of", ()):
+            if not any((node.key, slot) in fed for slot in group):
+                unfed.append(f"{node.key}.{'|'.join(group)}")
+    if unfed:
         problems.append(
-            "required inputs are not wired and the workflow declares no caveat explaining why:"
-            f" {sorted(unfed)}"
+            "these required inputs are wired to nothing: "
+            + ", ".join(sorted(unfed))
+            + ". Every lane's entry point is a node — input.audio, input.image or input.video for"
+            " material the operator supplies — so a stage that reads the run directory still says"
+            " where its input comes from."
         )
 
     if problems:
@@ -252,7 +265,24 @@ def to_workspace_graph(template: WorkflowTemplate) -> WorkspaceGraph:
         )
         for w in template.wires
     )
-    return WorkspaceGraph(graph_id=template.id, name=template.name, nodes=nodes, links=links)
+    by_id = {n.id: n for n in nodes}
+    groups = tuple(
+        WorkspaceGroup(
+            id=f"gr_{template.id}_{g.key}"[:64],
+            name=g.name,
+            template=g.key,
+            collapsed=g.collapsed,
+            members=tuple(_node_id(template.id, key) for key in g.members),
+            # The folded node sits at the corner of what it folds, so a lane opens with its
+            # groups where its nodes were rather than stacked at the origin.
+            x=min(by_id[_node_id(template.id, k)].x for k in g.members),
+            y=min(by_id[_node_id(template.id, k)].y for k in g.members),
+        )
+        for g in template.groups
+    )
+    return WorkspaceGraph(
+        graph_id=template.id, name=template.name, nodes=nodes, links=links, groups=groups
+    )
 
 
 def _node_id(workflow_id: str, key: str) -> str:

@@ -119,37 +119,36 @@ def probe_media(path: Path) -> dict[str, Any]:
 
 
 def _audio_suggestions(facts: dict[str, Any]) -> list[Suggestion]:
+    """What to offer for a dropped recording.
+
+    Reading it comes first, and that is not a preference — it is the shape of the audio chain.
+    Everything downstream of a voice here is per-beat and carries word timings, so
+    ``restore_speech`` and ``mix_audio`` work on ``<beat_id>.wav`` files that only a voice stage
+    writes. Offering them wired straight to a dropped file produced a graph that failed on its
+    first stage looking for takes that did not exist, which is the same defect ``audio-restore``
+    had as a whole lane. ``transcribe_audio`` is the door: it normalises the recording, measures
+    where every word is, and is what lets the beats — and therefore the repair, the captions and
+    the mix — exist at all.
+    """
     rate = int(facts.get("sample_rate_hz") or 0)
     channels = facts.get("channels")
     narrow = 0 < rate < 44_100
-    why_clean = (
-        f"{rate // 1000} kHz{' mono' if channels == 1 else ''}: band extension puts the top"
-        " octaves back before delivery, and the restorer takes the room off"
+    band = (
+        f"{rate // 1000} kHz{' mono' if channels == 1 else ''}: the repair chain's band extension"
+        " can put the top octaves back before delivery"
         if narrow
-        else "cleanup and restoration; the take is already full-band, so no band extension"
+        else "the take is already full-band, so the repair chain needs no band extension"
     )
     return [
         Suggestion(
-            node_type="restore_speech",
-            title="Clean the voice",
-            why=why_clean,
+            node_type="transcribe_audio",
+            title="Read what it says",
+            why=(
+                "word-by-word timings off the recording — the step every audio lane starts with,"
+                f" because the repair, the captions and the mix all work per beat. {band}"
+            ),
             to_slot="audio",
-            values={
-                "cleanup": "clearervoice",
-                "band_extension": "clearervoice_sr" if narrow else "off",
-                "enhancer": "resemble_enhance",
-                # The operator dropped a clip and asked for it to be cleaned: the chain should
-                # not second-guess that by measuring the take and deciding it sounds fine.
-                "gate": "always",
-                "device": "cuda",
-            },
-        ),
-        Suggestion(
-            node_type="mix_audio",
-            title="Master the loudness",
-            why="two-pass loudnorm to -16 LUFS, the spoken-word target rather than the video one",
-            to_slot="audio",
-            values={"target_lufs": -16.0},
+            values={"engine": "faster_whisper", "model": "base.en"},
         ),
         Suggestion(
             node_type="qc_deliverable",

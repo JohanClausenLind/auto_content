@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "TimingSource": {
+      "enum": [
+        "provider",
+        "forced_alignment",
+        "asr",
+        "synthetic",
+        "estimated"
+      ],
+      "title": "TimingSource",
+      "type": "string"
+    },
+    "WordTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "end_ms": {
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "start_ms": {
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "word": {
+          "title": "Word",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end_ms",
+        "start_ms",
+        "word"
+      ],
+      "title": "WordTiming",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/SpeechTranscript.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "What a recording says, with per-word timings: the input side of the narration contracts.\n\n:class:`NarrationSegment` describes speech this factory *produced* from a script it already\nhad. This describes speech that arrived without one — an interview, a lecture, a voice memo —\nso the words are the transcriber's reading of the audio rather than a script the audio was\nchecked against. That difference is the whole reason it is a separate contract and not a\nsegment with an empty script: nothing downstream may treat these words as authored.\n\n``words`` is the load-bearing field. A story planned from a transcript cuts it into beats at\nword boundaries, so every beat knows exactly which milliseconds of the recording it owns, and\nthe picture for that beat is on screen for exactly as long as those words are spoken. Without\ntimings the transcript is only text, which is why ``timing_source`` says how they were got.",
+  "properties": {
+    "audio_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Audio Sha256",
+      "type": "string"
+    },
+    "duration_ms": {
+      "minimum": 1,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "engine": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Engine",
+      "type": "string"
+    },
+    "language": {
+      "default": "en",
+      "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$",
+      "title": "Language",
+      "type": "string"
+    },
+    "sample_rate_hz": {
+      "maximum": 192000,
+      "minimum": 8000,
+      "title": "Sample Rate Hz",
+      "type": "integer"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "text": {
+      "maxLength": 200000,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "timing_source": {
+      "$ref": "#/$defs/TimingSource",
+      "default": "asr"
+    },
+    "transcript_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Transcript Id",
+      "type": "string"
+    },
+    "words": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WordTiming"
+      },
+      "title": "Words",
+      "type": "array"
+    }
+  },
+  "required": [
+    "audio_sha256",
+    "duration_ms",
+    "engine",
+    "language",
+    "sample_rate_hz",
+    "schema_version",
+    "text",
+    "timing_source",
+    "transcript_id",
+    "words"
+  ],
+  "title": "SpeechTranscript",
+  "type": "object"
+}

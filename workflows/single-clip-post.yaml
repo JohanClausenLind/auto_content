@@ -19,9 +19,8 @@ description: >
 category: social
 tags: [clip, vertical, voice, captions, sound, delivery]
 caveat: >
-  compose_video's frames input is left unwired on purpose: this lane makes a clip, not a frame
-  sequence, so the picture arrives on clips and the composer picks it up from the run directory.
-  The publish node is the canvas terminal; the runner stops after the destination packages.
+  The publish node is the canvas terminal: it marks where the packages go, and the runner stops
+  after building them. Nothing is uploaded by a run in this repo.
 prerequisite: >
   A topic on the brief, or a written script as fixtures/story/<name>.json set on plan_story's story
   widget. Nothing needs recording: the voice is synthesized. Posting needs a distribution profile.
@@ -127,9 +126,12 @@ nodes:
     type: compile_destination_packages
   - key: publish
     type: publish.social
+    values: {destinations: export, visibility: draft}
     note: >
-      Destination and profile are chosen per run, and the post is approval gated. The runner skips
-      this node: it marks where the packages go.
+      One post, to every destination lit up on the node - light more than one and the same package
+      goes to each, once. It defaults to export, which writes the package into the run's own folder
+      and sends nothing; a real platform needs an approved distribution profile, and the post is
+      approval gated on top of that. The runner skips this node: it marks where the packages go.
 
   - key: deliver
     type: output.deliverables
@@ -161,7 +163,17 @@ wires:
 
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
 
-  - {from_key: originality, from_slot: verdict, to_key: deliver, to_slot: files}
+  - {from_key: originality, from_slot: verdict, to_key: deliver, to_slot: reports}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: captions
+    name: Captions from the voice
+    members: [timings, captions]
+  - key: deliver
+    name: Check and package
+    members: [qc, pack]
 
 order:
   - story

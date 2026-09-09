@@ -732,6 +732,36 @@ class SpeechRestorationSettings(StrictModel):
     timeout_s: int = Field(default=3600, ge=30, le=86400)
 
 
+class TranscriptionSettings(StrictModel):
+    """transcribe_audio: reading the words off a recording nobody wrote a script for.
+
+    ``faster_whisper`` measures word timings in its own uv environment (CPU int8, so it costs no
+    VRAM while the image models hold the card). ``fixture`` takes a transcript the operator
+    already has — a repo-relative or absolute text file, or the node's own ``transcript`` widget —
+    and apportions it across the recording by word length, recording itself as ``estimated``
+    rather than measured. That is the offline path the core suite runs on, and the honest answer
+    for a recording whose script is known.
+
+    The default is the measured one: a lane whose whole premise is "make a film out of what this
+    person said" must not silently fall back to text nobody checked against the audio.
+    """
+
+    engine: Literal["faster_whisper", "fixture"] = "faster_whisper"
+    faster_whisper_model: str = "base.en"
+    faster_whisper_compute_type: str = "int8"
+    timeout_s: int = Field(default=1800, ge=10, le=86400)
+    language: str = Field(default="en", pattern=r"^[a-z]{2,3}(-[A-Z]{2})?$")
+    # The rate the recording is normalised to before anything measures or cuts it. 24 kHz is what
+    # voice_over normalises a take to, and the restoration chain resamples to its own delivery
+    # rate afterwards, so matching voice_over is what keeps one recording indistinguishable from
+    # a set of per-beat takes.
+    sample_rate_hz: int = Field(default=24000, ge=8000, le=192000)
+    # How many drawings a film gets when the node does not say. Six is a two-minute recording at
+    # about twenty seconds a picture, which is the longest a still can hold before it reads as a
+    # stalled video rather than an illustration.
+    beats: int = Field(default=6, ge=1, le=60)
+
+
 class VoiceOverSettings(StrictModel):
     """voice_over: human takes recorded outside the factory, force-aligned to the locked script.
 
@@ -914,6 +944,7 @@ class Settings(BaseSettings):
     routing: RoutingSettings = RoutingSettings()
     narration: NarrationSettings = NarrationSettings()
     compose: ComposeSettings = ComposeSettings()
+    transcription: TranscriptionSettings = TranscriptionSettings()
     voice_over: VoiceOverSettings = VoiceOverSettings()
     speech_restoration: SpeechRestorationSettings = SpeechRestorationSettings()
     sound_design: SoundDesignSettings = SoundDesignSettings()

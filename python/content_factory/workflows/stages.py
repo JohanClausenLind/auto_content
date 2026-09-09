@@ -669,8 +669,11 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
     # fixture planner: a film whose script is written, not researched, still gets a typed plan.
     fixture = _param(ctx, "story")
     drafted: dict | None = None
+    transcript_facts: dict | None = None
     if fixture:
         plan = StoryPlan.model_validate_json((REPO_ROOT / fixture).read_text())
+    elif (transcribed := _transcript_path(ctx)) is not None:
+        plan, transcript_facts = _story_plan_from_recording(ctx, transcribed)
     elif get_settings().execution.local_scriptwriter:
         plan, drafted = _draft_story_plan(ctx)
     else:
@@ -728,8 +731,63 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
             facts["shorts"] = len(shorts_plan.excerpts)
     if drafted is not None:
         facts.update(drafted)
+    if transcript_facts is not None:
+        facts.update(transcript_facts)
     outputs_hash = hashes[0] if len(hashes) == 1 else _hash_obj(hashes)
     return StageOutput(outputs_hash, facts)
+
+
+def _transcript_path(ctx: StageContext) -> Path | None:
+    """The transcript ``transcribe_audio`` wrote for this deliverable, when there is one.
+
+    ``plan_story`` is a *shared* stage: the campaign compiler runs one of it for the whole run, so
+    it can arrive with no deliverable at all — and a transcript belongs to a deliverable's audio
+    folder. No deliverable therefore means no transcript rather than an assertion, which is what
+    the documentary tests found the moment this branch existed.
+    """
+    if ctx.deliverable_id is None:
+        return None
+    path = ctx.ddir() / "audio" / "transcript.json"
+    return path if path.exists() else None
+
+
+def _story_plan_from_recording(ctx: StageContext, path: Path) -> tuple[StoryPlan, dict]:
+    """The plan a recording dictates: beats are spans of what was actually said.
+
+    Precedence matters here and is deliberate. A named ``story`` fixture still wins, because an
+    operator who names a plan means it; failing that, a transcript on disk beats both the script
+    writer and the demo fixture, because a lane that transcribed a recording and then planned a
+    film about Swedish wind power would be the single most confusing thing this pipeline could do.
+
+    ``beats`` is the number of drawings. It is the one knob here that changes the film: each beat
+    becomes one shot, one drawing and one held span of the recording, so asking for four beats out
+    of a three-minute interview is asking for four pictures that hold for forty seconds each.
+    """
+    from content_factory.audio.transcribe import TRANSCRIBE_VERSION, story_plan_from_transcript
+    from content_factory.schemas.audio import SpeechTranscript
+
+    cfg = get_settings().transcription
+    transcript = SpeechTranscript.model_validate_json(path.read_text())
+    spec = _spec(ctx)
+    width, height = aspect_dimensions(aspect_or_portrait(getattr(spec, "aspect", None)))
+    fps = int(getattr(spec, "fps", 24) or 24)
+    subject = _param(ctx, "subject").strip()
+    plan = story_plan_from_transcript(
+        transcript,
+        deliverable_id=spec.deliverable_id,
+        beats=max(1, _param_int(ctx, "beats", cfg.beats)),
+        width=width,
+        height=height,
+        fps=fps if fps in (24, 25, 30, 60) else 24,
+        visual_subject=subject or None,
+    )
+    return plan, {
+        "planned_from": "transcript",
+        "transcript_engine": transcript.engine,
+        "transcript_timings": transcript.timing_source.value,
+        "spoken_seconds": round(transcript.duration_ms / 1000, 1),
+        "transcribe_version": TRANSCRIBE_VERSION,
+    }
 
 
 def _draft_story_plan(ctx: StageContext) -> tuple[StoryPlan, dict]:
@@ -2053,10 +2111,106 @@ def _generate_checked(
     )
 
 
+def _anchor_from_upload(ctx: StageContext) -> StageOutput:
+    """The operator's own still as the anchor, drawn by nobody.
+
+    ``image-to-video``'s caveat used to read "no node type ingests a supplied still, so starting
+    from an image you already have is not expressible in the graph today". This is that node
+    behaviour: with ``source: upload`` the stage adopts the picture in the run's uploads folder
+    instead of generating one, writes it as ``anchors/anchor.png`` and records the same manifest a
+    generated anchor writes — so ``generate_video`` moves the operator's photograph with no
+    knowledge that it was not drawn here, and no prompt, seed or model is consulted at all.
+    """
+    uploads = ctx.project_dir / UPLOADS_DIRNAME
+    stills = (
+        sorted(
+            p
+            for p in uploads.glob("**/*")
+            if p.is_file() and p.suffix.lower() in PICTURE_SUFFIXES_IN
+        )
+        if uploads.is_dir()
+        else []
+    )
+    if not stills:
+        msg = (
+            "generate_anchor source=upload has no picture to start from: put one in"
+            f" {uploads} (`content-factory make <lane> --input <image>`) or set the node back to"
+            " source=generate to draw one."
+        )
+        raise RuntimeError(msg)
+    if len(stills) > 1:
+        names = ", ".join(p.name for p in stills)
+        msg = f"generate_anchor source=upload found {len(stills)} pictures ({names}); leave one."
+        raise RuntimeError(msg)
+    source = stills[0]
+    anchors_dir = ctx.ddir() / "anchors"
+    png_path = anchors_dir / "anchor.png"
+    anchors_dir.mkdir(parents=True, exist_ok=True)
+    if source.suffix.lower() == ".png":
+        png = source.read_bytes()
+    else:
+        from content_factory.audio.mix import ffmpeg
+
+        ffmpeg(["-i", str(source), str(png_path)], timeout=120)
+        png = png_path.read_bytes()
+    _write_atomic(png_path, png)
+    size = _png_size(png)
+    width = int(size.get("png_width") or 0)
+    height = int(size.get("png_height") or 0)
+    if width < 16 or height < 16:
+        msg = f"{source.name} is {width}x{height}; that is not a picture anything can work from"
+        raise RuntimeError(msg)
+    record = {
+        "frame_index": 0,
+        "shot_id": None,
+        "png_sha256": sha256_hex(png),
+        "backend": "upload",
+        "source": source.name,
+        **size,
+    }
+    _write(anchors_dir / "anchor.done.json", json.dumps(record, indent=1, sort_keys=True))
+    _write(
+        anchors_dir / "manifest.json",
+        json.dumps(
+            {
+                "backend": "upload",
+                "shots": [
+                    {
+                        "shot_id": None,
+                        "width": width,
+                        "height": height,
+                        "frames": [
+                            {
+                                "frame_index": 0,
+                                "path": "anchors/anchor.png",
+                                "sha256": record["png_sha256"],
+                            }
+                        ],
+                    }
+                ],
+            },
+            indent=1,
+            sort_keys=True,
+        ),
+    )
+    return StageOutput(
+        _hash_obj([record["png_sha256"]]),
+        {
+            "anchors": 1,
+            "backend": "upload",
+            "shots": 1,
+            "source": source.name,
+            "size": f"{width}x{height}",
+        },
+    )
+
+
 def stage_generate_anchor(ctx: StageContext) -> StageOutput:
     """Anchor images. With control bundles present: one anchor per shot per ``anchor_frames``
     index, conditioned on the Blender passes (identity refs + layout boxes + rough RGB + skeleton).
     Without controls: a single anchor from the brief. Each anchor is cached by its input hash."""
+    if _param(ctx, "source", "generate") == "upload":
+        return _anchor_from_upload(ctx)
     backend = _reference_backend(ctx)
     warmed: set[str] = set()
     references = tuple(
@@ -2481,6 +2635,171 @@ def stage_package_sequence(ctx: StageContext) -> StageOutput:
     return StageOutput(
         digest, {"frames": pkg["frames"], "outputs": sorted(k for k in pkg if k != "frames")}
     )
+
+
+AUDIO_SUFFIXES_IN: tuple[str, ...] = (".wav", ".flac", ".mp3", ".m4a", ".ogg", ".opus", ".aac")
+"""What ``transcribe_audio`` will pick up out of the run's uploads folder. FFmpeg reads far more
+than this; the list is short because a lane that grabs "the audio file" out of a folder should
+grab something a person would call a recording, not the audio track of a video they also dropped.
+"""
+
+
+def _source_recording(ctx: StageContext) -> Path:
+    """The one recording this run is about, or a failure that says where to put it.
+
+    Three places, in the order an operator would expect them to win:
+
+    1. the node's ``source`` widget — a path, absolute or relative to the project directory;
+    2. ``<project>/uploads/`` — where ``make --audio`` copies a file and where the canvas's
+       Audio File node stages what was dropped on it;
+    3. ``<deliverable>/audio/source.wav`` — the normalised copy a previous run of this stage
+       wrote, so a resumed run needs neither the original nor the flag again.
+
+    More than one candidate in uploads is an error rather than a coin flip: "which of these two
+    interviews is the film" is not a question a stage may answer by sort order.
+    """
+    named = _param(ctx, "source").strip()
+    if named:
+        path = Path(named).expanduser()
+        path = path if path.is_absolute() else ctx.project_dir / path
+        if not path.is_file():
+            msg = f"transcribe_audio: no recording at {path} (the node's source widget names it)"
+            raise RuntimeError(msg)
+        return path
+    uploads = ctx.project_dir / UPLOADS_DIRNAME
+    found = (
+        sorted(
+            p for p in uploads.glob("**/*") if p.is_file() and p.suffix.lower() in AUDIO_SUFFIXES_IN
+        )
+        if uploads.is_dir()
+        else []
+    )
+    if len(found) > 1:
+        names = ", ".join(p.name for p in found)
+        msg = (
+            f"transcribe_audio: {len(found)} recordings in {uploads} ({names}). This lane is about"
+            " one recording — leave one in the folder, or name it on the node's source widget."
+        )
+        raise RuntimeError(msg)
+    if found:
+        return found[0]
+    normalised = ctx.ddir() / "audio" / "source.wav"
+    if normalised.is_file():
+        return normalised
+    msg = (
+        "transcribe_audio has no recording. Put one in"
+        f" {uploads} (`content-factory make <lane> --input <file>` does that for you), drop one on"
+        " the canvas's Audio File node, or name a path on the node's source widget."
+    )
+    raise RuntimeError(msg)
+
+
+def stage_transcribe_audio(ctx: StageContext) -> StageOutput:
+    """Read the words off a recording, with timings, and keep the normalised audio beside them.
+
+    This is the only stage in the factory whose input is speech and whose output is text, and it
+    exists so a film can be made out of what somebody said rather than out of something somebody
+    wrote. It writes three things into ``<deliverable>/audio``:
+
+    * ``source.wav`` — the recording as mono PCM at the transcription rate. Every later stage
+      measures, cuts and mixes PCM, so an m4a off a phone is normalised once, here.
+    * ``transcript.json`` — the :class:`SpeechTranscript` contract: text, per-word timings, what
+      read it, and whether those timings were measured or estimated.
+    * ``transcript.txt`` — the same words as plain text, because an operator reading back what
+      their interview said should not have to open a JSON file to do it.
+
+    Cached by the recording's bytes and the transcriber's identity: re-running never re-transcribes
+    the same file, which matters at a minute of CPU per few minutes of audio.
+    """
+    from content_factory.audio.takes import TakeError
+    from content_factory.audio.transcribe import (
+        TRANSCRIBE_VERSION,
+        normalise_recording,
+        sentences,
+        transcribe,
+    )
+    from content_factory.schemas.audio import SpeechTranscript
+
+    cfg = get_settings().transcription
+    engine = _param(ctx, "engine", cfg.engine)
+    model = _param(ctx, "model", cfg.faster_whisper_model)
+    language = _param(ctx, "language", cfg.language)
+    audio_dir = ctx.ddir() / "audio"
+    source = _source_recording(ctx)
+    normalised = audio_dir / "source.wav"
+    # Normalising in place would read and write the same file; a recording that is already the
+    # normalised copy is left exactly as it is.
+    if source.resolve() != normalised.resolve():
+        try:
+            normalise_recording(source, normalised, sample_rate=cfg.sample_rate_hz)
+        except TakeError as exc:
+            raise RuntimeError(f"transcribe_audio: {exc}") from exc
+    fixture_text = _transcript_fixture(ctx)
+    input_hash = _hash_obj(
+        {
+            "audio": file_sha256(normalised),
+            "engine": engine,
+            "model": model,
+            "language": language,
+            "fixture": sha256_hex(fixture_text.encode()) if fixture_text else "",
+            "version": TRANSCRIBE_VERSION,
+        }
+    )
+    marker = audio_dir / "transcript.done.json"
+    out_path = audio_dir / "transcript.json"
+    cached = (
+        marker.exists()
+        and out_path.exists()
+        and json.loads(marker.read_text()).get("input_hash") == input_hash
+    )
+    if cached:
+        transcript = SpeechTranscript.model_validate_json(out_path.read_text())
+    else:
+        try:
+            transcript = transcribe(
+                normalised,
+                engine=engine,
+                model=model,
+                compute_type=cfg.faster_whisper_compute_type,
+                timeout_s=cfg.timeout_s,
+                language=language,
+                fixture_text=fixture_text,
+            )
+        except TakeError as exc:
+            raise RuntimeError(f"transcribe_audio: {exc}") from exc
+        _write(out_path, transcript.model_dump_json(indent=1))
+        _write(audio_dir / "transcript.txt", transcript.text + "\n")
+        _write(marker, json.dumps({"input_hash": input_hash}, indent=1, sort_keys=True))
+    return StageOutput(
+        transcript.content_hash(),
+        {
+            "engine": transcript.engine,
+            "words": len(transcript.words),
+            "sentences": len(sentences(transcript)),
+            "seconds": round(transcript.duration_ms / 1000, 1),
+            "timings": transcript.timing_source.value,
+            "source": source.name,
+            "cache_hit": cached,
+            # The first words, so a run log says which recording this was without opening a file.
+            "opening": " ".join(transcript.text.split()[:12]),
+        },
+    )
+
+
+def _transcript_fixture(ctx: StageContext) -> str:
+    """The operator's own transcript, for the ``fixture`` engine: the widget, or a file it names.
+
+    A widget holding a whole interview is unusable, and a path is unusable when the transcript is
+    one sentence, so both spellings work and the file wins when it resolves.
+    """
+    raw = _param(ctx, "transcript").strip()
+    if not raw:
+        return ""
+    candidate = Path(raw).expanduser()
+    for path in (candidate, ctx.project_dir / candidate, REPO_ROOT / candidate):
+        if len(raw) < 400 and path.is_file():
+            return path.read_text()
+    return raw
 
 
 def stage_lock_script(ctx: StageContext) -> StageOutput:
@@ -2960,6 +3279,8 @@ def stage_voice_over(ctx: StageContext) -> StageOutput:
     takes_dir = _takes_dir(ctx)
     audio_dir = ctx.ddir() / "audio"
     audio_dir.mkdir(parents=True, exist_ok=True)
+    if _param(ctx, "source", "takes") == "recording":
+        return _voice_over_from_recording(ctx, plan)
     try:
         takes = discover_takes(takes_dir, [b.beat_id for b in plan.beats])
     except TakeError as exc:
@@ -3046,6 +3367,113 @@ def stage_voice_over(ctx: StageContext) -> StageOutput:
     )
 
 
+def _voice_over_from_recording(ctx: StageContext, plan: StoryPlan) -> StageOutput:
+    """One continuous recording as the narration, cut into the plan's beats.
+
+    The other mode asks an operator to record their material beat by beat, which is the right
+    shape for a film written before it was performed and the wrong one for material that already
+    exists: nobody re-records an interview into six numbered files. So the beats are cut out of
+    the recording instead, at the word boundaries the transcript measured, and what lands on disk
+    is byte-for-byte the same per-beat layout the take path writes — ``<beat_id>.wav``, its
+    ``<beat_id>.segment.json`` and a marker — so ``restore_speech``, ``align_words``,
+    ``compile_captions``, the timeline compiler and the mix cannot tell the two apart.
+
+    No aligner runs. The recording was measured once, whole, by ``transcribe_audio``, and a beat
+    is a window on that measurement; re-transcribing each beat would cost minutes to rediscover
+    timings already on disk, and would let two passes disagree about what was said.
+    """
+    from content_factory.audio.takes import TakeError
+    from content_factory.audio.transcribe import beat_spans, cut_beat, segment_from_transcript
+    from content_factory.schemas.audio import SpeechTranscript
+
+    audio_dir = ctx.ddir() / "audio"
+    transcript_path = audio_dir / "transcript.json"
+    source = audio_dir / "source.wav"
+    if not transcript_path.exists() or not source.exists():
+        msg = (
+            "voice_over source=recording needs the transcript and the normalised recording"
+            f" ({transcript_path.name}, {source.name}): run transcribe_audio first"
+        )
+        raise RuntimeError(msg)
+    transcript = SpeechTranscript.model_validate_json(transcript_path.read_text())
+    try:
+        spans = beat_spans(transcript, plan)
+    except TakeError as exc:
+        raise RuntimeError(f"voice_over: {exc}") from exc
+    source_sha = file_sha256(source)
+    seg_hashes: list[str] = []
+    cut = 0
+    for beat in sorted(plan.beats, key=lambda b: b.order):
+        start_ms, end_ms = spans[beat.beat_id]
+        wav = audio_dir / f"{beat.beat_id}.wav"
+        seg_path = audio_dir / f"{beat.beat_id}.segment.json"
+        marker = audio_dir / f"{beat.beat_id}.take.json"
+        input_hash = _hash_obj(
+            {
+                "recording": source_sha,
+                "transcript": transcript.transcript_id,
+                "span": [start_ms, end_ms],
+                "display": beat.display_text,
+            }
+        )
+        if (
+            marker.exists()
+            and wav.exists()
+            and seg_path.exists()
+            and json.loads(marker.read_text()).get("input_hash") == input_hash
+        ):
+            seg_hashes.append(json.loads(marker.read_text())["audio_sha256"])
+            continue
+        try:
+            cut_beat(source, wav, start_ms=start_ms, end_ms=end_ms)
+            segment = segment_from_transcript(
+                transcript,
+                wav,
+                beat_id=beat.beat_id,
+                display_text=beat.display_text,
+                span=(start_ms, end_ms),
+            )
+        except TakeError as exc:
+            raise RuntimeError(f"voice_over: {beat.beat_id}: {exc}") from exc
+        _write(seg_path, segment.model_dump_json(indent=1))
+        _write(
+            marker,
+            json.dumps(
+                {
+                    "input_hash": input_hash,
+                    "audio_sha256": segment.audio_sha256,
+                    "speaker": "recording",
+                    "source": source.name,
+                    "span_ms": [start_ms, end_ms],
+                    "verdict": "accepted_as_recorded",
+                },
+                indent=1,
+                sort_keys=True,
+            ),
+        )
+        seg_hashes.append(segment.audio_sha256)
+        cut += 1
+    return StageOutput(
+        _hash_obj(seg_hashes),
+        {
+            "segments": len(seg_hashes),
+            "cut": cut,
+            "source": "recording",
+            "timings": transcript.timing_source.value,
+            "spoken_seconds": round(
+                sum(end - start for start, end in spans.values()) / 1000,
+                1,
+            ),
+            # How much of the recording no beat owns: the pauses between beats, plus anything the
+            # story dropped. A large number here is the operator's signal that the beat count is
+            # wrong or that the plan is not this recording's.
+            "unused_seconds": round(
+                max(0, transcript.duration_ms - sum(e - s for s, e in spans.values())) / 1000, 1
+            ),
+        },
+    )
+
+
 SEQUENCE_PREVIEW_FPS = 8
 """The rate a keyframe flipbook is previewed and cut at. One constant, because package_sequence's
 preview, stage_interpolate's ``sequence`` case and _silent_picture all have to agree."""
@@ -3076,6 +3504,18 @@ def _final_audio(ctx: StageContext) -> tuple[Path | None, str]:
             if track.exists():
                 return track, "music"
     return None, "none"
+
+
+def _speech_end_ms(ctx: StageContext) -> int:
+    """Where the last word ends in the laid-out narration: the length a film has to reach.
+
+    One definition for both compose paths, and for the mux itself. It is the *laid-out* position,
+    not the sum of the segments: the mix puts ``lead_in_ms`` before the first beat and a pause
+    between beats, so the last word is later than the audio alone would suggest.
+    """
+    _plan, segs, _files = _load_segments(ctx)
+    laid = lay_out(segs, AudioMixSpec(deliverable_id=ctx.deliverable_id))  # type: ignore[arg-type]
+    return max((w.end_ms for b in laid for w in b.words), default=0)
 
 
 def _silent_picture(ctx: StageContext) -> Path:
@@ -3978,10 +4418,11 @@ def _compose_mixed(ctx: StageContext, routing: ShotRouting) -> StageOutput:
     narration = ctx.ddir() / "audio" / "narration-mastered.wav"
     facts: dict = {}
     if narration.exists():
+        speech_ms = _speech_end_ms(ctx)
+        # No min_video_ms here: this path's picture IS the compiled timeline, frame for frame —
+        # check_video asserts exactly that a few lines above — so holding its last frame would
+        # break the one guarantee a timeline film makes about its own length.
         mux(picture, narration, final)
-        _plan, segs, _files = _load_segments(ctx)
-        laid = lay_out(segs, AudioMixSpec(deliverable_id=ctx.deliverable_id))  # type: ignore[arg-type]
-        speech_ms = max(w.end_ms for b in laid for w in b.words)
         aqc = check_audio_in_video(final, expected_speech_ms=speech_ms)
         if not aqc.passed:
             msg = f"final video failed audio QC: {aqc.findings}"
@@ -4065,12 +4506,24 @@ def stage_compose_video(ctx: StageContext) -> StageOutput:
     # size the speech QC, so a lane with no voice stage died on a missing file.
     audio, source = _final_audio(ctx)
     facts: dict = {"narrated": audio is not None and source == "narration"}
+    # How long the film has to last to carry everything that is said, measured before the mux
+    # rather than after it: a picture shorter than that loses words, and the mux holds its last
+    # frame to the number instead. The same number is what the QC below checks the result against.
+    speech_ms = _speech_end_ms(ctx) if facts["narrated"] else None
+    # ...but only a picture whose length is its OWN is held. A Remotion bundle render is the
+    # compiled timeline frame for frame, and that count is a promise three tests and the delivery
+    # QC rely on; the timeline is itself compiled from the measured narration, so what -shortest
+    # takes off it is the stem's trailing silence. A drawn or post-processed picture has no such
+    # promise — its length is the spans of speech it illustrates — and that is the one that loses
+    # sentences.
+    timeline_render = silent.name.startswith("bnd_")
+    hold_to = None if timeline_render else speech_ms
     if audio is None:
         # Video only. -an rather than a silent audio track: a genuinely silent film should not
         # carry an empty stream for the delivery checks to measure.
         ffmpeg(["-i", str(picture), "-an", "-c:v", "copy", "-movflags", "+faststart", str(final)])
     else:
-        mux(picture, audio, final)
+        mux(picture, audio, final, min_video_ms=hold_to)
     _write(
         manifest_path,
         json.dumps(
@@ -4085,13 +4538,10 @@ def stage_compose_video(ctx: StageContext) -> StageOutput:
             sort_keys=True,
         ),
     )
-    if facts["narrated"]:
+    if facts["narrated"] and speech_ms is not None:
         # Only speech gets the speech check: it asserts the mux carries at least 90 % of the
         # measured words, which is meaningless for a music bed and needs per-beat segment files
         # that only voice_over or synthesize_narration write.
-        _plan, segs, _files = _load_segments(ctx)
-        laid = lay_out(segs, AudioMixSpec(deliverable_id=ctx.deliverable_id))  # type: ignore[arg-type]
-        speech_ms = max(w.end_ms for b in laid for w in b.words)
         qc = check_audio_in_video(final, expected_speech_ms=speech_ms)
         if not qc.passed:
             raise RuntimeError(f"final video failed audio QC: {qc.findings}")
@@ -4273,18 +4723,27 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
     exports = ctx.ddir() / "exports"
     exports.mkdir(parents=True, exist_ok=True)
     entries = manifest["shots"]
+    # Whatever the finishing chain last produced for these drawings, if it produced all of them:
+    # a lane that runs upscale_video before the hold gets the restored pictures on screen rather
+    # than an orphaned frames directory. One picture per shot, in shot order, which is exactly the
+    # order they were gathered in.
+    finished = _finished_anchor_frames(ctx, sum(len(e["frames"]) for e in entries))
+    used: list[Path] = []
     listing_lines: list[str] = []
     held: list[dict] = []
     fps = 24
-    for entry in entries:
+    for index, entry in enumerate(entries):
         shot = shots.get(entry["shot_id"])
         fps = shot.fps if shot else get_settings().video.fps
         seconds = round((shot.frame_count if shot else fps * 2) / fps, 3)
-        png = (ctx.ddir() / entry["frames"][0]["path"]).resolve()
+        png = (
+            finished[index] if index < len(finished) else (ctx.ddir() / entry["frames"][0]["path"])
+        ).resolve()
+        used.append(png)
         listing_lines.append(f"file '{png}'\nduration {seconds}\n")
         held.append({"shot_id": entry["shot_id"], "seconds": seconds})
     # The concat demuxer ignores the final entry's duration, so the last image is repeated.
-    listing_lines.append(f"file '{(ctx.ddir() / entries[-1]['frames'][0]['path']).resolve()}'\n")
+    listing_lines.append(f"file '{used[-1]}'\n")
 
     target = exports / "generated.mp4"
     listing = exports / "held.concat.txt"
@@ -4294,7 +4753,7 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
     # asked for. Downscaling 2560x1440 ink hatching to 1024x576 throws away 84 % of the pixels
     # and *raises* measured edge energy by 54 % — fine line work aliasing into crunch rather than
     # resolving. A ``size`` parameter still forces a smaller cut for a quick preview.
-    native = _png_size((ctx.ddir() / entries[0]["frames"][0]["path"]).read_bytes())
+    native = _png_size(used[0].read_bytes())
     default_size = (
         int(native.get("png_width") or entries[0]["width"]),
         int(native.get("png_height") or entries[0]["height"]),
@@ -4305,6 +4764,10 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
         {
             "held": held,
             "anchors": [e["frames"][0]["sha256"] for e in entries],
+            # The finishing chain's output is not in the anchor digests, so without this a cut
+            # made from raw drawings would be reused after an upscale and the enlargement would
+            # never reach the screen.
+            "used": [file_sha256(p) for p in used],
             "size": [width, height],
             "fps": fps,
         }
@@ -4679,9 +5142,23 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
 
 
 # --- post-processing chain: fix (Cutie + ProPainter) -> upscale (SeedVR2) -> interpolate ----------
+PICTURE_SUFFIXES_IN: tuple[str, ...] = (".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp")
+VIDEO_SUFFIXES_IN: tuple[str, ...] = (".mp4", ".mov", ".mkv", ".webm", ".avi", ".m4v")
+"""What the post chain will adopt out of the run's uploads folder. Both lists are what FFmpeg on
+this host reads and what ``ingest.convert`` already accepts, so a lane cannot promise to finish a
+container the converter would refuse."""
+
+
 def _chain_inputs(ctx: StageContext) -> list[tuple[str, Path]]:
     """(name, working dir) per clip to post-process: the per-shot clips of the scene-control path,
-    else the single generated clip, else the MotionPlan keyframes."""
+    else the single generated clip, else the MotionPlan keyframes, else what the operator supplied.
+
+    The last case is what makes ``video-finish`` and ``image-upscale`` real lanes rather than
+    lanes that describe themselves. Both exist to work on footage this repo did not generate, and
+    before this the material had to be copied by hand into a deliverable directory whose name
+    contains a generated id — so the documented way to run them was to run something else first.
+    Now the entry point is the same one every lane uses: the run's uploads folder.
+    """
     video_dir = ctx.ddir() / "video"
     shots = sorted(p.parent for p in video_dir.glob("*/clip.mp4")) if video_dir.exists() else []
     if shots:
@@ -4690,8 +5167,129 @@ def _chain_inputs(ctx: StageContext) -> list[tuple[str, Path]]:
         return [("main", video_dir / "main")]
     if (ctx.ddir() / "sequence" / "frames").exists():
         return [("sequence", ctx.ddir() / "sequence")]
-    msg = "post chain: nothing to process (no clips, no keyframes)"
+    # The drawings, before anything has been held or animated. This is the entry the held-cut
+    # lanes need: a film of N drawings held for their own spans has N pictures worth finishing
+    # and thousands of identical frames, so the finishing chain has to run on the drawings and
+    # not on the cut. Ordered after the clip cases so a lane that animates first is unaffected.
+    if _anchor_sequence_dir(ctx) is not None:
+        return [("anchors", ctx.ddir() / "anchors")]
+    supplied = _adopt_uploaded_picture(ctx)
+    if supplied is not None:
+        return [supplied]
+    msg = (
+        "post chain: nothing to process. This lane finishes material you supply, and there is"
+        " none: no per-shot clips, no generated cut, no frame sequence, and nothing usable in"
+        f" {ctx.project_dir / UPLOADS_DIRNAME}."
+        " Run `content-factory make <lane> --input <clip or folder of stills>`."
+    )
     raise RuntimeError(msg)
+
+
+def _adopt_uploaded_picture(ctx: StageContext) -> tuple[str, Path] | None:
+    """The operator's clip or stills, staged where the post chain reads them. Idempotent.
+
+    A clip becomes ``video/upload/clip.mp4``, which ``_latest_frames`` explodes on demand; a
+    folder of stills becomes ``sequence/frames/%04d.png``, the layout every frame tool in the post
+    chain already speaks. Conversion is FFmpeg's job and happens once: a JPEG folder is rewritten
+    to PNG because ProPainter, SeedVR2 and the interpolators all read PNG only.
+
+    Two clips is a refusal, not a choice by sort order — "which of these is the film" is the
+    operator's question. Stills and a clip together is the same refusal for the same reason.
+    """
+    uploads = ctx.project_dir / UPLOADS_DIRNAME
+    if not uploads.is_dir():
+        return None
+    files = sorted(p for p in uploads.glob("**/*") if p.is_file())
+    clips = [p for p in files if p.suffix.lower() in VIDEO_SUFFIXES_IN]
+    stills = [p for p in files if p.suffix.lower() in PICTURE_SUFFIXES_IN]
+    if clips and stills:
+        msg = (
+            f"post chain: {uploads} holds both a clip ({clips[0].name}) and"
+            f" {len(stills)} still(s). Finish one thing at a time."
+        )
+        raise RuntimeError(msg)
+    if len(clips) > 1:
+        names = ", ".join(p.name for p in clips)
+        msg = f"post chain: {len(clips)} clips in {uploads} ({names}). Leave the one to finish."
+        raise RuntimeError(msg)
+    if clips:
+        workdir = ctx.ddir() / "video" / "upload"
+        target = workdir / "clip.mp4"
+        source = clips[0]
+        if source.suffix.lower() == ".mp4":
+            if not (target.exists() and target.stat().st_size == source.stat().st_size):
+                workdir.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(source.read_bytes())
+        elif not target.exists():
+            from content_factory.ingest.convert import convert_media
+            from content_factory.ingest.uploads import sniff_mime
+
+            workdir.mkdir(parents=True, exist_ok=True)
+            converted = convert_media(source, sniff_mime(source), workdir)
+            if converted.path.resolve() != target.resolve():
+                target.write_bytes(converted.path.read_bytes())
+        return ("upload", workdir)
+    if stills:
+        frames = ctx.ddir() / "sequence" / "frames"
+        existing = sorted(frames.glob("[0-9]*.png"))
+        if len(existing) == len(stills):
+            return ("sequence", ctx.ddir() / "sequence")
+        from content_factory.audio.mix import ffmpeg
+
+        frames.mkdir(parents=True, exist_ok=True)
+        for index, still in enumerate(stills):
+            dest = frames / f"{index:04d}.png"
+            if dest.exists():
+                continue
+            if still.suffix.lower() == ".png":
+                dest.write_bytes(still.read_bytes())
+            else:
+                ffmpeg(["-i", str(still), str(dest)], timeout=120)
+        return ("sequence", ctx.ddir() / "sequence")
+    return None
+
+
+def _anchor_sequence_dir(ctx: StageContext) -> Path | None:
+    """The anchor drawings gathered into ``anchors/frames/%04d.png``, in shot order.
+
+    The post chain speaks one language — a directory of numbered PNGs — and the anchors are
+    written per shot under their own shot ids. Gathering them is a copy of N pictures and is
+    idempotent, so the chain can restore and enlarge the *drawings* of a held film. Without this
+    the only thing an upscaler could see was the cut, which for held drawings is the same few
+    pictures repeated a few thousand times: hours of GPU to enlarge six images.
+    """
+    manifest_path = ctx.ddir() / "anchors" / "manifest.json"
+    if not manifest_path.exists():
+        return None
+    entries = json.loads(manifest_path.read_text()).get("shots", [])
+    paths = [ctx.ddir() / frame["path"] for entry in entries for frame in entry["frames"]]
+    paths = [p for p in paths if p.is_file()]
+    if not paths:
+        return None
+    frames = ctx.ddir() / "anchors" / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    for index, source in enumerate(paths):
+        dest = frames / f"{index:04d}.png"
+        if not dest.exists() or dest.stat().st_size != source.stat().st_size:
+            dest.write_bytes(source.read_bytes())
+    for stale in sorted(frames.glob("[0-9]*.png"))[len(paths) :]:
+        stale.unlink()
+    return frames
+
+
+def _finished_anchor_frames(ctx: StageContext, expected: int) -> list[Path]:
+    """The post chain's finished drawings, when it has finished exactly ``expected`` of them.
+
+    A partial set is not usable: holding four restored drawings and two raw ones would put a
+    visible change of texture in the middle of a film, so the count has to match or the raw
+    drawings are used. The chain records where its latest output is; nothing here re-derives it.
+    """
+    state = _chain_state(ctx.ddir() / "anchors")
+    latest = state.get("latest")
+    if not latest or not state.get("steps"):
+        return []
+    frames = sorted(Path(latest).glob("[0-9]*.png"))
+    return frames if len(frames) == expected else []
 
 
 def _chain_state(workdir: Path) -> dict:
@@ -4706,7 +5304,7 @@ def _latest_frames(ctx: StageContext, name: str, workdir: Path) -> Path:
     state = _chain_state(workdir)
     if state.get("latest"):
         return Path(state["latest"])
-    if name == "sequence":
+    if name in ("sequence", "anchors"):
         return workdir / "frames"
     clip = workdir / "clip.mp4" if name != "main" else ctx.ddir() / "exports" / "generated.mp4"
     frames = workdir / "frames"
@@ -4872,16 +5470,8 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
     # So the marker wins over the engine widget: a lane can set both and still get its held cut.
     held = (ctx.ddir() / "exports" / "held.done.json").exists()
     if engine == "none" or held:
-        picture = _silent_picture(ctx)
-        return StageOutput(
-            file_sha256(picture),
-            {
-                "clips": 0,
-                "engine": "none",
-                "skipped": "held cut" if held else "no interpolation requested",
-                "requested_engine": engine if held else None,
-                "picture": picture.name,
-            },
+        return _mux_without_interpolation(
+            ctx, skipped="held cut" if held else "no interpolation requested", requested=engine
         )
     results: list[dict] = []
     finals: list[Path] = []
@@ -4908,6 +5498,85 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
             "engine": engine,
             "factor": factor,
             "cache_hits": sum(1 for r in results if r["cache_hit"]),
+            "artifact_key": ref.key,
+        },
+    )
+
+
+def _mux_without_interpolation(ctx: StageContext, *, skipped: str, requested: str) -> StageOutput:
+    """Interpolation declined, and the picture still assembled from whatever the chain finished.
+
+    This stage is the post chain's last step and therefore its muxer, so declining to interpolate
+    must not mean declining to deliver. Before this it returned the most-finished *existing* video
+    and nothing else, which silently threw away every earlier step: a lane that removed an object
+    and upscaled and then held its drawings wrote its finished frames to disk and shipped the
+    unfinished cut — the frames were on disk, nothing had muxed them, and the run said ok.
+
+    A held cut re-muxes nothing: ``generate_video``'s hold already assembled it from the finished
+    drawings, each on screen for its own span, and re-muxing exploded frames at a constant rate
+    would throw that structure away. So the held case is the one that legitimately reports the
+    existing picture.
+    """
+    from content_factory.postchain import mux_frames
+
+    picture = _silent_picture(ctx)
+    if skipped == "held cut":
+        return StageOutput(
+            file_sha256(picture),
+            {
+                "clips": 0,
+                "engine": "none",
+                "skipped": skipped,
+                "requested_engine": requested,
+                "picture": picture.name,
+            },
+        )
+    try:
+        inputs = _chain_inputs(ctx)
+    except RuntimeError:
+        inputs = []
+    finals: list[Path] = []
+    muxed: list[dict] = []
+    shots = _shots_by_id(ctx)
+    for name, workdir in inputs:
+        state = _chain_state(workdir)
+        latest = state.get("latest")
+        if not latest or not state.get("steps"):
+            continue
+        frames = Path(latest)
+        if not sorted(frames.glob("[0-9]*.png")):
+            continue
+        fps = (
+            SEQUENCE_PREVIEW_FPS
+            if name in ("sequence", "anchors")
+            else (shots[name].fps if name in shots else get_settings().video.fps)
+        )
+        final = workdir / "final.mp4"
+        mux_frames(frames, final, fps=fps)
+        finals.append(final)
+        muxed.append({"clip": name, "fps": fps, "steps": list(state["steps"])})
+    if not finals:
+        return StageOutput(
+            file_sha256(picture),
+            {
+                "clips": 0,
+                "engine": "none",
+                "skipped": skipped,
+                "requested_engine": requested,
+                "picture": picture.name,
+            },
+        )
+    target = ctx.ddir() / "exports" / "final.mp4"
+    _concat_clips(finals, target)
+    ref = ctx.store.put_file(ctx.workspace_id, "renders", target)
+    return StageOutput(
+        file_sha256(target),
+        {
+            "clips": len(muxed),
+            "engine": "none",
+            "skipped": skipped,
+            "muxed": muxed,
+            "picture": target.name,
             "artifact_key": ref.key,
         },
     )
@@ -5285,6 +5954,11 @@ DELIVERY_CANDIDATES: tuple[tuple[str, str], ...] = (
     ("audio", "audio/narration-mastered.wav"),
     ("caption", "captions/captions.srt"),
     ("caption", "captions/captions.vtt"),
+    # What a transcribed recording said, in plain text. A deliverable in its own right for the
+    # lanes that start from sound — the most useful by-product a lecture recording has — and
+    # `text`, not `metadata`, because it is content rather than a description of content.
+    ("text", "audio/transcript.txt"),
+    ("metadata", "audio/transcript.json"),
     ("metadata", "qc/report.json"),
     ("metadata", "exports/compose.json"),
 )
@@ -5483,6 +6157,7 @@ STAGE_EXECUTORS = {
     Stage.generate_keyframes: stage_generate_keyframes,
     Stage.drift_qc: stage_drift_qc,
     Stage.package_sequence: stage_package_sequence,
+    Stage.transcribe_audio: stage_transcribe_audio,
     Stage.lock_script: stage_lock_script,
     Stage.synthesize_narration: stage_synthesize_narration,
     Stage.review_assets: stage_review_assets,

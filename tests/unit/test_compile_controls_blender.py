@@ -196,3 +196,43 @@ def test_skeleton_adapter_drops_out_of_frame_joints_and_dangling_bones() -> None
     assert set(poses["man"].joints) == {"nose", "neck"} and poses["man"].bones == (
         ("neck", "nose"),
     )
+
+
+def test_the_wrong_blender_is_diagnosed_as_the_wrong_blender(monkeypatch) -> None:
+    """A host with two Blenders on it fails in Blender's own Python, forty lines deep, and says
+    only `ModuleNotFoundError: No module named 'OpenImageIO'`. That is not a scene problem and it
+    is not a code problem: the distro package does not bundle the reader the skill needs, and
+    `blender_bin` is a bare name that PATH resolves. So the error says which Blender ran, why it
+    cannot work, and the setting that picks another one."""
+    from content_factory.controls import blender as blender_mod
+
+    def fails_with_oiio(*_args, **_kwargs):
+        class Proc:
+            returncode = 3
+            stdout = ""
+            stderr = "ModuleNotFoundError: No module named 'OpenImageIO'"
+
+        return Proc()
+
+    monkeypatch.setattr(blender_mod, "SUBPROCESS_RUN", fails_with_oiio)
+    with pytest.raises(RuntimeError) as caught:
+        blender_mod.run_blender_scene(Path("spec.json"), Path("out"), blender_bin="blender")
+    message = str(caught.value)
+    assert "This is the Blender, not the scene" in message
+    assert "OpenImageIO" in message
+    assert "CF__CONTROLS__BLENDER_BIN" in message or "upstream Blender build" in message
+
+    # A failure that is NOT about the binary is passed through untouched: a diagnosis that fires
+    # on everything is a diagnosis nobody reads.
+    def fails_otherwise(*_args, **_kwargs):
+        class Proc:
+            returncode = 4
+            stdout = ""
+            stderr = "no such asset: characters/man.blend"
+
+        return Proc()
+
+    monkeypatch.setattr(blender_mod, "SUBPROCESS_RUN", fails_otherwise)
+    with pytest.raises(RuntimeError, match="no such asset") as plain:
+        blender_mod.run_blender_scene(Path("spec.json"), Path("out"), blender_bin="blender")
+    assert "This is the Blender" not in str(plain.value)

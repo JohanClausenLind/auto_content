@@ -51,6 +51,7 @@ class Stage(StrEnum):
     interpolate = "interpolate"
     package_sequence = "package_sequence"
     # audio branch
+    transcribe_audio = "transcribe_audio"
     lock_script = "lock_script"
     synthesize_narration = "synthesize_narration"
     voice_over = "voice_over"

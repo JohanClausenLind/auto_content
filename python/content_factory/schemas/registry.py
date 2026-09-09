@@ -80,6 +80,7 @@ SCHEMA_REGISTRY: dict[str, type[BaseModel] | Any] = {
     "RenderBundle": render.RenderBundle,
     "DatasetTable": render.DatasetTable,
     "NarrationRequest": audio.NarrationRequest,
+    "SpeechTranscript": audio.SpeechTranscript,
     "NarrationSegment": audio.NarrationSegment,
     "AlignmentReport": audio.AlignmentReport,
     "CaptionTrack": audio.CaptionTrack,

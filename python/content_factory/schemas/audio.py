@@ -72,6 +72,57 @@ class NarrationSegment(VersionedModel):
         return self
 
 
+class SpeechTranscript(VersionedModel):
+    """What a recording says, with per-word timings: the input side of the narration contracts.
+
+    :class:`NarrationSegment` describes speech this factory *produced* from a script it already
+    had. This describes speech that arrived without one — an interview, a lecture, a voice memo —
+    so the words are the transcriber's reading of the audio rather than a script the audio was
+    checked against. That difference is the whole reason it is a separate contract and not a
+    segment with an empty script: nothing downstream may treat these words as authored.
+
+    ``words`` is the load-bearing field. A story planned from a transcript cuts it into beats at
+    word boundaries, so every beat knows exactly which milliseconds of the recording it owns, and
+    the picture for that beat is on screen for exactly as long as those words are spoken. Without
+    timings the transcript is only text, which is why ``timing_source`` says how they were got.
+    """
+
+    transcript_id: OpaqueId
+    audio_sha256: Sha256Hex
+    """The normalised WAV the words were read off, not the file the operator dropped."""
+    sample_rate_hz: int = Field(ge=8000, le=192000)
+    duration_ms: int = Field(ge=1)
+    language: str = Field(default="en", pattern=r"^[a-z]{2,3}(-[A-Z]{2})?$")
+    engine: str = Field(min_length=1, max_length=120)
+    """What read it: ``faster-whisper:base.en``, ``fixture:<file>``. Part of every input hash that
+    covers this transcript, so swapping the transcriber re-runs what depends on it."""
+    text: str = Field(min_length=1, max_length=200_000)
+    words: tuple[WordTiming, ...] = ()
+    timing_source: TimingSource = TimingSource.asr
+
+    @model_validator(mode="after")
+    def _words_inside_and_ordered(self) -> SpeechTranscript:
+        prev_end = 0
+        for w in self.words:
+            if w.start_ms < prev_end:
+                msg = f"word {w.word!r} starts at {w.start_ms} ms, before the previous word ended"
+                raise ValueError(msg)
+            if w.end_ms > self.duration_ms:
+                msg = (
+                    f"word {w.word!r} ends at {w.end_ms} ms, after the recording's"
+                    f" {self.duration_ms} ms"
+                )
+                raise ValueError(msg)
+            prev_end = w.start_ms
+        return self
+
+    def span_ms(self) -> tuple[int, int]:
+        """First word to last word, or the whole recording when there are no timings."""
+        if not self.words:
+            return 0, self.duration_ms
+        return self.words[0].start_ms, self.words[-1].end_ms
+
+
 class AlignmentFinding(SchemaModel):
     check: Literal[
         "monotonic", "overlap", "missing_words", "extra_words", "gap", "duration_mismatch", "empty"

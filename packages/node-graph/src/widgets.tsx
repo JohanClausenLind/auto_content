@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
-import type { WidgetSpec, WidgetValue } from "./nodeDefs";
+import { formatChips, parseChips, type WidgetSpec, type WidgetValue } from "./nodeDefs";
 
 /** A plain triangle. Text glyphs like U+25C0 get hijacked by emoji fonts; an SVG never is. */
 function Tri({ dir }: { dir: "left" | "right" }) {
@@ -46,6 +46,10 @@ function roundTo(value: number, spec: WidgetSpec): number {
 }
 
 export function formatWidgetValue(spec: WidgetSpec, value: WidgetValue): string {
+  if (spec.kind === "chips") {
+    const chosen = parseChips(value);
+    return chosen.length === 0 ? "none" : chosen.join(", ");
+  }
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") {
     if (spec.kind === "int" || spec.kind === "seed") return String(Math.round(value));
@@ -279,9 +283,67 @@ function TextareaWidget({ nodeId, spec, value, disabled, onChange }: WidgetRowPr
   );
 }
 
+/**
+ * Multi-select, as a field of pills rather than a stack of rows.
+ *
+ * The thing this replaces is a row per choice — or, worse, a node per choice: publishing to three
+ * places meant three Publish nodes wired to the same packages, and the graph said "three
+ * publishes" where the operator meant "this one post, in three places". So one node holds the
+ * whole set, and the set is legible at a glance: lit pills are where it goes, unlit ones are
+ * where it does not.
+ *
+ * Every pill is a real checkbox under the styling, grouped and labelled, so the whole control is
+ * keyboard-reachable and a screen reader reads it as the set of choices it is.
+ */
+function ChipsWidget({ nodeId, spec, value, disabled, onChange }: WidgetRowProps) {
+  const options = spec.options ?? [];
+  const selected = new Set(parseChips(value));
+  const toggle = (option: string) => {
+    const next = new Set(selected);
+    if (next.has(option)) next.delete(option);
+    else next.add(option);
+    onChange(formatChips([...next], options));
+  };
+  const allOn = options.length > 0 && options.every((o) => selected.has(o));
+  return (
+    // A fieldset rather than a div with role="group": it is the semantic element for a set of
+    // related controls, and the reset in the stylesheet takes its border and padding away.
+    <fieldset className="ng-chips" aria-labelledby={`${controlId(nodeId, spec.name)}-label`}>
+      {options.map((option) => {
+        const id = `${controlId(nodeId, spec.name)}-${option}`;
+        return (
+          <label key={option} className="ng-chip" data-on={selected.has(option) || undefined} htmlFor={id}>
+            <input
+              id={id}
+              className="ng-chip__input"
+              type="checkbox"
+              checked={selected.has(option)}
+              disabled={disabled}
+              onChange={() => toggle(option)}
+            />
+            <span className="ng-chip__dot" aria-hidden="true" />
+            <span className="ng-chip__text">{option}</span>
+          </label>
+        );
+      })}
+      {options.length > 1 && (
+        <button
+          type="button"
+          className="ng-chips__all"
+          disabled={disabled}
+          aria-label={allOn ? `Clear every ${spec.label ?? spec.name}` : `Select every ${spec.label ?? spec.name}`}
+          onClick={() => onChange(allOn ? "" : formatChips(options, options))}
+        >
+          {allOn ? "none" : "all"}
+        </button>
+      )}
+    </fieldset>
+  );
+}
+
 /** True when the widget owns the whole node width instead of sharing a label row. */
 export function isFullWidthWidget(spec: WidgetSpec): boolean {
-  return spec.kind === "textarea";
+  return spec.kind === "textarea" || spec.kind === "chips";
 }
 
 export function WidgetRow(props: WidgetRowProps) {
@@ -291,8 +353,20 @@ export function WidgetRow(props: WidgetRowProps) {
   if (isFullWidthWidget(spec)) {
     return (
       <div className="ng-widget ng-widget--full" data-widget={spec.name}>
-        <Label spec={spec} htmlFor={id} />
-        <TextareaWidget {...props} />
+        {spec.kind === "chips" ? (
+          <>
+            {/* A group's label cannot be a <label for>: it names the set, not one control. */}
+            <span className="ng-widget__label" id={`${id}-label`} title={spec.help ?? spec.label ?? spec.name}>
+              {spec.label ?? spec.name}
+            </span>
+            <ChipsWidget {...props} />
+          </>
+        ) : (
+          <>
+            <Label spec={spec} htmlFor={id} />
+            <TextareaWidget {...props} />
+          </>
+        )}
       </div>
     );
   }

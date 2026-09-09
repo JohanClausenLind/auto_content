@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { GraphThumbnail } from "@content-factory/node-graph";
 import { comfyModelsQuery, modelCatalogQuery } from "../api/queries";
 import { InstallButton } from "../models/ModelStore";
+import { BLOCKS, type WorkflowBlock } from "./blocks";
 import { workspaceCatalog } from "./catalog";
 import {
   downloadCommand,
@@ -179,8 +180,53 @@ function TemplateCard({
   );
 }
 
+/**
+ * One block: what it does, what it takes, what it gives back, and the steps it folds away.
+ *
+ * No thumbnail, deliberately. A block is two or three nodes in a line — a picture of that says
+ * nothing a list of the steps does not say better, and the card has to make clear that inserting
+ * one adds a *step* to the graph you are editing rather than replacing it with a new lane.
+ */
+function BlockCard({ block, onInsert }: { block: WorkflowBlock; onInsert(block: WorkflowBlock): void }) {
+  return (
+    <article className="cf-block" aria-label={block.name}>
+      <header className="cf-block__head">
+        <span className="cf-block__mark" aria-hidden="true">
+          ▤
+        </span>
+        <h3 className="cf-block__name">{block.name}</h3>
+        <span className="cf-block__count">{block.nodes.length} nodes</span>
+      </header>
+      <p className="cf-block__desc">{block.summary}</p>
+      <ol className="cf-block__steps">
+        {block.nodes.map((node) => {
+          const def = workspaceCatalog.get(node.type);
+          return (
+            <li key={node.key} className="cf-block__step">
+              {def?.title ?? node.type}
+            </li>
+          );
+        })}
+      </ol>
+      <dl className="cf-block__ports">
+        <dt>takes</dt>
+        <dd>{block.takes.length > 0 ? block.takes.join(", ") : "nothing"}</dd>
+        <dt>gives</dt>
+        <dd>{block.gives.length > 0 ? block.gives.join(", ") : "nothing — it is a terminal"}</dd>
+      </dl>
+      <footer className="cf-block__foot">
+        <button type="button" className="cf-wsbtn cf-wsbtn--run" onClick={() => onInsert(block)}>
+          Add as one node
+        </button>
+      </footer>
+    </article>
+  );
+}
+
 export interface TemplatesPanelProps {
   onUse(template: WorkflowTemplate): void;
+  /** Insert a block into the graph that is open, folded into one node. */
+  onInsertBlock(block: WorkflowBlock): void;
   onClose(): void;
 }
 
@@ -190,7 +236,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   publish: "Publish",
 };
 
-export function TemplatesPanel({ onUse, onClose }: TemplatesPanelProps) {
+export function TemplatesPanel({ onUse, onInsertBlock, onClose }: TemplatesPanelProps) {
   const { data: inventory } = useQuery(comfyModelsQuery);
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -205,6 +251,16 @@ export function TemplatesPanel({ onUse, onClose }: TemplatesPanelProps) {
         t.description.toLowerCase().includes(needle) ||
         t.tags.some((tag) => tag.includes(needle))),
   );
+  const blocks =
+    needle === ""
+      ? BLOCKS
+      : BLOCKS.filter(
+          (b) =>
+            b.name.toLowerCase().includes(needle) ||
+            b.summary.toLowerCase().includes(needle) ||
+            b.category.includes(needle),
+        );
+  const onBlocks = category === "blocks";
 
   return (
     <section className="cf-templates" role="dialog" aria-label="Workflow templates">
@@ -230,6 +286,12 @@ export function TemplatesPanel({ onUse, onClose }: TemplatesPanelProps) {
                 </button>
               </li>
             ))}
+            <li>
+              <button type="button" aria-pressed={onBlocks} onClick={() => setCategory("blocks")}>
+                Blocks
+                <span className="cf-templates__count">{BLOCKS.length}</span>
+              </button>
+            </li>
           </ul>
         </nav>
         <p className="cf-templates__hint">
@@ -242,7 +304,11 @@ export function TemplatesPanel({ onUse, onClose }: TemplatesPanelProps) {
       <div className="cf-templates__main">
         <header className="cf-templates__head">
           <h2 className="cf-templates__page">
-            {category === null ? "All Templates" : (CATEGORY_LABELS[category] ?? category)}
+            {category === null
+              ? "All Templates"
+              : onBlocks
+                ? "Blocks"
+                : (CATEGORY_LABELS[category] ?? category)}
           </h2>
           <input
             type="search"
@@ -256,12 +322,26 @@ export function TemplatesPanel({ onUse, onClose }: TemplatesPanelProps) {
             ✕
           </button>
         </header>
-        <div className="cf-templates__grid">
-          {shown.map((template) => (
-            <TemplateCard key={template.id} template={template} onUse={onUse} />
-          ))}
-          {shown.length === 0 && <p className="cf-templates__empty">No templates match.</p>}
-        </div>
+        {onBlocks ? (
+          <div className="cf-templates__grid" data-blocks="true">
+            <p className="cf-templates__lead">
+              A block is the part of a lane that every lane repeats. Adding one drops its nodes
+              into the graph you are editing, wired, and folds them into a single node — open it
+              whenever you want to change what is inside.
+            </p>
+            {blocks.map((block) => (
+              <BlockCard key={block.id} block={block} onInsert={onInsertBlock} />
+            ))}
+            {blocks.length === 0 && <p className="cf-templates__empty">No blocks match.</p>}
+          </div>
+        ) : (
+          <div className="cf-templates__grid">
+            {shown.map((template) => (
+              <TemplateCard key={template.id} template={template} onUse={onUse} />
+            ))}
+            {shown.length === 0 && <p className="cf-templates__empty">No templates match.</p>}
+          </div>
+        )}
       </div>
     </section>
   );

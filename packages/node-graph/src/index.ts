@@ -1,6 +1,8 @@
 export { NodeGraphEditor, NODE_DRAG_MIME } from "./NodeGraphEditor";
 export type { NodeGraphEditorProps, NodeStatusMap } from "./NodeGraphEditor";
 export { GraphNodeView } from "./GraphNodeView";
+export { GroupNodeView, GroupFrameView, GROUP_NODE_WIDTH } from "./GroupNodeView";
+export type { GroupFlowNode, GroupNodeData } from "./GroupNodeView";
 export { GraphThumbnail } from "./GraphThumbnail";
 export type { GraphThumbnailProps } from "./GraphThumbnail";
 export type { GraphFlowNode, GraphNodeData } from "./GraphNodeView";
@@ -24,6 +26,11 @@ export {
   emptyGraph,
   GraphOpError,
   GraphParseError,
+  groupById,
+  groupNodesOps,
+  groupOf,
+  groupPorts,
+  isHidden,
   linkById,
   linkInto,
   linksOf,
@@ -31,6 +38,7 @@ export {
   newId,
   nodeById,
   parseGraph,
+  parseGroupPort,
   removeNodesOps,
   serializeGraph,
   topoOrder,
@@ -40,10 +48,12 @@ export type {
   ApplyResult,
   BatchResult,
   ConnectVerdict,
+  GraphGroup,
   GraphLink,
   GraphNode,
   GraphOp,
   GraphProblem,
+  GroupPort,
   NodeMode,
   ProblemSeverity,
   WorkspaceGraph,
@@ -55,6 +65,8 @@ export {
   DEFAULT_NODE_WIDTH,
   estimateNodeSize,
   findSlot,
+  formatChips,
+  parseChips,
   MAX_NODE_WIDTH,
   MIN_NODE_WIDTH,
   NODE_SLOT_HEIGHT,

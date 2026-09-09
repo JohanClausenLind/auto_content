@@ -1,5 +1,63 @@
 {
   "$defs": {
+    "WorkspaceGroup": {
+      "additionalProperties": false,
+      "description": "A named set of nodes the canvas can draw as one.\n\nPurely a view: the nodes and links stay in the flat graph exactly as they were, so the\ncompiler, the runner and execution order never see a group at all. It exists because half of\nevery lane is the same few steps — clean up the voice, finish the picture, check and package —\nand an operator changing one prompt should not have to read all of them. Folded, the canvas\ndraws one node with the group's boundary slots; opened, it draws the members in a frame with\nevery widget available.\n\n``members`` order is meaningful: it decides the order of a folded group's ports.",
+      "properties": {
+        "collapsed": {
+          "default": true,
+          "title": "Collapsed",
+          "type": "boolean"
+        },
+        "id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "members": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Members",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "template": {
+          "default": "",
+          "maxLength": 64,
+          "title": "Template",
+          "type": "string"
+        },
+        "x": {
+          "default": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "default": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "collapsed",
+        "id",
+        "members",
+        "name",
+        "template",
+        "x",
+        "y"
+      ],
+      "title": "WorkspaceGroup",
+      "type": "object"
+    },
     "WorkspaceLink": {
       "additionalProperties": false,
       "properties": {
@@ -161,6 +219,14 @@
       "title": "Graph Id",
       "type": "string"
     },
+    "groups": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WorkspaceGroup"
+      },
+      "title": "Groups",
+      "type": "array"
+    },
     "links": {
       "default": [],
       "items": {
@@ -192,6 +258,7 @@
   },
   "required": [
     "graph_id",
+    "groups",
     "links",
     "name",
     "nodes",

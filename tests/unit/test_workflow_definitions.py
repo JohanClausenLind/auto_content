@@ -84,6 +84,95 @@ def test_every_definition_compiles_to_a_canvas_graph(path: Path) -> None:
 
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
+def test_every_required_input_is_wired(path: Path) -> None:
+    """No lane opens on a required input that nothing feeds — and a caveat can no longer excuse
+    one.
+
+    Four lanes used to. Each of them worked on material the operator supplies, and there was no
+    node type for that material to arrive through, so each declared its first stage's input
+    unwired and apologised in prose. ``input.audio`` / ``input.image`` / ``input.video`` are lane
+    node types now, so the apology has been replaced by a wire and the loader refuses the rest.
+    Asserted here as well as in the loader so a failure names the file.
+    """
+    template = load_definition_file(path)
+    catalog = node_catalog()
+    fed = {(w.to_key, w.to_slot) for w in template.wires}
+    unfed = [
+        f"{node.key}.{slot}"
+        for node in template.nodes
+        if node.runnable and (spec := catalog.get(node.type)) is not None
+        for slot in spec["required_inputs"]
+        if (node.key, slot) not in fed
+    ]
+    assert unfed == [], f"{path.name}: unwired required inputs {unfed}"
+
+
+@pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
+def test_every_output_is_consumed_by_something(path: Path) -> None:
+    """A node whose output nothing reads is the canvas's own warning, and in a committed lane it
+    means one of two things: a step whose result is thrown away, or a terminal nobody wired. Both
+    are wiring mistakes, and both were in the catalogue until this test existed."""
+    template = load_definition_file(path)
+    catalog = node_catalog()
+    used = {w.from_key for w in template.wires}
+    dangling = [
+        node.key
+        for node in template.nodes
+        if (spec := catalog.get(node.type)) is not None and spec["outputs"] and node.key not in used
+    ]
+    assert dangling == [], f"{path.name}: nothing consumes the output of {dangling}"
+
+
+@pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
+def test_a_lane_that_needs_material_declares_a_node_for_it(path: Path) -> None:
+    """The prerequisite and the graph have to agree, in both directions.
+
+    There are exactly two ways an operator's material reaches a run, and a lane has to use one of
+    them and say which: a file input node, staged by ``--input`` or by a drop on the canvas; or
+    ``voice_over`` in ``takes`` mode, which reads one recording per beat out of a directory. A
+    lane whose prose promises material and whose graph has neither is the shape that made four
+    lanes unrunnable.
+    """
+    from content_factory.runners.local import workflow_inputs
+
+    template = load_definition_file(path)
+    kinds = workflow_inputs(template.id)
+    prose = template.prerequisite.lower()
+    if kinds:
+        assert "--input" in prose, f"{path.name}: takes {kinds} and does not say how to pass it"
+    if "--input" in prose:
+        assert kinds, f"{path.name}: promises --input and declares no file input node"
+    if "takes/" in prose:
+        takes = [
+            n
+            for n in template.nodes
+            if n.type == "voice_over" and str(n.values.get("source", "takes")) == "takes"
+        ]
+        assert takes, f"{path.name}: prerequisite names takes/ and no node reads a takes directory"
+
+
+@pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
+def test_folded_groups_hold_together_and_reach_the_canvas(path: Path) -> None:
+    """Groups are how a lane is shown, so what has to hold is that they name real nodes, fold more
+    than one, and survive the trip into the canvas document."""
+    template = load_definition_file(path)
+    keys = {n.key for n in template.nodes}
+    for group in template.groups:
+        assert set(group.members) <= keys, f"{path.name}: {group.key} names a node that is not here"
+        assert len(group.members) > 1, f"{path.name}: {group.key} folds a single node"
+    graph = to_workspace_graph(template)
+    assert len(graph.groups) == len(template.groups)
+    node_ids = {n.id for n in graph.nodes}
+    for group in graph.groups:
+        assert set(group.members) <= node_ids
+        assert group.collapsed is True
+    # Every lane that ends in the delivery pair folds it: that tail is identical in all of them,
+    # and a catalogue where half the lanes fold it and half do not teaches nothing.
+    if any(n.type == "compile_destination_packages" for n in template.nodes):
+        assert template.groups, f"{path.name}: the delivery tail is not folded"
+
+
+@pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_names_are_general_not_about_one_subject(path: Path) -> None:
     """A workflow is named for what it does to the material. The lane that made a love story makes
     a fable with a different script, so 'love' does not belong in its name."""
@@ -305,7 +394,9 @@ def test_every_declared_widget_is_one_the_stage_actually_reads() -> None:
     )
     # The exemption table cannot rot into a list of stale excuses.
     assert stale_exemptions() == {}
-    assert set(WIDGET_EXEMPTIONS) == {"research", "plan_story", "compile_artboards"}
+    # plan_story's `beats` left this table when transcript mode bound it: a lane that plans a film
+    # out of a recording decides how many drawings it gets, and that number is the beat count.
+    assert set(WIDGET_EXEMPTIONS) == {"research", "compile_artboards"}
     for stage, exempt in WIDGET_EXEMPTIONS.items():
         for widget, reason in exempt.items():
             assert len(reason) > 40, f"{stage}.{widget} needs a real reason, not a shrug"

@@ -68,6 +68,7 @@ def list_workflows(
     category: str = typer.Option("", help="Only this category."),
 ) -> None:
     """Every workflow, one line each: id, category, how many stages, and whether it can run."""
+    from content_factory.runners.local import workflow_inputs
     from content_factory.workflows.catalog import runnable_missing_executor
 
     rows = []
@@ -82,6 +83,7 @@ def list_workflows(
                 "name": template.name,
                 "category": template.category,
                 "stages": len(template.stages()),
+                "needs_input": list(workflow_inputs(template.id)),
                 "ready": not blocked and not missing,
                 "blocked_stages": list(blocked),
                 "missing_models": missing,
@@ -107,6 +109,7 @@ def list_workflows(
 @app.command("show")
 def show_workflow(workflow_id: str, as_json: bool = typer.Option(False, "--json")) -> None:
     """One workflow: its stages in order, the values frozen on each, and what it needs first."""
+    from content_factory.runners.local import workflow_inputs
     from content_factory.workflows.catalog import load_definition, runnable_missing_executor
 
     template = load_definition(workflow_id)
@@ -123,6 +126,7 @@ def show_workflow(workflow_id: str, as_json: bool = typer.Option(False, "--json"
         "caveat": template.caveat,
         "blocked_stages": list(runnable_missing_executor(template)),
         "missing_models": _missing_models(template),
+        "needs_input": list(workflow_inputs(template.id)),
         "steps": steps,
     }
     if as_json:
@@ -130,6 +134,8 @@ def show_workflow(workflow_id: str, as_json: bool = typer.Option(False, "--json"
         return
     typer.echo(f"{template.id}  {template.name}  [{template.category}]")
     typer.echo(" ".join(template.description.split()))
+    if doc["needs_input"]:
+        typer.echo(f"needs --input: {', '.join(doc['needs_input'])}")
     if template.prerequisite:
         typer.echo(f"needs first: {' '.join(template.prerequisite.split())}")
     if template.caveat:
@@ -205,6 +211,13 @@ def make(
     story: str = typer.Option("", "--story", help="StoryPlan fixture, repo-relative"),
     shots: str = typer.Option("", "--shots", help="ShotPlan fixture; implies planner=fixture"),
     subject: str = typer.Option("", "--subject", help="One sentence naming the film's world"),
+    inputs: list[str] = typer.Option(
+        [],
+        "--input",
+        "-i",
+        help="Your own material: a recording, a still, a clip, or a folder of stills. Repeatable.",
+        metavar="PATH",
+    ),
     style: str = typer.Option("", "--style", help="A style preset name or a full prompt"),
     project_dir: str = typer.Option("", help="Where the run writes"),
     from_stage: str = typer.Option("", "--from", help="Resume at this node or stage"),
@@ -222,7 +235,7 @@ def make(
     finding that out fifteen minutes into a render costs more than finding it out now. ``--force``
     runs anyway.
     """
-    from content_factory.runners.local import LocalRunError, run_workflow
+    from content_factory.runners.local import LocalRunError, run_workflow, workflow_inputs
     from content_factory.runners.registry import RunStopped
     from content_factory.workflows.blocked import BLOCKED_EXIT_CODE
     from content_factory.workflows.catalog import (
@@ -249,11 +262,30 @@ def make(
                     "steps": [{"node": k, "stage": s.value, "values": v} for k, s, v in steps],
                     "blocked_stages": list(blocked),
                     "missing_models": missing,
+                    "needs_input": list(workflow_inputs(template.id)),
                     "prerequisite": template.prerequisite,
                 }
             )
         )
         return
+
+    needs = workflow_inputs(template.id)
+    if needs and not inputs and not force:
+        typer.echo(
+            json.dumps(
+                {
+                    "refused": template.id,
+                    "needs_input": list(needs),
+                    "hint": (
+                        "this lane works on material you supply:"
+                        f" --input <{'/'.join(needs)} file>."
+                        " Files already in the run directory are used with --force."
+                    ),
+                }
+            ),
+            err=True,
+        )
+        raise typer.Exit(code=3)
 
     if (blocked or missing) and not force:
         typer.echo(
@@ -335,6 +367,7 @@ def make(
             shots=shots or None,
             style=style or None,
             subject=subject or None,
+            inputs=[Path(i).expanduser() for i in inputs],
             params=by_stage or None,
             node_params=node_params or None,
             log=terse,

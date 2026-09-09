@@ -8,19 +8,536 @@
  */
 export const WORKFLOW_TEMPLATE_DATA = [
   {
+    "id": "audio-picture-story",
+    "name": "Audio picture story",
+    "description": "One recording becomes a picture story. Speech is transcribed with word timings, the transcript is cut into beats, a drawing is made for each, SeedVR2 restores and enlarges the drawings, and the cut holds each one for exactly its own words. The recording is cleaned up rather than replaced, the word timings drive the captions, and the mastered voice sits over a quiet bed.",
+    "category": "video",
+    "tags": [
+      "audio",
+      "transcript",
+      "pictures",
+      "story",
+      "restore",
+      "upscale",
+      "captions"
+    ],
+    "caveat": "",
+    "prerequisite": "The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's Audio File node. faster-whisper downloads its own model on first use, so the first run needs network; set transcribe.engine to fixture with your own transcript to stay offline.\n",
+    "stages_without_executor": [],
+    "models": [
+      {
+        "filename": "model-00001-of-00008.safetensors",
+        "install_key": "hidream-o1",
+        "kind": "path",
+        "label": "HiDream-O1 weights",
+        "path_includes": "hidream"
+      },
+      {
+        "install_key": "skill:skills/image/hidream",
+        "kind": "skill",
+        "label": "HiDream skill env",
+        "skill": "skills/image/hidream"
+      },
+      {
+        "filename": "seedvr2_7b_int8_convrot.safetensors",
+        "install_key": "seedvr2-7b",
+        "kind": "path",
+        "label": "SeedVR2 7B upscaler transformer",
+        "path_includes": "seedvr2-7b"
+      },
+      {
+        "filename": "seedvr2_ema_vae_fp16.safetensors",
+        "install_key": "seedvr2-7b",
+        "kind": "path",
+        "label": "SeedVR2 VAE",
+        "path_includes": "seedvr2-7b"
+      },
+      {
+        "install_key": "skill:skills/video/postchain",
+        "kind": "skill",
+        "label": "Post chain skill env",
+        "skill": "skills/video/postchain"
+      },
+      {
+        "filename": "last_best_checkpoint.pt",
+        "install_key": "mossformer2-se-48k",
+        "kind": "path",
+        "label": "ClearerVoice MossFormer2 enhancement (48 kHz)",
+        "optional": true,
+        "path_includes": "mossformer2-se-48k"
+      },
+      {
+        "install_key": "skill:skills/audio/clearervoice",
+        "kind": "skill",
+        "label": "ClearerVoice skill env",
+        "optional": true,
+        "skill": "skills/audio/clearervoice"
+      },
+      {
+        "filename": "enhancer_stage2/hparams.yaml",
+        "install_key": "resemble-enhance",
+        "kind": "path",
+        "label": "Resemble Enhance weights",
+        "optional": true,
+        "path_includes": "resemble-enhance"
+      },
+      {
+        "install_key": "skill:skills/audio/resemble_enhance",
+        "kind": "skill",
+        "label": "Resemble Enhance skill env",
+        "optional": true,
+        "skill": "skills/audio/resemble_enhance"
+      }
+    ],
+    "nodes": [
+      {
+        "key": "recording",
+        "type": "input.audio",
+        "x": -1280.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Your material. --input <file> copies it into the run's uploads folder; dropping a file on this node on the canvas does the same thing. Nothing in this lane invents speech.\n"
+      },
+      {
+        "key": "brief",
+        "type": "input.brief",
+        "x": -1280.0,
+        "y": 130.0,
+        "values": {
+          "audience": "general",
+          "quality": "demo",
+          "topic": "the story this recording tells"
+        },
+        "note": "The brief does not write the story here - the recording does. What it carries is the subject the pictures are drawn in, which the transcript cannot supply: words say what was said, not what the world it happened in looks like.\n"
+      },
+      {
+        "key": "transcribe",
+        "type": "transcribe_audio",
+        "x": -940.0,
+        "y": 0.0,
+        "values": {
+          "engine": "faster_whisper",
+          "language": "en",
+          "model": "base.en"
+        },
+        "note": "Reads the words and where each one is in the audio. Everything downstream hangs off those timings: the beat boundaries, each drawing's time on screen, the captions, and the cut of the voice itself. base.en is the fast default; switch to small.en or medium.en for a noisy room or an accent it stumbles on.\n"
+      },
+      {
+        "key": "story",
+        "type": "plan_story",
+        "x": -600.0,
+        "y": 0.0,
+        "values": {
+          "beats": 6
+        },
+        "note": "Six drawings, because the transcript is divided by where the sentences sit in the recording rather than by how many there are. Each beat's length is measured, not planned - so a long digression gets its own picture instead of sharing one with the line before it.\n"
+      },
+      {
+        "key": "shots",
+        "type": "plan_shots",
+        "x": -260.0,
+        "y": 0.0,
+        "values": {
+          "fps": 30,
+          "planner": "story_presets",
+          "size": "576x1024"
+        },
+        "note": "One shot per beat, its frame count taken from the beat's measured span of speech. The rate and the aspect are the deliverable's rather than a preference: a story planned from a recording has none of its own, and plan_shots refuses a plan at a different rate - a mismatch is corrected downstream by DUPLICATING frames, silently.\n"
+      },
+      {
+        "key": "controls",
+        "type": "compile_controls",
+        "x": 80.0,
+        "y": 0.0,
+        "values": {
+          "compiler": "motion_plan"
+        },
+        "note": "The builtin 2D compiler, not Blender: this lane stages nobody. It exists to give each shot a bundle so the drawings come out one per shot rather than one for the whole film. Reach for picture-story when the same characters have to appear shot after shot.\n"
+      },
+      {
+        "key": "anchor",
+        "type": "generate_anchor",
+        "x": 420.0,
+        "y": 0.0,
+        "values": {
+          "model": "hidream-o1",
+          "prompt": "the moment this part of the recording describes, as a single drawn frame",
+          "source": "generate",
+          "style": "hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper texture, one palette, one light direction, no text, no borders, no photographic lighting\n"
+        },
+        "note": "One drawing per shot. The prompt says frame rather than sentence on purpose: an image model handed a line of narration illustrates an argument instead of describing a picture.\n"
+      },
+      {
+        "key": "frames_gate",
+        "type": "review_frames",
+        "x": 760.0,
+        "y": 0.0,
+        "values": {},
+        "note": "A person looks at the contact sheet before six drawings become a film. It blocks, prints GATE and exits 4; `content-factory frames review --accept-all` then `make ... --from finish` carries on. Rejecting one drawing costs one drawing.\n"
+      },
+      {
+        "key": "finish",
+        "type": "upscale_video",
+        "x": 1100.0,
+        "y": 0.0,
+        "values": {
+          "resolution": "1440"
+        },
+        "note": "Restores and enlarges the drawings, before the hold and not after it. Six pictures at twelve seconds each; the finished cut would be a few thousand frames of the same six.\n"
+      },
+      {
+        "key": "motion",
+        "type": "generate_video",
+        "x": 1440.0,
+        "y": 0.0,
+        "values": {
+          "motion": "hold",
+          "prompt": "hold the frame; let only the light and the air move",
+          "size": "576x1024"
+        },
+        "note": "Holds each finished drawing for its shot's length. No model runs and the prompt is not read: this is ffmpeg's concat demuxer with a duration per picture, so every frame on screen is a drawing somebody approved. The prompt is here for the variant - switch motion to ltx and it becomes the standing instruction to the video model.\n"
+      },
+      {
+        "key": "script",
+        "type": "lock_script",
+        "x": -260.0,
+        "y": 130.0,
+        "values": {},
+        "note": "The sentences the recording actually says, frozen, so the timings stay valid."
+      },
+      {
+        "key": "voice",
+        "type": "voice_over",
+        "x": 80.0,
+        "y": 130.0,
+        "values": {
+          "source": "recording"
+        },
+        "note": "The recording is the narration. Each beat's audio is cut out of it at the word boundaries the transcript measured, so no aligner runs a second time and nothing is re-spoken.\n"
+      },
+      {
+        "key": "clean",
+        "type": "restore_speech",
+        "x": 420.0,
+        "y": 130.0,
+        "values": {
+          "band_extension": "clearervoice_sr",
+          "cleanup": "clearervoice",
+          "enhancer": "resemble_enhance"
+        },
+        "note": "The repair pass, per beat. The gate stays at its detected default: a take that measures clean passes through the FFmpeg tail alone rather than being run through two models to arrive back where it started.\n"
+      },
+      {
+        "key": "timings",
+        "type": "align_words",
+        "x": 760.0,
+        "y": 130.0,
+        "values": {}
+      },
+      {
+        "key": "captions",
+        "type": "compile_captions",
+        "x": 1100.0,
+        "y": 130.0,
+        "values": {},
+        "note": "The words are already timed, so the captions land where the voice does."
+      },
+      {
+        "key": "music",
+        "type": "select_music",
+        "x": -260.0,
+        "y": 260.0,
+        "values": {
+          "mood": "calm"
+        },
+        "note": "A quiet bed under the voice, ducked by the mix. Mute this node for a recording that should be heard on its own - a testimony or a lecture usually should.\n"
+      },
+      {
+        "key": "mix",
+        "type": "mix_audio",
+        "x": 760.0,
+        "y": 260.0,
+        "values": {
+          "target_lufs": -14.0
+        }
+      },
+      {
+        "key": "cut",
+        "type": "compose_video",
+        "x": 1780.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Held drawings, the mastered voice, the captions burned from the SRT."
+      },
+      {
+        "key": "qc",
+        "type": "qc_deliverable",
+        "x": 2120.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Slideshow detection matters here: a film of held drawings really is a slideshow, and the report has to say so rather than fail it.\n"
+      },
+      {
+        "key": "pack",
+        "type": "compile_destination_packages",
+        "x": 2460.0,
+        "y": 0.0,
+        "values": {}
+      },
+      {
+        "key": "deliver",
+        "type": "output.deliverables",
+        "x": 2800.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Where the run's files land. The transcript goes out with them, which is worth having on its own: it is what the film was made from.\n"
+      }
+    ],
+    "wires": [
+      {
+        "from_key": "recording",
+        "from_slot": "audio",
+        "to_key": "transcribe",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "brief",
+        "from_slot": "brief",
+        "to_key": "story",
+        "to_slot": "brief"
+      },
+      {
+        "from_key": "transcribe",
+        "from_slot": "text",
+        "to_key": "story",
+        "to_slot": "transcript"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "shots",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "shots",
+        "from_slot": "shots",
+        "to_key": "controls",
+        "to_slot": "shots"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "controls",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "anchor",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "controls",
+        "from_slot": "controls",
+        "to_key": "anchor",
+        "to_slot": "controls"
+      },
+      {
+        "from_key": "anchor",
+        "from_slot": "anchor",
+        "to_key": "frames_gate",
+        "to_slot": "frames"
+      },
+      {
+        "from_key": "frames_gate",
+        "from_slot": "frames",
+        "to_key": "finish",
+        "to_slot": "frames"
+      },
+      {
+        "from_key": "finish",
+        "from_slot": "frames",
+        "to_key": "motion",
+        "to_slot": "first_frame"
+      },
+      {
+        "from_key": "controls",
+        "from_slot": "controls",
+        "to_key": "motion",
+        "to_slot": "controls"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "script",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "script",
+        "from_slot": "script",
+        "to_key": "voice",
+        "to_slot": "script"
+      },
+      {
+        "from_key": "transcribe",
+        "from_slot": "audio",
+        "to_key": "voice",
+        "to_slot": "recording"
+      },
+      {
+        "from_key": "voice",
+        "from_slot": "audio",
+        "to_key": "clean",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "clean",
+        "from_slot": "audio",
+        "to_key": "timings",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "script",
+        "from_slot": "script",
+        "to_key": "timings",
+        "to_slot": "script"
+      },
+      {
+        "from_key": "timings",
+        "from_slot": "timings",
+        "to_key": "captions",
+        "to_slot": "timings"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "music",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "clean",
+        "from_slot": "audio",
+        "to_key": "mix",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "music",
+        "from_slot": "music",
+        "to_key": "mix",
+        "to_slot": "music"
+      },
+      {
+        "from_key": "finish",
+        "from_slot": "frames",
+        "to_key": "cut",
+        "to_slot": "frames"
+      },
+      {
+        "from_key": "motion",
+        "from_slot": "video",
+        "to_key": "cut",
+        "to_slot": "clips"
+      },
+      {
+        "from_key": "mix",
+        "from_slot": "audio",
+        "to_key": "cut",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "captions",
+        "from_slot": "captions",
+        "to_key": "cut",
+        "to_slot": "captions"
+      },
+      {
+        "from_key": "cut",
+        "from_slot": "video",
+        "to_key": "qc",
+        "to_slot": "deliverable"
+      },
+      {
+        "from_key": "cut",
+        "from_slot": "video",
+        "to_key": "pack",
+        "to_slot": "deliverable"
+      },
+      {
+        "from_key": "qc",
+        "from_slot": "report",
+        "to_key": "pack",
+        "to_slot": "qc"
+      },
+      {
+        "from_key": "pack",
+        "from_slot": "packages",
+        "to_key": "deliver",
+        "to_slot": "packages"
+      },
+      {
+        "from_key": "captions",
+        "from_slot": "captions",
+        "to_key": "deliver",
+        "to_slot": "files"
+      }
+    ],
+    "order": [
+      "transcribe",
+      "story",
+      "shots",
+      "controls",
+      "anchor",
+      "frames_gate",
+      "finish",
+      "motion",
+      "script",
+      "voice",
+      "clean",
+      "timings",
+      "captions",
+      "music",
+      "mix",
+      "cut",
+      "qc",
+      "pack"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
+    ]
+  },
+  {
     "id": "audio-restore",
     "name": "Audio restoration",
-    "description": "A recording the operator already has is cleaned up and mastered: cleanup, band extension back to 48 kHz, restoration, then a loudness pass and a packaged deliverable. No script is written, no voice is synthesised and no picture is made, so what comes out is the same performance, repaired.",
+    "description": "A recording the operator already has is repaired and mastered: read into a transcript with word timings, cleaned up, band-extended back to 48 kHz, restored, then mastered to a fixed loudness, checked and packaged with its transcript beside it. No script is written, no voice is synthesised and no picture is made, so what comes out is the same performance, repaired.",
     "category": "audio",
     "tags": [
       "audio",
       "restoration",
       "denoise",
+      "transcript",
       "loudness",
       "delivery"
     ],
-    "caveat": "One input is unwired: restore_speech reads the recording from the run directory rather than from a wire, so the lane opens on an unconnected required input. Everything after it is wired, delivery included - the mastered WAV is what QC measures and what gets packaged.\n",
-    "prerequisite": "The recording. restore_speech reads it from the run directory, so the file must be in place before the run starts; nothing upstream in this lane produces audio.\n",
+    "caveat": "",
+    "prerequisite": "The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's Audio File node. faster-whisper downloads its model on first use; transcribe.engine=fixture with your own transcript keeps the run offline.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -59,9 +576,69 @@ export const WORKFLOW_TEMPLATE_DATA = [
     ],
     "nodes": [
       {
+        "key": "recording",
+        "type": "input.audio",
+        "x": -1280.0,
+        "y": 0.0,
+        "values": {},
+        "note": "The file to repair. Nothing upstream of this node produces audio, and nothing in the lane generates any: what comes out is this performance.\n"
+      },
+      {
+        "key": "brief",
+        "type": "input.brief",
+        "x": -1280.0,
+        "y": 130.0,
+        "values": {
+          "audience": "general",
+          "quality": "demo",
+          "topic": "a recording to repair"
+        },
+        "note": "Not the source of the words - the recording is. The brief is what every run carries so the campaign, the deliverable and the run record have a subject; here it names the errand.\n"
+      },
+      {
+        "key": "transcribe",
+        "type": "transcribe_audio",
+        "x": -940.0,
+        "y": 0.0,
+        "values": {
+          "engine": "faster_whisper",
+          "language": "en",
+          "model": "base.en"
+        },
+        "note": "Normalises the recording to mono PCM and reads the words off it with timings. Both outputs matter: the transcript ships as a deliverable, and the timings are what make the recording a typed narration segment the repair chain can work on.\n"
+      },
+      {
+        "key": "story",
+        "type": "plan_story",
+        "x": -600.0,
+        "y": 0.0,
+        "values": {
+          "beats": 1
+        },
+        "note": "One beat, because the recording is one performance. Beats are how a film is divided into pictures; a repair has no pictures, so dividing would only cut the audio up and glue it back.\n"
+      },
+      {
+        "key": "script",
+        "type": "lock_script",
+        "x": -260.0,
+        "y": 0.0,
+        "values": {},
+        "note": "What the recording says, frozen, so the timings and the caption sidecars stay valid."
+      },
+      {
+        "key": "voice",
+        "type": "voice_over",
+        "x": 80.0,
+        "y": 0.0,
+        "values": {
+          "source": "recording"
+        },
+        "note": "The recording becomes the narration for the one beat, cut at the words the transcript measured. No aligner runs twice and nothing is re-spoken.\n"
+      },
+      {
         "key": "restore",
         "type": "restore_speech",
-        "x": -1280.0,
+        "x": 420.0,
         "y": 0.0,
         "values": {
           "band_extension": "clearervoice_sr",
@@ -75,7 +652,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "mix",
         "type": "mix_audio",
-        "x": -940.0,
+        "x": 760.0,
         "y": 0.0,
         "values": {
           "target_lufs": -16.0
@@ -85,38 +662,74 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "qc",
         "type": "qc_deliverable",
-        "x": -600.0,
+        "x": 1100.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "pack",
         "type": "compile_destination_packages",
-        "x": -260.0,
+        "x": 1440.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "deliver",
         "type": "output.deliverables",
-        "x": 80.0,
+        "x": 1780.0,
         "y": 0.0,
         "values": {},
-        "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
+        "note": "Where the run's files land: the mastered WAV, its loudness report, and the transcript the words were read into.\n"
       }
     ],
     "wires": [
+      {
+        "from_key": "recording",
+        "from_slot": "audio",
+        "to_key": "transcribe",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "brief",
+        "from_slot": "brief",
+        "to_key": "story",
+        "to_slot": "brief"
+      },
+      {
+        "from_key": "transcribe",
+        "from_slot": "text",
+        "to_key": "story",
+        "to_slot": "transcript"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "script",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "script",
+        "from_slot": "script",
+        "to_key": "voice",
+        "to_slot": "script"
+      },
+      {
+        "from_key": "transcribe",
+        "from_slot": "audio",
+        "to_key": "voice",
+        "to_slot": "recording"
+      },
+      {
+        "from_key": "voice",
+        "from_slot": "audio",
+        "to_key": "restore",
+        "to_slot": "audio"
+      },
       {
         "from_key": "restore",
         "from_slot": "audio",
         "to_key": "mix",
         "to_slot": "audio"
-      },
-      {
-        "from_key": "qc",
-        "from_slot": "report",
-        "to_key": "pack",
-        "to_slot": "qc"
       },
       {
         "from_key": "mix",
@@ -131,6 +744,12 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "to_slot": "deliverable"
       },
       {
+        "from_key": "qc",
+        "from_slot": "report",
+        "to_key": "pack",
+        "to_slot": "qc"
+      },
+      {
         "from_key": "pack",
         "from_slot": "packages",
         "to_key": "deliver",
@@ -138,10 +757,26 @@ export const WORKFLOW_TEMPLATE_DATA = [
       }
     ],
     "order": [
+      "transcribe",
+      "story",
+      "script",
+      "voice",
       "restore",
       "mix",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -389,7 +1024,17 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 3820.0,
         "y": 0.0,
         "values": {},
-        "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
+        "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n",
+        "title": "Film and packages"
+      },
+      {
+        "key": "extras",
+        "type": "output.deliverables",
+        "x": 3140.0,
+        "y": 130.0,
+        "values": {},
+        "note": "A second terminal, because this lane makes more than one thing. The typeset cards are a carousel deliverable in their own right - the thumbnail set, and what qc_deliverable reads back for accessibility - and the originality decision ships beside the film. One terminal per thing delivered is what keeps every output wired to somewhere it goes.\n",
+        "title": "Card set and originality"
       }
     ],
     "wires": [
@@ -580,16 +1225,28 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "to_slot": "packages"
       },
       {
-        "from_key": "pack_qc",
-        "from_slot": "report",
-        "to_key": "deliver",
-        "to_slot": "files"
-      },
-      {
         "from_key": "pack",
         "from_slot": "packages",
         "to_key": "deliver",
         "to_slot": "packages"
+      },
+      {
+        "from_key": "pack_qc",
+        "from_slot": "report",
+        "to_key": "deliver",
+        "to_slot": "reports"
+      },
+      {
+        "from_key": "card_stills",
+        "from_slot": "images",
+        "to_key": "extras",
+        "to_slot": "files"
+      },
+      {
+        "from_key": "originality",
+        "from_slot": "verdict",
+        "to_key": "extras",
+        "to_slot": "reports"
       }
     ],
     "order": [
@@ -615,6 +1272,28 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "qc",
       "pack",
       "pack_qc"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "pack_qc",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -1087,6 +1766,27 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "cut",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -1101,7 +1801,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "drift",
       "review"
     ],
-    "caveat": "The set is fixed at the 8 frames of the builtin control plan, and its per-image layout is that plan's hand-gesture fixture, not the views the brief asks for. generate_keyframes declares a frames widget the runner does not read, so you cannot yet ask for a number of images or say what each shows.\n",
+    "caveat": "The set is fixed at the 8 frames of the builtin control plan, and its per-image layout is that plan's hand-gesture fixture, not the views the brief asks for. There is no widget for the count anywhere - the plan decides it - so you cannot yet ask for a number of images or say what each one shows.\n",
     "prerequisite": "A brief naming the subject, and the look written out on generate_anchor (prompt plus style). The set is only as consistent as that anchor, so draft the anchor prompt before running. What each later image shows is not yet yours to choose - see the caveat. For real images image_sequences.backend must be hidream; the default mock backend draws placeholders.\n",
     "stages_without_executor": [],
     "models": [
@@ -1321,12 +2021,24 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "package",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
     "id": "image-to-video",
     "name": "Image to video",
-    "description": "A single still becomes a short moving shot. The anchor fixes the opening frame, LTX-2.5 invents the motion out of it, frame interpolation smooths the result, and QC and packaging turn the clip into something deliverable. No script, no voice, no cut between shots.",
+    "description": "A still you already have becomes a short moving shot. The picture you supply is the opening frame, LTX-2.5 invents the motion out of it, frame interpolation smooths the result, and QC and packaging turn the clip into something deliverable. No script, no voice, no cut between shots.",
     "category": "video",
     "tags": [
       "video",
@@ -1334,8 +2046,8 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "single-shot",
       "ltx"
     ],
-    "caveat": "Every stage here has an executor, but two inputs are unwired on purpose. generate_anchor gets no STORY because this lane has no script, so it draws the first frame from the brief topic and its own prompt instead. And no node type ingests a supplied still, so starting from an image you already have is not expressible in the graph today.\n",
-    "prerequisite": "A subject written into the brief topic. With no shot plan in the run, the runner takes both the anchor prompt and the motion prompt from that topic, so it is the one field that has to be right. A starting image of your own cannot be wired in yet; see the caveat.\n",
+    "caveat": "",
+    "prerequisite": "The picture to move: --input <file>, or dropped on the canvas's Image File node. Plus one sentence naming what is moving, on the motion node's subject widget or as --subject: this lane plans no shots, so nothing else can tell the video model what it is looking at.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -1399,32 +2111,42 @@ export const WORKFLOW_TEMPLATE_DATA = [
           "quality": "demo",
           "topic": "one image brought into motion by a slow camera push"
         },
-        "note": "Unwired because generate_anchor reads a STORY, not a BRIEF. The runner still takes the topic from here."
+        "note": "The run's subject. With source set to upload the anchor is your picture and the topic is not drawn from; switch anchor.source to generate and this topic becomes what gets drawn.\n"
+      },
+      {
+        "key": "picture",
+        "type": "input.image",
+        "x": -1280.0,
+        "y": 130.0,
+        "values": {},
+        "note": "The still to move. It is the clip's first frame, exactly as supplied."
       },
       {
         "key": "anchor",
         "type": "generate_anchor",
-        "x": -1280.0,
-        "y": 130.0,
+        "x": -940.0,
+        "y": 0.0,
         "values": {
-          "prompt": "the opening frame of the shot, as it should look before anything moves"
+          "prompt": "the opening frame of the shot, as it should look before anything moves",
+          "source": "upload"
         },
-        "note": "The first frame the whole clip grows out of. No style is frozen here: the look belongs to the shot the operator asked for, not to the lane.\n"
+        "note": "source: upload adopts your picture as the anchor and runs no model at all. Set it to generate and the same node draws an opening frame from the prompt and the brief topic instead, which is the variant for when you have no picture yet.\n"
       },
       {
         "key": "motion",
         "type": "generate_video",
-        "x": -940.0,
+        "x": -600.0,
         "y": 0.0,
         "values": {
-          "prompt": "hold the framing of the first frame and let the motion develop out of it"
+          "prompt": "hold the framing of the first frame and let the motion develop out of it",
+          "subject": "the scene in the supplied picture, moving gently"
         },
-        "note": "With no shot plan the runner prompts from the brief topic and sizes the clip from the anchor, so keep this prompt saying the same thing as the topic rather than fighting it.\n"
+        "note": "This lane plans no shots, so the prompt says how to move and the subject says what is moving. Both are read by the stage; --subject overrides the second for one run.\n"
       },
       {
         "key": "smooth",
         "type": "interpolate",
-        "x": -600.0,
+        "x": -260.0,
         "y": 0.0,
         "values": {
           "engine": "gimm_vfi"
@@ -1434,27 +2156,39 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "qc",
         "type": "qc_deliverable",
-        "x": -260.0,
+        "x": 80.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "pack",
         "type": "compile_destination_packages",
-        "x": 80.0,
+        "x": 420.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "deliver",
         "type": "output.deliverables",
-        "x": 420.0,
+        "x": 760.0,
         "y": 0.0,
         "values": {},
         "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
       }
     ],
     "wires": [
+      {
+        "from_key": "picture",
+        "from_slot": "image",
+        "to_key": "anchor",
+        "to_slot": "still"
+      },
+      {
+        "from_key": "brief",
+        "from_slot": "brief",
+        "to_key": "anchor",
+        "to_slot": "brief"
+      },
       {
         "from_key": "anchor",
         "from_slot": "anchor",
@@ -1498,6 +2232,18 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "smooth",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -1512,8 +2258,8 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "seedvr2",
       "delivery"
     ],
-    "caveat": "The first stage takes no wire. upscale.frames is a required input left unwired on purpose: the operator's images are read from the run directory rather than handed over by an upstream node, so the graph starts from a slot the canvas shows as empty. Every stage in the lane has an executor.\n",
-    "prerequisite": "The images to upscale, staged in the run's input frame directory. This lane produces no material of its own, so with no pictures in place there is nothing for it to do.\n",
+    "caveat": "",
+    "prerequisite": "The images to upscale: --input <file or folder>, or dropped on the canvas's Image File node. This lane produces no material of its own, so with no pictures in place there is nothing to do.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -1547,9 +2293,17 @@ export const WORKFLOW_TEMPLATE_DATA = [
     ],
     "nodes": [
       {
+        "key": "pictures",
+        "type": "input.image",
+        "x": -1280.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Your pictures. One node stands for the whole set: --input takes a folder and the stage picks up everything in the run's uploads, so a hundred stills are one wire rather than a hundred.\n"
+      },
+      {
         "key": "upscale",
         "type": "upscale_video",
-        "x": -1280.0,
+        "x": -940.0,
         "y": 0.0,
         "values": {
           "resolution": "2160"
@@ -1559,7 +2313,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "qc",
         "type": "qc_deliverable",
-        "x": -940.0,
+        "x": -600.0,
         "y": 0.0,
         "values": {},
         "note": "An upscaler can smear a face or invent texture, so the enlarged set is looked at before it ships."
@@ -1567,20 +2321,26 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "pack",
         "type": "compile_destination_packages",
-        "x": -600.0,
+        "x": -260.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "deliver",
         "type": "output.deliverables",
-        "x": -260.0,
+        "x": 80.0,
         "y": 0.0,
         "values": {},
         "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
       }
     ],
     "wires": [
+      {
+        "from_key": "pictures",
+        "from_slot": "image",
+        "to_key": "upscale",
+        "to_slot": "frames"
+      },
       {
         "from_key": "upscale",
         "from_slot": "frames",
@@ -1610,6 +2370,18 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "upscale",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -1667,7 +2439,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -1280.0,
         "y": 130.0,
         "values": {},
-        "note": "Optional, and the only way a picture gets into this lane. Files in <project>/uploads are sniffed by magic number, stored immutably, recorded as operator_upload sources and carried into the render bundle as assets - which is what an image, screenshot, map or background still resolves against. With an empty uploads dir this is a no-op and the film is cards only.\n"
+        "note": "Optional, and the only way a picture gets into this lane. Files in <project>/uploads are sniffed by magic number, stored immutably and carried into the render bundle, which is what an image, screenshot or map scene resolves its file against. The wire goes to compile_timeline: that is the stage that builds the bundle. An empty folder is a no-op.\n"
       },
       {
         "key": "story",
@@ -1854,6 +2626,12 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "to_slot": "timings"
       },
       {
+        "from_key": "uploads",
+        "from_slot": "sources",
+        "to_key": "timeline",
+        "to_slot": "sources"
+      },
+      {
         "from_key": "timeline",
         "from_slot": "timeline",
         "to_key": "cards",
@@ -1917,6 +2695,27 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "cut",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -2152,6 +2951,18 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "cut",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -2638,6 +3449,27 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "cut",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -2883,6 +3715,18 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "motion",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -3203,6 +4047,18 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "cut",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -3218,7 +4074,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "sound",
       "delivery"
     ],
-    "caveat": "compose_video's frames input is left unwired on purpose: this lane makes a clip, not a frame sequence, so the picture arrives on clips and the composer picks it up from the run directory. The publish node is the canvas terminal; the runner stops after the destination packages.\n",
+    "caveat": "The publish node is the canvas terminal: it marks where the packages go, and the runner stops after building them. Nothing is uploaded by a run in this repo.\n",
     "prerequisite": "A topic on the brief, or a written script as fixtures/story/<name>.json set on plan_story's story widget. Nothing needs recording: the voice is synthesized. Posting needs a distribution profile.\n",
     "stages_without_executor": [],
     "models": [
@@ -3433,8 +4289,11 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "type": "publish.social",
         "x": 2120.0,
         "y": 0.0,
-        "values": {},
-        "note": "Destination and profile are chosen per run, and the post is approval gated. The runner skips this node: it marks where the packages go.\n"
+        "values": {
+          "destinations": "export",
+          "visibility": "draft"
+        },
+        "note": "One post, to every destination lit up on the node - light more than one and the same package goes to each, once. It defaults to export, which writes the package into the run's own folder and sends nothing; a real platform needs an approved distribution profile, and the post is approval gated on top of that. The runner skips this node: it marks where the packages go.\n"
       },
       {
         "key": "deliver",
@@ -3576,7 +4435,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "from_key": "originality",
         "from_slot": "verdict",
         "to_key": "deliver",
-        "to_slot": "files"
+        "to_slot": "reports"
       }
     ],
     "order": [
@@ -3595,6 +4454,26 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "qc",
       "pack",
       "publish"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and package",
+        "members": [
+          "qc",
+          "pack"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -3751,6 +4630,18 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "anchor",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -3765,8 +4656,8 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "interpolate",
       "delivery"
     ],
-    "caveat": "Nothing loads an existing video, so the entry frames are not a wire: fix_video reads whatever the run directory already holds. Removal is also a no-op on its own, because Cutie needs a Blender segmentation seed mask under controls/, which only a lane that ran compile_controls writes. Upscale, interpolation and QC do run standalone.\n",
-    "prerequisite": "The material to finish, already in the run directory: exports/generated.mp4, per-shot video/<shot>/clip.mp4, or a frame sequence at sequence/frames. Removal ids come from settings.postchain.remove_seg_ids.\n",
+    "caveat": "Object removal is a no-op on its own: Cutie needs a Blender segmentation seed mask under controls/, which only a lane that ran compile_controls writes, so on supplied footage fix_video passes the frames through and says so. Upscale, interpolation and QC do run standalone.\n",
+    "prerequisite": "The clip to finish: --input <file>, or dropped on the canvas's Video File node. A run that already holds material (exports/generated.mp4, per-shot clips, sequence/frames) finishes that instead. Removal ids come from settings.postchain.remove_seg_ids.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -3821,17 +4712,25 @@ export const WORKFLOW_TEMPLATE_DATA = [
     ],
     "nodes": [
       {
-        "key": "fix",
-        "type": "fix_video",
+        "key": "footage",
+        "type": "input.video",
         "x": -1280.0,
         "y": 0.0,
         "values": {},
-        "note": "The entry. Its frames come from the run directory, not from a wire. remove_ids and mask_dilation are read from settings.postchain today, not from these widgets, so setting them here would not change the run.\n"
+        "note": "The clip to finish. It is staged into the run's uploads folder and the post chain adopts it from there, so the same lane finishes a camera file, a render from elsewhere, or a clip from a run whose earlier stages have been thrown away.\n"
+      },
+      {
+        "key": "fix",
+        "type": "fix_video",
+        "x": -940.0,
+        "y": 0.0,
+        "values": {},
+        "note": "The entry. remove_ids and mask_dilation are read from settings.postchain today, not from these widgets, so setting them here would not change the run.\n"
       },
       {
         "key": "upscale",
         "type": "upscale_video",
-        "x": -940.0,
+        "x": -600.0,
         "y": 0.0,
         "values": {},
         "note": "Resolution comes from settings.postchain.upscale_resolution, default 1080. 1440 and 2160 are offered but the 7B model at that size is tight on a 24GB card.\n"
@@ -3839,7 +4738,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "smooth",
         "type": "interpolate",
-        "x": -600.0,
+        "x": -260.0,
         "y": 0.0,
         "values": {
           "engine": "gimm_vfi"
@@ -3849,27 +4748,33 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "key": "qc",
         "type": "qc_deliverable",
-        "x": -260.0,
+        "x": 80.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "pack",
         "type": "compile_destination_packages",
-        "x": 80.0,
+        "x": 420.0,
         "y": 0.0,
         "values": {}
       },
       {
         "key": "deliver",
         "type": "output.deliverables",
-        "x": 420.0,
+        "x": 760.0,
         "y": 0.0,
         "values": {},
         "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
       }
     ],
     "wires": [
+      {
+        "from_key": "footage",
+        "from_slot": "video",
+        "to_key": "fix",
+        "to_slot": "frames"
+      },
       {
         "from_key": "fix",
         "from_slot": "frames",
@@ -3913,6 +4818,28 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "smooth",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "finish",
+        "name": "Finish the picture",
+        "members": [
+          "fix",
+          "upscale",
+          "smooth"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   },
   {
@@ -4018,7 +4945,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
           "device": "cuda",
           "enhancer": "resemble_enhance"
         },
-        "note": "voice_over normalises every take to 16 kHz mono for alignment, so band extension is what puts the top octaves back before delivery. The gate stays on detected, unlike the repair lane: a take recorded for this script is usually clean. cuda because nothing else wants the GPU here and the enhancer is about 19x realtime on CPU.\n"
+        "note": "voice_over normalises every take to 24 kHz mono, so band extension is what puts the top octaves back before delivery. The gate stays on detected, unlike the repair lane: a take recorded for this script is usually clean. cuda because nothing else wants the GPU here and the enhancer is about 19x realtime on CPU.\n"
       },
       {
         "key": "timings",
@@ -4140,6 +5067,27 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "captions",
       "qc",
       "pack"
+    ],
+    "groups": [
+      {
+        "key": "captions",
+        "name": "Captions from the voice",
+        "members": [
+          "timings",
+          "captions"
+        ],
+        "collapsed": true
+      },
+      {
+        "key": "deliver",
+        "name": "Check and deliver",
+        "members": [
+          "qc",
+          "pack",
+          "deliver"
+        ],
+        "collapsed": true
+      }
     ]
   }
 ] as const;

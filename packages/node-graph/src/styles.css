@@ -616,6 +616,269 @@
   outline-offset: -1px;
 }
 
+/* The panel's own group rows: the steps a lane is made of, foldable from the list. */
+.ng-props__group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--ng-muted);
+  font-size: 11px;
+}
+.ng-props__group strong {
+  color: var(--ng-fg);
+  font-weight: 500;
+}
+.ng-props__group button {
+  margin-left: auto;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--ng-widget-border);
+  border-radius: 999px;
+  background: var(--ng-widget-bg);
+  color: var(--ng-widget-text);
+  font-size: 10px;
+  cursor: pointer;
+}
+.ng-props__grouprow .ng-props__row {
+  color: var(--ng-fg);
+}
+.ng-props__row-count {
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ng-accent) 26%, transparent);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+
+/*
+ * A folded group, and the frame behind an open one.
+ *
+ * The folded node has to read as "several things shown as one" at a glance, so it is given the
+ * one visual property no ordinary node has: a stack. Two offset plates behind the body, the
+ * stacked mark in the header, and a numbered list of what is inside. The frame around an open
+ * group is the same idea inverted — a dashed region with the same mark, so opening and folding
+ * feel like two states of one object rather than two different features.
+ */
+.ng-group {
+  position: relative;
+}
+/* The plates. Drawn with ::before/::after so nothing has to be in the DOM for them. */
+.ng-group::before,
+.ng-group::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ng-node-border);
+  border-radius: 8px;
+  background: var(--ng-node-body);
+  z-index: -1;
+}
+.ng-group::before {
+  transform: translate(5px, 5px);
+  opacity: 0.55;
+}
+.ng-group::after {
+  transform: translate(10px, 10px);
+  opacity: 0.3;
+}
+.ng-group__header {
+  gap: 6px;
+}
+.ng-group__mark {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--ng-accent);
+}
+.ng-group__count {
+  flex: none;
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ng-accent) 26%, transparent);
+  color: var(--ng-fg);
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
+.ng-group__steps {
+  margin: 6px 10px 2px;
+  padding: 0 0 0 18px;
+  list-style: decimal;
+  color: var(--ng-node-text);
+  font-size: 10.5px;
+  line-height: 16px;
+}
+.ng-group__step {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ng-group__actions {
+  display: flex;
+  gap: 6px;
+  padding: 6px 10px 10px;
+}
+.ng-group__open,
+.ng-group__ungroup {
+  flex: 1;
+  height: 22px;
+  border: 1px solid var(--ng-widget-border);
+  border-radius: 999px;
+  background: var(--ng-widget-bg);
+  color: var(--ng-widget-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+.ng-group__open {
+  border-color: var(--ng-accent);
+  color: var(--ng-fg);
+  background: color-mix(in srgb, var(--ng-accent) 22%, var(--ng-widget-bg));
+}
+.ng-group__open:hover:not(:disabled),
+.ng-group__ungroup:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.ng-groupframe {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px dashed color-mix(in srgb, var(--ng-accent) 55%, var(--ng-node-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ng-accent) 7%, transparent);
+  pointer-events: none;
+}
+.ng-groupframe__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  color: var(--ng-node-title);
+  font-size: 11px;
+  pointer-events: auto;
+}
+.ng-groupframe__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.ng-groupframe__fold {
+  height: 18px;
+  padding: 0 8px;
+  border: 1px solid var(--ng-widget-border);
+  border-radius: 999px;
+  background: var(--ng-widget-bg);
+  color: var(--ng-widget-secondary);
+  font-size: 10px;
+  cursor: pointer;
+}
+.ng-groupframe__fold:hover:not(:disabled) {
+  color: var(--ng-fg);
+}
+
+/*
+ * Multi-select: a field of pills, wrapped, on one node.
+ *
+ * Deliberately not a stack of rows. A destination set is one decision with several answers, and
+ * a row per answer makes it look like several decisions — which is what a node per destination
+ * looked like before. Lit means chosen: the dot fills, the border takes the accent, the text
+ * brightens. Unlit pills stay legible rather than fading out, because "where this is not going"
+ * is half of what the control is for.
+ */
+.ng-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  /* Fieldset reset: it is here for the semantics, not for the browser's box. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.ng-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px 0 6px;
+  border: 1px solid var(--ng-widget-border);
+  border-radius: 999px;
+  background: var(--ng-widget-bg);
+  color: var(--ng-widget-secondary);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 90ms ease,
+    color 90ms ease,
+    background-color 90ms ease;
+}
+.ng-chip:hover {
+  color: var(--ng-widget-text);
+  border-color: var(--ng-widget-text);
+}
+.ng-chip[data-on] {
+  border-color: var(--ng-accent);
+  color: var(--ng-fg);
+  background: color-mix(in srgb, var(--ng-accent) 22%, var(--ng-widget-bg));
+}
+/* The checkbox is the control; the dot is its face. Hiding it with display:none would take it
+   out of the tab order, so it is transparent and stretched over the pill instead. */
+.ng-chip__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+}
+.ng-chip__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid currentcolor;
+  background: transparent;
+}
+.ng-chip[data-on] .ng-chip__dot {
+  background: var(--ng-accent);
+  border-color: var(--ng-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-accent) 30%, transparent);
+}
+.ng-chip__input:focus-visible ~ .ng-chip__dot {
+  outline: 1px solid var(--ng-accent);
+  outline-offset: 2px;
+}
+.ng-chip__text {
+  white-space: nowrap;
+}
+.ng-chips__all {
+  height: 20px;
+  padding: 0 7px;
+  border: 1px dashed var(--ng-widget-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ng-widget-secondary);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.ng-chips__all:hover:not(:disabled) {
+  color: var(--ng-fg);
+  border-color: var(--ng-widget-text);
+}
+
 /* The note under a node: quiet until it has content or focus. */
 .ng-node__note {
   padding: 0 10px;
@@ -1024,6 +1287,9 @@
 }
 .ng-thumb__header[data-kind="note"] {
   fill: var(--ng-note-header);
+}
+.ng-thumb__header[data-kind="group"] {
+  fill: color-mix(in srgb, var(--ng-accent) 45%, var(--ng-node-header));
 }
 
 .ng-node__badge[data-badge="ai"] {

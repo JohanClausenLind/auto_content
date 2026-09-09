@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { splitTypes } from "./datatypes";
-import { nodeById, type NodeMode } from "./graphModel";
+import { groupOf, isHidden, nodeById, type NodeMode } from "./graphModel";
 import type { NodeDefinition } from "./nodeDefs";
 import type { GraphEditor } from "./useGraphEditor";
 import { WidgetRow } from "./widgets";
@@ -34,9 +34,24 @@ function SelectedNode({ editor, nodeId, readOnly }: { editor: GraphEditor; nodeI
   if (!node) return null;
   const def = editor.catalog.get(node.type);
   const problems = editor.problemsByNode.get(node.id) ?? [];
+  const group = groupOf(editor.graph, node.id);
 
   return (
     <div className="ng-props__node">
+      {group && (
+        // Which step this node is part of. A node opened out of a folded group otherwise gives no
+        // clue where it came from or how to put it back.
+        <p className="ng-props__group">
+          part of <strong>{group.name}</strong>
+          <button
+            type="button"
+            disabled={readOnly}
+            onClick={() => editor.setGroupCollapsed(group.id, !group.collapsed)}
+          >
+            {group.collapsed ? "Open" : "Fold"}
+          </button>
+        </p>
+      )}
       {def && (
         // What the node is, before how it is configured: the type's own name, one line on what it
         // does, and the longer explanation where the definition carries one.
@@ -168,9 +183,26 @@ export function PropertiesPanel({ editor, readOnly = false }: PropertiesPanelPro
 
       {tab === "nodes" && (
         <ol className="ng-props__list" aria-label="Nodes in execution order">
+          {/* Folded groups first, as the steps they stand for. The list is the screen-reader path
+              through the graph, so it has to show what the canvas shows. */}
+          {editor.graph.groups.map((group) => (
+            <li key={group.id} className="ng-props__grouprow">
+              <button
+                type="button"
+                className="ng-props__row"
+                onClick={() => editor.setGroupCollapsed(group.id, !group.collapsed)}
+              >
+                <span className="ng-props__row-title">
+                  {group.collapsed ? "▸" : "▾"} {group.name}
+                </span>
+                <span className="ng-props__row-count">{group.members.length}</span>
+              </button>
+            </li>
+          ))}
           {order.map((id) => {
             const node = nodeById(editor.graph, id);
             if (!node) return null;
+            if (isHidden(editor.graph, id)) return null;
             const def = editor.catalog.get(node.type);
             const errors = (editor.problemsByNode.get(id) ?? []).filter((p) => p.severity === "error");
             return (

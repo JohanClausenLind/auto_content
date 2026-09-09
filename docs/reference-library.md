@@ -71,7 +71,7 @@ touched eight places in six files.
 | --- | --- |
 | The contract | `python/content_factory/schemas/workflow_template.py` |
 | The loader both front doors read | `python/content_factory/workflows/catalog.py` |
-| The definitions | `workflows/*.yaml`, fifteen of them |
+| The definitions | `workflows/*.yaml`, sixteen of them |
 | The node catalogue the validator checks against | `fixtures/schema/node_catalog.json`, generated from `catalog.ts` by esbuild |
 | The canvas data | `apps/web/src/workspace/generated/workflowTemplates.ts` plus a tracked JSON twin |
 | The commands | `content-factory workflows list|show|validate|new` and `content-factory make` |
@@ -89,6 +89,28 @@ not match, and an `order` that is not a topological order of the wires. It also 
 uses a stage with no executor unless the file admits that in `caveat`. That last rule is what keeps
 the catalogue honest rather than aspirational.
 
+It refuses **an unwired required input** too, with no escape. That used to be waived for any file
+carrying a `caveat`, and four lanes took the waiver: each worked on material the operator supplies,
+and there was no node type for that material to arrive through, so each declared its first stage's
+input unwired and explained it in prose. `input.audio` / `input.image` / `input.video` are lane node
+types now — a lane's entry point is a node that says *your recording goes here*, which is also what
+makes `--input` and `needs_input` work — so the waiver is gone.
+
+A definition may also declare `groups:`, sets of nodes the canvas draws as one under a name:
+
+```yaml
+groups:
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
+```
+
+Presentation only. The runner reads `order`, which knows nothing about groups; the compiler and the
+DAG never see one; and opening a group on the canvas shows the same nodes with every widget on them.
+It exists because half of every lane is the same few steps, and an operator opening a graph to change
+one prompt should not have to read all of them. Every lane folds its delivery tail, and the tests
+refuse one that does not.
+
 Order and values key on **node key**, not on stage. The old runner keyed on stage and silently
 collapsed a lane that used one stage twice.
 
@@ -104,7 +126,7 @@ collapsed a lane that used one stage twice.
    made its first fourteen steps a copy of that lane, so they went back to the one lane where
    drafting a script from sources is the point. Hybrid's own thing is the router.
 
-**The catalogue, fifteen lanes.** Six other consolidations happened on the way: two single-image
+**The catalogue, sixteen lanes.** Six other consolidations happened on the way: two single-image
 templates became one lane with a model widget, and `blender-controlled-video`,
 `hybrid-shot-router-video`, `stitch-sequence-video`, `image-to-video-ltx` and `video-to-social` were
 renamed to say what they do rather than which model does it.
@@ -124,7 +146,8 @@ renamed to say what they do rather than which model does it.
 | `silent-video` | video | Music and effects, no voice |
 | `single-clip-post` | social | One short clip finished for posting |
 | `voice-over-track` | audio | A clean narration track and captions, no picture |
-| `audio-restore` | audio | Clean up a recording |
+| `audio-restore` | audio | Clean up a recording, and write down what it says |
+| `audio-picture-story` | video | A recording becomes drawings: the words are read off it, the beats are spans of what was said, and each drawing holds for its own sentences |
 | `video-finish` | utility | Fix, upscale and interpolate a video that already exists |
 
 ## Running a production in one call
@@ -138,12 +161,20 @@ project directory and the path to `run.json`.
 uv run content-factory workflows list                 # the catalogue, one line each
 uv run content-factory make picture-story --plan      # what would run, no run
 uv run content-factory make picture-story --subject "two people, one small moment"
+uv run content-factory make audio-picture-story --input ~/talks/interview.m4a
 ```
 
 The preflight refuses a lane whose stages have no executor or whose weights are absent, because
 finding that out fifteen minutes into a render costs more than finding it out now. `--force` runs
 anyway. `--set node.key=value` overrides one widget without editing the file, which is how the
 stills variant is reached: `--set motion.motion=hold`.
+
+Five lanes work on material the operator already has, and there is one rule for all of them: **it
+goes in the run's `uploads/` folder**, which is what `--input` does — sniffing the kind from the
+bytes and refusing it against the kinds the lane's own input nodes declare, so `--input` on the
+wrong lane is caught in the first second rather than in the first stage. `workflows list --json`,
+`workflows show` and `--plan` all report `needs_input`, and the preflight refuses a lane that needs
+material and was given none.
 
 `.claude/skills/produce/SKILL.md` tells an agent exactly this and nothing more, so producing
 something costs one tool call and one short read.

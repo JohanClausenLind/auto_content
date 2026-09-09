@@ -99,3 +99,87 @@ def test_stem_master_and_loudness(tmp_path: Path) -> None:
     assert (
         abs(raw.integrated_lufs - report.integrated_lufs) > 0.5
     )  # mastering actually changed level
+
+
+def _silent_clip(path: Path, *, seconds: float) -> Path:
+    """A tiny H.264 clip of the given length, made the way the post chain makes one."""
+    from content_factory.audio.mix import ffmpeg
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg(
+        [
+            "-f",
+            "lavfi",
+            "-i",
+            f"testsrc=size=64x48:rate=24:duration={seconds}",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:v",
+            "libx264",
+            str(path),
+        ]
+    )
+    return path
+
+
+def _tone(path: Path, *, seconds: float) -> Path:
+    from content_factory.audio.mix import ffmpeg
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg(
+        [
+            "-f",
+            "lavfi",
+            "-i",
+            f"sine=frequency=220:duration={seconds}",
+            "-ac",
+            "1",
+            "-ar",
+            "48000",
+            "-c:a",
+            "pcm_s16le",
+            str(path),
+        ]
+    )
+    return path
+
+
+def test_the_mux_holds_the_last_frame_rather_than_cutting_the_narration(tmp_path: Path) -> None:
+    """`-shortest` made a film end when its picture did, and the mix always ends later than the
+    beats: it lays the narration out with a lead-in, a pause between beats and a tail. So a lane
+    whose picture is exactly as long as its beats lost its ending to a flag — measured on a real
+    run as "audio shorter than the narration it should carry", raised by the composer's own QC.
+    """
+    from content_factory.audio.mix import _media_ms, mux
+
+    picture = _silent_clip(tmp_path / "picture.mp4", seconds=2.0)
+    audio = _tone(tmp_path / "audio.wav", seconds=3.4)
+    out = tmp_path / "final.mp4"
+    # 3.0 s is where the last word ends; the 0.4 s after it is the stem's tail of silence.
+    mux(picture, audio, out, min_video_ms=3000)
+    # Every word is there, and the picture was extended to carry them.
+    assert _media_ms(out) >= 3000 - 60
+    from content_factory.qc.media import ffprobe
+
+    streams = {s["codec_type"]: s for s in ffprobe(out)["streams"]}
+    assert streams["video"]["codec_name"] == "h264"
+    assert streams["audio"]["codec_name"] == "aac"
+    assert int(streams["video"]["width"]) == 64
+
+
+def test_a_picture_that_already_carries_the_words_is_copied_not_re_encoded(tmp_path: Path) -> None:
+    """The old path, kept, and it is what every timeline lane takes: the compiler sizes the picture
+    to the speech, so what -shortest cuts there is the stem's trailing silence. Holding costs a
+    re-encode and there is nothing to save."""
+    from content_factory.audio.mix import _media_ms, mux
+    from content_factory.qc.media import ffprobe
+
+    picture = _silent_clip(tmp_path / "picture.mp4", seconds=3.0)
+    audio = _tone(tmp_path / "audio.wav", seconds=3.4)
+    out = tmp_path / "final.mp4"
+    mux(picture, audio, out, min_video_ms=2600)
+    # -shortest wins: the film is the length of its picture, and nothing was re-encoded.
+    assert _media_ms(out) <= _media_ms(picture) + 60
+    source = {s["codec_type"]: s for s in ffprobe(picture)["streams"]}["video"]
+    muxed = {s["codec_type"]: s for s in ffprobe(out)["streams"]}["video"]
+    assert muxed["profile"] == source["profile"]

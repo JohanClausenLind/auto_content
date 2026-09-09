@@ -3,8 +3,10 @@
 This is the same document the TypeScript editor serialises — field for field — so a graph saved
 from the browser round-trips through this contract byte-compatibly. Node ``type`` values are
 either a pipeline :class:`~content_factory.schemas.dag.Stage` name or one of the editor's
-non-stage node types (``input.brief``, ``utility.note``, ``publish.social``); the compiler in
-``content_factory.workspace`` decides what each one means for execution.
+non-stage node types (``input.brief``, the ``input.audio``/``image``/``video`` file inputs,
+``utility.note``, ``publish.social``); the compiler in ``content_factory.workspace`` decides what
+each one means for execution. ``groups`` are folded views over the same flat nodes and links: the
+canvas draws a group as one node, and nothing downstream of the canvas knows they exist.
 """
 
 from __future__ import annotations
@@ -41,12 +43,38 @@ class WorkspaceLink(SchemaModel):
     to_slot: str = Field(min_length=1, max_length=64)
 
 
+class WorkspaceGroup(SchemaModel):
+    """A named set of nodes the canvas can draw as one.
+
+    Purely a view: the nodes and links stay in the flat graph exactly as they were, so the
+    compiler, the runner and execution order never see a group at all. It exists because half of
+    every lane is the same few steps — clean up the voice, finish the picture, check and package —
+    and an operator changing one prompt should not have to read all of them. Folded, the canvas
+    draws one node with the group's boundary slots; opened, it draws the members in a frame with
+    every widget available.
+
+    ``members`` order is meaningful: it decides the order of a folded group's ports.
+    """
+
+    id: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=80)
+    template: str = Field(default="", max_length=64)
+    """The block this was inserted from, for provenance. Empty for a hand-made group."""
+    collapsed: bool = True
+    members: tuple[str, ...] = ()
+    x: float = 0.0
+    y: float = 0.0
+
+
 class WorkspaceGraph(SchemaModel):
     schema_version: Literal[1] = 1
     graph_id: str = Field(min_length=1, max_length=64)
     name: str = Field(min_length=1, max_length=200)
     nodes: tuple[WorkspaceNode, ...] = ()
     links: tuple[WorkspaceLink, ...] = ()
+    groups: tuple[WorkspaceGroup, ...] = ()
+    """Folded views over ``nodes``. Absent in every document written before groups existed, which
+    is why it defaults to empty rather than being required."""
 
     @model_validator(mode="after")
     def _invariants(self) -> WorkspaceGraph:
@@ -69,6 +97,19 @@ class WorkspaceGraph(SchemaModel):
             if target in occupied:
                 raise ValueError(f"input {link.to_node}.{link.to_slot} is connected twice")
             occupied.add(target)
+        group_ids: set[str] = set()
+        owner: dict[str, str] = {}
+        for group in self.groups:
+            if group.id in group_ids:
+                raise ValueError(f"duplicate group id {group.id}")
+            group_ids.add(group.id)
+            for member in group.members:
+                if member not in node_ids:
+                    raise ValueError(f"group {group.id} names unknown node {member}")
+                if member in owner:
+                    msg = f"node {member} is in two groups ({owner[member]}, {group.id})"
+                    raise ValueError(msg)
+                owner[member] = group.id
         if self._topological_order() is None:
             raise ValueError("the graph contains a cycle")
         return self

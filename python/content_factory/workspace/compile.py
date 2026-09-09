@@ -231,7 +231,17 @@ def compile_graph(graph: WorkspaceGraph, template: ContentCampaign) -> GraphComp
         elif node.type == "utility.note":
             kind, reason = "skipped", "note: canvas annotation only"
         elif node.type == "publish.social":
-            kind, reason = "skipped", "publishing runs through the gated distribution flow"
+            # Name the destinations the node is set to. The compile preview is where an operator
+            # checks what a Run would do, and "publishing is skipped" without saying where it
+            # would have gone is the half of the answer that does not need checking.
+            wanted = [
+                d.strip() for d in str(node.values.get("destinations", "")).split(",") if d.strip()
+            ]
+            where = ", ".join(wanted) if wanted else "no destination selected"
+            kind, reason = (
+                "skipped",
+                f"publishing runs through the gated distribution flow ({where})",
+            )
         elif node.type == "output.deliverables":
             kind, reason = "skipped", "marks where the run already writes its deliverable files"
         elif node.mode != "always":

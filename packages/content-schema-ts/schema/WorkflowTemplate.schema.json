@@ -68,6 +68,45 @@
       "title": "ModelRequirement",
       "type": "object"
     },
+    "WorkflowGroup": {
+      "additionalProperties": false,
+      "description": "Nodes this lane shows as one, and what it calls them.\n\nHalf of every lane in the catalogue is the same few steps — read the recording, clean up the\nvoice, build the captions, check and package. A group is how a definition says \"these are one\nidea\", so opening the lane on the canvas shows a step called *Captions from the voice* instead\nof two nodes an operator has to recognise, and opening the group shows both with every widget\non them. Purely presentation: the runner reads ``order``, which knows nothing about groups.",
+      "properties": {
+        "collapsed": {
+          "default": true,
+          "title": "Collapsed",
+          "type": "boolean"
+        },
+        "key": {
+          "pattern": "^[a-z][a-z0-9_]{0,31}$",
+          "title": "Key",
+          "type": "string"
+        },
+        "members": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,31}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "collapsed",
+        "key",
+        "members",
+        "name"
+      ],
+      "title": "WorkflowGroup",
+      "type": "object"
+    },
     "WorkflowNode": {
       "additionalProperties": false,
       "properties": {
@@ -215,6 +254,14 @@
       "title": "Description",
       "type": "string"
     },
+    "groups": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WorkflowGroup"
+      },
+      "title": "Groups",
+      "type": "array"
+    },
     "id": {
       "pattern": "^[a-z0-9][a-z0-9-]{2,48}$",
       "title": "Id",
@@ -284,6 +331,7 @@
     "category",
     "caveat",
     "description",
+    "groups",
     "id",
     "models",
     "name",

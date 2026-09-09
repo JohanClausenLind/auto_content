@@ -249,3 +249,47 @@ def test_srt_burn_is_the_fallback_when_highlighting_is_off(ctx: StageContext, en
     stage_compose_video(ctx)
     manifest = json.loads((ctx.ddir() / "exports" / "compose.json").read_text())
     assert manifest["captions"] == "captions/captions.srt"
+
+
+def test_a_drawn_film_holds_its_last_frame_instead_of_losing_its_last_words(
+    ctx: StageContext, env
+) -> None:
+    """The defect a live run of `audio-picture-story` found, as a test.
+
+    A film whose picture is its own length — drawings held for the spans of speech they
+    illustrate — is shorter than the mastered stem, because the mix puts `lead_in_ms` before the
+    first beat, a pause between beats and `tail_ms` after the last one. `mux`'s `-shortest` then
+    cut the *words*, and the composer's own audio QC caught it as "audio shorter than the
+    narration it should carry". So the picture is held to the last word instead, and the QC that
+    would have failed is the assertion: `stage_compose_video` raises when it does not pass.
+    """
+    from content_factory.audio.mix import _media_ms, ffmpeg
+    from content_factory.workflows.stages import _speech_end_ms
+
+    env(CF__ROUTING__GENERATE_KINDS="[]")
+    _narration(ctx)
+    speech_ms = _speech_end_ms(ctx)
+    # A picture two seconds shorter than the speech, at the generated-cut path's own filename —
+    # no Remotion bundle, so this is a film whose length is nobody's promise but its own.
+    exports = ctx.ddir() / "exports"
+    exports.mkdir(parents=True, exist_ok=True)
+    picture = exports / "generated.mp4"
+    ffmpeg(
+        [
+            "-f",
+            "lavfi",
+            "-i",
+            f"testsrc=size=64x48:rate=24:duration={(speech_ms - 2000) / 1000:.3f}",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:v",
+            "libx264",
+            str(picture),
+        ]
+    )
+    assert _media_ms(picture) < speech_ms - 1000
+
+    out = stage_compose_video(ctx)
+    assert out.facts["narrated"] is True
+    final = ctx.ddir() / "exports" / "final.mp4"
+    assert _media_ms(final) >= speech_ms - 60, "the film ends before its last word"

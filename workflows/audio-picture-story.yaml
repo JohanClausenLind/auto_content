@@ -1,0 +1,260 @@
+# A recording becomes a film of drawings.
+#
+# Every other lane in the catalogue starts from something written. This one starts from sound: an
+# interview, a lecture, a voice memo, a grandmother telling a story into a phone. The words are read
+# off the recording, the story is cut out of those words, one drawing is made per span of speech,
+# each drawing is restored and enlarged, and each is held on screen for exactly as long as its own
+# sentences are spoken. The voice you hear is the recording — repaired, not regenerated.
+#
+# The lane is named for what it does to the material. It makes no difference whether the recording is
+# a memoir, a product post-mortem or a lecture on soil chemistry: the shape is one voice, several
+# pictures, and a cut driven by the speech.
+#
+# Why the drawings are held rather than animated. Each shot's length comes from the measured span of
+# its own words, and speech does not arrive in LTX-shaped lengths — a twenty-second sentence is
+# longer than a single generated clip can be, so animating would leave the picture short of the
+# narration and the two would drift apart. Holding a drawing for its span makes picture and voice
+# exact by construction. Set generate_video.motion to ltx if you want movement and are willing to
+# have the cut decided by the clip length instead of by the sentence.
+schema_version: 1
+id: audio-picture-story
+name: Audio picture story
+description: >
+  One recording becomes a picture story. Speech is transcribed with word timings, the transcript is
+  cut into beats, a drawing is made for each, SeedVR2 restores and enlarges the drawings, and the
+  cut holds each one for exactly its own words. The recording is cleaned up rather than replaced,
+  the word timings drive the captions, and the mastered voice sits over a quiet bed.
+category: video
+tags: [audio, transcript, pictures, story, restore, upscale, captions]
+prerequisite: >
+  The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's
+  Audio File node. faster-whisper downloads its own model on first use, so the first run needs
+  network; set transcribe.engine to fixture with your own transcript to stay offline.
+models:
+  - kind: path
+    label: HiDream-O1 weights
+    path_includes: hidream
+    filename: model-00001-of-00008.safetensors
+  - kind: skill
+    label: HiDream skill env
+    skill: skills/image/hidream
+  - kind: path
+    label: SeedVR2 7B upscaler transformer
+    path_includes: seedvr2-7b
+    filename: seedvr2_7b_int8_convrot.safetensors
+  - kind: path
+    label: SeedVR2 VAE
+    path_includes: seedvr2-7b
+    filename: seedvr2_ema_vae_fp16.safetensors
+  - kind: skill
+    label: Post chain skill env
+    skill: skills/video/postchain
+  # The voice repair chain. Optional because restore_speech's own gate decides per beat whether a
+  # take needs cleaning: a clean studio recording passes through the FFmpeg tail alone.
+  - kind: path
+    label: ClearerVoice MossFormer2 enhancement (48 kHz)
+    path_includes: mossformer2-se-48k
+    filename: last_best_checkpoint.pt
+    optional: true
+  - kind: skill
+    label: ClearerVoice skill env
+    skill: skills/audio/clearervoice
+    optional: true
+  - kind: path
+    label: Resemble Enhance weights
+    path_includes: resemble-enhance
+    filename: enhancer_stage2/hparams.yaml
+    optional: true
+  - kind: skill
+    label: Resemble Enhance skill env
+    skill: skills/audio/resemble_enhance
+    optional: true
+
+nodes:
+  - key: recording
+    type: input.audio
+    note: >
+      Your material. --input <file> copies it into the run's uploads folder; dropping a file on
+      this node on the canvas does the same thing. Nothing in this lane invents speech.
+  - key: brief
+    type: input.brief
+    values: {topic: "the story this recording tells", audience: general, quality: demo}
+    note: >
+      The brief does not write the story here - the recording does. What it carries is the subject
+      the pictures are drawn in, which the transcript cannot supply: words say what was said, not
+      what the world it happened in looks like.
+  - key: transcribe
+    type: transcribe_audio
+    values: {engine: faster_whisper, model: base.en, language: en}
+    note: >
+      Reads the words and where each one is in the audio. Everything downstream hangs off those
+      timings: the beat boundaries, each drawing's time on screen, the captions, and the cut of
+      the voice itself. base.en is the fast default; switch to small.en or medium.en for a noisy
+      room or an accent it stumbles on.
+  - key: story
+    type: plan_story
+    values: {beats: 6}
+    note: >
+      Six drawings, because the transcript is divided by where the sentences sit in the recording
+      rather than by how many there are. Each beat's length is measured, not planned - so a long
+      digression gets its own picture instead of sharing one with the line before it.
+  - key: shots
+    type: plan_shots
+    values: {planner: story_presets, size: 576x1024, fps: 30}
+    note: >
+      One shot per beat, its frame count taken from the beat's measured span of speech. The rate
+      and the aspect are the deliverable's rather than a preference: a story planned from a
+      recording has none of its own, and plan_shots refuses a plan at a different rate - a
+      mismatch is corrected downstream by DUPLICATING frames, silently.
+  - key: controls
+    type: compile_controls
+    values: {compiler: motion_plan}
+    note: >
+      The builtin 2D compiler, not Blender: this lane stages nobody. It exists to give each shot a
+      bundle so the drawings come out one per shot rather than one for the whole film. Reach for
+      picture-story when the same characters have to appear shot after shot.
+  - key: anchor
+    type: generate_anchor
+    values:
+      source: generate
+      model: hidream-o1
+      prompt: "the moment this part of the recording describes, as a single drawn frame"
+      style: >
+        hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper
+        texture, one palette, one light direction, no text, no borders, no photographic lighting
+    note: >
+      One drawing per shot. The prompt says frame rather than sentence on purpose: an image model
+      handed a line of narration illustrates an argument instead of describing a picture.
+  - key: frames_gate
+    type: review_frames
+    note: >
+      A person looks at the contact sheet before six drawings become a film. It blocks, prints
+      GATE and exits 4; `content-factory frames review --accept-all` then `make ... --from finish`
+      carries on. Rejecting one drawing costs one drawing.
+  - key: finish
+    type: upscale_video
+    values: {resolution: "1440"}
+    note: >
+      Restores and enlarges the drawings, before the hold and not after it. Six pictures at twelve
+      seconds each; the finished cut would be a few thousand frames of the same six.
+  - key: motion
+    type: generate_video
+    values:
+      motion: hold
+      size: 576x1024
+      prompt: "hold the frame; let only the light and the air move"
+    note: >
+      Holds each finished drawing for its shot's length. No model runs and the prompt is not read:
+      this is ffmpeg's concat demuxer with a duration per picture, so every frame on screen is a
+      drawing somebody approved. The prompt is here for the variant - switch motion to ltx and it
+      becomes the standing instruction to the video model.
+  - key: script
+    type: lock_script
+    note: The sentences the recording actually says, frozen, so the timings stay valid.
+  - key: voice
+    type: voice_over
+    values: {source: recording}
+    note: >
+      The recording is the narration. Each beat's audio is cut out of it at the word boundaries
+      the transcript measured, so no aligner runs a second time and nothing is re-spoken.
+  - key: clean
+    type: restore_speech
+    values: {cleanup: clearervoice, band_extension: clearervoice_sr, enhancer: resemble_enhance}
+    note: >
+      The repair pass, per beat. The gate stays at its detected default: a take that measures
+      clean passes through the FFmpeg tail alone rather than being run through two models to
+      arrive back where it started.
+  - key: timings
+    type: align_words
+  - key: captions
+    type: compile_captions
+    note: The words are already timed, so the captions land where the voice does.
+  - key: music
+    type: select_music
+    values: {mood: calm}
+    note: >
+      A quiet bed under the voice, ducked by the mix. Mute this node for a recording that should
+      be heard on its own - a testimony or a lecture usually should.
+  - key: mix
+    type: mix_audio
+    values: {target_lufs: -14.0}
+  - key: cut
+    type: compose_video
+    note: Held drawings, the mastered voice, the captions burned from the SRT.
+  - key: qc
+    type: qc_deliverable
+    note: >
+      Slideshow detection matters here: a film of held drawings really is a slideshow, and the
+      report has to say so rather than fail it.
+  - key: pack
+    type: compile_destination_packages
+
+  - key: deliver
+    type: output.deliverables
+    note: >
+      Where the run's files land. The transcript goes out with them, which is worth having on its
+      own: it is what the film was made from.
+
+wires:
+  - {from_key: recording, from_slot: audio, to_key: transcribe, to_slot: audio}
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: transcribe, from_slot: text, to_key: story, to_slot: transcript}
+  - {from_key: story, from_slot: story, to_key: shots, to_slot: story}
+  - {from_key: shots, from_slot: shots, to_key: controls, to_slot: shots}
+  - {from_key: story, from_slot: story, to_key: controls, to_slot: story}
+  - {from_key: story, from_slot: story, to_key: anchor, to_slot: story}
+  - {from_key: controls, from_slot: controls, to_key: anchor, to_slot: controls}
+  - {from_key: anchor, from_slot: anchor, to_key: frames_gate, to_slot: frames}
+  - {from_key: frames_gate, from_slot: frames, to_key: finish, to_slot: frames}
+  - {from_key: finish, from_slot: frames, to_key: motion, to_slot: first_frame}
+  - {from_key: controls, from_slot: controls, to_key: motion, to_slot: controls}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: voice, to_slot: script}
+  - {from_key: transcribe, from_slot: audio, to_key: voice, to_slot: recording}
+  - {from_key: voice, from_slot: audio, to_key: clean, to_slot: audio}
+  - {from_key: clean, from_slot: audio, to_key: timings, to_slot: audio}
+  - {from_key: script, from_slot: script, to_key: timings, to_slot: script}
+  - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
+  - {from_key: story, from_slot: story, to_key: music, to_slot: story}
+  - {from_key: clean, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: music, from_slot: music, to_key: mix, to_slot: music}
+  - {from_key: finish, from_slot: frames, to_key: cut, to_slot: frames}
+  - {from_key: motion, from_slot: video, to_key: cut, to_slot: clips}
+  - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
+  - {from_key: captions, from_slot: captions, to_key: cut, to_slot: captions}
+  - {from_key: cut, from_slot: video, to_key: qc, to_slot: deliverable}
+  - {from_key: cut, from_slot: video, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
+
+  - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+  - {from_key: captions, from_slot: captions, to_key: deliver, to_slot: files}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: captions
+    name: Captions from the voice
+    members: [timings, captions]
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
+
+order:
+  - transcribe
+  - story
+  - shots
+  - controls
+  - anchor
+  - frames_gate
+  - finish
+  - motion
+  - script
+  - voice
+  - clean
+  - timings
+  - captions
+  - music
+  - mix
+  - cut
+  - qc
+  - pack

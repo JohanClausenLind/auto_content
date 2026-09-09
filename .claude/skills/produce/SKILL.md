@@ -13,6 +13,7 @@ that, and driving it stage by stage costs a transcript and gains nothing.
 ```bash
 uv run content-factory workflows list          # one line each; "todo" means it cannot run yet
 uv run content-factory make <id> --subject "one sentence naming the world"
+uv run content-factory make <id> --input <file>   # lanes that work on material you supply
 ```
 
 `make` preflights the lane, runs every stage, prints one line per stage, and ends with a single
@@ -24,6 +25,7 @@ Useful flags, all optional:
 | Flag | For |
 |---|---|
 | `--plan` | Print the steps and exit. Use this first when you are unsure a lane does what you want. |
+| `--input <path>` | Your own material: a recording, a still, a clip, or a folder of stills. Repeatable. |
 | `--story fixtures/story/<name>.json` | A written script rather than a drafted one. |
 | `--shots fixtures/shots/<name>.json` | Hand-staged shots. `two_hander_mocap.json` stages real captured two-person contact. |
 | `--style <preset or prompt>` | Art direction for every frame. |
@@ -34,17 +36,49 @@ Useful flags, all optional:
 ## What the lanes are for
 
 Ask `workflows list` rather than guessing, but in outline: `picture-story` is drawings cut into a
-film with a voice; `narrated-video` is typeset cards with narration and no generative picture, so
-it is the cheapest and most reliable; `scene-controlled-video` is 3D-staged cinematography without
-sound; `hybrid-video` splices data scenes and staged scenes into one narrated timeline;
-`silent-video` has music and effects but no voice; `single-clip-post` finishes one short clip for
-posting; `single-image` and `image-set` make stills, the second one consistent with itself;
-`photo-sequence-video` cuts stills into a video; `image-to-video` moves one still;
+film with a voice; `audio-picture-story` is the same film made **out of a recording** — the words
+are transcribed, the beats are spans of what was said, and each drawing holds for its own
+sentences; `narrated-video` is typeset cards with narration and no generative picture, so it is the
+cheapest and most reliable; `scene-controlled-video` is 3D-staged cinematography without sound;
+`hybrid-video` splices data scenes and staged scenes into one narrated timeline; `silent-video` has
+music and effects but no voice; `single-clip-post` finishes one short clip for posting;
+`single-image` and `image-set` make stills, the second one consistent with itself;
+`photo-sequence-video` cuts stills into a video; `image-to-video` moves a still you supply;
 `voice-over-track` and `audio-restore` deliver audio; `image-upscale` and `video-finish` clean up
 what already exists.
 
-Two lanes ask a person to look before they continue, at `review_assets` and `review_frames`. That
-is deliberate, and the output distinguishes it: a review gate prints `GATE`, exits **4**, and its
+## Lanes that work on your own material
+
+Five lanes start from something the operator has rather than from a brief: `audio-restore` and
+`audio-picture-story` (a recording), `video-finish` (a clip), `image-upscale` (stills) and
+`image-to-video` (one picture). `workflows list --json` and `workflows show <id>` both report
+`needs_input`, and `make` refuses such a lane with `needs_input` rather than failing inside the
+first stage.
+
+One rule for all of them: **the material goes in the run's `uploads/` folder**, and `--input` puts
+it there.
+
+```bash
+uv run content-factory make audio-picture-story --input ~/talks/grandmother.m4a
+uv run content-factory make image-upscale --input ~/scans/            # a whole folder
+```
+
+The kind is sniffed from the bytes and checked against what the lane declares, so `--input` on the
+wrong lane is refused in the first second by name. `--force` runs a lane whose material is already
+in the run directory from an earlier pass.
+
+The two audio lanes transcribe first, because everything downstream of a voice in this pipeline is
+per-beat and carries word timings. faster-whisper downloads its own model on first use; to stay
+offline, hand over the transcript you already have:
+
+```bash
+uv run content-factory make audio-restore --input take.wav \
+  --set transcribe.engine=fixture --set transcribe.transcript="what the recording says"
+```
+
+Five lanes ask a person to look before they continue, at `review_assets` or `review_frames`:
+`picture-story`, `photo-sequence-video`, `image-set`, `scene-controlled-video` and
+`audio-picture-story`. That is deliberate, and the output distinguishes it: a review gate prints `GATE`, exits **4**, and its
 summary says `waiting_for_review`, where a real failure prints `FAIL`, exits 1 and says `failed_at`.
 
 When a run parks at a gate, show the contact sheet it names and ask. Do not pass `--force`: that is
@@ -81,8 +115,24 @@ uv run content-factory workflows validate
 
 Rules the validator enforces, so you do not have to remember them: every widget value must be a
 widget the node declares, every wire must connect slots that exist and whose types are compatible,
-and `order` must be a topological order of `wires`. Read `fixtures/schema/node_catalog.json` for
-what a node accepts. Name a workflow for what it does to the material, never for one subject.
+`order` must be a topological order of `wires`, and **every required input must be wired** — there
+is no caveat that excuses an unwired one any more. A lane that works on the operator's material
+declares an `input.audio` / `input.image` / `input.video` node and wires it, which is also what
+makes `--input` and `needs_input` work. Read `fixtures/schema/node_catalog.json` for what a node
+accepts. Name a workflow for what it does to the material, never for one subject.
+
+A definition may also declare `groups:` — sets of nodes the canvas shows as one, with a name:
+
+```yaml
+groups:
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
+```
+
+That is presentation only. The runner reads `order`, which knows nothing about groups, and opening
+a group on the canvas shows the same nodes with every widget on them. Every lane folds its delivery
+tail, and the tests refuse a lane that does not.
 
 If a lane uses a stage that has no executor yet, the file must say so in `caveat`. The catalogue is
 allowed to describe an unfinished lane; it is not allowed to pretend one works.

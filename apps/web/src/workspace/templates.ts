@@ -13,6 +13,7 @@ import {
   applyOps,
   connectOps,
   emptyGraph,
+  groupNodesOps,
   makeNode,
   newId,
   type GraphNode,
@@ -126,6 +127,15 @@ interface Placed {
   readonly y: number;
   readonly values?: Record<string, string | number | boolean>;
   readonly note?: string;
+  /** The definition's own name for this node, when it renames it. */
+  readonly title?: string;
+}
+
+interface Folded {
+  readonly name: string;
+  readonly members: readonly string[];
+  readonly collapsed: boolean;
+  readonly key: string;
 }
 
 /** Build a graph from placed nodes and named links; keys become stable per-template node ids. */
@@ -133,6 +143,7 @@ function graphOf(
   name: string,
   nodes: Record<string, Placed>,
   links: readonly [from: string, output: string, to: string, input: string][],
+  groups: readonly Folded[] = [],
 ): WorkspaceGraph {
   let graph = emptyGraph(newId("graph"), name);
   const made: Record<string, GraphNode> = {};
@@ -142,6 +153,10 @@ function graphOf(
       y: placed.y,
       ...(placed.values ? { values: placed.values } : {}),
       ...(placed.note ? { note: placed.note } : {}),
+      // A definition that renames a node means it: two deliverables terminals in one lane are
+      // "Film" and "Card set", not "Deliverables" twice. This was parsed out of the YAML, carried
+      // through the exporter, and then dropped here, so no title in the catalogue ever showed.
+      ...(placed.title ? { title: placed.title } : {}),
     });
     graph = applyOps(graph, [{ op: "add_node", node: made[key]! }]).graph;
   }
@@ -149,6 +164,20 @@ function graphOf(
     graph = applyOps(
       graph,
       connectOps(graph, { node: made[from]!.id, slot: output }, { node: made[to]!.id, slot: input }),
+    ).graph;
+  }
+  // Folded last: a group has to name nodes that already exist, and the fold is a view over the
+  // finished graph rather than a step in building it.
+  for (const group of groups) {
+    const members = group.members.map((key) => made[key]?.id).filter((id): id is string => !!id);
+    if (members.length === 0) continue;
+    graph = applyOps(
+      graph,
+      groupNodesOps(graph, members, {
+        name: group.name,
+        template: group.key,
+        collapsed: group.collapsed,
+      }),
     ).graph;
   }
   return graph;
@@ -201,6 +230,12 @@ interface GeneratedTemplate {
     readonly to_slot: string;
   }[];
   readonly order: readonly string[];
+  readonly groups?: readonly {
+    readonly key: string;
+    readonly name: string;
+    readonly members: readonly string[];
+    readonly collapsed: boolean;
+  }[];
 }
 
 /** The generated shape is snake_case because it comes from the Pydantic contract. */
@@ -257,12 +292,19 @@ export function toTemplate(data: GeneratedTemplate): WorkflowTemplate {
               y: node.y,
               ...(Object.keys(node.values).length ? { values: node.values } : {}),
               ...(node.note ? { note: node.note } : {}),
+              ...(node.title ? { title: node.title } : {}),
             },
           ]),
         ),
         data.wires.map(
           (w) => [w.from_key, w.from_slot, w.to_key, w.to_slot] as const,
         ) as readonly [string, string, string, string][],
+        (data.groups ?? []).map((g) => ({
+          key: g.key,
+          name: g.name,
+          members: g.members,
+          collapsed: g.collapsed,
+        })),
       ),
   };
 }

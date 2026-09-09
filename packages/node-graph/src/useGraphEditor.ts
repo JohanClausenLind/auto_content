@@ -12,6 +12,7 @@ import {
   connectOps,
   duplicateOps,
   emptyGraph,
+  groupNodesOps,
   linkInto,
   makeNode,
   newId,
@@ -174,6 +175,28 @@ export interface GraphEditor {
   setWidth(nodeId: string, width: number | null): void;
   setMode(nodeId: string, mode: NodeMode): void;
   renameGraph(name: string): void;
+  /**
+   * Apply a batch of prepared operations as one undoable edit.
+   *
+   * The seam for composites the host builds and the editor cannot know about — inserting a block
+   * of five nodes, their wires and the group over them is one gesture and must be one undo. Ops
+   * are validated by `applyOp` exactly as every other edit is, so this widens what can be
+   * expressed and not what is allowed.
+   */
+  apply(ops: readonly GraphOp[], label: string): void;
+
+  // --- folded groups: a view over the same flat graph -----------------------------------------
+  /** Fold nodes into one named group. Returns the group id, or null when nothing could be. */
+  groupNodes(
+    nodeIds: readonly string[],
+    options?: { name?: string; template?: string; collapsed?: boolean },
+  ): string | null;
+  /** Drop the folded view. Every node and link stays. */
+  ungroup(groupId: string): void;
+  setGroupCollapsed(groupId: string, collapsed: boolean): void;
+  renameGroup(groupId: string, name: string): void;
+  /** Absolute position for the folded node; the members move by the same delta. */
+  moveGroup(groupId: string, x: number, y: number): void;
   undo(): void;
   redo(): void;
   /** Load another graph. History is cleared: the old inverses no longer apply. */
@@ -317,6 +340,30 @@ export function useGraphEditor(catalog: NodeCatalog, options: UseGraphEditorOpti
     setWidth: (nodeId, width) => commit([{ op: "set_width", node_id: nodeId, width }], `width:${nodeId}`, "resize"),
     setMode: (nodeId, mode) => commit([{ op: "set_mode", node_id: nodeId, mode }], null, "change mode"),
     renameGraph: (name) => commit([{ op: "rename_graph", name }], "rename_graph", "rename graph"),
+    apply: (ops, label) => commit(ops, null, label),
+
+    groupNodes: (nodeIds, options) => {
+      const id = newId("grp");
+      const ops = groupNodesOps(state.graph, nodeIds, { ...options, id });
+      if (ops.length === 0) return null;
+      commit(ops, null, "group nodes");
+      return id;
+    },
+    ungroup: (groupId) => commit([{ op: "remove_group", group_id: groupId }], null, "ungroup"),
+    setGroupCollapsed: (groupId, collapsed) =>
+      commit(
+        [{ op: "set_group_collapsed", group_id: groupId, collapsed }],
+        null,
+        collapsed ? "fold group" : "open group",
+      ),
+    renameGroup: (groupId, name) =>
+      commit([{ op: "rename_group", group_id: groupId, name }], null, "rename group"),
+    moveGroup: (groupId, x, y) =>
+      commit(
+        [{ op: "move_group", group_id: groupId, x: Math.round(x), y: Math.round(y) }],
+        `move_group:${groupId}`,
+        "move group",
+      ),
     undo: () => dispatch({ kind: "undo" }),
     redo: () => dispatch({ kind: "redo" }),
     replaceGraph: (graph) => dispatch({ kind: "replace_graph", graph }),

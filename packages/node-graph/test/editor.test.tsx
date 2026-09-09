@@ -5,7 +5,14 @@ import { describe, expect, it } from "vitest";
 import { NodeGraphEditor } from "../src/NodeGraphEditor";
 import { PropertiesPanel } from "../src/PropertiesPanel";
 import { useGraphEditor, type GraphEditor } from "../src/useGraphEditor";
-import { applyOps, connectOps, emptyGraph, makeNode, type WorkspaceGraph } from "../src/graphModel";
+import {
+  applyOps,
+  connectOps,
+  emptyGraph,
+  groupNodesOps,
+  makeNode,
+  type WorkspaceGraph,
+} from "../src/graphModel";
 import { catalog } from "./fixtures";
 
 function seededGraph(): WorkspaceGraph {
@@ -150,5 +157,56 @@ describe("node context menu", () => {
     await user.click(within(again).getByRole("menuitem", { name: /Delete/ }));
     expect(editor?.graph.nodes.some((n) => n.id === "s")).toBe(false);
     expect(editor?.graph.links).toHaveLength(0);
+  });
+});
+
+describe("folded groups on the canvas", () => {
+  function foldedGraph(): WorkspaceGraph {
+    const graph = seededGraph();
+    return applyOps(
+      graph,
+      groupNodesOps(graph, ["b", "s"], { name: "Write it", id: "grp1" }),
+    ).graph;
+  }
+
+  it("draws one node for the group and none of its members", async () => {
+    render(<Harness graph={foldedGraph()} />);
+    expect(await screen.findByText("Write it")).toBeInTheDocument();
+    // The members are not drawn as nodes — that is what folding is — but the folded node lists
+    // them, so what is inside is legible without opening it.
+    const steps = screen.getByRole("list");
+    expect(within(steps).getByText("Brief")).toBeInTheDocument();
+    expect(within(steps).getByText("Write Script")).toBeInTheDocument();
+    // No member's widgets, no member's note field: the four rows a Brief node would show.
+    expect(screen.queryByPlaceholderText("What is this about?")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /Note for/ })).not.toBeInTheDocument();
+  });
+
+  it("opens on the header button and shows every member's widgets again", async () => {
+    const user = userEvent.setup();
+    render(<Harness graph={foldedGraph()} />);
+    await user.click(await screen.findByRole("button", { name: "Open Write it" }));
+    expect(await screen.findByText("Write Script")).toBeInTheDocument();
+    // The frame around the open group offers the way back.
+    expect(screen.getByRole("button", { name: "Fold Write it" })).toBeInTheDocument();
+  });
+
+  it("ungrouping from the folded node keeps the nodes", async () => {
+    const user = userEvent.setup();
+    let editor: GraphEditor | undefined;
+    render(<Harness graph={foldedGraph()} onEditor={(e) => (editor = e)} />);
+    await user.click(await screen.findByRole("button", { name: "Ungroup" }));
+    expect(editor?.graph.groups).toHaveLength(0);
+    expect(editor?.graph.nodes).toHaveLength(2);
+    expect(editor?.graph.links).toHaveLength(1);
+    expect(await screen.findByText("Write Script")).toBeInTheDocument();
+  });
+
+  it("shows the group's boundary slots, labelled by the member they belong to", async () => {
+    const graph = seededGraph();
+    // Fold only the second node, so the link into it crosses the boundary.
+    const folded = applyOps(graph, groupNodesOps(graph, ["s"], { name: "Script step", id: "grp2" })).graph;
+    render(<Harness graph={folded} />);
+    expect(await screen.findByText("Write Script · brief")).toBeInTheDocument();
   });
 });

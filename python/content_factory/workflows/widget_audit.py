@@ -51,10 +51,6 @@ WIDGET_EXEMPTIONS: dict[str, dict[str, str]] = {
         "depth": "the research executor returns a committed fixture, and no depth of search"
         " changes a fixture. Binds when the real ingest/search executor lands (priority 2)."
     },
-    "plan_story": {
-        "beats": "plan_story loads a written StoryPlan, so the beat count is the plan's. Binds"
-        " when draft_story_plan lands behind its execution flag (priority 2)."
-    },
     "compile_artboards": {
         "format": "the artboard comes from a committed fixture bundle whose size is already the"
         " deliverable's aspect. Binds when artboards are compiled from the story rather than"

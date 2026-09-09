@@ -77,6 +77,7 @@
         "review_frames",
         "interpolate",
         "package_sequence",
+        "transcribe_audio",
         "lock_script",
         "synthesize_narration",
         "voice_over",

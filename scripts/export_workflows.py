@@ -108,6 +108,7 @@ def document() -> dict:
                 "nodes": positioned(template),
                 "wires": [w.model_dump(mode="json") for w in template.wires],
                 "order": list(template.order),
+                "groups": [g.model_dump(mode="json") for g in template.groups],
             }
         )
     return {

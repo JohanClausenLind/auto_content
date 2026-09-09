@@ -82,6 +82,8 @@ try {
       inputs: (def.inputs ?? []).map((s) => s.name),
       outputs: (def.outputs ?? []).map((s) => s.name),
       required_inputs: (def.inputs ?? []).filter((s) => !s.optional).map((s) => s.name),
+      // Groups where at least one input must be connected (Compose Video's frames-or-clips).
+      requires_one_of: (def.requires_one_of ?? []).map((group) => [...group]),
       // Slot types, so a workflow definition can be checked for a wire the canvas would reject.
       input_types: Object.fromEntries((def.inputs ?? []).map((s) => [s.name, s.type])),
       output_types: Object.fromEntries((def.outputs ?? []).map((s) => [s.name, s.type])),

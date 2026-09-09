@@ -76,17 +76,20 @@ def test_every_suggested_widget_value_is_a_widget_that_node_declares() -> None:
                     assert str(value) in options[name], f"{suggestion.node_type}.{name}={value}"
 
 
-def test_audio_suggestions_read_the_measurements() -> None:
+def test_a_dropped_recording_is_offered_the_step_that_actually_works_on_it() -> None:
+    """`restore_speech` and `mix_audio` were offered wired straight to the dropped file, and both
+    read `<beat_id>.wav` files that only a voice stage writes — so one click produced a graph that
+    failed on its first stage. Reading the recording is the door: it is what makes the beats, and
+    therefore the repair and the captions, exist."""
     narrow = suggestions_for("audio", {"sample_rate_hz": 16000, "channels": 1})
-    clean = next(s for s in narrow if s.node_type == "restore_speech")
-    assert clean.values["band_extension"] == "clearervoice_sr"
-    assert "16 kHz" in clean.why and "mono" in clean.why
+    assert [s.node_type for s in narrow] == ["transcribe_audio", "qc_deliverable"]
+    read = narrow[0]
+    assert read.to_slot == "audio"
+    assert "16 kHz" in read.why and "mono" in read.why
 
     wide = suggestions_for("audio", {"sample_rate_hz": 48000, "channels": 2})
-    clean_wide = next(s for s in wide if s.node_type == "restore_speech")
-    # Band extension on a full-band take is work that cannot improve it.
-    assert clean_wide.values["band_extension"] == "off"
-    assert "no band extension" in clean_wide.why
+    # The measurement still shapes what is said about it, which is what makes it specific.
+    assert "no band extension" in wide[0].why
 
 
 def test_data_and_documents_go_through_ingest_rather_than_a_node_of_their_own() -> None:

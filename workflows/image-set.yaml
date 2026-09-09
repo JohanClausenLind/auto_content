@@ -43,9 +43,9 @@ prerequisite: >
   image_sequences.backend must be hidream; the default mock backend draws placeholders.
 caveat: >
   The set is fixed at the 8 frames of the builtin control plan, and its per-image layout is that
-  plan's hand-gesture fixture, not the views the brief asks for. generate_keyframes declares a
-  frames widget the runner does not read, so you cannot yet ask for a number of images or say what
-  each shows.
+  plan's hand-gesture fixture, not the views the brief asks for. There is no widget for the count
+  anywhere - the plan decides it - so you cannot yet ask for a number of images or say what each
+  one shows.
 models:
   - kind: path
     label: HiDream-O1 weights
@@ -135,6 +135,13 @@ wires:
   - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
 
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
 
 order:
   - story

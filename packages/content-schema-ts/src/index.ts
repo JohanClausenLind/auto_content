@@ -69,6 +69,7 @@ import SoundConditionReport from "../schema/SoundConditionReport.schema.json";
 import SoundConditionSpec from "../schema/SoundConditionSpec.schema.json";
 import SourceRecord from "../schema/SourceRecord.schema.json";
 import SpeechRestorationReport from "../schema/SpeechRestorationReport.schema.json";
+import SpeechTranscript from "../schema/SpeechTranscript.schema.json";
 import SpeechRestorationSpec from "../schema/SpeechRestorationSpec.schema.json";
 import StoragePlan from "../schema/StoragePlan.schema.json";
 import StoryPlan from "../schema/StoryPlan.schema.json";
@@ -143,6 +144,7 @@ const SCHEMAS: Record<SchemaName, object> = {
   SoundConditionSpec,
   SourceRecord,
   SpeechRestorationReport,
+  SpeechTranscript,
   SpeechRestorationSpec,
   StoragePlan,
   StoryPlan,

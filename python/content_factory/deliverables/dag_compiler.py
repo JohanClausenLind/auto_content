@@ -121,6 +121,10 @@ _EXTRA_STAGES: dict[Stage, tuple[ResourceClass, Executor]] = {
     # Both reviews park on a human: passing measurements is necessary and never sufficient.
     Stage.review_assets: ("control", Executor.human),
     Stage.review_frames: ("control", Executor.human),
+    # Reading words off a recording is the one audio stage that produces text, and it is
+    # the first step of a lane rather than a branch of one: nothing standard ingests
+    # speech, so it lives here with the other hand-drawn stages.
+    Stage.transcribe_audio: ("inference-audio", Executor.ai),
     Stage.voice_over: ("inference-audio", Executor.deterministic),
     Stage.sound_design: ("inference-audio", Executor.ai),
 }

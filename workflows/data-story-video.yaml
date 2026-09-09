@@ -143,9 +143,18 @@ nodes:
 
   - key: deliver
     type: output.deliverables
+    title: Film and packages
     note: >
       Where the run's files land. Not a step - the deliverable folder is written either way - but
       the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+  - key: extras
+    type: output.deliverables
+    title: Card set and originality
+    note: >
+      A second terminal, because this lane makes more than one thing. The typeset cards are a
+      carousel deliverable in their own right - the thumbnail set, and what qc_deliverable reads
+      back for accessibility - and the originality decision ships beside the film. One terminal
+      per thing delivered is what keeps every output wired to somewhere it goes.
 
 wires:
   - {from_key: brief, from_slot: brief, to_key: research, to_slot: brief}
@@ -180,8 +189,20 @@ wires:
   - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
   - {from_key: pack, from_slot: packages, to_key: pack_qc, to_slot: packages}
 
-  - {from_key: pack_qc, from_slot: report, to_key: deliver, to_slot: files}
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+  - {from_key: pack_qc, from_slot: report, to_key: deliver, to_slot: reports}
+  - {from_key: card_stills, from_slot: images, to_key: extras, to_slot: files}
+  - {from_key: originality, from_slot: verdict, to_key: extras, to_slot: reports}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: captions
+    name: Captions from the voice
+    members: [timings, captions]
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, pack_qc, deliver]
 
 order:
   - uploads

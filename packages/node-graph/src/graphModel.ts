@@ -6,7 +6,7 @@
  * snapshot diff. Nothing here touches React or the DOM, so all of it is testable in isolation.
  */
 
-import { findSlot, widgetDefaults, type NodeCatalog, type WidgetValue } from "./nodeDefs";
+import { findSlot, parseChips, widgetDefaults, type NodeCatalog, type WidgetValue } from "./nodeDefs";
 import { typesCompatible } from "./datatypes";
 
 export type NodeMode = "always" | "muted" | "bypass";
@@ -36,12 +36,42 @@ export interface GraphLink {
   readonly to_slot: string;
 }
 
+/**
+ * A named set of nodes that can be shown as one.
+ *
+ * The problem it solves: half of every lane in this catalogue is the same three or four steps —
+ * clean up the voice, finish the picture, check it and package it — and an operator opening a
+ * graph to change one prompt had to read all of them every time. A group is how a lane says
+ * "these five nodes are one idea called Clean up voice". Collapsed, the canvas draws one node
+ * with the group's own boundary slots; opened, it draws the members inside a frame, and every
+ * widget is there to change.
+ *
+ * It is a **view**, not a container. The nodes and links stay exactly where they were in the flat
+ * graph, so the compiler, the runner, validation, execution order and every existing test see the
+ * same graph they always did — which is the whole reason this can exist without a second graph
+ * format, a nested compiler and a subgraph contract.
+ */
+export interface GraphGroup {
+  readonly id: string;
+  /** What it is called when folded. */
+  readonly name: string;
+  /** The block it was inserted from, or "" for a hand-made group. Provenance, not behaviour. */
+  readonly template: string;
+  readonly collapsed: boolean;
+  /** Node ids. Every one must exist, and a node belongs to at most one group. */
+  readonly members: readonly string[];
+  /** Where the folded node sits. Members keep their own positions inside the frame. */
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface WorkspaceGraph {
   readonly schema_version: 1;
   readonly graph_id: string;
   readonly name: string;
   readonly nodes: readonly GraphNode[];
   readonly links: readonly GraphLink[];
+  readonly groups: readonly GraphGroup[];
 }
 
 export type GraphOp =
@@ -61,7 +91,14 @@ export type GraphOp =
   | { readonly op: "set_mode"; readonly node_id: string; readonly mode: NodeMode }
   | { readonly op: "connect"; readonly link: GraphLink }
   | { readonly op: "disconnect"; readonly link_id: string }
-  | { readonly op: "rename_graph"; readonly name: string };
+  | { readonly op: "rename_graph"; readonly name: string }
+  | { readonly op: "add_group"; readonly group: GraphGroup }
+  | { readonly op: "remove_group"; readonly group_id: string }
+  | { readonly op: "rename_group"; readonly group_id: string; readonly name: string }
+  | { readonly op: "set_group_collapsed"; readonly group_id: string; readonly collapsed: boolean }
+  | { readonly op: "set_group_members"; readonly group_id: string; readonly members: readonly string[] }
+  /** Absolute, so the inverse is the previous position; members shift by the same delta. */
+  | { readonly op: "move_group"; readonly group_id: string; readonly x: number; readonly y: number };
 
 export class GraphOpError extends Error {
   constructor(
@@ -86,7 +123,96 @@ export interface BatchResult {
 }
 
 export function emptyGraph(graphId: string, name = "Untitled graph"): WorkspaceGraph {
-  return { schema_version: 1, graph_id: graphId, name, nodes: [], links: [] };
+  return { schema_version: 1, graph_id: graphId, name, nodes: [], links: [], groups: [] };
+}
+
+export function groupById(graph: WorkspaceGraph, groupId: string): GraphGroup | undefined {
+  return graph.groups.find((g) => g.id === groupId);
+}
+
+/** The group a node belongs to, if any. A node is in at most one. */
+export function groupOf(graph: WorkspaceGraph, nodeId: string): GraphGroup | undefined {
+  return graph.groups.find((g) => g.members.includes(nodeId));
+}
+
+/** True when this node is inside a folded group, so the canvas draws the group instead. */
+export function isHidden(graph: WorkspaceGraph, nodeId: string): boolean {
+  const group = groupOf(graph, nodeId);
+  return group !== undefined && group.collapsed;
+}
+
+export interface GroupPort {
+  /** Stable handle id: `in:<node>:<slot>` / `out:<node>:<slot>`. */
+  readonly id: string;
+  readonly node_id: string;
+  readonly slot: string;
+  readonly type: string;
+  readonly label: string;
+}
+
+/**
+ * The slots a folded group shows: every member input fed from outside, every member output read
+ * from outside, plus the unconnected required inputs — so folding can never hide the fact that
+ * something still has to be connected.
+ *
+ * Derived, never stored. A group whose members are rewired shows different ports the moment the
+ * links change, which is the only way a folded view can stay honest.
+ */
+export function groupPorts(
+  graph: WorkspaceGraph,
+  catalog: NodeCatalog,
+  group: GraphGroup,
+): { inputs: readonly GroupPort[]; outputs: readonly GroupPort[] } {
+  const members = new Set(group.members);
+  const inputs: GroupPort[] = [];
+  const outputs: GroupPort[] = [];
+  const seen = new Set<string>();
+  // Member order follows the group's own list, so the ports do not jump around when a link moves.
+  for (const nodeId of group.members) {
+    const node = nodeById(graph, nodeId);
+    const def = node ? catalog.get(node.type) : undefined;
+    if (!node || !def) continue;
+    const title = node.title ?? def.title;
+    for (const slot of def.inputs) {
+      const link = linkInto(graph, nodeId, slot.name);
+      const fromOutside = link !== undefined && !members.has(link.from_node);
+      const openRequired = link === undefined && !slot.optional;
+      if (!fromOutside && !openRequired) continue;
+      const id = `in:${nodeId}:${slot.name}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      inputs.push({
+        id,
+        node_id: nodeId,
+        slot: slot.name,
+        type: slot.type,
+        label: `${title} · ${slot.label ?? slot.name}`,
+      });
+    }
+    for (const slot of def.outputs) {
+      const used = graph.links.some(
+        (l) => l.from_node === nodeId && l.from_slot === slot.name && !members.has(l.to_node),
+      );
+      if (!used) continue;
+      const id = `out:${nodeId}:${slot.name}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      outputs.push({
+        id,
+        node_id: nodeId,
+        slot: slot.name,
+        type: slot.type,
+        label: `${title} · ${slot.label ?? slot.name}`,
+      });
+    }
+  }
+  return { inputs, outputs };
+}
+
+/** Parse a group handle id back into the member and slot it stands for. */
+export function parseGroupPort(handle: string): { node_id: string; slot: string } | null {
+  const match = /^(?:in|out):([^:]+):(.+)$/.exec(handle);
+  return match ? { node_id: match[1]!, slot: match[2]! } : null;
 }
 
 export function nodeById(graph: WorkspaceGraph, nodeId: string): GraphNode | undefined {
@@ -114,6 +240,16 @@ function requireNode(graph: WorkspaceGraph, op: GraphOp["op"], nodeId: string): 
 
 function withNode(graph: WorkspaceGraph, next: GraphNode): WorkspaceGraph {
   return { ...graph, nodes: graph.nodes.map((n) => (n.id === next.id ? next : n)) };
+}
+
+function requireGroup(graph: WorkspaceGraph, op: GraphOp["op"], groupId: string): GraphGroup {
+  const group = groupById(graph, groupId);
+  if (!group) throw new GraphOpError(op, `unknown group ${groupId}`);
+  return group;
+}
+
+function withGroup(graph: WorkspaceGraph, next: GraphGroup): WorkspaceGraph {
+  return { ...graph, groups: graph.groups.map((g) => (g.id === next.id ? next : g)) };
 }
 
 /**
@@ -219,6 +355,70 @@ export function applyOp(graph: WorkspaceGraph, op: GraphOp): ApplyResult {
     case "rename_graph": {
       return { graph: { ...graph, name: op.name }, inverse: { op: "rename_graph", name: graph.name } };
     }
+    case "add_group": {
+      if (groupById(graph, op.group.id)) throw new GraphOpError(op.op, `duplicate group ${op.group.id}`);
+      for (const member of op.group.members) {
+        if (!nodeById(graph, member)) throw new GraphOpError(op.op, `unknown node ${member}`);
+        const owner = groupOf(graph, member);
+        if (owner) throw new GraphOpError(op.op, `node ${member} is already in group ${owner.id}`);
+      }
+      return {
+        graph: { ...graph, groups: byId([...graph.groups, op.group]) },
+        inverse: { op: "remove_group", group_id: op.group.id },
+      };
+    }
+    case "remove_group": {
+      const group = groupById(graph, op.group_id);
+      if (!group) throw new GraphOpError(op.op, `unknown group ${op.group_id}`);
+      return {
+        graph: { ...graph, groups: graph.groups.filter((g) => g.id !== op.group_id) },
+        // Ungrouping keeps every node and link: a group is a view, and dropping it drops the view.
+        inverse: { op: "add_group", group },
+      };
+    }
+    case "rename_group": {
+      const group = requireGroup(graph, op.op, op.group_id);
+      return {
+        graph: withGroup(graph, { ...group, name: op.name }),
+        inverse: { op: "rename_group", group_id: group.id, name: group.name },
+      };
+    }
+    case "set_group_collapsed": {
+      const group = requireGroup(graph, op.op, op.group_id);
+      return {
+        graph: withGroup(graph, { ...group, collapsed: op.collapsed }),
+        inverse: { op: "set_group_collapsed", group_id: group.id, collapsed: group.collapsed },
+      };
+    }
+    case "set_group_members": {
+      const group = requireGroup(graph, op.op, op.group_id);
+      for (const member of op.members) {
+        if (!nodeById(graph, member)) throw new GraphOpError(op.op, `unknown node ${member}`);
+        const owner = groupOf(graph, member);
+        if (owner && owner.id !== group.id) {
+          throw new GraphOpError(op.op, `node ${member} is already in group ${owner.id}`);
+        }
+      }
+      return {
+        graph: withGroup(graph, { ...group, members: [...op.members] }),
+        inverse: { op: "set_group_members", group_id: group.id, members: group.members },
+      };
+    }
+    case "move_group": {
+      const group = requireGroup(graph, op.op, op.group_id);
+      const dx = op.x - group.x;
+      const dy = op.y - group.y;
+      const members = new Set(group.members);
+      // The members move with the folded node, so opening a group that was dragged across the
+      // canvas shows its nodes where the group is and not where it used to be.
+      const nodes = graph.nodes.map((n) =>
+        members.has(n.id) ? { ...n, x: n.x + dx, y: n.y + dy } : n,
+      );
+      return {
+        graph: { ...withGroup(graph, { ...group, x: op.x, y: op.y }), nodes },
+        inverse: { op: "move_group", group_id: group.id, x: group.x, y: group.y },
+      };
+    }
   }
 }
 
@@ -280,10 +480,44 @@ export function removeNodesOps(graph: WorkspaceGraph, nodeIds: readonly string[]
   for (const link of graph.links) {
     if (ids.has(link.from_node) || ids.has(link.to_node)) ops.push({ op: "disconnect", link_id: link.id });
   }
+  // A group may not name a node that is gone, so the membership is corrected first — and a group
+  // whose last member is deleted goes with it rather than staying as an empty label.
+  for (const group of graph.groups) {
+    const left = group.members.filter((m) => !ids.has(m));
+    if (left.length === group.members.length) continue;
+    if (left.length === 0) ops.push({ op: "remove_group", group_id: group.id });
+    else ops.push({ op: "set_group_members", group_id: group.id, members: left });
+  }
   for (const id of nodeIds) {
     if (nodeById(graph, id)) ops.push({ op: "remove_node", node_id: id });
   }
   return ops;
+}
+
+/** Fold a selection into one node: the group, named, collapsed, placed at the members' corner. */
+export function groupNodesOps(
+  graph: WorkspaceGraph,
+  nodeIds: readonly string[],
+  options: { name?: string; template?: string; id?: string; collapsed?: boolean } = {},
+): GraphOp[] {
+  const members = nodeIds.filter((id) => nodeById(graph, id) && !groupOf(graph, id));
+  if (members.length === 0) return [];
+  const xs = members.map((id) => nodeById(graph, id)!.x);
+  const ys = members.map((id) => nodeById(graph, id)!.y);
+  return [
+    {
+      op: "add_group",
+      group: {
+        id: options.id ?? newId("grp"),
+        name: options.name ?? "Group",
+        template: options.template ?? "",
+        collapsed: options.collapsed ?? true,
+        members,
+        x: Math.min(...xs),
+        y: Math.min(...ys),
+      },
+    },
+  ];
 }
 
 /**
@@ -439,14 +673,32 @@ export function validateGraph(graph: WorkspaceGraph, catalog: NodeCatalog): read
         });
       }
     }
+    for (const group of def.requires_one_of ?? []) {
+      if (group.some((name) => linkInto(graph, node.id, name))) continue;
+      const slots = group.map((name) => findSlot(def.inputs, name));
+      const labels = group.map((name, i) => slots[i]?.label ?? name);
+      const hint = slots.find((slot) => slot?.hint)?.hint;
+      problems.push({
+        node_id: node.id,
+        severity: "error",
+        message:
+          `${def.title}: connect one of ${labels.join(" or ")}` + (hint ? ` — ${hint}` : ""),
+      });
+    }
     for (const widget of def.widgets) {
       if (!widget.required) continue;
       const value = node.values[widget.name];
-      if (typeof value !== "string" || value.trim() === "") {
+      const empty =
+        widget.kind === "chips"
+          ? parseChips(value ?? "").length === 0
+          : typeof value !== "string" || value.trim() === "";
+      if (empty) {
         problems.push({
           node_id: node.id,
           severity: "error",
-          message: `${def.title}: ${widget.label ?? widget.name} is empty`,
+          message:
+            `${def.title}: ${widget.label ?? widget.name} is empty` +
+            (widget.hint ? ` — ${widget.hint}` : ""),
         });
       }
     }
@@ -458,6 +710,31 @@ export function validateGraph(graph: WorkspaceGraph, catalog: NodeCatalog): read
         severity: "warning",
         message: `${def.title}: nothing consumes its output`,
       });
+    }
+  }
+  const owner = new Map<string, string>();
+  for (const group of graph.groups) {
+    if (group.members.length === 0) {
+      problems.push({ node_id: null, severity: "warning", message: `group ${group.name} is empty` });
+    }
+    for (const member of group.members) {
+      if (!nodeById(graph, member)) {
+        problems.push({
+          node_id: null,
+          severity: "error",
+          message: `group ${group.name} names a node that is not in the graph`,
+        });
+        continue;
+      }
+      const already = owner.get(member);
+      if (already !== undefined && already !== group.id) {
+        problems.push({
+          node_id: member,
+          severity: "error",
+          message: `this node is in two groups (${already} and ${group.id})`,
+        });
+      }
+      owner.set(member, group.id);
     }
   }
   if (topoOrder(graph) === null) {
@@ -477,7 +754,8 @@ export class GraphParseError extends Error {
 
 const NODE_KEYS = ["id", "type", "title", "x", "y", "width", "collapsed", "note", "values", "mode"];
 const LINK_KEYS = ["id", "from_node", "from_slot", "to_node", "to_slot"];
-const GRAPH_KEYS = ["schema_version", "graph_id", "name", "nodes", "links"];
+const GROUP_KEYS = ["id", "name", "template", "collapsed", "members", "x", "y"];
+const GRAPH_KEYS = ["schema_version", "graph_id", "name", "nodes", "links", "groups"];
 
 function record(value: unknown, where: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -607,12 +885,50 @@ export function parseGraph(value: unknown): WorkspaceGraph {
     occupiedInputs.add(input);
   }
 
+  // Absent, not empty, in every document written before groups existed: a graph saved by an
+  // older build must still load, and it loads as a graph with no folded views.
+  const rawGroups = raw.groups === undefined ? [] : raw.groups;
+  if (!Array.isArray(rawGroups)) throw new GraphParseError("graph.groups: expected an array");
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  const claimed = new Map<string, string>();
+  const groups: GraphGroup[] = rawGroups.map((entry, index) => {
+    const where = `graph.groups[${index}]`;
+    const group = record(entry, where);
+    rejectUnknown(group, GROUP_KEYS, where);
+    if (!Array.isArray(group.members)) throw new GraphParseError(`${where}.members: expected an array`);
+    const members = group.members.map((member, i) => {
+      const id = str(member, `${where}.members[${i}]`, ID64);
+      if (!nodeIds.has(id)) throw new GraphParseError(`${where}.members[${i}]: unknown node ${id}`);
+      const already = claimed.get(id);
+      if (already !== undefined) {
+        throw new GraphParseError(`${where}.members[${i}]: node ${id} is already in group ${already}`);
+      }
+      claimed.set(id, str(group.id, `${where}.id`, ID64));
+      return id;
+    });
+    return {
+      id: str(group.id, `${where}.id`, ID64),
+      name: str(group.name, `${where}.name`, { min: 1, max: 80 }),
+      template: group.template === undefined ? "" : str(group.template, `${where}.template`, { max: 64 }),
+      collapsed: bool(group.collapsed, `${where}.collapsed`),
+      members,
+      x: num(group.x, `${where}.x`),
+      y: num(group.y, `${where}.y`),
+    };
+  });
+  const groupIds = new Set<string>();
+  for (const group of groups) {
+    if (groupIds.has(group.id)) throw new GraphParseError(`graph.groups: duplicate group id ${group.id}`);
+    groupIds.add(group.id);
+  }
+
   const graph: WorkspaceGraph = {
     schema_version: 1,
     graph_id: str(raw.graph_id, "graph.graph_id", ID64),
     name: str(raw.name, "graph.name", { min: 1, max: 200 }),
     nodes: byId(nodes),
     links: byId(links),
+    groups: byId(groups),
   };
   if (topoOrder(graph) === null) throw new GraphParseError("graph: the graph contains a cycle");
   return graph;
@@ -642,6 +958,17 @@ export function serializeGraph(graph: WorkspaceGraph): string {
       from_slot: l.from_slot,
       to_node: l.to_node,
       to_slot: l.to_slot,
+    })),
+    groups: graph.groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      template: g.template,
+      collapsed: g.collapsed,
+      // Member order is meaningful — it decides the order of a folded group's ports — so it is
+      // kept as it is rather than sorted like the id-keyed collections.
+      members: [...g.members],
+      x: g.x,
+      y: g.y,
     })),
   });
 }

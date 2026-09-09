@@ -8,7 +8,15 @@
 
 export type WidgetValue = string | number | boolean;
 
-export type WidgetKind = "combo" | "int" | "float" | "text" | "textarea" | "toggle" | "seed";
+export type WidgetKind =
+  | "combo"
+  | "chips"
+  | "int"
+  | "float"
+  | "text"
+  | "textarea"
+  | "toggle"
+  | "seed";
 
 export interface WidgetSpec {
   readonly name: string;
@@ -16,7 +24,7 @@ export interface WidgetSpec {
   /** Row label; defaults to `name`. */
   readonly label?: string;
   readonly default: WidgetValue;
-  /** combo: the choices, in order. */
+  /** combo and chips: the choices, in order. */
   readonly options?: readonly string[];
   /** int/float/seed bounds and stepping. */
   readonly min?: number;
@@ -28,8 +36,14 @@ export interface WidgetSpec {
   readonly rows?: number;
   /** Shown as the row's title attribute. */
   readonly help?: string;
-  /** A text/textarea widget that must not be left empty for the graph to be valid. */
+  /** A text/textarea/chips widget that must not be left empty for the graph to be valid. */
   readonly required?: boolean;
+  /**
+   * What to put here, in the operator's words, for a required widget that is empty. The twin of
+   * `SlotSpec.hint`: "Audio File: dropped file is empty" says what is wrong and not what to do
+   * about it, and a lane template that opens with an empty file input needs the second thing.
+   */
+  readonly hint?: string;
 }
 
 export interface SlotSpec {
@@ -65,6 +79,15 @@ export interface NodeDefinition {
   readonly inputs: readonly SlotSpec[];
   readonly outputs: readonly SlotSpec[];
   readonly widgets: readonly WidgetSpec[];
+  /**
+   * Groups of inputs where at least one must be connected, though no single one is required.
+   *
+   * Some nodes take the same thing in two shapes: Compose Video needs a picture, and a picture is
+   * either a frame sequence or a clip. Marking both slots required is a lie a lane then has to
+   * apologise for in its caveat; marking both optional says a node with no picture at all is
+   * fine. This says what is actually true, and the message names the alternatives.
+   */
+  readonly requires_one_of?: readonly (readonly string[])[];
   /** Header tint. Defaults to the category colour the app's stylesheet assigns. */
   readonly accent?: string;
   readonly executor?: NodeExecutor;
@@ -107,8 +130,39 @@ export function estimateNodeSize(
   if (node.collapsed || !def) return { width, height: NODE_TITLE_HEIGHT + 2 };
   const slotRows = Math.max(def.inputs.length, def.outputs.length);
   let height = NODE_TITLE_HEIGHT + 14 + slotRows * NODE_SLOT_HEIGHT + 24;
-  for (const widget of def.widgets) height += widget.kind === "textarea" ? 90 : NODE_WIDGET_HEIGHT + 4;
+  for (const widget of def.widgets) {
+    if (widget.kind === "textarea") height += 90;
+    else if (widget.kind === "chips") {
+      // Label row plus the pill grid, three to a row at the default node width.
+      height += NODE_WIDGET_HEIGHT + 6 + Math.ceil((widget.options?.length ?? 0) / 3) * 24;
+    } else height += NODE_WIDGET_HEIGHT + 4;
+  }
   return { width, height };
+}
+
+/**
+ * A multi-select widget's value: one comma-separated string, not an array.
+ *
+ * `WidgetValue` is a string, a number or a boolean in every layer this crosses — the graph
+ * document, the Pydantic contract, the DAG node's `params`, the stage's `_param_list` reader —
+ * and widening all of them to carry a list would be a contract change in five places for a
+ * control that reads back as `"bluesky,mastodon"` either way. So the list lives in the string,
+ * and these two functions are the only place that knows it.
+ */
+export function parseChips(value: WidgetValue): string[] {
+  return String(value)
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+}
+
+export function formatChips(values: readonly string[], options?: readonly string[]): string {
+  const unique = [...new Set(values.filter((v) => v !== ""))];
+  // Kept in the definition's own order so the same selection always serialises identically,
+  // whatever order the operator clicked in.
+  const ordered = options ? options.filter((o) => unique.includes(o)) : unique;
+  const extras = unique.filter((v) => !ordered.includes(v));
+  return [...ordered, ...extras].join(",");
 }
 
 export function widgetDefaults(def: NodeDefinition): Record<string, WidgetValue> {

@@ -247,8 +247,18 @@ def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkey
     from content_factory.config import get_settings
     from content_factory.schemas.scenes import CompiledTimeline
     from content_factory.workflows import stages as st
+    from tests.helpers.real_blender import SKIP_REASON, blender_with_oiio
 
     monkeypatch.setenv("CF__ROUTING__GENERATE_KINDS", '["image"]')
+    # This lane pins `controls.compiler: blender`, so the test runs the real scene skill — and the
+    # skill reads its passes back through Blender's bundled OpenImageIO, which the distro package
+    # does not have. `blender_bin` is the bare name, so PATH decides which Blender that is, and on
+    # a host with both installed this test's result came down to the order of two directories.
+    # Name the one that can do the job instead, and skip where there is none.
+    blender = blender_with_oiio()
+    if blender is None:
+        pytest.skip(SKIP_REASON)
+    monkeypatch.setenv("CF__CONTROLS__BLENDER_BIN", blender)
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
     def fake_render(ctx: st.StageContext) -> st.StageOutput:

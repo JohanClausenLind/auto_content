@@ -30,18 +30,25 @@ NodeKey = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,31}$")]
 SlotName = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,31}$")]
 WidgetValue = str | int | float | bool
 
+# The file inputs: a recording, a still or a clip the operator supplies. On the canvas they are
+# what a dropped file becomes; in a lane definition they are the declared entry point — the node
+# that says "your material goes here" — which is what lets a lane whose first stage reads the run
+# directory still show a connected graph instead of an unexplained empty slot.
+SOURCE_TYPES: frozenset[str] = frozenset({"input.audio", "input.image", "input.video"})
+
 # Node types the canvas accepts that are not pipeline stages: the campaign brief that starts a
-# graph, a free-text sticky note, the publish terminal, and the deliverables terminal that marks
-# where a lane's files land.
+# graph, the file inputs, a free-text sticky note, the publish terminal, and the deliverables
+# terminal that marks where a lane's files land.
 NON_STAGE_TYPES: frozenset[str] = frozenset(
-    {"input.brief", "utility.note", "publish.social", "output.deliverables"}
+    {"input.brief", "utility.note", "publish.social", "output.deliverables"} | SOURCE_TYPES
 )
 
 # Types that carry no work and are skipped by the runner. A note is decoration; a brief is the
-# input the run is started with; the deliverables terminal names a folder the run writes to
+# input the run is started with; a file input is staged into the run's uploads folder before the
+# first stage rather than executed; the deliverables terminal names a folder the run writes to
 # anyway, which is why it is a marker and not a stage.
 NON_RUNNABLE_TYPES: frozenset[str] = frozenset(
-    {"input.brief", "utility.note", "output.deliverables"}
+    {"input.brief", "utility.note", "output.deliverables"} | SOURCE_TYPES
 )
 
 WorkflowCategory = Literal["image", "video", "audio", "article", "email", "social", "utility"]
@@ -116,6 +123,22 @@ class WorkflowWire(SchemaModel):
     to_slot: SlotName
 
 
+class WorkflowGroup(SchemaModel):
+    """Nodes this lane shows as one, and what it calls them.
+
+    Half of every lane in the catalogue is the same few steps — read the recording, clean up the
+    voice, build the captions, check and package. A group is how a definition says "these are one
+    idea", so opening the lane on the canvas shows a step called *Captions from the voice* instead
+    of two nodes an operator has to recognise, and opening the group shows both with every widget
+    on them. Purely presentation: the runner reads ``order``, which knows nothing about groups.
+    """
+
+    key: NodeKey
+    name: str = Field(min_length=1, max_length=80)
+    members: tuple[NodeKey, ...] = Field(min_length=1)
+    collapsed: bool = True
+
+
 class WorkflowTemplate(VersionedModel):
     """A complete workflow: what it is for, what it needs, its graph, and its run order."""
 
@@ -137,6 +160,8 @@ class WorkflowTemplate(VersionedModel):
     wires: tuple[WorkflowWire, ...] = ()
     order: tuple[NodeKey, ...] = Field(min_length=1)
     """The runner's linear order, by node key. Must be a topological order of ``wires``."""
+    groups: tuple[WorkflowGroup, ...] = ()
+    """How the canvas folds this lane. Presentation only; nothing executes differently."""
 
     @model_validator(mode="after")
     def _coherent(self) -> WorkflowTemplate:
@@ -206,6 +231,22 @@ class WorkflowTemplate(VersionedModel):
 
         for key in known:
             visit(key)
+
+        group_keys: set[str] = set()
+        owner: dict[str, str] = {}
+        for group in self.groups:
+            if group.key in group_keys:
+                msg = f"duplicate group key {group.key}"
+                raise ValueError(msg)
+            group_keys.add(group.key)
+            for member in group.members:
+                if member not in known:
+                    msg = f"group {group.key} names unknown node {member}"
+                    raise ValueError(msg)
+                if member in owner:
+                    msg = f"node {member} is in two groups ({owner[member]}, {group.key})"
+                    raise ValueError(msg)
+                owner[member] = group.key
         return self
 
     def node(self, key: str) -> WorkflowNode:

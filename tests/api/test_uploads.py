@@ -85,9 +85,9 @@ async def test_a_dropped_recording_comes_back_typed_measured_and_placeable(
     # Placeable: the canvas is told which node holds it and which slot carries it onward.
     assert body["node_type"] == "input.audio"
     assert body["node_slot"] == "audio"
-    clean = next(s for s in body["suggestions"] if s["node_type"] == "restore_speech")
-    assert clean["to_slot"] == "audio"
-    assert clean["values"]["band_extension"] == "clearervoice_sr"  # 16 kHz: put the top back
+    read = next(s for s in body["suggestions"] if s["node_type"] == "transcribe_audio")
+    assert read["to_slot"] == "audio"
+    assert "16 kHz" in read["why"]  # measured, so the offer is specific rather than generic
 
 
 async def test_a_file_type_the_allowlist_does_not_carry_is_refused_by_its_bytes(

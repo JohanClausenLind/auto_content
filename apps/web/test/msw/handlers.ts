@@ -213,20 +213,21 @@ export const DROPPED_AUDIO = {
   description: "audio · 2.0 s · 16 kHz · mono",
   node_type: "input.audio",
   node_slot: "audio",
+  // What the real endpoint answers for a dropped recording: reading it comes first, because the
+  // repair and the mix work per beat and there are no beats until the words are measured.
   suggestions: [
     {
-      node_type: "restore_speech",
-      title: "Clean the voice",
-      why: "16 kHz mono: band extension puts the top octaves back before delivery",
+      node_type: "transcribe_audio",
+      title: "Read what it says",
+      why: "word-by-word timings off the recording. 16 kHz mono: the repair chain's band extension can put the top octaves back",
       to_slot: "audio",
-      values: { cleanup: "clearervoice", band_extension: "clearervoice_sr", enhancer: "resemble_enhance", gate: "always", device: "cuda" },
+      values: { engine: "faster_whisper", model: "base.en" },
     },
     {
-      node_type: "mix_audio",
-      title: "Master the loudness",
-      why: "two-pass loudnorm to -16 LUFS",
-      to_slot: "audio",
-      values: { target_lufs: -16.0 },
+      node_type: "qc_deliverable",
+      title: "Check it against delivery",
+      why: "integrated loudness, true peak and dead air",
+      to_slot: "deliverable",
     },
   ],
 };

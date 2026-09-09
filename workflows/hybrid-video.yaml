@@ -209,6 +209,16 @@ wires:
 
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
 
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: captions
+    name: Captions from the voice
+    members: [timings, captions]
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
+
 order:
   - story
   - script

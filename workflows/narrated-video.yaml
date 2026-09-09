@@ -44,9 +44,9 @@ nodes:
     type: ingest
     note: >
       Optional, and the only way a picture gets into this lane. Files in <project>/uploads are
-      sniffed by magic number, stored immutably, recorded as operator_upload sources and carried
-      into the render bundle as assets - which is what an image, screenshot, map or background
-      still resolves against. With an empty uploads dir this is a no-op and the film is cards only.
+      sniffed by magic number, stored immutably and carried into the render bundle, which is what
+      an image, screenshot or map scene resolves its file against. The wire goes to
+      compile_timeline: that is the stage that builds the bundle. An empty folder is a no-op.
   - key: story
     type: plan_story
     note: >
@@ -116,6 +116,9 @@ wires:
   - {from_key: music, from_slot: music, to_key: mix, to_slot: music}
   - {from_key: story, from_slot: story, to_key: timeline, to_slot: story}
   - {from_key: timings, from_slot: timings, to_key: timeline, to_slot: timings}
+  # The one wire that makes a dropped picture reach the film: compile_timeline folds the ingested
+  # assets into the render bundle, and an image or map scene resolves its file out of that.
+  - {from_key: uploads, from_slot: sources, to_key: timeline, to_slot: sources}
   - {from_key: timeline, from_slot: timeline, to_key: cards, to_slot: timeline}
   - {from_key: cards, from_slot: frames, to_key: cut, to_slot: frames}
   - {from_key: mix, from_slot: audio, to_key: cut, to_slot: audio}
@@ -125,6 +128,16 @@ wires:
   - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
 
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: captions
+    name: Captions from the voice
+    members: [timings, captions]
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
 
 order:
   - uploads

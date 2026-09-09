@@ -5,7 +5,12 @@ from __future__ import annotations
 import pytest
 
 from content_factory.schemas.fixtures import sample_campaign
-from content_factory.schemas.workspace_graph import WorkspaceGraph, WorkspaceLink, WorkspaceNode
+from content_factory.schemas.workspace_graph import (
+    WorkspaceGraph,
+    WorkspaceGroup,
+    WorkspaceLink,
+    WorkspaceNode,
+)
 from content_factory.workspace import compile_graph
 
 
@@ -366,3 +371,98 @@ def test_the_same_lane_compiles_once_the_deliverable_is_wired() -> None:
     qc_node = next(n for n in by_id.values() if n.stage.value == "qc_deliverable")
     # The wire is the ordering: QC now depends on the stage that made the cut.
     assert any("compose_video" in dep for dep in qc_node.depends_on)
+
+
+# --- folded groups are a view, and the compiler must not be able to tell ------------------------
+
+
+def _video_graph(groups: tuple[WorkspaceGroup, ...] = ()) -> WorkspaceGraph:
+    return WorkspaceGraph(
+        graph_id="g1",
+        name="Test graph",
+        nodes=(
+            node("brief", "input.brief", values={"topic": "dragons", "quality": "demo"}),
+            node("story", "plan_story"),
+            node("tl", "compile_timeline"),
+            node("rs", "render_scenes"),
+            node("cv", "compose_video"),
+            node("qc", "qc_deliverable"),
+        ),
+        links=(
+            link("l1", "story", "tl"),
+            link("l2", "tl", "rs"),
+            link("l3", "rs", "cv"),
+            link("l4", "cv", "qc"),
+        ),
+        groups=groups,
+    )
+
+
+def test_folding_a_graph_compiles_to_exactly_the_same_run() -> None:
+    """The property the whole feature rests on. A group is how the canvas *draws* a lane; if it
+    could change what runs, every folded lane would be a different film from the one an operator
+    read, and the compiler would need to learn a second graph format."""
+    flat = compile_graph(_video_graph(), TEMPLATE)
+    folded = compile_graph(
+        _video_graph(
+            (
+                WorkspaceGroup(
+                    id="gr1", name="Render and check", members=("rs", "cv", "qc"), x=0, y=0
+                ),
+            )
+        ),
+        TEMPLATE,
+    )
+    assert flat.ok and folded.ok
+    assert folded.dag is not None and flat.dag is not None
+    assert folded.dag.model_dump_json() == flat.dag.model_dump_json()
+    assert folded.campaign is not None and flat.campaign is not None
+    assert folded.campaign.model_dump_json() == flat.campaign.model_dump_json()
+    assert [d.kind for d in folded.dispositions] == [d.kind for d in flat.dispositions]
+
+
+def test_the_publish_node_says_where_it_would_have_gone() -> None:
+    """A compile preview is where an operator checks what a Run does. "Publishing is skipped" is
+    half the answer; the other half is which destinations were lit up on the node."""
+    g = graph(
+        node("brief", "input.brief", values={"topic": "dragons", "quality": "demo"}),
+        node("story", "plan_story"),
+        node("tl", "compile_timeline"),
+        node("rs", "render_scenes"),
+        node("cv", "compose_video"),
+        node("pub", "publish.social", values={"destinations": "bluesky,mastodon"}),
+        links=(link("l1", "story", "tl"), link("l2", "tl", "rs"), link("l3", "rs", "cv")),
+    )
+    out = compile_graph(g, TEMPLATE)
+    reason = next(d.reason for d in out.dispositions if d.node_id == "pub")
+    assert "bluesky, mastodon" in reason
+    empty = compile_graph(
+        graph(
+            node("brief", "input.brief", values={"topic": "dragons", "quality": "demo"}),
+            node("story", "plan_story"),
+            node("tl", "compile_timeline"),
+            node("rs", "render_scenes"),
+            node("cv", "compose_video"),
+            node("pub", "publish.social", values={"destinations": ""}),
+            links=(link("l1", "story", "tl"), link("l2", "tl", "rs"), link("l3", "rs", "cv")),
+        ),
+        TEMPLATE,
+    )
+    assert "no destination selected" in next(
+        d.reason for d in empty.dispositions if d.node_id == "pub"
+    )
+
+
+def test_a_group_naming_a_node_that_is_not_there_is_refused_by_the_contract() -> None:
+    with pytest.raises(ValueError, match="unknown node"):
+        _video_graph((WorkspaceGroup(id="gr1", name="Ghost", members=("nope",), x=0, y=0),))
+
+
+def test_one_node_cannot_be_in_two_groups() -> None:
+    with pytest.raises(ValueError, match="in two groups"):
+        _video_graph(
+            (
+                WorkspaceGroup(id="gr1", name="A", members=("rs",), x=0, y=0),
+                WorkspaceGroup(id="gr2", name="B", members=("rs",), x=0, y=0),
+            )
+        )

@@ -1,29 +1,34 @@
-# Repair a recording somebody already made.
+# Repair a recording somebody already made, and write down what it says.
 #
-# This is the audio half of a voice lane with the writing and the synthesis taken out. Nothing here
-# invents material: no brief, no script, no picture, no generated voice. The operator drops a
-# recording in the run directory and the lane denoises it, extends the band back to 48 kHz, runs the
-# restoration pass, then masters the result to a fixed loudness and packages it.
+# Nothing here invents material: no picture, no generated voice, not one word that was not spoken.
+# The operator hands over a recording; the lane reads it, repairs it, masters it to a fixed loudness
+# and packages the result with its transcript.
 #
 # It is named for what it does to the material rather than for what the material is. A lecture, an
-# interview, a narration take and a salvaged phone memo all go through the same four steps, so there
-# is no reason for four lanes.
+# interview, a narration take and a salvaged phone memo all go through the same steps, so there is
+# no reason for four lanes.
+#
+# Why a repair lane transcribes at all. Every audio contract downstream of a voice is per-beat and
+# carries word timings — that is what makes captions, the mix and the loudness report agree about
+# one file — so a recording has to become a typed narration segment before the restoration chain
+# can touch it, and a segment without words is not one. The transcript is therefore not decoration:
+# it is what lets this lane use the same repair chain, the same mastering and the same QC as a film.
+# It is also the most useful by-product a lecture recording could have. Set transcribe.engine to
+# fixture and paste your own transcript to skip the model entirely.
 schema_version: 1
 id: audio-restore
 name: Audio restoration
 description: >
-  A recording the operator already has is cleaned up and mastered: cleanup, band extension back to
-  48 kHz, restoration, then a loudness pass and a packaged deliverable. No script is written, no
-  voice is synthesised and no picture is made, so what comes out is the same performance, repaired.
+  A recording the operator already has is repaired and mastered: read into a transcript with word
+  timings, cleaned up, band-extended back to 48 kHz, restored, then mastered to a fixed loudness,
+  checked and packaged with its transcript beside it. No script is written, no voice is synthesised
+  and no picture is made, so what comes out is the same performance, repaired.
 category: audio
-tags: [audio, restoration, denoise, loudness, delivery]
+tags: [audio, restoration, denoise, transcript, loudness, delivery]
 prerequisite: >
-  The recording. restore_speech reads it from the run directory, so the file must be in place before
-  the run starts; nothing upstream in this lane produces audio.
-caveat: >
-  One input is unwired: restore_speech reads the recording from the run directory rather than from
-  a wire, so the lane opens on an unconnected required input. Everything after it is wired,
-  delivery included - the mastered WAV is what QC measures and what gets packaged.
+  The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's
+  Audio File node. faster-whisper downloads its model on first use; transcribe.engine=fixture with
+  your own transcript keeps the run offline.
 models:
   - kind: path
     label: ClearerVoice MossFormer2 enhancement (48 kHz)
@@ -45,6 +50,39 @@ models:
     skill: skills/audio/resemble_enhance
 
 nodes:
+  - key: recording
+    type: input.audio
+    note: >
+      The file to repair. Nothing upstream of this node produces audio, and nothing in the lane
+      generates any: what comes out is this performance.
+  - key: brief
+    type: input.brief
+    values: {topic: "a recording to repair", audience: general, quality: demo}
+    note: >
+      Not the source of the words - the recording is. The brief is what every run carries so the
+      campaign, the deliverable and the run record have a subject; here it names the errand.
+  - key: transcribe
+    type: transcribe_audio
+    values: {engine: faster_whisper, model: base.en, language: en}
+    note: >
+      Normalises the recording to mono PCM and reads the words off it with timings. Both outputs
+      matter: the transcript ships as a deliverable, and the timings are what make the recording a
+      typed narration segment the repair chain can work on.
+  - key: story
+    type: plan_story
+    values: {beats: 1}
+    note: >
+      One beat, because the recording is one performance. Beats are how a film is divided into
+      pictures; a repair has no pictures, so dividing would only cut the audio up and glue it back.
+  - key: script
+    type: lock_script
+    note: What the recording says, frozen, so the timings and the caption sidecars stay valid.
+  - key: voice
+    type: voice_over
+    values: {source: recording}
+    note: >
+      The recording becomes the narration for the one beat, cut at the words the transcript
+      measured. No aligner runs twice and nothing is re-spoken.
   - key: restore
     type: restore_speech
     values:
@@ -70,20 +108,38 @@ nodes:
   - key: deliver
     type: output.deliverables
     note: >
-      Where the run's files land. Not a step - the deliverable folder is written either way - but
-      the lane's last output has somewhere to go, and the canvas can stop calling it unused.
+      Where the run's files land: the mastered WAV, its loudness report, and the transcript the
+      words were read into.
 
 wires:
+  - {from_key: recording, from_slot: audio, to_key: transcribe, to_slot: audio}
+  - {from_key: brief, from_slot: brief, to_key: story, to_slot: brief}
+  - {from_key: transcribe, from_slot: text, to_key: story, to_slot: transcript}
+  - {from_key: story, from_slot: story, to_key: script, to_slot: story}
+  - {from_key: script, from_slot: script, to_key: voice, to_slot: script}
+  - {from_key: transcribe, from_slot: audio, to_key: voice, to_slot: recording}
+  - {from_key: voice, from_slot: audio, to_key: restore, to_slot: audio}
   - {from_key: restore, from_slot: audio, to_key: mix, to_slot: audio}
-  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
 
   # An audio master is a deliverable: qc_deliverable measures the delivered WAV (loudness,
   # true peak, dead air) and compile_destination_packages already ships it.
   - {from_key: mix, from_slot: audio, to_key: qc, to_slot: deliverable}
   - {from_key: mix, from_slot: audio, to_key: pack, to_slot: deliverable}
+  - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
 
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
+
 order:
+  - transcribe
+  - story
+  - script
+  - voice
   - restore
   - mix
   - qc

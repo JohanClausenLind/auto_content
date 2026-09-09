@@ -12,20 +12,15 @@ schema_version: 1
 id: image-to-video
 name: Image to video
 description: >
-  A single still becomes a short moving shot. The anchor fixes the opening frame, LTX-2.5 invents
-  the motion out of it, frame interpolation smooths the result, and QC and packaging turn the clip
-  into something deliverable. No script, no voice, no cut between shots.
+  A still you already have becomes a short moving shot. The picture you supply is the opening
+  frame, LTX-2.5 invents the motion out of it, frame interpolation smooths the result, and QC and
+  packaging turn the clip into something deliverable. No script, no voice, no cut between shots.
 category: video
 tags: [video, motion, single-shot, ltx]
 prerequisite: >
-  A subject written into the brief topic. With no shot plan in the run, the runner takes both the
-  anchor prompt and the motion prompt from that topic, so it is the one field that has to be right.
-  A starting image of your own cannot be wired in yet; see the caveat.
-caveat: >
-  Every stage here has an executor, but two inputs are unwired on purpose. generate_anchor gets no
-  STORY because this lane has no script, so it draws the first frame from the brief topic and its
-  own prompt instead. And no node type ingests a supplied still, so starting from an image you
-  already have is not expressible in the graph today.
+  The picture to move: --input <file>, or dropped on the canvas's Image File node. Plus one
+  sentence naming what is moving, on the motion node's subject widget or as --subject: this lane
+  plans no shots, so nothing else can tell the video model what it is looking at.
 models:
   - kind: comfy
     label: LTX-2.5 transformer
@@ -48,8 +43,8 @@ models:
   - kind: skill
     label: Post chain skill env
     skill: skills/video/postchain
-  # Optional because the anchor backend defaults to the deterministic mock: only a run that wants
-  # a real drawn first frame needs HiDream.
+  # Optional because this lane adopts the operator's picture by default: only a run that switches
+  # anchor.source back to generate needs an image model at all.
   - kind: path
     label: HiDream-O1 weights
     path_includes: hidream
@@ -64,19 +59,29 @@ nodes:
   - key: brief
     type: input.brief
     values: {topic: "one image brought into motion by a slow camera push", audience: general, quality: demo}
-    note: Unwired because generate_anchor reads a STORY, not a BRIEF. The runner still takes the topic from here.
+    note: >
+      The run's subject. With source set to upload the anchor is your picture and the topic is not
+      drawn from; switch anchor.source to generate and this topic becomes what gets drawn.
+  - key: picture
+    type: input.image
+    note: The still to move. It is the clip's first frame, exactly as supplied.
   - key: anchor
     type: generate_anchor
-    values: {prompt: "the opening frame of the shot, as it should look before anything moves"}
+    values:
+      source: upload
+      prompt: "the opening frame of the shot, as it should look before anything moves"
     note: >
-      The first frame the whole clip grows out of. No style is frozen here: the look belongs to the
-      shot the operator asked for, not to the lane.
+      source: upload adopts your picture as the anchor and runs no model at all. Set it to
+      generate and the same node draws an opening frame from the prompt and the brief topic
+      instead, which is the variant for when you have no picture yet.
   - key: motion
     type: generate_video
-    values: {prompt: "hold the framing of the first frame and let the motion develop out of it"}
+    values:
+      prompt: "hold the framing of the first frame and let the motion develop out of it"
+      subject: "the scene in the supplied picture, moving gently"
     note: >
-      With no shot plan the runner prompts from the brief topic and sizes the clip from the anchor,
-      so keep this prompt saying the same thing as the topic rather than fighting it.
+      This lane plans no shots, so the prompt says how to move and the subject says what is
+      moving. Both are read by the stage; --subject overrides the second for one run.
   - key: smooth
     type: interpolate
     values: {engine: gimm_vfi}
@@ -95,6 +100,8 @@ nodes:
       the lane's last output has somewhere to go, and the canvas can stop calling it unused.
 
 wires:
+  - {from_key: picture, from_slot: image, to_key: anchor, to_slot: still}
+  - {from_key: brief, from_slot: brief, to_key: anchor, to_slot: brief}
   - {from_key: anchor, from_slot: anchor, to_key: motion, to_slot: first_frame}
   - {from_key: motion, from_slot: video, to_key: smooth, to_slot: frames}
   - {from_key: smooth, from_slot: frames, to_key: qc, to_slot: deliverable}
@@ -102,6 +109,13 @@ wires:
   - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
 
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
+
+# How the canvas folds this lane. Presentation only: the runner reads `order`, which knows
+# nothing about groups, and opening a group shows the same nodes with every widget on them.
+groups:
+  - key: deliver
+    name: Check and deliver
+    members: [qc, pack, deliver]
 
 order:
   - anchor
