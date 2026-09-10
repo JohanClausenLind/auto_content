@@ -17,6 +17,7 @@ import pytest
 from content_factory.ingest.convert import (
     CONVERTIBLE,
     ConversionError,
+    blank_picture,
     convert_media,
     needs_conversion,
 )
@@ -188,3 +189,99 @@ def test_an_unknown_mime_is_left_for_the_allowlist_to_refuse(tmp_path: Path) -> 
     path.write_bytes(b"\x00\x01")
     result = convert_media(path, "application/octet-stream", tmp_path / "out")
     assert result.action == "none" and result.path == path
+
+
+# --- a recording wearing a video container -----------------------------------------------------
+
+
+def _blank(path: Path, *, seconds: float = 3.0, colour: str = "black", tone: bool = True) -> Path:
+    """A recording as a phone or a meeting tool writes it: sound, and a picture of nothing."""
+    args = [
+        "-f",
+        "lavfi",
+        "-i",
+        f"color=c={colour}:s=320x240:r=25:d={seconds}",
+        *(["-f", "lavfi", "-i", f"sine=frequency=440:duration={seconds}"] if tone else []),
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-pix_fmt",
+        "yuv420p",
+        *(["-c:a", "aac", "-shortest"] if tone else ["-an"]),
+        str(path),
+    ]
+    _run(*args)
+    return path
+
+
+def test_an_mp4_with_no_video_stream_at_all_is_a_recording(tmp_path: Path) -> None:
+    """The commonest shape of the problem, and the one the container settles on its own: a
+    voice-memo app writes AAC into MP4, `magic` reads the ftyp brand and says `video/mp4`, and
+    there has never been a picture in it."""
+    out = tmp_path / "memo.mp4"
+    _run("-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "aac", str(out))
+    assert sniff_mime(out) == "video/mp4", "the bytes say video whatever is inside"
+
+    verdict = blank_picture(out)
+
+    assert verdict is not None
+    assert verdict.certainty == "exact"
+    assert "no video stream" in verdict.reason
+
+
+def test_an_mp4_whose_picture_is_black_the_whole_way_is_a_recording(tmp_path: Path) -> None:
+    verdict = blank_picture(_blank(tmp_path / "interview.mp4"))
+
+    assert verdict is not None
+    assert verdict.certainty == "sampled", "pixels had to be looked at, and the word says so"
+    assert "black" in verdict.reason and "12 frames" in verdict.reason
+
+
+def test_an_mp4_that_holds_one_unchanging_cover_is_a_recording(tmp_path: Path) -> None:
+    """The other half of the same problem: a podcast tool renders the show's artwork over the
+    audio, so the picture is not black — it is simply not a film."""
+    verdict = blank_picture(_blank(tmp_path / "episode.mp4", colour="0x203040"))
+
+    assert verdict is not None and verdict.certainty == "sampled"
+    assert "never changes" in verdict.reason
+
+
+def test_a_film_is_not_a_recording_however_much_the_operator_wants_one(source: Path) -> None:
+    """The check has to be able to say no, or it is not a check: `--input holiday.mp4` to an
+    audio lane is a mistake, and the lane that takes video is one command away."""
+    assert blank_picture(source) is None
+
+
+def test_a_black_video_with_no_sound_is_not_a_recording(tmp_path: Path) -> None:
+    """Blankness alone is not the question. The question is whether the sound can stand on its
+    own, and silence cannot — so this stays a video and is refused as one."""
+    assert blank_picture(_blank(tmp_path / "dead.mp4", tone=False)) is None
+
+
+def test_a_file_ffprobe_cannot_read_is_not_a_recording(tmp_path: Path) -> None:
+    """Total, like every other measurement here: an unreadable file is refused by the allowlist
+    that already looked at it, not by an exception out of a heuristic."""
+    junk = tmp_path / "broken.mp4"
+    junk.write_bytes(b"\x00" * 4096)
+    assert blank_picture(junk) is None
+
+
+def test_looking_at_a_long_recording_costs_a_bounded_number_of_frames(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The verdict is reached from a fixed sample however long the file is. That is the whole
+    reason this can run in front of an operator waiting for a run to start."""
+    from content_factory.ingest import convert
+
+    looked_at: list[float] = []
+    real = convert._grey_frame
+
+    def counting(path: Path, at_s: float) -> bytes | None:
+        looked_at.append(at_s)
+        return real(path, at_s)
+
+    monkeypatch.setattr(convert, "_grey_frame", counting)
+    assert blank_picture(_blank(tmp_path / "long.mp4", seconds=30)) is not None
+    assert len(looked_at) == convert.BLANK_PICTURE_SAMPLES
+    assert max(looked_at) > 25, "the samples span the file rather than crowding its opening"

@@ -254,13 +254,61 @@ def test_restore_beat_records_what_ran_and_what_did_not(tmp_path: Path) -> None:
         skills=_skills(),
         workdir=tmp_path / "work",
     )
-    assert report.steps == ("detect", "voice_chain:de_ess+eq+compress")
-    assert [s.split(":")[0] for s in report.skipped] == ["cleanup", "band_extension", "enhancer"]
+    # `_voice_like` is a clean synthetic tone: nothing for the de-esser to do, so it does not run
+    # and says why. It is gated on the measurement like every model step in the chain.
+    assert report.steps == ("detect", "voice_chain:eq+compress")
+    assert not report.before.needs_de_ess
+    assert [s.split(":")[0] for s in report.skipped] == [
+        "cleanup",
+        "band_extension",
+        "enhancer",
+        "de_ess",
+    ]
     assert report.input_duration_ms == report.output_duration_ms
     assert report.output_sample_rate_hz == 48000
     assert report.before.needs_band_extension  # 24 kHz in
     # The tail resamples but cannot invent a top end: only a model can clear this finding.
     assert report.after.needs_band_extension
+
+
+def _essy(path: Path, *, rate: int = 48000, seconds: float = 2.0) -> Path:
+    """`_voice_like` with a 7 kHz band on top of every word: an ess loud enough to trip the gate."""
+    n = int(rate * seconds)
+    out = []
+    for i in range(n):
+        t = i / rate
+        voiced = (i % int(rate * 0.35)) < int(rate * 0.25)
+        value = 0.0
+        if voiced:
+            for h, amp in ((1, 1.0), (2, 0.5), (3, 0.3), (6, 0.15), (12, 0.06)):
+                value += amp * math.sin(2 * math.pi * 180 * h * t)
+            # The sibilant: three partials across the 5-9 kHz band the detector measures.
+            for f, amp in ((5800.0, 0.9), (7000.0, 1.1), (8400.0, 0.8)):
+                value += amp * math.sin(2 * math.pi * f * t)
+            value *= 0.5 / 2.0
+        out.append(value)
+    return _write_wav(path, out, rate)
+
+
+def test_restore_beat_de_esses_the_beat_that_needs_it(tmp_path: Path) -> None:
+    """The gate fires, and the filter behind it actually reduces the band it is named for.
+
+    Both halves matter. The intensity shipped at 0.25, which measured -0.1 % on a real narration
+    beat — the step was recorded as having run and had done nothing (2026-09-10).
+    """
+    src = _essy(tmp_path / "s.wav")
+    out = tmp_path / "restored.wav"
+    report = restore_beat(
+        src,
+        out,
+        beat_id=BEAT,
+        spec=SpeechRestorationSpec(),
+        skills=_skills(),
+        workdir=tmp_path / "work",
+    )
+    assert report.before.needs_de_ess, "the fixture has to be essy or the test proves nothing"
+    assert "voice_chain:de_ess+eq+compress" in report.steps
+    assert report.after.sibilance_ratio < report.before.sibilance_ratio * 0.9
 
 
 def test_restore_beat_refuses_a_missing_take(tmp_path: Path) -> None:

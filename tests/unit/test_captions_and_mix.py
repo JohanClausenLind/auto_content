@@ -183,3 +183,54 @@ def test_a_picture_that_already_carries_the_words_is_copied_not_re_encoded(tmp_p
     source = {s["codec_type"]: s for s in ffprobe(picture)["streams"]}["video"]
     muxed = {s["codec_type"]: s for s in ffprobe(out)["streams"]}["video"]
     assert muxed["profile"] == source["profile"]
+
+
+def test_a_master_that_overshoots_the_ceiling_is_trimmed_back_under_it(tmp_path: Path) -> None:
+    """`loudnorm` in linear mode does not limit; its `TP` argument only informs the gain it picks.
+
+    Measured on `audio-picture-story` (2026-09-10): the master landed on -14.2 LUFS, right on
+    target, with a true peak of -0.8 dBTP against a -1.0 ceiling, and `mix_audio` refused the run
+    at stage nine of twenty rather than deliver it. A second linear gain of exactly the overshoot
+    moves the peak by the same dB and the programme by the same dB — a fifth of a decibel here.
+    """
+    import math
+    import struct
+    import wave
+
+    import pytest
+
+    from content_factory.audio.mix import master
+    from content_factory.schemas.audio import MasterChainSpec
+
+    # A loud, peaky programme: the linear pass has nowhere to put the gain but into the peak.
+    src = tmp_path / "hot.wav"
+    rate, seconds = 48000, 3.0
+    n = int(rate * seconds)
+    frames = []
+    for i in range(n):
+        t = i / rate
+        # Speech-like body with a short transient every half second.
+        v = 0.35 * math.sin(2 * math.pi * 180 * t)
+        if i % (rate // 2) < 240:
+            v += 0.6 * math.sin(2 * math.pi * 3000 * t)
+        frames.append(max(-32767, min(32767, int(v * 32767))))
+    with wave.open(str(src), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(rate)
+        wf.writeframes(struct.pack(f"<{n}h", *frames))
+
+    out = tmp_path / "mastered.wav"
+    report = master(out.parent / "hot.wav", out, MasterChainSpec(target_lufs=-14.0))
+    assert report.true_peak_dbtp <= report.target_true_peak_dbtp + 0.1, report
+    assert report.passed, report
+    assert not (tmp_path / "mastered-trim.wav").exists()  # the scratch file is not left behind
+
+    # And it lands *below* the delivery ceiling, by roughly the encode headroom: the AAC encode
+    # raises inter-sample peaks, and every master tonight sat exactly on -1.0 dBTP while its
+    # `final.mp4` came back at -0.80 to -0.88 (finding 60). The report still states the delivery
+    # ceiling, because that is the number a caller's gate is about.
+    spec = MasterChainSpec(target_lufs=-14.0)
+    assert spec.master_true_peak_dbtp == pytest.approx(-1.3)
+    assert report.target_true_peak_dbtp == -1.0
+    assert report.true_peak_dbtp <= -1.0 - spec.encode_headroom_db + 0.15, report

@@ -77,18 +77,33 @@ export interface SceneFrameProps {
   notice?: DataClassification | undefined;
   /** Overrides for the backdrop; `ImageScene` sets `scrim: 0` because the picture is the scene. */
   backdrop?: Omit<SceneBackdropProps, "assetId" | "background"> | undefined;
+  /**
+   * How far the scene's own type reaches across the safe area, in px — `fitText` measures it, so
+   * the scene knows before it renders and the value is the same on every machine.
+   *
+   * It exists to aim the backdrop veil (see :data:`BACKDROP_SCRIM`). Landscape only: portrait
+   * centres its content, where the band that matters is vertical and the anchor already covers
+   * it. A scene that does not measure gets a veil flat across the safe area, which is what every
+   * scene got before — a card must not lose its contrast floor by forgetting to opt in.
+   */
+  typeWidth?: number | undefined;
 }
 
 /** Background + safe-area container. Hard cuts: no enter/exit at the frame level. In portrait a
  * thin accent progress rule runs along the top of the safe area for the scene's duration. */
-export function SceneFrame({ background = "paper", justify = "center", children, testId, backgroundAssetId = null, notice, backdrop }: SceneFrameProps): ReactElement {
-  const { theme, safe, portrait, scale, durationInFrames } = useSceneGeometry();
+export function SceneFrame({ background = "paper", justify = "center", children, testId, backgroundAssetId = null, notice, backdrop, typeWidth }: SceneFrameProps): ReactElement {
+  const { theme, safe, portrait, scale, durationInFrames, width } = useSceneGeometry();
   const frame = useCurrentFrame();
   const justifyContent = { start: "flex-start", center: "center", end: "flex-end" }[justify];
   const progressWidth = Math.round(safe.width * Math.min(1, frame / Math.max(1, durationInFrames - 1)));
+  // Where the content block sits, which is where the veil has to stay full strength. A notice is
+  // pinned outside the block and below the safe area, so a card carrying one keeps the flat veil.
+  const anchor: ScrimAnchor = notice !== undefined ? "full" : portrait ? ({ start: "top", center: "middle", end: "bottom" } as const)[justify] : "left";
+  const typeEnd = safe.left + Math.min(safe.width, typeWidth ?? safe.width);
+  const plateau = anchor === "left" && typeWidth !== undefined ? (100 * typeEnd) / Math.max(1, width) : undefined;
   return (
     <AbsoluteFill data-scene={testId} style={{ background: theme.color[background], fontFamily: FONT_STACK, color: textColor(theme, "body", background) }}>
-      <SceneBackdrop assetId={backgroundAssetId} background={background} {...backdrop} />
+      <SceneBackdrop assetId={backgroundAssetId} background={background} anchor={anchor} plateau={plateau} {...backdrop} />
       {portrait ? (
         <div style={{ position: "absolute", left: safe.left, top: Math.max(0, safe.top - Math.round(28 * scale)), width: safe.width, height: Math.max(2, Math.round(4 * scale)), background: theme.color.rule }}>
           <div data-progress style={{ width: progressWidth, height: "100%", background: theme.color.accent }} />
@@ -123,6 +138,44 @@ export interface FitBlock {
   style: CSSProperties;
 }
 
+/**
+ * The smallest size the fitter may choose for a role before it truncates instead.
+ *
+ * This used to be `t.min * scale * 0.5` — half the role's own declared minimum, with nothing
+ * saying so. Measured on the real portrait geometry (1080x1920, safe box 928 x 999 after the
+ * caption band, six lines, `maxHeight = 0.4 x safe.height`): body text of 135 characters sets at
+ * 30px, 407 characters at 28px, and **815 characters at 14px** — with `truncated: false`, because
+ * the fitter shrank rather than cut. The theme declares `legibility.minFontPx1080 = 24` and
+ * `legibilityReport` enforces it with a `font_too_small` finding, but that report runs on
+ * `ArtboardSpec` only. Nothing on the video path checks a fitted size at all, so 14px shipped
+ * looking exactly like 30px to every gate there is.
+ *
+ * So the floor is the theme's own declared floor, and text that will not fit above it is cut with
+ * an ellipsis instead. That is louder, and being loud is the point: `legibilityReport` calls
+ * truncation a blocker and a small font merely major, because an ellipsis in a delivered film is
+ * something a person notices and 14px body text is not. The `Math.min` keeps the floor from ever
+ * rising above the role's preferred size, so a role smaller than the floor still renders.
+ */
+export function fitFloorPx(theme: ContentTheme, role: TextRole | "display", scale: number): number {
+  const t = theme.type[role];
+  return Math.max(8, Math.min(t.size * scale, theme.legibility.minFontPx1080 * scale));
+}
+
+/**
+ * The smallest size *any* text in a scene may be set at, in px for this frame.
+ *
+ * The companion to `fitFloorPx`, for the text that never goes through the fitter at all: axis
+ * ticks, credit lines, timeline event labels, screenshot and map captions. Six of those were
+ * hardcoded at 20 or 22 px against the theme's declared `legibility.minFontPx1080` of 24 —
+ * measured on a landscape render of a card deck 2026-09-10, where the timeline's event text came
+ * out at 22px on a 1920-wide frame and read as a grey smudge. Wrap a literal in
+ * `Math.max(minTextPx(theme, scale), …)` rather than replacing it, so a size that is already
+ * above the floor keeps whatever the design chose for it.
+ */
+export function minTextPx(theme: ContentTheme, scale: number): number {
+  return Math.round(theme.legibility.minFontPx1080 * scale);
+}
+
 /** Deterministic fitted text block for a role within a box (px). */
 export function useFittedText(text: string, role: TextRole | "display", maxWidth: number, maxHeight: number, maxLines: number, background: BackgroundRole, colorOverride?: string): FitBlock {
   const { theme, scale } = useSceneGeometry();
@@ -136,7 +189,7 @@ export function useFittedText(text: string, role: TextRole | "display", maxWidth
     maxHeight,
     maxLines,
     preferredSize: t.size * scale,
-    minSize: Math.max(8, t.min * scale * 0.5),
+    minSize: fitFloorPx(theme, role, scale),
     lineHeight: t.lineHeight,
     letterSpacing: t.letterSpacing,
   });
@@ -219,7 +272,7 @@ export function DataNotice({ classification, background = "paper" }: { classific
         alignItems: "center",
         gap: Math.round(theme.space[2]! * scale),
         fontFamily: FONT_STACK,
-        fontSize: Math.round(label.size * scale * (portrait ? 1 : 0.9)),
+        fontSize: Math.max(minTextPx(theme, scale), Math.round(label.size * scale * (portrait ? 1 : 0.9))),
         fontWeight: label.weight,
         letterSpacing: `${label.letterSpacing}em`,
         textTransform: "uppercase",
@@ -242,24 +295,103 @@ export function DataNotice({ classification, background = "paper" }: { classific
  * under it, so the same contrast the card was designed for still holds. `ImageScene` is the one
  * caller that asks for `scrim={0}`: there the picture *is* the scene, and nothing is set over it.
  *
+ * That floor used to be laid flat over the whole frame, and it cost the picture everything. A
+ * title card generated over a photograph of a bee on lavender measured mean HSV saturation 0.219
+ * and value 0.570 in the source and 0.063 / 0.837 on the rendered card: 71 % of the colour gone,
+ * and a hair above :data:`COLOUR_SAT_MIN` (0.06), the threshold `qc/frame_review.py` uses to call
+ * a frame colourless. The card was legible and the photograph was a ghost.
+ *
+ * The floor is only needed where the type is. So the veil is masked by :data:`SCRIM_FALLOFF`: full
+ * strength across the band the content block occupies, easing to :data:`BACKDROP_SCRIM_FLOOR`
+ * away from it. Landscape sets its type down the left (`useSceneGeometry().align`), portrait
+ * centres it, and `justify` says which way a portrait card leans — so the anchor is read off the
+ * layout rather than asked of the caller. A scene carrying a `notice` opts back out to a flat
+ * veil: a caveat pinned under the safe area has to be legible wherever the picture is bright.
+ *
  * The render is held until the image loads. Without that, a card whose backdrop is still in flight
  * renders on paper for its first frames — a hole at the top of a film, and an intermittent one,
  * which is the worst kind of render bug to chase.
  */
-export const BACKDROP_SCRIM = 0.72;
+export const BACKDROP_SCRIM = 0.88;
+/*
+ * 0.88, not the 0.72 this shipped with, and it is solved rather than chosen. The veil is paper
+ * over an unknown picture, so the worst pixel any photograph can present is black, and the
+ * background under the type is then `scrim x paper`. Solving WCAG AA (4.5:1) for each role
+ * against that:
+ *
+ *     role     colour     clears 4.5 from
+ *     ink      #14171C    ~0.30   (never at risk)
+ *     muted    #525A66     0.837
+ *     accent   #1C5FA8     0.868
+ *
+ * At 0.72 the muted role — every subtitle, caption, source line and outro paragraph — measured
+ * **3.31** against black and fell below 4.5 over 19.5 % of a bee photograph and 36.7 % of a night
+ * street. The "known floor" was a floor for the headline only. 0.88 clears every role over every
+ * possible pixel, and it costs the picture nothing that the aimed mask does not already give
+ * back: the strong veil now covers the type's own band, and the photograph lives in the roll-off.
+ */
+
+/** What the veil thins to where no type is set over it. Low enough that the photograph reads as a
+ * photograph; not zero, so the picture still sits behind the card rather than in front of it. */
+export const BACKDROP_SCRIM_FLOOR = 0.14;
+
+/** Which band of the frame the content block occupies, and therefore where the veil stays full. */
+export type ScrimAnchor = "left" | "top" | "middle" | "bottom" | "full";
+
+/** How the veil thins once it is past the type: `[percent further along, how much scrim is left]`. */
+const SCRIM_TAIL: ReadonlyArray<readonly [number, number]> = [[0, 1], [6, 0.62], [13, 0.26], [20, 0.06], [25, 0]];
+
+/** Axis and stops per anchor, as `[percent along the axis, fraction of the way to full scrim]`. */
+const SCRIM_FALLOFF: Record<Exclude<ScrimAnchor, "full">, { axis: string; stops: ReadonlyArray<readonly [number, number]> }> = {
+  // `left` is rebuilt per scene from the measured type width; these stops are only the fallback
+  // for a caller that did not measure, and they keep the veil flat right across the safe area.
+  left: { axis: "to right", stops: [[0, 1], [96, 1], [100, 0]] },
+  top: { axis: "to bottom", stops: [[0, 1], [52, 1], [64, 0.82], [76, 0.5], [88, 0.2], [100, 0]] },
+  bottom: { axis: "to top", stops: [[0, 1], [52, 1], [64, 0.82], [76, 0.5], [88, 0.2], [100, 0]] },
+  middle: { axis: "to bottom", stops: [[0, 0], [6, 0.3], [16, 0.8], [24, 1], [76, 1], [84, 0.8], [94, 0.3], [100, 0]] },
+};
+
+/**
+ * A CSS mask that thins the veil away from the type, or `undefined` for a flat one.
+ *
+ * The mask multiplies the overlay's alpha, so the element keeps `opacity: scrim` and the mask
+ * carries the shape — no colour parsing, which matters because `theme.color[background]` is
+ * whatever string the theme wrote. Alpha 1 leaves :data:`BACKDROP_SCRIM`; the floor stop is
+ * `floor / scrim`, so raising or lowering `scrim` moves both ends together.
+ */
+export function scrimMask(anchor: ScrimAnchor, scrim: number, plateau?: number, floor: number = BACKDROP_SCRIM_FLOOR): string | undefined {
+  if (anchor === "full" || scrim <= 0 || floor >= scrim) return undefined;
+  const preset = SCRIM_FALLOFF[anchor];
+  const axis = preset.axis;
+  // A landscape card sets its type down the left and `plateau` is where that type ends, measured.
+  // Guessing instead of measuring is what makes this treatment either useless or unsafe: a guess
+  // too narrow leaves a headline's tail on bare photograph, and a guess too wide veils the whole
+  // frame again. Absent a measurement the fallback stops keep the old flat veil.
+  const stops =
+    anchor === "left" && plateau !== undefined
+      ? ([[0, 1], ...SCRIM_TAIL.map(([d, v]) => [Math.min(100, plateau + d), v] as const), [100, 0]] as ReadonlyArray<readonly [number, number]>)
+      : preset.stops;
+  const low = floor / scrim;
+  const parts = stops.map(([at, full]) => `rgba(0,0,0,${(low + (1 - low) * full).toFixed(3)}) ${at.toFixed(2)}%`);
+  return `linear-gradient(${axis}, ${parts.join(", ")})`;
+}
 
 export interface SceneBackdropProps {
   assetId: string | null;
   background: BackgroundRole;
   /** 0 leaves the picture untouched; :data:`BACKDROP_SCRIM` is the default for type over it. */
   scrim?: number;
+  /** Where the veil stays full strength. `SceneFrame` reads it off the layout; override to pin it. */
+  anchor?: ScrimAnchor;
+  /** For `anchor: "left"`, the percentage of the frame the type covers. See :func:`scrimMask`. */
+  plateau?: number | undefined;
   /** A scale about the centre, for a still that breathes (see `ImageScene.imageScale`). */
   scale?: number;
   /** Inset the picture into the safe area instead of bleeding to the frame edge. */
   box?: PxBox | undefined;
 }
 
-export function SceneBackdrop({ assetId, background, scrim = BACKDROP_SCRIM, scale = 1, box }: SceneBackdropProps): ReactElement | null {
+export function SceneBackdrop({ assetId, background, scrim = BACKDROP_SCRIM, anchor = "full", plateau, scale = 1, box }: SceneBackdropProps): ReactElement | null {
   const { bundle, theme, assetUrl } = useSceneEnv();
   const path = assetId === null ? undefined : bundle.assets[assetId];
   const [handle] = useState(() => delayRender(`backdrop:${assetId ?? "none"}`));
@@ -268,6 +400,7 @@ export function SceneBackdrop({ assetId, background, scrim = BACKDROP_SCRIM, sca
     if (path === undefined) continueRender(handle);
   }, [handle, path]);
   if (assetId === null || path === undefined) return null;
+  const mask = scrimMask(anchor, scrim, plateau);
   const frame = box === undefined ? { position: "absolute" as const, inset: 0 } : { position: "absolute" as const, left: box.left, top: box.top, width: box.width, height: box.height };
   return (
     <div data-backdrop={assetId} style={{ ...frame, overflow: "hidden" }}>
@@ -288,7 +421,7 @@ export function SceneBackdrop({ assetId, background, scrim = BACKDROP_SCRIM, sca
           transformOrigin: "center center",
         }}
       />
-      {scrim > 0 ? <AbsoluteFill style={{ background: theme.color[background], opacity: scrim }} /> : null}
+      {scrim > 0 ? <AbsoluteFill data-scrim={anchor} style={{ background: theme.color[background], opacity: scrim, maskImage: mask, WebkitMaskImage: mask }} /> : null}
     </div>
   );
 }

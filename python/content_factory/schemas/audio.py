@@ -176,10 +176,27 @@ class LoudnessReport(SchemaModel):
     tolerance_lu: float = 1.0
 
     @property
-    def passed(self) -> bool:
+    def peak_limited(self) -> bool:
+        """Quieter than the target because the true-peak ceiling would not allow any more gain.
+
+        Not a miss. Measured on a 2.84 s single-clip narration: the stem was -23.97 LUFS with a
+        true peak of -9.48 dBTP, so reaching -14 LUFS needs +9.97 dB and would put the peak at
+        +0.49 dBTP — 1.49 dB over the ceiling. The two-pass master applied +8.66 dB, landed the
+        peak on exactly -1.0 and the programme at -15.31, which is the loudest that material can
+        legally be. The alternative is to compress, and this chain deliberately does not: "which
+        is what keeps the dynamics intact instead of riding gain".
+        """
         return (
-            abs(self.integrated_lufs - self.target_lufs) <= self.tolerance_lu
-            and self.true_peak_dbtp <= self.target_true_peak_dbtp + 0.1
+            self.integrated_lufs < self.target_lufs
+            and self.true_peak_dbtp >= self.target_true_peak_dbtp - 0.1
+        )
+
+    @property
+    def passed(self) -> bool:
+        if self.true_peak_dbtp > self.target_true_peak_dbtp + 0.1:
+            return False  # over the ceiling is never acceptable, however loud the programme is
+        return (
+            abs(self.integrated_lufs - self.target_lufs) <= self.tolerance_lu or self.peak_limited
         )
 
 
@@ -414,6 +431,11 @@ class AudioArtifactReport(VersionedModel):
     def needs_band_extension(self) -> bool:
         return self.has("band_limited")
 
+    @property
+    def needs_de_ess(self) -> bool:
+        """Esses loud enough to spit. `harsh_band` is the same measurement on non-speech."""
+        return self.has("sibilance") or self.has("harsh_band")
+
 
 class VoiceChainSpec(SchemaModel):
     """The deterministic tail of the voice chain: de-esser → EQ → light compression.
@@ -424,8 +446,22 @@ class VoiceChainSpec(SchemaModel):
 
     # FFmpeg's `deesser` takes normalized controls, not Hz/dB, so this exposes its actual
     # parameters instead of inventing units that would have to be guessed back.
+    #
+    # 0.45, not the 0.25 this shipped with, because 0.25 does nothing at all. Swept on three real
+    # narration beats (2026-09-10), measuring `sibilance_ratio` — 5-9 kHz energy over the 300 Hz
+    # to 5 kHz speech band, limit 0.12 — before and after:
+    #
+    #     intensity   hot beat 0.1431   mid beat 0.0269   clean beat 0.0072
+    #     0.25          -0.1 %            -0.0 %            -0.0 %
+    #     0.35          -3.8 %            -1.7 %            -0.1 %
+    #     0.45         -27.5 %           -15.6 %            -1.7 %
+    #     0.60         -73.2 %           -63.0 %            -4.7 %
+    #
+    # 0.45 brings the beat that was over the limit under it (0.1431 -> 0.1036) and leaves a clean
+    # beat alone, which is what program-dependent means. `f` barely matters — 0.9 % across its
+    # whole range on this material — so it is left where it was rather than churned.
     de_ess: bool = True
-    de_ess_intensity: float = Field(default=0.25, ge=0, le=1)
+    de_ess_intensity: float = Field(default=0.45, ge=0, le=1)
     de_ess_max_reduction: float = Field(default=0.5, ge=0, le=1)
     de_ess_frequency: float = Field(default=0.5, ge=0, le=1)
     # EQ: rumble and plosive energy out, presence in, air only where there is a top to lift.
@@ -502,8 +538,24 @@ class MasterChainSpec(SchemaModel):
     limiter_release_ms: float = Field(default=50.0, ge=1, le=8000)
     target_lufs: float = Field(default=-14.0, ge=-40, le=0)
     target_true_peak_dbtp: float = Field(default=-1.0, ge=-12, le=0)
+    """The ceiling the **delivered file** has to sit under. The master aims lower — see
+    :attr:`encode_headroom_db` — because the delivery encode is what the ceiling is about."""
+    encode_headroom_db: float = Field(default=0.3, ge=0, le=3)
+    """How far below the delivery ceiling the master lands, so the AAC encode still fits under it.
+
+    A lossy encoder does not preserve inter-sample peaks, and this one raises them. Measured on
+    five delivered films (2026-09-10): every master sat on exactly **-1.0 dBTP** and every
+    `final.mp4` came back **-0.80 to -0.88 dBTP** — 0.12 to 0.20 dB over the ceiling in the file
+    that actually ships, with the WAV's own report saying it passed. 0.3 dB covers the measured
+    range with margin and costs a third of a decibel of loudness.
+    """
     loudness_range_lu: float = Field(default=11.0, gt=0, le=30)
     sample_rate_hz: Literal[44100, 48000] = 48000
+
+    @property
+    def master_true_peak_dbtp(self) -> float:
+        """What the master itself aims at: the delivery ceiling, less the encode headroom."""
+        return self.target_true_peak_dbtp - self.encode_headroom_db
 
 
 class SoundConditionSpec(SchemaModel):

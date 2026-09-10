@@ -211,8 +211,13 @@ class EnvironmentSpec(SchemaModel):
     background_color: Rgb = (0.05, 0.05, 0.06)
 
 
+LightingPreset = Literal["studio", "exterior_day", "exterior_dusk", "interior_warm"]
+"""The four lighting clauses `shots/prompt_compile.py` can compile. Named so a caller can
+be typed against it: `plan_shots` had no way to ask for anything but `studio`."""
+
+
 class LightingSpec(SchemaModel):
-    preset: Literal["studio", "exterior_day", "exterior_dusk", "interior_warm"] = "studio"
+    preset: LightingPreset = "studio"
     key_azimuth_deg: float = Field(default=35.0, ge=-360.0, le=360.0)
     key_elevation_deg: float = Field(default=45.0, ge=-90.0, le=90.0)
     intensity: float = Field(default=1.0, ge=0.0, le=100.0)

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 from pathlib import Path
 
@@ -55,11 +56,16 @@ def run(job: Job, started: float) -> dict:
         str(ckpt),
         "--eval",
     ]
+    # `compat/sitecustomize.py` puts `cupy.cuda.compile_with_cache` back for softsplat; `site`
+    # imports it because it is first on PYTHONPATH. Read its docstring before removing this.
+    compat = Path(__file__).resolve().parent.parent / "compat"
+    inherited = os.environ.get("PYTHONPATH", "")
     run_cmd(
         cmd,
         cwd=repo,
         timeout_s=int(job.params.get("timeout_s", 3600)),
         log=job.out_dir / "logs" / "gimm_vfi.log",
+        env={"PYTHONPATH": f"{compat}{os.pathsep}{inherited}" if inherited else str(compat)},
     )
     produced = (
         sorted((results / "frames").glob("*.png"))

@@ -71,11 +71,26 @@ def test_edit_instruction_contains_preserve_list_and_exactly_one_delta() -> None
         ),
         LOCK,
     )
+    from content_factory.sequences.instructions import EXEMPT_BY_KIND
+
+    # Everything is preserved except the two things a move is *about*. Both used to be in the
+    # list, so the instruction said "do not alter composition or subject anatomy" and then asked
+    # for the subject to be moved — and a six-view owl set came back as six copies of the anchor.
+    exempt = EXEMPT_BY_KIND["move_subject"]
+    assert exempt == ("composition", "subject anatomy")
     for item in PRESERVE_LIST:
-        assert item in text
+        if item in exempt:
+            assert item not in text.split("Apply exactly ONE change")[0]
+        else:
+            assert item in text
     assert text.count("exactly ONE change") == 1
     assert "move both hands toward the centre" in text
     assert "Everything else unchanged." in text
+
+    # A frame that declares no change preserves everything, as it always did.
+    unchanged = compile_edit_instruction(FrameDelta(kind="none", instruction="hold"), LOCK)
+    for item in PRESERVE_LIST:
+        assert item in unchanged
 
 
 def test_flipbook_builds_hub_and_spoke_with_locks_intact(tmp_path: Path) -> None:
@@ -189,3 +204,37 @@ def test_conditioning_changes_the_marker_and_reaches_the_backend(tmp_path: Path)
         six_keyframe_plan(), LOCK, Recording(), tmp_path / "b", conditioning_for=lambda _idx: refs
     )
     assert all(f["cache_hit"] for f in again.frames)
+
+
+def test_the_lock_records_the_model_that_actually_drew_the_anchor(tmp_path, monkeypatch) -> None:
+    """`lock_generation` re-derived the backend from its own node, which has no `model` widget.
+
+    Measured on `image-set` (2026-09-10): the anchor's marker said `hidream-o1` and the lock it
+    was frozen into said `mock-reference-edit`. The lock's model rides in every spoke's
+    `input_hash`, so the wrong name is not only a wrong record — it keys the whole frame set on a
+    model that never touched it. The style had the same defect and was fixed the same way, off
+    the anchor's own marker; this is the other half.
+    """
+    import json
+
+    from content_factory.workflows.stages import ANCHOR_BACKEND_MODELS, _anchor_recorded_backend
+
+    # The three names a backend writes, and what each means to the `model` widget.
+    assert ANCHOR_BACKEND_MODELS["hidream-o1"] == "hidream-o1"
+    assert ANCHOR_BACKEND_MODELS["mock-reference-edit"] == "mock"
+
+    from content_factory.runners.local import make_context
+
+    ctx = make_context(project_dir=tmp_path / "one")
+    root = ctx.ddir()
+    (root / "anchors").mkdir(parents=True, exist_ok=True)
+    assert _anchor_recorded_backend(ctx) == ""  # nothing drawn yet
+    (root / "anchors" / "anchor.done.json").write_text(json.dumps({"backend": "hidream-o1"}))
+    assert _anchor_recorded_backend(ctx) == "hidream-o1"
+
+    # A per-shot lane writes `<shot>/0000.done.json` instead, and the first one answers.
+    other = make_context(project_dir=tmp_path / "two")
+    shot_dir = other.ddir() / "anchors" / "shot_a"
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    shot_dir.joinpath("0000.done.json").write_text(json.dumps({"backend": "mock-reference-edit"}))
+    assert ANCHOR_BACKEND_MODELS[_anchor_recorded_backend(other)] == "mock"

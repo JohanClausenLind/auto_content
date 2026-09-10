@@ -179,3 +179,35 @@ def test_symlink_index_resolves_to_the_store_it_points_into(tmp_path: Path) -> N
     (plain / "ltx25").mkdir(parents=True)
     assert index_store_root(plain) is None
     assert resolve_models_root(tmp_path / "plain") == plain
+
+
+def test_a_clip_is_never_asked_for_at_a_size_the_package_refuses() -> None:
+    """The graph owns the limit and nothing upstream had asked it.
+
+    Measured 2026-09-10: `image-to-video` on a 2560x1440 photograph and `silent-video` on a
+    1920x1080 story both died at `generate_video` with "parameter 'width' above maximum 1344.0",
+    raised inside the ComfyUI package validator — after the anchors had been generated.
+    """
+    import pytest
+
+    from content_factory.media.video_generate import ComfyUIVideoBackend, MockVideoBackend
+    from content_factory.schemas.fixtures import sample_ltx_i2v_package
+    from content_factory.workflows.stages import _backend_size_cap, _clip_size
+
+    ltx = ComfyUIVideoBackend("http://127.0.0.1:8188", sample_ltx_i2v_package())
+    assert _backend_size_cap(ltx) == (1344, 1344)
+    # A backend that declares no limit is left alone, mocks included.
+    assert _backend_size_cap(MockVideoBackend()) is None
+    assert _clip_size(MockVideoBackend(), 2560, 1440, fit=True, what="still") == (2560, 1440)
+
+    # A supplied still has an incidental size: fit it, keep the aspect, stay on the 16 grid.
+    w, h = _clip_size(ltx, 2560, 1440, fit=True, what="the supplied first frame")
+    assert w <= 1344 and h <= 1344
+    assert w % 16 == 0 and h % 16 == 0
+    assert abs((w / h) - (2560 / 1440)) < 0.05
+    # Already inside the cap: untouched.
+    assert _clip_size(ltx, 1024, 576, fit=True, what="still") == (1024, 576)
+
+    # A shot plan's size is deliberate, so it is refused rather than silently shrunk.
+    with pytest.raises(RuntimeError, match="generates at most 1344x1344"):
+        _clip_size(ltx, 1920, 1080, fit=False, what="shot s1")

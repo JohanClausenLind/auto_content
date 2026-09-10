@@ -380,6 +380,21 @@ long render unfinishable.
 
   The bracket works because `[s]kills…` is a regex matching `skills…`, while the literal text in
   your own argv is `[s]kills…`, which the regex does not match.
+- **The distro Blender has no bundled OpenImageIO.** The control passes are read back out of
+  multilayer EXR with Blender's own OIIO, and `controls.blender_bin` defaults to the bare name
+  `"blender"`, so **PATH decides which Blender runs** — and `/usr/bin` sits far ahead of `/snap/bin`.
+  Measured on these hosts: `/usr/bin/blender` (apt) is 4.0.2 on vegaserv and 5.0.1 on nova, **both
+  without OpenImageIO**; the snap is 5.2.1 LTS **with** OIIO 3.1.13.1. `content-factory video-stack`
+  reports Blender READY either way, because it only checks that a binary exists — so this passes
+  every check and then dies inside Blender's Python. Install the snap and pin the path:
+
+  ```bash
+  sudo snap install blender --classic
+  # .env, on every host that compiles control passes
+  CF__CONTROLS__BLENDER_BIN=/snap/bin/blender
+  ```
+
+  Verify the binary, not the package: `blender --background --python-expr "import OpenImageIO"`.
 - **A different mount point than `/mnt/fast`.** Five modules hardcode it.
 - **`ubuntu-drivers autoinstall` on a fresh Ubuntu picks `-open`.** Freezes the box under load.
 - **Tests can leak into the live weight index.** A `models/frame_interpolation/GIMM-VFI` symlink was
@@ -388,6 +403,326 @@ long render unfinishable.
 - **The control plane's own card may already be full.** Ollama holding a 13 GB model leaves no room
   for a local HiDream; the anchor stage's arbitration evicts it, which is designed behaviour but
   surprising the first time.
+
+# When a card falls off the bus
+
+Measured on vegaserv, 2026-09-10 03:12, during an LTX-2.5 22B generation:
+
+```
+pcieport 0000:00:01.0: PCIe Bus Error: severity=Uncorrectable (Non-Fatal), TLP UnsupReq
+nvidia 0000:01:00.0: AER: can't recover (no error_detected callback)
+NVRM: Xid (PCI:0000:01:00): 79, GPU has fallen off the bus.
+NVRM: Xid (PCI:0000:01:00): 154, GPU recovery action changed from 0x0 (None) to 0x2
+                                 (Node Reboot Required)
+```
+
+**Xid 79 is a reboot, not a restart.** The driver says so itself in Xid 154, and `nvidia-smi -r`
+cannot reset a device the desktop compositor and any other tenant still hold open. It is a
+hardware-side event — PCIe link, power delivery, riser, thermals — provoked by a heavy sustained
+load, and no amount of restarting a model server touches it.
+
+How to tell, and what the pipeline does about it:
+
+```bash
+nvidia-smi                       # "Unable to determine the device handle ... No devices were found"
+journalctl -k | grep -E 'Xid|fell off the bus'
+```
+
+`_ensure_backend_ready` — the moment before a run puts weights on the local card — checks this and
+refuses with a `BlockedError` (exit 5) that names Xid 79 and the reboot. Without it the failure
+arrives later wearing someone else's clothes: ComfyUI answers `All connection attempts failed`, and
+SeedVR2 places its VAE on the CPU and dies on `device cpu:0 is invalid`. A queue will otherwise
+spend every remaining job discovering the same thing.
+
+Until the reboot, the work that still runs is anything pointed at the other host
+(`CF__IMAGE_SEQUENCES__HIDREAM_ENDPOINTS='["http://<other>:8801"]'`) and anything on the mock
+backends. The TTS, the post chain, MMAudio and Blender are not endpoint-addressable, so the lanes
+that need them wait for the reboot — see the table at the top.
+
+## Why it presents as "the whole PC froze"
+
+Reconstructed from `journalctl -b -1` after the 06:07 reboot. The GPU dying is the first event,
+not the visible one; three things follow it in the same second and it is the second and third
+that make the machine unusable.
+
+1. **03:12:22.881** — ComfyUI's log stops mid-sampling. It had LTXAV fully resident
+   (`loaded completely; 18708.18 MB usable, 16204.69 MB loaded`) and was on step 0 of 8. Its last
+   words are `CUDA error: unspecified launch failure` → `Fatal Python error: Aborted`. That is
+   the *consequence*: `cudaErrorLaunchFailure` is what the runtime reports when the device
+   disappears under a running kernel.
+2. **03:12:22 → 03:12:29** — `nvidia-modeset` floods the kernel log:
+   **190,960 lines of `ERROR: GPU:0: Failed to query display engine channel state` in seven
+   seconds**, about 27,000 a second. `systemd-journald` cannot keep up and logs ~171,000
+   `Missed N kernel messages` of its own. This is the moment the machine visibly locks up.
+3. **03:12:22 onwards** — `Xorg` (pid 1897) goes to state **R and spins forever inside the dead
+   driver, holding the `nvidia_modeset` semaphore**. The kernel names it explicitly:
+
+   ```
+   INFO: task nvidia-modeset/:943 blocked for more than 122 seconds.
+   INFO: task nvidia-modeset/:943 blocked on a semaphore likely last held by task Xorg:1897
+   INFO: task Discord:149253 blocked on a semaphore likely last held by task Xorg:1897
+   ```
+
+   Both blocked tasks were still blocked at 614 seconds, when the kernel gave up reporting
+   (`Future hung task reports are suppressed`). The display server never came back.
+
+So the screen freezes and the keyboard does nothing from 03:12, **and everything that is not the
+display keeps working**: the journal shows normal service activity for the next three hours, load
+average stayed between 3.5 and 7.3 on 24 cores, and an agent session went on running shell
+commands, rendering with Remotion and writing files until the power cycle at 06:06:08 (the
+journal ends mid-line — no clean shutdown).
+
+**What it was not.** Worth writing down because these are the first things anyone checks: memory
+peaked at **31 %** and never came near it again (20-23 % for the rest of the night), there were
+**zero** OOM kills, disks were at 72 % and 41 %, no thermal event, no soft/hard lockup, no panic.
+And it is not a recurring fault: across the five boots the journal still holds — including one of
+43 days and one of six weeks — this is the **only** occurrence of either `AER: Uncorrectable` or
+`fallen off the bus`.
+
+**The load it happened under.** One heavy tenant, not two — and it is worth being exact,
+because the obvious guess is wrong. ComfyUI reports `Total VRAM 24117 MB` and saw
+`18708.18 MB usable` immediately before loading LTX-2.5, and that figure is steady across all
+eight of its loads that night. So about **5.4 GB was held by the desktop** (Xorg, KDE, Discord)
+and nothing else: `exclusive_gpu` did its job and no second model server was resident. The card
+was carrying ~16.2 GB of LTX-2.5 plus ~5.4 GB of desktop, roughly 21.6 of 24 GB, under sustained
+sampling in the eighth hour of a continuous run.
+
+The two later CUDA failures are wreckage, not causes, and the clock proves it: the AER is at
+**03:12:22**, SeedVR2 (`m12-video-finish`) started at **03:12:24** and failed `exit 3`, and the
+local HiDream server was launched by the next job's `generate_anchor` and died in
+`caching_allocator_warmup` → `RuntimeError: CUDA unknown error` at **03:12:48**. Everything
+after 03:12:22 met a card that was already gone.
+
+## Making it less likely, and making it visible
+
+Nothing in this repo can stop a card leaving the PCIe bus — it is a link and power event, below
+anything software touches. And there is no single published fix: every account of this failure
+that ends in "solved" was solved by a *different* cause. That is the important finding, so it
+goes first.
+
+### What other people found
+
+| case | what did **not** help | what fixed it |
+| --- | --- | --- |
+| [3090, Linux, Xid 79 under load (Level1Techs)](https://forum.level1techs.com/t/3090-keeps-falling-off-the-bus-xid-79-on-linux/244958) | forcing Gen3, disabling ASPM, two different PSUs, drivers 550 / 575 / 590, power limiting | **locking clocks** — `nvidia-smi -lgc 800,1600`, stable 4+ days |
+| ["GPU has fallen off the bus" (Arch, Solved)](https://bbs.archlinux.org/viewtopic.php?id=304020) | — | `nvidia.NVreg_EnableGpuFirmware=0` **+** `pcie_aspm=off`, plus cleaning and rewiring GPU power |
+| [5090, Xid 79 under sustained CUDA load (NVIDIA forums)](https://forums.developer.nvidia.com/t/bug-report-fix-rtx-5090-xid-79-gsp-firmware-crash-under-sustained-cuda-load/369440) | `pcie_aspm=off`, `NVreg_EnableGpuFirmware=0`, `nvidia_drm.fbdev=1`, three driver branches | **case airflow** — harder fan curve, higher-CFM intakes, an extra fan under the card |
+| [Xid 79 while idle with ASPM in UEFI (NVIDIA forums)](https://forums.developer.nvidia.com/t/nvidia-driver-xid-79-gpu-crash-while-idling-if-aspm-l0s-is-enabled-in-uefi-bios-gpu-has-fallen-off-the-bus/314453) | — | disabling **L0s** in BIOS; that reporter's conclusion was *"ASPM L1 mode is perfectly okay but L0 and L0s do not work correctly"* |
+| [3090 during model training (NVIDIA forums)](https://forums.developer.nvidia.com/t/xid-79-gpu-has-fallen-off-the-bus-training-a-deep-learning-model-on-nvidia-3090/267115) | ruled out software, memcheck, temperature, a 1500 W PSU | unresolved |
+
+Read together: ASPM, GSP, power and cooling each fixed exactly one of these and each failed in at
+least one other. Anyone who tells you which one it is without having measured your machine is
+guessing.
+
+### What that means for *this* host
+
+**ASPM is a weaker suspect here than it first looked.** `sudo lspci -vv` shows
+`LnkCtl: ASPM L1 Enabled` on both the root port and the card, with the L1 substates off
+(`L1SubCtl1: PCI-PM_L1.2- ASPM_L1.2-`) and **no L0s**. The one thread that pinned Xid 79 on ASPM
+pinned it on L0s specifically and called L1 fine. Still worth turning off — it is free and
+reversible — but it should not be first.
+
+**GSP firmware is the better-supported candidate**, because this host has form. `nvidia-smi -q`
+reports `GSP Firmware Version: 595.84`, so GSP is live, and the reason this machine runs the
+proprietary module rather than `-open` is an earlier GSP-related freeze. The proprietary module
+can run without GSP; the open module cannot, which is why `NVreg_EnableGpuFirmware=0` is reported
+as a no-op by open-module users.
+
+**Thermals cannot be ruled in or out, and that is a gap, not an answer.** The 5090 case above was
+airflow, and the 3090's known weak point is the GDDR6X on the back of the board — but this driver
+reports `Memory Current Temp: N/A` for consumer cards and `lm-sensors` is not installed, so *no
+thermal data exists for the night at all*. Saying "no thermal event" only means the kernel logged
+no ACPI thermal trip and the driver logged no slowdown; the memory junction was never sampled.
+
+**The 5GT/s in `LnkSta` is not a fault.** `content-factory gpu watch` catches the link stepping
+2 → 3 as the card moves P5 → P3: the driver parks the link at idle. `hostmax 3` on a 12th-gen x16
+slot is a BIOS setting worth a look, but it is not this.
+
+### Change one thing at a time, in this order
+
+The point of the ordering is that each step is cheap, reversible, and *distinguishable in the
+telemetry* from the ones before it. Applying all four at once buys stability with no knowledge.
+
+**1. Start recording** (do this first, whatever else you do):
+
+```bash
+mkdir -p ~/.config/systemd/user
+tee ~/.config/systemd/user/cf-gpu-telemetry.service >/dev/null <<'UNIT'
+[Unit]
+Description=Sample GPU temperature, power, clocks, throttle reasons and PCIe errors
+
+[Service]
+Type=simple
+WorkingDirectory=%h/git/auto_content
+ExecStart=%h/.local/bin/uv run content-factory gpu watch --interval 10
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target
+UNIT
+systemctl --user daemon-reload
+systemctl --user enable --now cf-gpu-telemetry.service
+loginctl enable-linger "$USER"      # so it survives logout
+```
+
+It appends to `.services/gpu-telemetry.csv` (header + ~110 bytes a row, one rotation kept) and
+prints once to stderr the first time a non-fatal PCIe error appears. If the card goes again, the
+minute before it is on disk.
+
+**2. Close the thermal blind spot.** `sudo apt install lm-sensors && sudo sensors-detect --auto`
+gets CPU, board and NVMe temperatures. GDDR6X junction temperature needs the out-of-tree
+[`gddr6`](https://github.com/olealgoritme/gddr6) module; on a 3090 that number is the one most
+worth having, because it is both the hottest part of the card and the one nothing else reports.
+
+**3. Lock the clocks** — the only remedy that worked in the closest-matching case, a 3090 on
+Linux:
+
+```bash
+sudo nvidia-smi -pm 1
+sudo nvidia-smi -lgc 800,1600      # undo with: sudo nvidia-smi -rgc
+```
+
+**4. Cap the power** and make it persistent. A 3090 at its stock 350 W ceiling draws microsecond
+transients well above it:
+
+```bash
+sudo nvidia-smi -pl 300
+sudo tee /etc/systemd/system/nvidia-power-cap.service >/dev/null <<'UNIT'
+[Unit]
+Description=Cap the GPU power limit below the stock ceiling
+After=nvidia-persistenced.service
+Wants=nvidia-persistenced.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/nvidia-smi -pm 1
+ExecStart=/usr/bin/nvidia-smi -pl 300
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+sudo systemctl enable --now nvidia-power-cap.service
+```
+
+**5. Kernel parameters**, both at once since they are one reboot:
+
+```bash
+sudo cp /etc/default/grub /etc/default/grub.bak
+# append to GRUB_CMDLINE_LINUX_DEFAULT:  pcie_aspm=off nvidia.NVreg_EnableGpuFirmware=0
+sudo update-grub && sudo reboot
+```
+
+Confirm GSP actually went away — `nvidia-smi -q | grep "GSP Firmware"` should say `N/A`, not a
+version. If `doctor` still warns about ASPM afterwards the firmware is holding ASPM control: set
+**Native ASPM** and **PEG ASPM** to Disabled in the BIOS.
+
+### What `doctor` holds you to
+
+`content-factory doctor` carries three checks, none of which needs root:
+
+| check | what it reads | when it complains |
+| --- | --- | --- |
+| `gpu_pcie_health` | `aer_rootport_total_err_{cor,nonfatal,fatal}` on the card's root port | **fail** on any fatal or non-fatal error since boot — one non-fatal was this whole event; **warn** past 100 correctable, which is a link on its way out |
+| `gpu_aspm` | `/proc/cmdline` and `/sys/module/pcie_aspm/parameters/policy` | until `pcie_aspm=off` or the `performance` policy is in force |
+| `gpu_power_cap` | `nvidia-smi --query-gpu=power.limit,power.max_limit` | while the limit sits at the stock ceiling |
+
+`gpu_pcie_health` is the one that earns its place. The counters are reset by a reboot and
+readable without root, and nothing else in the stack looks at them — a link that has begun
+retrying shows up in a routine `just doctor` days before it drops the card.
+
+**If it happens twice, it is the hardware.** In that order: reseat the card and both PCIe power
+cables (two separate cables to the PSU, not one cable with two tails — the Level1Techs case
+suspected exactly this), then another slot, then the PSU. One occurrence in five boots, two of
+them 43 days and six weeks long, is not yet a pattern.
+
+# When a host goes off the network
+
+Different failure, same effect on a run, and worth telling apart from the one above. Measured on
+nova, 2026-09-10 05:23:31, between two frames of an `image-set` run:
+
+```
+$ curl -m 8 http://100.82.150.94:8801/          # no response, exit 28
+$ ssh nova@100.82.150.94                        # connect to port 22: Connection timed out
+$ ping -c 3 100.82.150.94                       # 3 transmitted, 0 received, 100% packet loss
+$ tailscale status | grep nova
+100.82.150.94  nova  linux  active; relay "ams"; offline, last seen 9m ago
+```
+
+`tailscale status` is the one that answers the question, and `tailscale status --json` answers it
+precisely: `LastSeen` is an exact timestamp where the CLI only prints a rounded "9m ago". On nova
+that was `2026-09-10T03:23:31.1Z` — 05:23:31 local, about 66 seconds into a frame, against a run
+whose previous frame had landed at 05:22:25.
+
+**Telling this apart from a dead GPU matters, and one command does it:**
+
+```bash
+ip neigh show | grep <lan-ip>      # INCOMPLETE = nothing is answering ARP
+```
+
+A card that has fallen off the bus leaves the host **up**: it still answers ping and ssh,
+`nvidia-smi` says `Unable to determine the device handle`, and the kernel log holds an Xid.
+vegaserv proved it two hours before nova went — its GPU died at 03:12 and the machine stayed
+pingable and fully usable for three more hours. A dead GPU silences the display, not the NIC.
+
+A host that is off, hard-hung **or asleep** answers nothing at layer 2. `INCOMPLETE` in the ARP
+table proves only that: it rules the GPU out and nothing else. Check the gateway and sweep the
+/24 first so you know it is not your own end — and then **check suspend before you assume
+damage**, because it is the only one of the four that is not a fault and it looks exactly like
+the other three from outside.
+
+That is what nova turned out to be, and the lesson cost two hours of wrong conclusions:
+
+```
+05:21:39  systemd-logind: Power key pressed short.
+05:22:54  systemd-logind: The system will suspend now!
+05:22:55  Starting nvidia-suspend.service - NVIDIA system suspend actions...
+05:23:04  nvidia-suspend.service: Finished. Consumed 8.4s CPU, 18.1G memory peak
+05:23:04  systemd-sleep: Performing sleep operation 'suspend'...
+07:10:19  systemd-sleep: System returned from sleep operation 'suspend'.
+```
+
+A short press of the power button, and a stock `/etc/systemd/logind.conf` under a desktop
+session treats that as `suspend`. The 18.1 GB peak in `nvidia-suspend.service` is the driver
+copying resident VRAM into system RAM before S3; add the 16.9 s filesystem sync after it and you
+have the gap between the last frame served (05:22:25) and the last tailnet contact (05:23:31).
+The machine came back on its own with the GPU healthy, HiDream still resident and the same pid
+still listening.
+
+**When you get back in, `uptime` is the first thing to type.** A machine that suspended has an
+uptime spanning the outage on a single boot; one that crashed or lost power does not.
+
+### Stop a GPU worker having a path to sleep
+
+Suspending mid-generation destroys the run whatever else survives, so on a headless worker
+neither the button nor an idle timer should be able to do it. Both need root:
+
+```bash
+# 1. no path to sleep at all — takes effect immediately, no logind restart
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+
+# 2. and a stray press of the power button does nothing
+sudo mkdir -p /etc/systemd/logind.conf.d
+sudo tee /etc/systemd/logind.conf.d/10-gpu-worker.conf >/dev/null <<'CONF'
+[Login]
+HandlePowerKey=ignore
+HandleSuspendKey=ignore
+HandleLidSwitch=ignore
+CONF
+sudo systemctl restart systemd-logind    # ends graphical sessions on some setups; a reboot is safer
+```
+
+Check afterwards with `systemctl is-enabled suspend.target` (want: `masked`) and
+`systemd-inhibit --list`. Worth knowing what is *not* the problem on nova: GNOME idle suspend was
+never armed — `gsettings get org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout`
+returns `0`, which means never.
+
+What it looks like from inside a run: the stage that was mid-request simply stops. The HiDream
+client has no request timeout, so `generate_keyframes` sits on a socket that will never answer
+until the job's outer `timeout` fires. There is nothing to recover; stop the queue by PID (never a
+bare self-matching `pkill -f` over ssh), delete the half-written run directory so it cannot be
+mistaken for a result later, and move the pool to the other host — if there is one.
 
 # Not distributed yet
 

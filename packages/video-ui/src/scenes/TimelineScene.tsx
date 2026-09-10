@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { useCurrentFrame } from "remotion";
 
 import { enter, motionFrames, progress } from "../motion";
-import { Lines, SceneFrame, useFittedText, useSceneGeometry } from "./common";
+import { Lines, minTextPx, SceneFrame, useFittedText, useSceneGeometry } from "./common";
 
 /** Chronology on a spine; events reveal in order as the spine draws. Landscape runs the spine
  * horizontally; portrait runs it down the left edge with the events stacked beside it, which
@@ -47,19 +47,35 @@ export function TimelineScene({ scene }: { scene: Spec; compiled: unknown }): Re
     );
   }
 
-  const spineY = Math.round(safe.height * 0.42);
+  // The spine sits in the middle of its own box and the labels hang off it, above and below.
+  // It used to sit at 42 % of the *safe area* inside a box 70 % of the safe area tall, with the
+  // above-labels pushed down by a second fixed fraction — three different references for one
+  // arrangement, and the result measured on a 1920x1080 render (2026-09-10) put every mark in
+  // the top 28 % of the safe box with 72 % of it empty underneath. Anchoring both label bands to
+  // the spine keeps a two-line event tight against the rule wherever the rule is.
+  // ...and the box is what the safe area has left under the title, not a fixed 0.7 of it. The
+  // fraction left the bottom 24 % of the safe area unusable on top of everything else; the title
+  // knows its own height, so there is nothing to guess.
+  const plotH = Math.max(
+    Math.round(safe.height * 0.5),
+    Math.round(safe.height - title.fit.heightPx - 16 * scale),
+  );
+  const spineY = Math.round(plotH / 2);
+  const labelGap = Math.round(24 * scale);
   const band = safe.width / n;
   return (
     <SceneFrame testId="timeline" justify="start">
       <Lines block={title} style={enter(frame, 0, f.base, theme, 10 * scale)} />
-      <div style={{ position: "relative", height: Math.round(safe.height * 0.7), marginTop: 16 * scale }}>
+      <div style={{ position: "relative", height: plotH, marginTop: 16 * scale }}>
         <div style={{ position: "absolute", top: spineY, left: 0, width: `${(revealed / n) * 100}%`, height: 3 * scale, background: theme.color.accent, transition: "none" }} />
         {scene.events.slice(0, revealed).map((event, i) => (
-          <div key={i} style={{ position: "absolute", left: band * i, width: band, top: 0, paddingRight: 12 * scale, boxSizing: "border-box", ...enter(frame, Math.round((i * f.base) / Math.max(1, n)), f.base, theme, 10 * scale) }}>
+          <div key={i} style={{ position: "absolute", left: band * i, width: band, top: 0, height: "100%", paddingRight: 12 * scale, boxSizing: "border-box", ...enter(frame, Math.round((i * f.base) / Math.max(1, n)), f.base, theme, 10 * scale) }}>
             <div style={{ position: "absolute", top: spineY - 6 * scale, left: 0, width: 14 * scale, height: 14 * scale, borderRadius: "50%", background: theme.color.accent }} />
-            <div style={{ marginTop: i % 2 === 0 ? spineY - Math.round(safe.height * 0.28) : spineY + 24 * scale }}>
+            <div style={i % 2 === 0
+              ? { position: "absolute", left: 0, right: 12 * scale, bottom: plotH - spineY + labelGap }
+              : { position: "absolute", left: 0, right: 12 * scale, top: spineY + labelGap }}>
               <div style={{ fontWeight: 700, fontSize: 26 * scale, color: ink }}>{event.date_label}</div>
-              <div style={{ fontSize: 22 * scale, color: muted, marginTop: 4 * scale }}>{event.text.text}</div>
+              <div style={{ fontSize: Math.max(minTextPx(theme, scale), 22 * scale), color: muted, marginTop: 4 * scale }}>{event.text.text}</div>
             </div>
           </div>
         ))}

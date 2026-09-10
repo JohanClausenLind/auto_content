@@ -67,6 +67,13 @@ The kind is sniffed from the bytes and checked against what the lane declares, s
 wrong lane is refused in the first second by name. `--force` runs a lane whose material is already
 in the run directory from an earlier pass.
 
+One exception, measured rather than assumed: a phone, a voice-memo app and a meeting recorder all
+write **MP4**, so a recording's bytes say `video/mp4` while the picture in it is an hour of black.
+An audio lane handed one of those looks at the picture — no video stream, cover art, or nothing
+that changes wherever it was sampled — and takes it as the recording, saying which of those
+decided it. A clip with a picture in it is still refused, because `--input holiday.mp4` on an
+audio lane is exactly the mistake the check is for.
+
 The two audio lanes transcribe first, because everything downstream of a voice in this pipeline is
 per-beat and carries word timings. faster-whisper downloads its own model on first use; to stay
 offline, hand over the transcript you already have:

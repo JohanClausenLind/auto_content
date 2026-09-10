@@ -68,6 +68,7 @@ nodes:
   - key: anchor
     type: generate_anchor
     values:
+      model: hidream-o1
       source: upload
       prompt: "the opening frame of the shot, as it should look before anything moves"
     note: >
@@ -77,6 +78,7 @@ nodes:
   - key: motion
     type: generate_video
     values:
+      model: ltx-2.5.i2v
       prompt: "hold the framing of the first frame and let the motion develop out of it"
       subject: "the scene in the supplied picture, moving gently"
     note: >

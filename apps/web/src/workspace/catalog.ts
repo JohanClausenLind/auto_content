@@ -357,8 +357,41 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       },
       { name: "size", kind: "combo", default: "1024x576", options: LTX_SIZES, label: "size (WxH)" },
       { name: "fps", kind: "combo", default: "24", options: ["24", "25", "30", "60"] },
+      {
+        name: "characters",
+        kind: "combo",
+        default: "one",
+        options: ["one", "none"],
+        label: "who is in the shot",
+        hint: "none for a lane that stages nobody",
+        help:
+          "The preset planner puts one staged figure in every shot and says so in the shot's" +
+          " description, which is what the image model is told. On a lane whose controls" +
+          " compiler is the 2D motion plan rather than Blender, nobody is staged and that" +
+          " sentence is false: a recording explaining why the sky is blue came back as six" +
+          " drawings of an unnamed man standing on open ground. `none` drops the figure from" +
+          " the staging and from the sentence.",
+      },
+      {
+        name: "lighting",
+        kind: "combo",
+        default: "studio",
+        options: ["studio", "exterior_day", "exterior_dusk", "interior_warm"],
+        label: "how the shot is lit",
+        hint: "exterior_dusk rakes the light across the subject",
+        help:
+          "The clause the shot's description carries about light. `studio` is" +
+          " \"even studio light from a single soft key, shadows contained\" — product" +
+          " photography, and it was the only reachable value until now. Measured across three" +
+          " subjects on 2026-09-10 it renders a still life as smooth glazed ceramic: a pine cone" +
+          " turned from clay, a whelk like a painted porcelain ornament, an amber like moulded" +
+          " resin. The two best stills this project has made went the other way —" +
+          " `material/bee.png` at 9 on ordinary light and `n-amber` at 8.5 on warm raking" +
+          " light — so `exterior_dusk` (\"low warm dusk light raking across the scene, long" +
+          " shadows\") is the one to reach for on a translucent or texture-carried subject.",
+      },
     ],
-    keywords: ["shot", "camera", "blender", "storyboard", "3d"],
+    keywords: ["shot", "camera", "blender", "storyboard", "3d", "lighting"],
   },
   route_shots: {
     title: "Route Shots",
@@ -479,11 +512,18 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       { name: "controls", type: "CONTROLS" },
     ],
     outputs: [{ name: "frames", type: "SEQUENCE" }],
-    // No widgets on purpose. The frame count comes from the control plan and the seed from the
-    // generation lock, so a `frames` or `seed` widget here would look bound and do nothing --
-    // the stage never reads either. If the length should become settable, the plan has to be
-    // resampled first, and the widget can come back with the behaviour.
-    widgets: [],
+    // No `frames` or `seed` widget on purpose: the frame count comes from the control plan and
+    // the seed from the generation lock, so either would look bound and do nothing -- the stage
+    // never reads them. If the length should become settable, the plan has to be resampled first
+    // and the widget can come back with the behaviour.
+    widgets: [
+      // `model` is different: the stage really does resolve its backend from this node's own
+      // widget (`_reference_backends` -> `_anchor_backend_name(ctx)`), and without it declared a
+      // lane could not say which model draws its spokes. `photo-sequence-video` pinned
+      // hidream-o1 on the anchor node and got a real anchor with **mock spokes**, because the
+      // pin could not be written here (measured 2026-09-10).
+      { name: "model", kind: "combo", default: "hidream-o1", options: ["hidream-o1", "flux2-dev", "mock"] },
+    ],
   },
   drift_qc: {
     title: "Drift QC",
@@ -899,6 +939,14 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       // hold needs no model at all: the drawings are cut together, each held for its shot's
       // length, and every frame on screen is one you approved. The jump between them is the look.
       { name: "motion", kind: "combo", default: "ltx", options: ["ltx", "hold"] },
+      // Which generator animates, the way `generate_anchor.model` says which one draws. Without
+      // it a lane could name its LTX weight files -- this node has three widgets for exactly
+      // that -- and still run the deterministic ffmpeg stand-in, because `video.backend`
+      // defaults to `mock` and only an environment variable could say otherwise. Measured
+      // 2026-09-10: five video lanes had never run against anything but the mock. The default
+      // stays `mock` so an unpinned lane and an offline test are unchanged; a lane that means
+      // LTX now says so where the weights it names are.
+      { name: "model", kind: "combo", default: "mock", options: ["mock", "ltx-2.5.i2v", "wan-animate-2.pose"] },
       {
         // Read by the stage and, until now, settable only through `make --subject`, so a canvas
         // Run of a lane with no shot plan died at "generate_video has no subject" with no widget

@@ -10,7 +10,7 @@ import type { Topology } from "topojson-specification";
 import { useSceneEnv } from "../context";
 import { enter, motionFrames, progress } from "../motion";
 import { PlaceholderCard } from "./Placeholder";
-import { Lines, SceneFrame, useFittedText, useSceneGeometry } from "./common";
+import { Lines, minTextPx, SceneFrame, useFittedText, useSceneGeometry } from "./common";
 
 /** The four projections the MapScene contract names. All are d3-geo: the contract describes a
  * topojson choropleth, not a tiled basemap, which is why this scene needs no WebGL and no tiles. */
@@ -167,7 +167,7 @@ export function MapScene({ scene, compiled }: { scene: Spec; compiled: { scene_i
           ),
         )}
       </svg>
-      <div style={{ marginTop: 8 * scale, color: theme.color.muted, fontSize: 20 * scale }}>
+      <div style={{ marginTop: 8 * scale, color: theme.color.muted, fontSize: Math.max(minTextPx(theme, scale), 20 * scale) }}>
         {scene.data
           ? `${bundle.datasets?.[scene.data.dataset_id]?.label ?? scene.data.dataset_id} · ${values.size} of ${drawn.length} regions`
           : `${drawn.length} regions · ${scene.projection}`}

@@ -13,7 +13,7 @@ export function TitleScene({ scene }: SceneProps<TitleSpec>): ReactElement {
   const subtitle = useFittedText(scene.subtitle?.text ?? "", "subhead", safe.width, Math.round(safe.height * 0.2), 2, "paper", theme.color.muted);
   const ruleWidth = Math.round(120 * scale * progress(frame, 0, f.base, theme.motion.easing.standard));
   return (
-    <SceneFrame testId="title" backgroundAssetId={scene.background_asset_id}>
+    <SceneFrame testId="title" backgroundAssetId={scene.background_asset_id} typeWidth={Math.max(title.fit.widthPx, subtitle.fit.widthPx, 120 * scale)}>
       <Rule width={Math.max(1, ruleWidth)} thickness={Math.max(2, Math.round(6 * scale))} color={theme.color.accent} style={portrait ? { alignSelf: "center" } : {}} />
       <Spacer size={Math.round(theme.space[6]! * scale)} />
       <Lines block={title} align={align} style={enter(frame, Math.round(f.fast / 2), f.base, theme, 24 * scale)} />

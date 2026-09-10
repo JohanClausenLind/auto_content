@@ -21,8 +21,10 @@ description: >
 category: audio
 tags: [audio, narration, voice, captions, timings, restoration]
 prerequisite: >
-  A written script for plan_story to freeze, and one recording per beat under takes/, named by beat
-  id. A missing take fails voice_over and names the beat rather than filling the gap.
+  A written script for plan_story to freeze, and one recording per beat named by beat id
+  (<beat_id>.wav) in the run's uploads folder or under takes/. `make` refuses the lane with
+  nothing supplied rather than failing inside voice_over; a set that is missing one beat fails
+  there and names the beat rather than filling the gap.
 models:
   - kind: path
     label: Resemble Enhance weights
@@ -80,6 +82,13 @@ nodes:
     type: align_words
   - key: captions
     type: compile_captions
+  - key: mix
+    type: mix_audio
+    values: {target_lufs: -16.0}
+    note: >
+      The step this lane was missing. restore_speech writes one repaired wav per beat and nothing
+      assembled them, so a lane whose product is a clean spoken track delivered five per-beat files
+      and no track. Loudness only: no music, no sound design, -16 LUFS for spoken word.
   - key: qc
     type: qc_deliverable
   - key: pack
@@ -103,9 +112,10 @@ wires:
   - {from_key: timings, from_slot: timings, to_key: captions, to_slot: timings}
   - {from_key: qc, from_slot: report, to_key: pack, to_slot: qc}
 
-  # The restored voice is what ships, so it is what QC measures and what gets packaged.
-  - {from_key: clean_voice, from_slot: audio, to_key: qc, to_slot: deliverable}
-  - {from_key: clean_voice, from_slot: audio, to_key: pack, to_slot: deliverable}
+  # The mastered track is what ships, so it is what QC measures and what gets packaged.
+  - {from_key: clean_voice, from_slot: audio, to_key: mix, to_slot: audio}
+  - {from_key: mix, from_slot: audio, to_key: qc, to_slot: deliverable}
+  - {from_key: mix, from_slot: audio, to_key: pack, to_slot: deliverable}
   - {from_key: captions, from_slot: captions, to_key: deliver, to_slot: files}
   - {from_key: pack, from_slot: packages, to_key: deliver, to_slot: packages}
 
@@ -117,7 +127,7 @@ groups:
     members: [timings, captions]
   - key: deliver
     name: Check and deliver
-    members: [qc, pack, deliver]
+    members: [mix, qc, pack, deliver]
 
 order:
   - story
@@ -126,5 +136,6 @@ order:
   - clean_voice
   - timings
   - captions
+  - mix
   - qc
   - pack

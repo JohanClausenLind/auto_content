@@ -302,3 +302,38 @@ class _MockName:
     """The two fields ``_anchor_lock`` reads off a backend, without importing one."""
 
     name = "mock-reference-edit"
+
+
+def test_a_shot_with_no_figures_does_not_assert_a_ground_the_subject_did_not_ask_for() -> None:
+    """ "Standing on open level ground" is a sentence about a body, and it overrode a subject.
+
+    Measured on `audio-picture-story` 2026-09-10: "one open pine cone on a plain grey slate" came
+    back six times as a cone on **wet outdoor gravel**, the slate gone, the background thrown into
+    bokeh by the preamble's "shallow depth of field", and the whole picture covered in specular
+    glints I first mistook for sensor noise — and then for paper texture from the illustration
+    style, which was wrong too. The cause was this clause outranking the subject line's own ground.
+
+    A room still gets named, because a room is a place rather than a surface the subject may have
+    brought with it.
+    """
+    from content_factory.schemas.shots import EnvironmentSpec, WallsSpec
+    from content_factory.shots.prompt_compile import environment_clause, state_sentence
+
+    ground = EnvironmentSpec()
+    assert ground.ground.enabled  # the default the picture-story lanes stage
+
+    assert environment_clause(ground, has_figures=True) == "standing on open level ground"
+    assert environment_clause(ground, has_figures=False) == ""
+
+    said = state_sentence(
+        preset=CameraPreset.static,
+        lighting_preset="studio",
+        environment=ground,
+        characters=(),
+        visual_subject="one open pine cone on a plain grey slate",
+    )
+    assert "one open pine cone on a plain grey slate" in said
+    assert "open level ground" not in said
+    # A staged room is a place and still worth naming, figures or not.
+    walled = EnvironmentSpec(walls=WallsSpec())
+    assert environment_clause(walled, has_figures=False) == "inside a bare room with plain walls"

@@ -13,6 +13,7 @@ swallowed by the stage's ``_param`` default and the workflow quietly does someth
 from __future__ import annotations
 
 import json
+import warnings
 from functools import lru_cache
 from pathlib import Path
 
@@ -181,7 +182,27 @@ def load_definitions() -> dict[str, WorkflowTemplate]:
 
 
 def load_definition(workflow_id: str) -> WorkflowTemplate:
-    definitions = load_definitions()
+    """One lane, fully validated - and only that lane has to be right for it to run.
+
+    ``load_definitions`` reads every file and raises on the first bad one, so for a while a
+    single unreadable definition took down every lane. Measured on 2026-09-10 at 05:14: a note
+    in ``image-set.yaml`` was one sentence over the contract's 400-character limit, and fifteen
+    queued runs - twelve of them ``single-image``, which does not read that file - died one
+    second apart with the same validation error. The whole catalogue is still checked as a whole
+    by ``workflows validate``, by the web exporter and by the tests; a run only needs its own
+    definition, so fall back to reading it alone and say on stderr what else is broken.
+    """
+    try:
+        definitions = load_definitions()
+    except WorkflowDefinitionError as exc:
+        path = DEFINITIONS_DIR / f"{workflow_id}.yaml"
+        if not path.is_file():
+            raise
+        warnings.warn(
+            f"the workflow catalogue has a problem elsewhere: {exc}",
+            stacklevel=2,
+        )
+        return load_definition_file(path)
     if workflow_id not in definitions:
         msg = f"unknown workflow {workflow_id!r}; known: {sorted(definitions)}"
         raise WorkflowDefinitionError(msg)

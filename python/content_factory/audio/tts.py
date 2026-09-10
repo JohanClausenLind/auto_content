@@ -27,6 +27,7 @@ from pathlib import Path
 
 import httpx
 
+from content_factory.audio.languages import locale_prefix
 from content_factory.audio.normalize import tokenize_words
 from content_factory.schemas.audio import NarrationRequest, NarrationSegment, TimingSource
 from content_factory.schemas.base import sha256_hex
@@ -35,6 +36,35 @@ from content_factory.schemas.scenes import WordTiming
 
 class TTSError(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class ScriptCheck:
+    """Whether a take said what it was handed, and how that was decided.
+
+    Three outcomes, not two. `passed=True, similarity=None` is the *unchecked* case — the aligner
+    was `even_split`, or the beat carries a pronunciation respelling the aligner cannot score (see
+    `_time_words`) — and it has to read as a pass, because there is nothing to fail it on. Ranking
+    keeps unchecked takes above every scored one for exactly that reason: a take nobody can score
+    must not lose a retake race to a take that scored 0.4.
+    """
+
+    similarity: float | None = None
+    diff: str = ""
+    passed: bool = True
+    note: str = ""
+
+    @property
+    def rank(self) -> float:
+        """Order for "keep the best take". Unchecked sorts above any score."""
+        return 2.0 if self.similarity is None else self.similarity
+
+    def describe(self, take: int, budget: int) -> str:
+        """The line that goes in the stage's run record."""
+        head = self.note or (
+            "unchecked" if self.similarity is None else f"similarity {self.similarity:.2f}"
+        )
+        return head if take == 0 else f"{head} (take {take + 1} of {budget})"
 
 
 @dataclass(frozen=True)
@@ -258,10 +288,12 @@ class Qwen3TTS(TTSExecutor):
         aligner_timeout_s: int = 600,
         script_similarity_min: float = 0.8,
         seed: int | None = None,
+        takes: int = 3,
     ) -> None:
         self.skill_dir = skill_dir
         self.device = device
         self.seed = seed
+        self.takes = max(1, takes)
         self.language = language
         self.instruct = instruct
         self.ref_audio = ref_audio
@@ -274,7 +306,8 @@ class Qwen3TTS(TTSExecutor):
         self.script_similarity_min = script_similarity_min
         self.last_script_check = ""
         """How the most recent beat's script check went, for the stage's run record. Set by
-        `_time_words`; empty until a beat has been timed by the aligner."""
+        :meth:`synthesize`; empty until a beat has been timed by the aligner. Names the take when
+        more than one was needed, so a retake is visible in the run record rather than silent."""
 
     def fingerprint(self) -> dict[str, object]:
         return {
@@ -287,9 +320,29 @@ class Qwen3TTS(TTSExecutor):
             "ref_text": self.ref_text,
             "aligner": self.aligner,
             "aligner_model": self.faster_whisper_model if self.aligner != "even_split" else "",
+            # `takes` is deliberately absent. It is how many tries the executor is allowed, not
+            # what it was asked to say: a beat that passed on take 1 is the same audio whether the
+            # budget was one take or five, and putting the budget in the key would re-speak a
+            # whole film's narration the first time somebody raised it.
         }
 
-    def _generate(self, request: NarrationRequest, out_wav: Path) -> dict:
+    def _take_seed(self, request: NarrationRequest, take: int) -> int | None:
+        """The seed for one take. Take 0 is exactly what the executor was configured with —
+        usually `None`, which lets the model sample freely and keeps every cached take valid.
+
+        A retake has to differ or it is not a retake: re-running the same seed on a sampling model
+        reproduces the same dropped sentence. So take 1 and up are seeded from the beat id, which
+        makes the *retake* deterministic too — the same beat that failed yesterday retries with
+        the same seeds today, and a take that fixed a beat is reproducible rather than lucky.
+        """
+        if take == 0:
+            return self.seed
+        base = self.seed
+        if base is None:
+            base = int.from_bytes(hashlib.sha256(request.beat_id.encode()).digest()[:4], "big")
+        return (base + take * 7919) % (2**31 - 1)
+
+    def _generate(self, request: NarrationRequest, out_wav: Path, seed: int | None) -> dict:
         cmd = [
             "uv",
             "run",
@@ -304,8 +357,8 @@ class Qwen3TTS(TTSExecutor):
             "--out",
             str(out_wav),
         ]
-        if self.seed is not None:
-            cmd += ["--seed", str(self.seed)]
+        if seed is not None:
+            cmd += ["--seed", str(seed)]
         if self.ref_audio is not None:
             # Base weights: clone the reference voice. It declares no built-in speakers at all.
             cmd += ["--ref-audio", str(self.ref_audio), "--ref-text", self.ref_text]
@@ -334,7 +387,7 @@ class Qwen3TTS(TTSExecutor):
 
     def _time_words(
         self, wav: Path, request: NarrationRequest, duration_ms: int
-    ) -> tuple[list[WordTiming], TimingSource]:
+    ) -> tuple[list[WordTiming], TimingSource, ScriptCheck]:
         from content_factory.audio.takes import (
             TakeError,
             even_split,
@@ -346,7 +399,7 @@ class Qwen3TTS(TTSExecutor):
         if not script_words:
             raise TTSError("nothing to speak")
         if self.aligner == "even_split":
-            return even_split(script_words, duration_ms), TimingSource.estimated
+            return even_split(script_words, duration_ms), TimingSource.estimated, ScriptCheck()
         if self.aligner != "faster_whisper":
             raise TTSError(
                 f"aligner {self.aligner!r} is not installed on this host;"
@@ -360,6 +413,11 @@ class Qwen3TTS(TTSExecutor):
                 model=self.faster_whisper_model,
                 compute_type=self.compute_type,
                 timeout_s=self.aligner_timeout_s,
+                # What the voice is speaking, not what Whisper would guess from three seconds of
+                # it. `stage_synthesize_narration` resolves the model for this language too — an
+                # English-only checkpoint cannot align German and does not say so, it just
+                # transcribes nonsense and the script gate blames the take.
+                language=locale_prefix(request.voice.locale),
             )
         except TakeError as exc:
             raise TTSError(f"alignment failed for {request.beat_id}: {exc}") from exc
@@ -374,8 +432,9 @@ class Qwen3TTS(TTSExecutor):
         respelled = tuple(
             e.term for e in request.lexicon if e.respelling and e.respelling in request.spoken_text
         )
+        check = ScriptCheck()
         if respelled:
-            self.last_script_check = f"skipped: respelled {', '.join(respelled)}"
+            check = ScriptCheck(note=f"skipped: respelled {', '.join(respelled)}")
         else:
             review = validate_take(
                 wav,
@@ -386,23 +445,69 @@ class Qwen3TTS(TTSExecutor):
                 # is held to; what matters here is whether the model said the script.
                 min_duration_s=0.2,
             )
-            if review.similarity < self.script_similarity_min:
-                raise TTSError(
-                    f"{request.beat_id}: qwen3-tts did not speak the locked script"
-                    f" (similarity {review.similarity:.2f} < {self.script_similarity_min:.2f});"
-                    f" diff: {' '.join(review.diff)[:200]}"
-                )
-            self.last_script_check = f"similarity {review.similarity:.2f}"
-        return snap_to_script(script_words, spans, duration_ms), TimingSource.forced_alignment
+            check = ScriptCheck(
+                similarity=review.similarity,
+                diff=" ".join(review.diff)[:200],
+                passed=review.similarity >= self.script_similarity_min,
+            )
+        return (
+            snap_to_script(script_words, spans, duration_ms),
+            TimingSource.forced_alignment,
+            check,
+        )
 
     def synthesize(self, request: NarrationRequest) -> SynthesisResult:
-        with tempfile.TemporaryDirectory(prefix="cf-qwen3tts-") as tmp:
-            wav = Path(tmp) / f"{request.beat_id}.wav"
-            out = self._generate(request, wav)
-            audio = wav.read_bytes()
-            sample_rate = int(out["sample_rate"])
-            duration_ms = int(out["duration_ms"])
-            words, source = self._time_words(wav, request, duration_ms)
+        """Speak one beat, and keep speaking it until the aligner agrees it was spoken.
+
+        Qwen3-TTS drops material. Measured on the narrated-video lane (2026-09-10): the beat
+        "A pitcher cannot make a ball turn by throwing it harder. The turn comes from the spin."
+        came back as the second sentence alone — similarity **0.76** against a 0.80 gate — and one
+        bad take failed a fourteen-stage run at stage four. The take was not wrong in a way a
+        better prompt fixes; it is a sampling model, and the next sample said the whole thing.
+
+        So the gate stays where it is and the executor gets a budget of :attr:`takes`. Each retake
+        reseeds (see :meth:`_take_seed`), the best-scoring take is kept, and the beat only fails
+        when every take fell short — which is the signal that the *script* is the problem, not the
+        sample. `last_script_check` names the take, so a retake shows up in the run record.
+        """
+        best: tuple[ScriptCheck, bytes, dict, list[WordTiming], TimingSource] | None = None
+        for take in range(self.takes):
+            with tempfile.TemporaryDirectory(prefix="cf-qwen3tts-") as tmp:
+                wav = Path(tmp) / f"{request.beat_id}.wav"
+                out = self._generate(request, wav, self._take_seed(request, take))
+                audio = wav.read_bytes()
+                words, source, check = self._time_words(wav, request, int(out["duration_ms"]))
+            if best is None or check.rank > best[0].rank:
+                best = (check, audio, out, words, source)
+            if check.passed:
+                self.last_script_check = check.describe(take, self.takes)
+                break
+        if best is None:  # unreachable: __init__ clamps `takes` to at least one
+            raise TTSError(f"{request.beat_id}: no take was generated")
+        check, audio, out, words, source = best
+        if not check.passed:
+            # The locale is in the message because the first thing a catastrophic score usually
+            # means is that nobody set it. `narration.locale` is global configuration and a
+            # StoryPlan carries no language of its own, so a French script on a default-config
+            # machine is spoken by an English voice and then scored by an English ASR. Measured
+            # 2026-09-10: "trois choses rendent ce bleu" came back as "trasho's rance sublo" at
+            # 0.29, and "todo el proceso" as "ah the toe a processo" — the gate was right both
+            # times and the message sent the reader hunting for a TTS fault instead.
+            hint = ""
+            scored = check.similarity if check.similarity is not None else 1.0
+            if scored < 0.6 and locale_prefix(request.voice.locale) == "en":
+                hint = (
+                    " — narration.locale is 'en', so both the voice and the aligner were"
+                    " English. If this script is not, set CF__NARRATION__LOCALE."
+                )
+            raise TTSError(
+                f"{request.beat_id}: qwen3-tts did not speak the locked script in"
+                f" {self.takes} take(s) (best similarity {check.similarity:.2f} <"
+                f" {self.script_similarity_min:.2f}); diff: {check.diff}{hint}"
+            )
+        self.last_script_check = self.last_script_check or check.describe(0, self.takes)
+        sample_rate = int(out["sample_rate"])
+        duration_ms = int(out["duration_ms"])
         seg = NarrationSegment(
             beat_id=request.beat_id,
             audio_sha256=sha256_hex(audio),

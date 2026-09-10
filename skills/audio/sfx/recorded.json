@@ -1,362 +1,6122 @@
 {
-  "$comment": "Recipe for the recorded half of assets/sfx: excerpts cut from the #GameAudioGDC bundle the operator holds locally (royalty-free, commercial use, modification permitted, no attribution required). Selection rationale and the taxonomy these ids fill are in docs/research/2026-09-07-video-sfx-and-ambience-library.md; the ids are the same ones the generated recipe defines, because the point of this file is to put a real recording behind an id wherever the bundle holds one that is better than a generation. 27 ids here replace a generated sound of the same name and 11 are new. What is deliberately NOT here: every id the bundle cannot serve honestly. There is no stream in it, no night-only cricket bed, and its nearest office room tone is a fridge; those three stay generated rather than be filled with something that is nearly the sound. A ticking-clock BED was cut for the same reason and then dropped: a metronomic event inside a loop announces the wrap on every cycle, which is exactly what qc.event_prominence_db exists to catch, so the clock is here as a single tick instead. No timestamps are written by hand. Beds name a length and the builder sweeps the whole recording for the evenest window of it; one-shots name which event they want and the builder gates the file to find it.",
-  "sample_rate": 44100,
-  "channels": 2,
-  "defaults": {
-    "highpass_hz": 25,
-    "crossfade_law": "equal_power",
-    "search": { "hop_s": 1.0, "finalists": 6 },
-    "oneshot": { "event": -1, "min_gap_s": 0.15, "gate_db": -35.0 }
+ "$comment": "Recipe for the recorded half of assets/sfx: excerpts cut from the #GameAudioGDC bundle the operator holds locally (royalty-free, commercial use, modification permitted, no attribution required). Selection rationale and the taxonomy these ids fill are in docs/research/2026-09-07-video-sfx-and-ambience-library.md; the ids are the same ones the generated recipe defines, because the point of this file is to put a real recording behind an id wherever the bundle holds one that is better than a generation. 27 ids here replace a generated sound of the same name and 11 are new. What is deliberately NOT here: every id the bundle cannot serve honestly. There is no stream in it, no night-only cricket bed, and its nearest office room tone is a fridge; those three stay generated rather than be filled with something that is nearly the sound. A ticking-clock BED was cut for the same reason and then dropped: a metronomic event inside a loop announces the wrap on every cycle, which is exactly what qc.event_prominence_db exists to catch, so the clock is here as a single tick instead. No timestamps are written by hand. Beds name a length and the builder sweeps the whole recording for the evenest window of it; one-shots name which event they want and the builder gates the file to find it. 2026-09-10: the recipe was extended from 38 excerpts to 346. The first 38 filled a documentary/explainer taxonomy from the packs that could serve it honestly; the 308 added here are the rest of the bundle, because a 7.5 GB archive sitting unused next to a library that needs sounds is not a curation decision, it is an omission. Most of what the bundle ships is already cut -- 122 packs of two to four sampler files -- so the new entries use the `whole` mode (take the file as delivered, trim, high-pass, level) rather than the event gate: the supplier already decided where the sound starts, and gating over that decision crops whatever swells. `loop` is still used for the 74 long ambiences, which are the only ones with a window left to choose. Categories follow the UCS CatID in the filename where the supplier set one (ANML->animal, AMB->place, WEAP->weapon, VOX->voice/human, CREA-> creature, MAG->magic, DSGN/ROBT->scifi, VEH/TRN/AERO->vehicle, and so on) rather than being re-decided here. One file is deliberately NOT ingested: 'Camp fire, crackling, putting oil in fire, close, night_B-format, Ambix.wav' is 4-channel ambisonic B-format with an unknown channel layout, and `-ac 2` would fold W against the X/Y/Z gradients rather than decode it -- that needs an ambisonic decoder this pipeline does not have, and the same supplier's stereo campfire is already in the library.",
+ "sample_rate": 44100,
+ "channels": 2,
+ "defaults": {
+  "highpass_hz": 25,
+  "crossfade_law": "equal_power",
+  "search": {
+   "hop_s": 1.0,
+   "finalists": 6
   },
-  "targets": {
-    "oneshot": { "metric": "max_momentary_lufs", "value": -16.0, "true_peak_dbtp": -3.0 },
-    "bed": { "metric": "integrated_lufs", "value": -23.0, "true_peak_dbtp": -1.0 }
+  "oneshot": {
+   "event": -1,
+   "min_gap_s": 0.15,
+   "gate_db": -35.0
+  }
+ },
+ "targets": {
+  "oneshot": {
+   "metric": "max_momentary_lufs",
+   "value": -16.0,
+   "true_peak_dbtp": -3.0
   },
-  "sounds": [
-    {
-      "id": "rain_light_loop",
-      "category": "weather",
-      "replaces": "generated",
-      "tags": ["rain", "wet", "weather", "bed"],
-      "use": "General wet-weather bed. The safest rain: real garden rainfall, no thunder to clash with narration and no traffic to place it in a city.",
-      "src": { "pack": "InMotionAudio - Back Garden Storm", "file": "STORM_StormAmbience13_InMotionAudio_BackGardenStorm.wav" },
-      "loop": { "length_s": 24.0, "crossfade_s": 2.0 }
-    },
-    {
-      "id": "rain_window_loop",
-      "category": "weather",
-      "replaces": "generated",
-      "tags": ["rain", "window", "interior", "bed"],
-      "use": "Interior scene with weather outside. Heavy rain on real glass, so it is muffled where a synthesised rain is only quiet — dialogue sits over it easily.",
-      "src": { "pack": "Jake Fielding - Interior Wind Rain and Storms", "file": "RAINInt_Heavy Rain on Window,  Constant _JF_INT Storm.wav" },
-      "loop": { "length_s": 22.0, "crossfade_s": 2.0 }
-    },
-    {
-      "id": "rain_city_loop",
-      "category": "weather",
-      "tags": ["rain", "city", "street", "traffic", "bed"],
-      "use": "Rain over a street: splatter on concrete with a distant traffic wash under it. Use where the shot is urban and rain_light_loop would sound like open country.",
-      "src": { "pack": "The Noisery - City Rain", "file": "RAINConc_Rain Medium Exterior Splatter City Traffic 6_The Noisery_City Rain.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "storm_bed_loop",
-      "category": "weather",
-      "replaces": "generated",
-      "tags": ["storm", "rain", "wind", "bed"],
-      "use": "Heavy-weather bed. Continuous by design — the window was chosen for evenness, so no thunder clap is baked in; add thunder_distant on top where you want one.",
-      "src": { "pack": "InMotionAudio - Back Garden Storm", "file": "STORM_StormAmbience11_InMotionAudio_BackGardenStorm.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "hail_window_loop",
-      "category": "weather",
-      "tags": ["hail", "window", "interior", "bed"],
-      "use": "Interior under hail. Harder and more granular than rain_window_loop; good for a turn in a story that rain is too gentle for.",
-      "src": { "pack": "Jake Fielding - Interior Wind Rain and Storms", "file": "HAIL_Hail on Door Window, UVPC_JF_INT Storm.wav" },
-      "loop": { "length_s": 24.0, "crossfade_s": 2.0 }
-    },
-    {
-      "id": "wind_open_loop",
-      "category": "weather",
-      "replaces": "generated",
-      "tags": ["wind", "exterior", "landscape", "bed"],
-      "use": "Exteriors, landscapes, aerials. A real storm-force wind recorded in the open; gust swells are slow enough to read as one movement.",
-      "src": { "pack": "344 Audio - Extreme Winds Vol. 1", "file": "WINDDsgn_EXT, Eye Of The Storm_344 Audio_Extreme Winds Vol 1.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "thunder_distant",
-      "category": "weather",
-      "replaces": "generated",
-      "tags": ["thunder", "rumble", "storm", "one-shot"],
-      "use": "Drop over storm_bed_loop wherever you want a thunder roll. Kept separate on purpose: a clap baked into a loop announces the repeat every cycle.",
-      "src": { "pack": "Jake Fielding - Interior Wind Rain and Storms", "file": "THUN_Interior Thunder Rumble_JF_INT Storm_01.wav" },
-      "oneshot": { "max_s": 20.0, "min_gap_s": 1.0, "event": -1 },
-      "peak_band_hz": [30, 200]
-    },
-
-    {
-      "id": "ocean_waves_loop",
-      "category": "place",
-      "replaces": "generated",
-      "tags": ["ocean", "sea", "waves", "coast", "bed"],
-      "use": "Coastal establishing shots and calm reflective passages. Soft waves against cliffs on the Norwegian coast; the loop is long because a wave set is long.",
-      "src": { "pack": "Just Sound Effects - Rocky Coast of Norway", "file": "WATRWave_Soft Waves Cliffs_JSE_RCoN_Stereo.wav" },
-      "loop": { "length_s": 40.0, "crossfade_s": 4.0 }
-    },
-    {
-      "id": "city_distant_loop",
-      "category": "place",
-      "replaces": "generated",
-      "tags": ["city", "urban", "traffic", "bed"],
-      "use": "Urban interiors and skyline shots. A calm courtyard with the traffic a street away, so there are no sirens or horns to date a shot.",
-      "src": { "pack": "Epic Stock Media - Public Spaces - Urban Life Exteriors", "file": "AMBTown_City Courtyard Calm Street Distant Traffic Children Playing 03_ESM_CPS.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "crowd_murmur_loop",
-      "category": "place",
-      "replaces": "generated",
-      "tags": ["crowd", "walla", "murmur", "lobby", "bed"],
-      "use": "Conferences, museums, lobbies. A large hall's worth of voices at distance — the window was picked for the lowest event prominence, which is what keeps a single foreground sentence out of it.",
-      "src": { "pack": "Sonic Bat - Bars & Restaurants Ambience", "file": "SBbra_Shopping Mall Food Court B 001.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "pub_walla_loop",
-      "category": "place",
-      "tags": ["pub", "bar", "restaurant", "walla", "bed"],
-      "use": "Bar and restaurant interiors. Closer and warmer than crowd_murmur_loop, with glass and room in it; individual voices are audible, so keep it under narration rather than beside it.",
-      "src": { "pack": "Jake Fielding - British Walla and Crowd", "file": "CRWDWalla_Pub Walla Atmos, Restaurant, Liverpool, Scouse,_Jake Fielding_11.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "station_hall_loop",
-      "category": "place",
-      "tags": ["station", "hall", "transit", "reverb", "bed"],
-      "use": "Transit and institutional interiors: a big reverberant concourse. The long tail on every footstep is what sells the size of a room a shot only implies.",
-      "src": { "pack": "InMotionAudio - Grand Central Station", "file": "AMBTran_MainHallAmbience03B_InMotionAudio_GrandCentralStation.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "fireplace_loop",
-      "category": "place",
-      "replaces": "generated",
-      "tags": ["fire", "campfire", "crackle", "warm", "bed"],
-      "use": "Interior warmth, historical pieces, cosy segments. A real close-miked fire; the crackles are sparse, which is why the loop is long.",
-      "src": { "pack": "Ivo Vicic - Campfire - Bonfire FX", "file": "24 Campfire, Dropping Fresh Pine Branches in Fire, Crackling, Sizzling Strong, Close 02.wav" },
-      "loop": { "length_s": 24.0, "crossfade_s": 2.0 }
-    },
-    {
-      "id": "forest_day_loop",
-      "category": "place",
-      "replaces": "generated",
-      "tags": ["forest", "birds", "nature", "day", "bed"],
-      "use": "Nature documentary bed. Deciduous forest with birds and insects; the loop is long to hide the sparse calls.",
-      "src": { "pack": "344 Audio - East Coast America Vol. 1", "file": "AMBSubn_Ambience, Forest Crickets, Birds, Connecticut 02_344 Audio_East Coast America.wav" },
-      "loop": { "length_s": 28.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "meadow_day_loop",
-      "category": "place",
-      "tags": ["meadow", "grass", "insects", "upland", "bed"],
-      "use": "Open country rather than woodland: pipits, humming insects and wind through grass. The neutral outdoor bed for a map or a landscape hold.",
-      "src": { "pack": "Just Sound Effects - Highlands of Norway", "file": "AMBSwmp_Meadow Pipits calling many Insects humming Wind blowing through Grass_JSE_HoN_Stereo.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "lake_shore_loop",
-      "category": "place",
-      "tags": ["lake", "water", "ripples", "calm", "bed"],
-      "use": "Still water: ripples against a dock. The quiet water bed — use it under maps and reflective passages where ocean_waves_loop would be too much movement.",
-      "src": { "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors", "file": "WATRLap_Summer Tennessee Lake Dock Water Ripples Wake Wave Gentle 05 Distant_ESM_CPS.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-    {
-      "id": "park_wind_trees_loop",
-      "category": "place",
-      "tags": ["park", "wind", "trees", "foliage", "bed"],
-      "use": "Wind in foliage with a city wash behind it. The bed for an urban park or a tree-lined street — motion without weather.",
-      "src": { "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors", "file": "AMBPark_Berlin City Humboldthain Park Strong Wind On Trees Foliage Traffic Wash 03_ESM_CPS.wav" },
-      "loop": { "length_s": 30.0, "crossfade_s": 3.0 }
-    },
-
-    {
-      "id": "room_tone_hum_loop",
-      "category": "room-tone",
-      "tags": ["room-tone", "hum", "electrical", "interior", "bed"],
-      "use": "Domestic and small-room interiors: a deep appliance hum, which is most of what an indoor room tone actually is. Patch silence between takes with it and keep it very low.",
-      "src": { "pack": "Jake Fielding - Fridge Hums Vol.2", "file": "MACHAppl_Deep Fridge Hum, Buzz, Electric Tone, Deep_Jake Fielding_Fridge Hums Pt2.wav" },
-      "loop": { "length_s": 20.0, "crossfade_s": 2.0 },
-      "crossfade_law": "linear"
-    },
-
-    {
-      "id": "drone_low_loop",
-      "category": "drone",
-      "replaces": "generated",
-      "tags": ["drone", "tension", "tonal", "dark", "bed"],
-      "use": "Tension under a serious passage where music would be too much. A steady dark tonal layer, designed as a loop by its author.",
-      "src": { "pack": "Epic Stock Media - Strange Game Ambient Loops 3", "file": "DSGNSynth_Dark Loop Mystic Forest Tonal Steady Synth_ESM_SGA3.wav" },
-      "loop": { "length_s": 28.0, "crossfade_s": 3.0 },
-      "crossfade_law": "linear"
-    },
-
-    {
-      "id": "impact_soft",
-      "category": "impact",
-      "replaces": "generated",
-      "tags": ["impact", "thud", "low", "one-shot"],
-      "use": "Weight under a lower third or a card landing. The everyday impact: a real metal thud with a short low ring, no trailer tail.",
-      "src": { "pack": "The Noisery - Moaning Metal", "file": "DSGNImpt_Metal Hit Thud Thump Low Ring Geofon 1_The Noisery_Moaning Metal.wav" },
-      "oneshot": { "max_s": 5.5, "min_gap_s": 0.4, "event": -1 },
-      "peak_band_hz": [40, 250]
-    },
-    {
-      "id": "impact_cinematic",
-      "category": "impact",
-      "replaces": "generated",
-      "tags": ["impact", "boom", "cinematic", "title", "one-shot"],
-      "use": "Title cards and act breaks. A trailer boom with a long tail: leave it room, do not cut it short.",
-      "src": { "pack": "Federico Soler - Effective Trailer Booms Vol. 2", "file": "EffectiveTrailer_Booms_Vol2_011.wav" },
-      "oneshot": { "max_s": 14.0, "min_gap_s": 1.0, "event": -1 },
-      "peak_band_hz": [30, 200]
-    },
-    {
-      "id": "sub_drop",
-      "category": "impact",
-      "replaces": "generated",
-      "tags": ["sub", "drop", "downer", "section", "one-shot"],
-      "use": "Section change or a hard stop. A designed bass downer — check it on speakers that can reproduce 40 Hz.",
-      "src": { "pack": "344 Audio - Bass Drops & Downers Vol. 1", "file": "DSGNBass_Bass Drop & Downer Slow 10_344 Audio_Bass Drops & Downers.wav" },
-      "oneshot": { "max_s": 8.0, "min_gap_s": 1.0, "event": 0 },
-      "peak_band_hz": [25, 150]
-    },
-    {
-      "id": "braam_horn",
-      "category": "impact",
-      "tags": ["braam", "horn", "brass", "cinematic", "one-shot"],
-      "use": "The big version of braam_soft: a real horn section, dark and wide. For a title or a single gravest point — one per film, not one per chapter.",
-      "src": { "pack": "Jake Fielding - Cinematic Horn Braams", "file": "DSGNBram____Cinematic Horn Braam, Epic, Cinematic, Dark, Instrument, Huge-32.wav" },
-      "oneshot": { "max_s": 14.0, "min_gap_s": 1.0, "event": -1 },
-      "peak_band_hz": [60, 600]
-    },
-
-    {
-      "id": "whoosh_soft",
-      "category": "transition",
-      "replaces": "generated",
-      "tags": ["whoosh", "swoosh", "cut", "scene-change", "one-shot"],
-      "use": "Default cut-masker. A recorded air rush rather than filtered noise. Land the cut ~60% through the whoosh.",
-      "src": { "pack": "344 Audio - Elemental Palette Designed Vol. 1", "file": "WINDDsgn_Wind, Rush, Whoosh, Long x5 01_344 Audio_Elemental Palette Designed Vol 1.wav" },
-      "oneshot": { "max_s": 1.6, "min_gap_s": 0.2, "event": -1 },
-      "peak_band_hz": [250, 4000]
-    },
-    {
-      "id": "whoosh_reverse",
-      "category": "transition",
-      "replaces": "generated",
-      "tags": ["reverse", "riser", "sweep", "cut", "one-shot"],
-      "use": "Swell into a hard cut; align the stop exactly on the cut frame. A sweep that arrives rather than departs.",
-      "src": { "pack": "Cinematic Sound Design - Colossal Impacts", "file": "Impact Cut Sweep.wav" },
-      "oneshot": { "max_s": 2.8, "min_gap_s": 1.0, "event": 0, "gate_db": -60.0 }
-    },
-
-    {
-      "id": "click_soft",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["click", "button", "cursor", "one-shot"],
-      "use": "Cursor clicks in a screen recording or a product demo. A real light switch: mid-focused, so it reads over speech without the 4 kHz spike a bright UI click puts there.",
-      "src": { "pack": "InMotionAudio - USA Hotel", "file": "MECHClik_USALightSwitch_On05_InMotionAudio_USAHotel.wav" },
-      "oneshot": { "max_s": 0.35, "min_gap_s": 0.15, "event": -1 }
-    },
-    {
-      "id": "pop_in",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["pop", "appear", "icon", "callout", "one-shot"],
-      "use": "Something pops onto screen: an icon, a callout, a pin dropping on a map.",
-      "src": { "pack": "Cinematic Sound Design - Interface & Infographics", "file": "Interface Pop High Short.wav" },
-      "oneshot": { "max_s": 0.8, "min_gap_s": 0.2, "event": -1 }
-    },
-    {
-      "id": "tick_light",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["tick", "clock", "counter", "step", "one-shot"],
-      "use": "Step-by-step counters and timelines. One tick of a real mechanical clock — retrigger it; do not use data_ticks for slow counts.",
-      "src": { "pack": "344 Audio - Antique Clocks", "file": "CLOCKTick_Crooked Antique Clock_344 Audio_Antique Clocks.wav" },
-      "oneshot": { "max_s": 0.5, "min_gap_s": 0.15, "event": 2 }
-    },
-    {
-      "id": "counter_tick",
-      "category": "ui",
-      "tags": ["tick", "mechanism", "counter", "one-shot"],
-      "use": "The mechanical sibling of tick_light: a counting-machine detent, drier and shorter. For fast count-ups where a clock tick would ring.",
-      "src": { "pack": "Epic Stock Media - HD Lock And Mechanism Sound Design Kit", "file": "MACHMech_Mechanism Counting Machine Interact Loose Container Short 01_ESM_HDLM.wav" },
-      "oneshot": { "max_s": 0.4, "min_gap_s": 0.05, "event": 0 }
-    },
-    {
-      "id": "type_key",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["typewriter", "key", "text", "reveal", "one-shot"],
-      "use": "Typewriter text reveals. An actual typewriter key. Retrigger per character at low level.",
-      "src": { "pack": "344 Audio - Antique Typewriter", "file": "COMType_Typewriter Space Key, Typewriter 05_344 Audio_Antiques - Typewriter.wav" },
-      "oneshot": { "max_s": 0.6, "min_gap_s": 0.1, "event": 0 }
-    },
-    {
-      "id": "page_change",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["page", "turn", "paper", "slide", "one-shot"],
-      "use": "Turning to a new page, slide or chapter — a real page turn, which is the literal cue and reads instantly.",
-      "src": { "pack": "Cinematic Sound Design - Paper Foley", "file": "Encyclopedia Glossy Page Turn Muted.wav" },
-      "oneshot": { "max_s": 0.8, "min_gap_s": 0.3, "event": -1 }
-    },
-    {
-      "id": "notify_soft",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["notify", "message", "arp", "one-shot"],
-      "use": "A message or notification arriving on screen. A short bright pluck — kept whole, because the gesture is the sound.",
-      "src": { "pack": "Cinematic Sound Design - User Interface", "file": "Interface Plucks Happy.wav" },
-      "oneshot": { "max_s": 1.2, "min_gap_s": 0.6, "event": 0 }
-    },
-    {
-      "id": "success_chime",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["success", "chime", "kalimba", "complete", "one-shot"],
-      "use": "A step completing or a checkmark landing. Three ascending kalimba notes: tuned, warm, and over in under a second.",
-      "src": { "pack": "CB_Sounddesign - Applicable Sounds - Organic UI and Building Games SFX", "file": "UIMisc_Kalimba 3 Up_CB Sounddesign_APPlicable Sounds.wav" },
-      "oneshot": { "max_s": 1.2, "min_gap_s": 0.6, "event": 0 }
-    },
-    {
-      "id": "error_soft",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["error", "deny", "fail", "one-shot"],
-      "use": "Something did not work. A muted deny — deliberately matter-of-fact, not a buzzer.",
-      "src": { "pack": "Cinematic Sound Design - UI Interaction Elements", "file": "Deny Muted.wav" },
-      "oneshot": { "max_s": 1.2, "min_gap_s": 0.4, "event": -1 }
-    },
-    {
-      "id": "glitch_data",
-      "category": "ui",
-      "tags": ["glitch", "corrupt", "data", "error", "one-shot"],
-      "use": "Data corrupting, a feed dropping out, a system failing. The hard version of error_soft, for the beat where something breaks rather than merely refuses.",
-      "src": { "pack": "The Noisery - Rich Glitch", "file": "UIGlitch_Designed_Glitch_Corrupted_Data Error_The Noisery_Rich Glitch_06.wav" },
-      "oneshot": { "max_s": 5.5, "min_gap_s": 1.5, "event": 0 }
-    },
-    {
-      "id": "data_ticks",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["data", "readout", "stream", "count-up", "one-shot"],
-      "use": "Number count-ups and data streaming in. A continuous readout — fade it under narration rather than cutting it.",
-      "src": { "pack": "Cinematic Sound Design - User Interface", "file": "Readout Thin Long.wav" },
-      "oneshot": { "max_s": 4.5, "min_gap_s": 1.5, "event": 0 }
-    },
-    {
-      "id": "chart_reveal",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["chart", "reveal", "arp", "figure", "one-shot"],
-      "use": "A bar chart drawing in or a figure resolving. Time the last note of the arpeggio to the final frame of the animation.",
-      "src": { "pack": "Cinematic Sound Design - System & UI Feedback Elements", "file": "Interface Arp Reveal Down Long.wav" },
-      "oneshot": { "max_s": 2.0, "min_gap_s": 0.6, "event": 0 }
-    },
-    {
-      "id": "slide_transition",
-      "category": "ui",
-      "replaces": "generated",
-      "tags": ["slide", "sweep", "infographic", "panel", "one-shot"],
-      "use": "A graph, panel or dashboard view sliding to the next state. Short, dry and made for infographics.",
-      "src": { "pack": "Cinematic Sound Design - Ultra Transitions & Impacts", "file": "Woosh Sweep Slide Infographics Basic.wav" },
-      "oneshot": { "max_s": 0.8, "min_gap_s": 0.3, "event": -1 }
-    }
-  ]
+  "bed": {
+   "metric": "integrated_lufs",
+   "value": -23.0,
+   "true_peak_dbtp": -1.0
+  }
+ },
+ "sounds": [
+  {
+   "id": "rain_light_loop",
+   "category": "weather",
+   "replaces": "generated",
+   "tags": [
+    "rain",
+    "wet",
+    "weather",
+    "bed"
+   ],
+   "use": "General wet-weather bed. The safest rain: real garden rainfall, no thunder to clash with narration and no traffic to place it in a city.",
+   "src": {
+    "pack": "InMotionAudio - Back Garden Storm",
+    "file": "STORM_StormAmbience13_InMotionAudio_BackGardenStorm.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "rain_window_loop",
+   "category": "weather",
+   "replaces": "generated",
+   "tags": [
+    "rain",
+    "window",
+    "interior",
+    "bed"
+   ],
+   "use": "Interior scene with weather outside. Heavy rain on real glass, so it is muffled where a synthesised rain is only quiet — dialogue sits over it easily.",
+   "src": {
+    "pack": "Jake Fielding - Interior Wind Rain and Storms",
+    "file": "RAINInt_Heavy Rain on Window,  Constant _JF_INT Storm.wav"
+   },
+   "loop": {
+    "length_s": 22.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "rain_city_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "city",
+    "street",
+    "traffic",
+    "bed"
+   ],
+   "use": "Rain over a street: splatter on concrete with a distant traffic wash under it. Use where the shot is urban and rain_light_loop would sound like open country.",
+   "src": {
+    "pack": "The Noisery - City Rain",
+    "file": "RAINConc_Rain Medium Exterior Splatter City Traffic 6_The Noisery_City Rain.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "storm_bed_loop",
+   "category": "weather",
+   "replaces": "generated",
+   "tags": [
+    "storm",
+    "rain",
+    "wind",
+    "bed"
+   ],
+   "use": "Heavy-weather bed. Continuous by design — the window was chosen for evenness, so no thunder clap is baked in; add thunder_distant on top where you want one.",
+   "src": {
+    "pack": "InMotionAudio - Back Garden Storm",
+    "file": "STORM_StormAmbience11_InMotionAudio_BackGardenStorm.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "hail_window_loop",
+   "category": "weather",
+   "tags": [
+    "hail",
+    "window",
+    "interior",
+    "bed"
+   ],
+   "use": "Interior under hail. Harder and more granular than rain_window_loop; good for a turn in a story that rain is too gentle for.",
+   "src": {
+    "pack": "Jake Fielding - Interior Wind Rain and Storms",
+    "file": "HAIL_Hail on Door Window, UVPC_JF_INT Storm.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wind_open_loop",
+   "category": "weather",
+   "replaces": "generated",
+   "tags": [
+    "wind",
+    "exterior",
+    "landscape",
+    "bed"
+   ],
+   "use": "Exteriors, landscapes, aerials. A real storm-force wind recorded in the open; gust swells are slow enough to read as one movement.",
+   "src": {
+    "pack": "344 Audio - Extreme Winds Vol. 1",
+    "file": "WINDDsgn_EXT, Eye Of The Storm_344 Audio_Extreme Winds Vol 1.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "thunder_distant",
+   "category": "weather",
+   "replaces": "generated",
+   "tags": [
+    "thunder",
+    "rumble",
+    "storm",
+    "one-shot"
+   ],
+   "use": "Drop over storm_bed_loop wherever you want a thunder roll. Kept separate on purpose: a clap baked into a loop announces the repeat every cycle.",
+   "src": {
+    "pack": "Jake Fielding - Interior Wind Rain and Storms",
+    "file": "THUN_Interior Thunder Rumble_JF_INT Storm_01.wav"
+   },
+   "oneshot": {
+    "max_s": 20.0,
+    "min_gap_s": 1.0,
+    "event": -1
+   },
+   "peak_band_hz": [
+    30,
+    200
+   ]
+  },
+  {
+   "id": "ocean_waves_loop",
+   "category": "place",
+   "replaces": "generated",
+   "tags": [
+    "ocean",
+    "sea",
+    "waves",
+    "coast",
+    "bed"
+   ],
+   "use": "Coastal establishing shots and calm reflective passages. Soft waves against cliffs on the Norwegian coast; the loop is long because a wave set is long.",
+   "src": {
+    "pack": "Just Sound Effects - Rocky Coast of Norway",
+    "file": "WATRWave_Soft Waves Cliffs_JSE_RCoN_Stereo.wav"
+   },
+   "loop": {
+    "length_s": 40.0,
+    "crossfade_s": 4.0
+   }
+  },
+  {
+   "id": "city_distant_loop",
+   "category": "place",
+   "replaces": "generated",
+   "tags": [
+    "city",
+    "urban",
+    "traffic",
+    "bed"
+   ],
+   "use": "Urban interiors and skyline shots. A calm courtyard with the traffic a street away, so there are no sirens or horns to date a shot.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Urban Life Exteriors",
+    "file": "AMBTown_City Courtyard Calm Street Distant Traffic Children Playing 03_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "crowd_murmur_loop",
+   "category": "place",
+   "replaces": "generated",
+   "tags": [
+    "crowd",
+    "walla",
+    "murmur",
+    "lobby",
+    "bed"
+   ],
+   "use": "Conferences, museums, lobbies. A large hall's worth of voices at distance — the window was picked for the lowest event prominence, which is what keeps a single foreground sentence out of it.",
+   "src": {
+    "pack": "Sonic Bat - Bars & Restaurants Ambience",
+    "file": "SBbra_Shopping Mall Food Court B 001.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "pub_walla_loop",
+   "category": "place",
+   "tags": [
+    "pub",
+    "bar",
+    "restaurant",
+    "walla",
+    "bed"
+   ],
+   "use": "Bar and restaurant interiors. Closer and warmer than crowd_murmur_loop, with glass and room in it; individual voices are audible, so keep it under narration rather than beside it.",
+   "src": {
+    "pack": "Jake Fielding - British Walla and Crowd",
+    "file": "CRWDWalla_Pub Walla Atmos, Restaurant, Liverpool, Scouse,_Jake Fielding_11.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "station_hall_loop",
+   "category": "place",
+   "tags": [
+    "station",
+    "hall",
+    "transit",
+    "reverb",
+    "bed"
+   ],
+   "use": "Transit and institutional interiors: a big reverberant concourse. The long tail on every footstep is what sells the size of a room a shot only implies.",
+   "src": {
+    "pack": "InMotionAudio - Grand Central Station",
+    "file": "AMBTran_MainHallAmbience03B_InMotionAudio_GrandCentralStation.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "fireplace_loop",
+   "category": "place",
+   "replaces": "generated",
+   "tags": [
+    "fire",
+    "campfire",
+    "crackle",
+    "warm",
+    "bed"
+   ],
+   "use": "Interior warmth, historical pieces, cosy segments. A real close-miked fire; the crackles are sparse, which is why the loop is long.",
+   "src": {
+    "pack": "Ivo Vicic - Campfire - Bonfire FX",
+    "file": "24 Campfire, Dropping Fresh Pine Branches in Fire, Crackling, Sizzling Strong, Close 02.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "forest_day_loop",
+   "category": "place",
+   "replaces": "generated",
+   "tags": [
+    "forest",
+    "birds",
+    "nature",
+    "day",
+    "bed"
+   ],
+   "use": "Nature documentary bed. Deciduous forest with birds and insects; the loop is long to hide the sparse calls.",
+   "src": {
+    "pack": "344 Audio - East Coast America Vol. 1",
+    "file": "AMBSubn_Ambience, Forest Crickets, Birds, Connecticut 02_344 Audio_East Coast America.wav"
+   },
+   "loop": {
+    "length_s": 28.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "meadow_day_loop",
+   "category": "place",
+   "tags": [
+    "meadow",
+    "grass",
+    "insects",
+    "upland",
+    "bed"
+   ],
+   "use": "Open country rather than woodland: pipits, humming insects and wind through grass. The neutral outdoor bed for a map or a landscape hold.",
+   "src": {
+    "pack": "Just Sound Effects - Highlands of Norway",
+    "file": "AMBSwmp_Meadow Pipits calling many Insects humming Wind blowing through Grass_JSE_HoN_Stereo.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "lake_shore_loop",
+   "category": "place",
+   "tags": [
+    "lake",
+    "water",
+    "ripples",
+    "calm",
+    "bed"
+   ],
+   "use": "Still water: ripples against a dock. The quiet water bed — use it under maps and reflective passages where ocean_waves_loop would be too much movement.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors",
+    "file": "WATRLap_Summer Tennessee Lake Dock Water Ripples Wake Wave Gentle 05 Distant_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "park_wind_trees_loop",
+   "category": "place",
+   "tags": [
+    "park",
+    "wind",
+    "trees",
+    "foliage",
+    "bed"
+   ],
+   "use": "Wind in foliage with a city wash behind it. The bed for an urban park or a tree-lined street — motion without weather.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors",
+    "file": "AMBPark_Berlin City Humboldthain Park Strong Wind On Trees Foliage Traffic Wash 03_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 3.0
+   }
+  },
+  {
+   "id": "room_tone_hum_loop",
+   "category": "room-tone",
+   "tags": [
+    "room-tone",
+    "hum",
+    "electrical",
+    "interior",
+    "bed"
+   ],
+   "use": "Domestic and small-room interiors: a deep appliance hum, which is most of what an indoor room tone actually is. Patch silence between takes with it and keep it very low.",
+   "src": {
+    "pack": "Jake Fielding - Fridge Hums Vol.2",
+    "file": "MACHAppl_Deep Fridge Hum, Buzz, Electric Tone, Deep_Jake Fielding_Fridge Hums Pt2.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   },
+   "crossfade_law": "linear"
+  },
+  {
+   "id": "drone_low_loop",
+   "category": "drone",
+   "replaces": "generated",
+   "tags": [
+    "drone",
+    "tension",
+    "tonal",
+    "dark",
+    "bed"
+   ],
+   "use": "Tension under a serious passage where music would be too much. A steady dark tonal layer, designed as a loop by its author.",
+   "src": {
+    "pack": "Epic Stock Media - Strange Game Ambient Loops 3",
+    "file": "DSGNSynth_Dark Loop Mystic Forest Tonal Steady Synth_ESM_SGA3.wav"
+   },
+   "loop": {
+    "length_s": 28.0,
+    "crossfade_s": 3.0
+   },
+   "crossfade_law": "linear"
+  },
+  {
+   "id": "impact_soft",
+   "category": "impact",
+   "replaces": "generated",
+   "tags": [
+    "impact",
+    "thud",
+    "low",
+    "one-shot"
+   ],
+   "use": "Weight under a lower third or a card landing. The everyday impact: a real metal thud with a short low ring, no trailer tail.",
+   "src": {
+    "pack": "The Noisery - Moaning Metal",
+    "file": "DSGNImpt_Metal Hit Thud Thump Low Ring Geofon 1_The Noisery_Moaning Metal.wav"
+   },
+   "oneshot": {
+    "max_s": 5.5,
+    "min_gap_s": 0.4,
+    "event": -1
+   },
+   "peak_band_hz": [
+    40,
+    250
+   ]
+  },
+  {
+   "id": "impact_cinematic",
+   "category": "impact",
+   "replaces": "generated",
+   "tags": [
+    "impact",
+    "boom",
+    "cinematic",
+    "title",
+    "one-shot"
+   ],
+   "use": "Title cards and act breaks. A trailer boom with a long tail: leave it room, do not cut it short.",
+   "src": {
+    "pack": "Federico Soler - Effective Trailer Booms Vol. 2",
+    "file": "EffectiveTrailer_Booms_Vol2_011.wav"
+   },
+   "oneshot": {
+    "max_s": 14.0,
+    "min_gap_s": 1.0,
+    "event": -1
+   },
+   "peak_band_hz": [
+    30,
+    200
+   ]
+  },
+  {
+   "id": "sub_drop",
+   "category": "impact",
+   "replaces": "generated",
+   "tags": [
+    "sub",
+    "drop",
+    "downer",
+    "section",
+    "one-shot"
+   ],
+   "use": "Section change or a hard stop. A designed bass downer — check it on speakers that can reproduce 40 Hz.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 1",
+    "file": "DSGNBass_Bass Drop & Downer Slow 10_344 Audio_Bass Drops & Downers.wav"
+   },
+   "oneshot": {
+    "max_s": 8.0,
+    "min_gap_s": 1.0,
+    "event": 0
+   },
+   "peak_band_hz": [
+    25,
+    150
+   ]
+  },
+  {
+   "id": "braam_horn",
+   "category": "impact",
+   "tags": [
+    "braam",
+    "horn",
+    "brass",
+    "cinematic",
+    "one-shot"
+   ],
+   "use": "The big version of braam_soft: a real horn section, dark and wide. For a title or a single gravest point — one per film, not one per chapter.",
+   "src": {
+    "pack": "Jake Fielding - Cinematic Horn Braams",
+    "file": "DSGNBram____Cinematic Horn Braam, Epic, Cinematic, Dark, Instrument, Huge-32.wav"
+   },
+   "oneshot": {
+    "max_s": 14.0,
+    "min_gap_s": 1.0,
+    "event": -1
+   },
+   "peak_band_hz": [
+    60,
+    600
+   ]
+  },
+  {
+   "id": "whoosh_soft",
+   "category": "transition",
+   "replaces": "generated",
+   "tags": [
+    "whoosh",
+    "swoosh",
+    "cut",
+    "scene-change",
+    "one-shot"
+   ],
+   "use": "Default cut-masker. A recorded air rush rather than filtered noise. Land the cut ~60% through the whoosh.",
+   "src": {
+    "pack": "344 Audio - Elemental Palette Designed Vol. 1",
+    "file": "WINDDsgn_Wind, Rush, Whoosh, Long x5 01_344 Audio_Elemental Palette Designed Vol 1.wav"
+   },
+   "oneshot": {
+    "max_s": 1.6,
+    "min_gap_s": 0.2,
+    "event": -1
+   },
+   "peak_band_hz": [
+    250,
+    4000
+   ]
+  },
+  {
+   "id": "whoosh_reverse",
+   "category": "transition",
+   "replaces": "generated",
+   "tags": [
+    "reverse",
+    "riser",
+    "sweep",
+    "cut",
+    "one-shot"
+   ],
+   "use": "Swell into a hard cut; align the stop exactly on the cut frame. A sweep that arrives rather than departs.",
+   "src": {
+    "pack": "Cinematic Sound Design - Colossal Impacts",
+    "file": "Impact Cut Sweep.wav"
+   },
+   "oneshot": {
+    "max_s": 2.8,
+    "min_gap_s": 1.0,
+    "event": 0,
+    "gate_db": -60.0
+   }
+  },
+  {
+   "id": "click_soft",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "click",
+    "button",
+    "cursor",
+    "one-shot"
+   ],
+   "use": "Cursor clicks in a screen recording or a product demo. A real light switch: mid-focused, so it reads over speech without the 4 kHz spike a bright UI click puts there.",
+   "src": {
+    "pack": "InMotionAudio - USA Hotel",
+    "file": "MECHClik_USALightSwitch_On05_InMotionAudio_USAHotel.wav"
+   },
+   "oneshot": {
+    "max_s": 0.35,
+    "min_gap_s": 0.15,
+    "event": -1
+   }
+  },
+  {
+   "id": "pop_in",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "pop",
+    "appear",
+    "icon",
+    "callout",
+    "one-shot"
+   ],
+   "use": "Something pops onto screen: an icon, a callout, a pin dropping on a map.",
+   "src": {
+    "pack": "Cinematic Sound Design - Interface & Infographics",
+    "file": "Interface Pop High Short.wav"
+   },
+   "oneshot": {
+    "max_s": 0.8,
+    "min_gap_s": 0.2,
+    "event": -1
+   }
+  },
+  {
+   "id": "tick_light",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "tick",
+    "clock",
+    "counter",
+    "step",
+    "one-shot"
+   ],
+   "use": "Step-by-step counters and timelines. One tick of a real mechanical clock — retrigger it; do not use data_ticks for slow counts.",
+   "src": {
+    "pack": "344 Audio - Antique Clocks",
+    "file": "CLOCKTick_Crooked Antique Clock_344 Audio_Antique Clocks.wav"
+   },
+   "oneshot": {
+    "max_s": 0.5,
+    "min_gap_s": 0.15,
+    "event": 2
+   }
+  },
+  {
+   "id": "counter_tick",
+   "category": "ui",
+   "tags": [
+    "tick",
+    "mechanism",
+    "counter",
+    "one-shot"
+   ],
+   "use": "The mechanical sibling of tick_light: a counting-machine detent, drier and shorter. For fast count-ups where a clock tick would ring.",
+   "src": {
+    "pack": "Epic Stock Media - HD Lock And Mechanism Sound Design Kit",
+    "file": "MACHMech_Mechanism Counting Machine Interact Loose Container Short 01_ESM_HDLM.wav"
+   },
+   "oneshot": {
+    "max_s": 0.4,
+    "min_gap_s": 0.05,
+    "event": 0
+   }
+  },
+  {
+   "id": "type_key",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "typewriter",
+    "key",
+    "text",
+    "reveal",
+    "one-shot"
+   ],
+   "use": "Typewriter text reveals. An actual typewriter key. Retrigger per character at low level.",
+   "src": {
+    "pack": "344 Audio - Antique Typewriter",
+    "file": "COMType_Typewriter Space Key, Typewriter 05_344 Audio_Antiques - Typewriter.wav"
+   },
+   "oneshot": {
+    "max_s": 0.6,
+    "min_gap_s": 0.1,
+    "event": 0
+   }
+  },
+  {
+   "id": "page_change",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "page",
+    "turn",
+    "paper",
+    "slide",
+    "one-shot"
+   ],
+   "use": "Turning to a new page, slide or chapter — a real page turn, which is the literal cue and reads instantly.",
+   "src": {
+    "pack": "Cinematic Sound Design - Paper Foley",
+    "file": "Encyclopedia Glossy Page Turn Muted.wav"
+   },
+   "oneshot": {
+    "max_s": 0.8,
+    "min_gap_s": 0.3,
+    "event": -1
+   }
+  },
+  {
+   "id": "notify_soft",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "notify",
+    "message",
+    "arp",
+    "one-shot"
+   ],
+   "use": "A message or notification arriving on screen. A short bright pluck — kept whole, because the gesture is the sound.",
+   "src": {
+    "pack": "Cinematic Sound Design - User Interface",
+    "file": "Interface Plucks Happy.wav"
+   },
+   "oneshot": {
+    "max_s": 1.2,
+    "min_gap_s": 0.6,
+    "event": 0
+   }
+  },
+  {
+   "id": "success_chime",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "success",
+    "chime",
+    "kalimba",
+    "complete",
+    "one-shot"
+   ],
+   "use": "A step completing or a checkmark landing. Three ascending kalimba notes: tuned, warm, and over in under a second.",
+   "src": {
+    "pack": "CB_Sounddesign - Applicable Sounds - Organic UI and Building Games SFX",
+    "file": "UIMisc_Kalimba 3 Up_CB Sounddesign_APPlicable Sounds.wav"
+   },
+   "oneshot": {
+    "max_s": 1.2,
+    "min_gap_s": 0.6,
+    "event": 0
+   }
+  },
+  {
+   "id": "error_soft",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "error",
+    "deny",
+    "fail",
+    "one-shot"
+   ],
+   "use": "Something did not work. A muted deny — deliberately matter-of-fact, not a buzzer.",
+   "src": {
+    "pack": "Cinematic Sound Design - UI Interaction Elements",
+    "file": "Deny Muted.wav"
+   },
+   "oneshot": {
+    "max_s": 1.2,
+    "min_gap_s": 0.4,
+    "event": -1
+   }
+  },
+  {
+   "id": "glitch_data",
+   "category": "ui",
+   "tags": [
+    "glitch",
+    "corrupt",
+    "data",
+    "error",
+    "one-shot"
+   ],
+   "use": "Data corrupting, a feed dropping out, a system failing. The hard version of error_soft, for the beat where something breaks rather than merely refuses.",
+   "src": {
+    "pack": "The Noisery - Rich Glitch",
+    "file": "UIGlitch_Designed_Glitch_Corrupted_Data Error_The Noisery_Rich Glitch_06.wav"
+   },
+   "oneshot": {
+    "max_s": 5.5,
+    "min_gap_s": 1.5,
+    "event": 0
+   }
+  },
+  {
+   "id": "data_ticks",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "data",
+    "readout",
+    "stream",
+    "count-up",
+    "one-shot"
+   ],
+   "use": "Number count-ups and data streaming in. A continuous readout — fade it under narration rather than cutting it.",
+   "src": {
+    "pack": "Cinematic Sound Design - User Interface",
+    "file": "Readout Thin Long.wav"
+   },
+   "oneshot": {
+    "max_s": 4.5,
+    "min_gap_s": 1.5,
+    "event": 0
+   }
+  },
+  {
+   "id": "chart_reveal",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "chart",
+    "reveal",
+    "arp",
+    "figure",
+    "one-shot"
+   ],
+   "use": "A bar chart drawing in or a figure resolving. Time the last note of the arpeggio to the final frame of the animation.",
+   "src": {
+    "pack": "Cinematic Sound Design - System & UI Feedback Elements",
+    "file": "Interface Arp Reveal Down Long.wav"
+   },
+   "oneshot": {
+    "max_s": 2.0,
+    "min_gap_s": 0.6,
+    "event": 0
+   }
+  },
+  {
+   "id": "slide_transition",
+   "category": "ui",
+   "replaces": "generated",
+   "tags": [
+    "slide",
+    "sweep",
+    "infographic",
+    "panel",
+    "one-shot"
+   ],
+   "use": "A graph, panel or dashboard view sliding to the next state. Short, dry and made for infographics.",
+   "src": {
+    "pack": "Cinematic Sound Design - Ultra Transitions & Impacts",
+    "file": "Woosh Sweep Slide Infographics Basic.wav"
+   },
+   "oneshot": {
+    "max_s": 0.8,
+    "min_gap_s": 0.3,
+    "event": -1
+   }
+  },
+  {
+   "id": "dog_barks_indoors",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "barks",
+    "indoor",
+    "room"
+   ],
+   "use": "Several barks with a room around them. The indoor counterpart to dog_bark_twice.",
+   "src": {
+    "pack": "344 Audio - Dog Vocalisations Vol. 1",
+    "file": "ANMLDog_Dog Barks, Multiple, Indoors, Perspective,_344 Audio_Dog Vocalisations_02.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_settling",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "settling",
+    "grunt",
+    "movement"
+   ],
+   "use": "A dog shuffling and grunting as it lies down. Domestic, quiet, and very readable.",
+   "src": {
+    "pack": "344 Audio - Dog Vocalisations Vol. 1",
+    "file": "ANMLDog_Dog Shuffle, Grunt, Movement, Lying Down_344 Audio_Dog Vocalisations.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "frog_call",
+   "category": "animal",
+   "tags": [
+    "frog",
+    "call",
+    "amphibian",
+    "echo"
+   ],
+   "use": "One frog, with an echo on it. Wetland and pond subjects.",
+   "src": {
+    "pack": "Epic Stock Media - Synthesized Nature Loops and Sounds",
+    "file": "ANMLAmph_Animal Frog Echo Short Squished Frequency Formant 03_ESM_SNLS.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "aquatic_gurgle",
+   "category": "creature",
+   "tags": [
+    "aquatic",
+    "gurgle",
+    "creature",
+    "wet"
+   ],
+   "use": "A wet gurgling creature. Designed; underwater fiction.",
+   "src": {
+    "pack": "SoundBits - Vox Bestiae - Source Elements",
+    "file": "CREAAqua_Aquatic Creature Gurgling 2_SNDBTS_VB-SE.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "creature_inhale",
+   "category": "creature",
+   "tags": [
+    "inhale",
+    "breath",
+    "weak",
+    "creature"
+   ],
+   "use": "A weak screeching inhale. Small, and more frightening than a roar.",
+   "src": {
+    "pack": "Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets",
+    "file": "HMNBrth_Construction Kit Male Screeching Breath Inhale Weak Squeal 05_ESM_HC4.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "death_vocal",
+   "category": "creature",
+   "tags": [
+    "death",
+    "vocal",
+    "stuttered",
+    "creature"
+   ],
+   "use": "A stuttered death vocal. Strong material; fiction only.",
+   "src": {
+    "pack": "Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets",
+    "file": "VOXReac_Construction Kit Male Flutter Death Vocal Stuttered Long 05_ESM_HC4.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dinosaur_eating",
+   "category": "creature",
+   "tags": [
+    "dinosaur",
+    "eating",
+    "feeding",
+    "designed"
+   ],
+   "use": "Twenty seconds of a large designed animal feeding. Bed level — it runs under a shot.",
+   "src": {
+    "pack": "344 Audio - Dinosaurs Vol. 2",
+    "file": "ANMLRept_Dinosaur Eating Meat 01_344 Audio_Dinosaurs Vol 2.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "egg_hatching",
+   "category": "creature",
+   "tags": [
+    "egg",
+    "hatching",
+    "crack",
+    "designed"
+   ],
+   "use": "An egg cracking open.",
+   "src": {
+    "pack": "344 Audio - Dinosaurs Vol. 2",
+    "file": "ANMLRept_Dinosaur Egg Hatching 02_344 Audio_Dinosaurs Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ethereal_pain",
+   "category": "creature",
+   "tags": [
+    "ethereal",
+    "pain",
+    "entity",
+    "ghost"
+   ],
+   "use": "A grim, disembodied cry. Ghost material.",
+   "src": {
+    "pack": "SoundBits - Vox Bestiae - Source Elements",
+    "file": "CREAEthr_Ethereal Entity Grim Pain Long 4_SNDBTS_VB-SE.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "hatchling_call",
+   "category": "creature",
+   "tags": [
+    "hatchling",
+    "call",
+    "young",
+    "reptile"
+   ],
+   "use": "A small reptile hatchling calling. Designed — this is dinosaur material, not a wildlife recording.",
+   "src": {
+    "pack": "344 Audio - Dinosaurs Vol. 1",
+    "file": "ANMLRept_Hatchling Calling Out_344 Audio_Dinosaurs.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "herbivore_roar",
+   "category": "creature",
+   "tags": [
+    "dinosaur",
+    "roar",
+    "herbivore",
+    "long"
+   ],
+   "use": "A long, lower call from a large plant-eater. Less aggressive than trex_roar.",
+   "src": {
+    "pack": "344 Audio - Dinosaurs Vol. 2",
+    "file": "ANMLRept_Large Herbivore Roar 01_344 Audio_Dinosaurs Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "humanoid_exhale",
+   "category": "creature",
+   "tags": [
+    "humanoid",
+    "exhale",
+    "violent",
+    "short"
+   ],
+   "use": "A short violent exhale. Under half a second.",
+   "src": {
+    "pack": "SoundBits - Vox Bestiae - Source Elements",
+    "file": "CREAHmn_Violent Humanoid Creature Exhale Short 4_SNDBTS_VB-SE.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "insectoid_attack",
+   "category": "creature",
+   "tags": [
+    "insect",
+    "creature",
+    "tremble",
+    "attack"
+   ],
+   "use": "A trembling insectoid attack. Chittering rather than roaring.",
+   "src": {
+    "pack": "SoundBits - Vox Bestiae - Source Elements",
+    "file": "CREAInsc_Insectoid Creature Tremble Attack Long 1_SNDBTS_VB-SE.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "jumpscare_whisper",
+   "category": "creature",
+   "tags": [
+    "whisper",
+    "jumpscare",
+    "harsh",
+    "horror"
+   ],
+   "use": "An aggressive distorted whisper. A jump scare — use it once or not at all.",
+   "src": {
+    "pack": "Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit",
+    "file": "DSGNEthr_Jumpscare Vocal Aggressive Whisper Harsh Distortion 02_ESM_HALG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "orc_attack",
+   "category": "creature",
+   "tags": [
+    "orc",
+    "attack",
+    "humanoid",
+    "charged"
+   ],
+   "use": "A humanoid creature attacking. Fantasy.",
+   "src": {
+    "pack": "Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets",
+    "file": "CREAHmn_Designed Orc Male Attack Long Heavy Hit Charged Up 03_ESM_HC4.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "raptor_call",
+   "category": "creature",
+   "tags": [
+    "raptor",
+    "call",
+    "dinosaur",
+    "designed"
+   ],
+   "use": "A raptor. Designed; do not use it in a film that claims to know what one sounded like.",
+   "src": {
+    "pack": "344 Audio - Dinosaurs Vol. 1",
+    "file": "ANMLRept_Raptor Flair_344 Audio_Dinosaurs.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sea_beast_yell",
+   "category": "creature",
+   "tags": [
+    "beast",
+    "sea",
+    "pain",
+    "yell"
+   ],
+   "use": "A long pained yell from something large and aquatic.",
+   "src": {
+    "pack": "Epic Stock Media - Humanoid Creatures Vol 4 - Monstrous and Undead Creature Vocalization Sound Sets",
+    "file": "CREAMnstr_Designed Sea Beast Creature Pain Intense Yell Long 04_ESM_HC4.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tentacle_wobble",
+   "category": "creature",
+   "tags": [
+    "tentacle",
+    "modulated",
+    "abstract",
+    "designed"
+   ],
+   "use": "A modulated creature movement with no animal in it. Abstract enough for a graphic.",
+   "src": {
+    "pack": "Epic Stock Media - Anime Game",
+    "file": "DSGNMisc_Misc Monster Tentacle Modulated Creature Shadow Abstract Swept Wobble Lfo 02_ESM_AG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "trex_roar",
+   "category": "creature",
+   "tags": [
+    "dinosaur",
+    "roar",
+    "large",
+    "designed"
+   ],
+   "use": "The big dinosaur roar. Five seconds, and unmistakable.",
+   "src": {
+    "pack": "344 Audio - Dinosaurs Vol. 1",
+    "file": "ANMLRept_T Rex_344 Audio_Dinosaurs.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "werewolf_growl",
+   "category": "creature",
+   "tags": [
+    "werewolf",
+    "growl",
+    "menacing",
+    "monster"
+   ],
+   "use": "A menacing designed growl. Folklore and horror.",
+   "src": {
+    "pack": "Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit",
+    "file": "CREABeast_Creature Werewolf Growl Menacing Monstrous 06_ESM_HALG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "club_cheer_applause",
+   "category": "crowd",
+   "tags": [
+    "cheer",
+    "applause",
+    "club",
+    "celebration"
+   ],
+   "use": "Fifty people cheering and applauding in a small club, recorded in 5.1 and folded to stereo. Warmer and closer than applause_light.",
+   "src": {
+    "pack": "Sonik Sound Library - Spanish Crowds",
+    "file": "CRWDCheer_Small Club, 50 People, Crowd, Spanish, Cheering and Applause-Surround_KSL_KS015.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "crowd_dense_exterior_loop",
+   "category": "crowd",
+   "tags": [
+    "crowd",
+    "dense",
+    "exterior",
+    "walla",
+    "bed"
+   ],
+   "use": "A dense group of adults outdoors before a show. The busiest walla here — individual voices are audible.",
+   "src": {
+    "pack": "Sonik Sound Library - Spanish Wallas",
+    "file": "CRWDWalla_Crowd, Walla, Dense Immersive Group of Adults, After or Befor a Show, Exterior, Spanish-Stereo_KSL_KS014.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "school_playground_loop",
+   "category": "crowd",
+   "tags": [
+    "children",
+    "school",
+    "playground",
+    "walla",
+    "bed"
+   ],
+   "use": "Two and a half minutes of a school playground, looped to thirty seconds. Bigger and further off than playground_loop.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Crowds Walla and Everyday Ambiences",
+    "file": "CRWDChld_Walla Children Kids Daytime School Playing Laughing Playground 01_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "sports_match_loop",
+   "category": "crowd",
+   "tags": [
+    "sport",
+    "crowd",
+    "match",
+    "indoor",
+    "bed"
+   ],
+   "use": "An indoor volleyball match with its crowd. The bed for amateur and school sport.",
+   "src": {
+    "pack": "Sonic Bat - Volleyball Match Ambience",
+    "file": "SBvma_Feminine League Match 017.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "sports_match_regional_loop",
+   "category": "crowd",
+   "tags": [
+    "sport",
+    "crowd",
+    "regional",
+    "match",
+    "bed"
+   ],
+   "use": "A bigger regional match: more crowd, more room. Six and a half minutes of source, so the window had plenty to choose from.",
+   "src": {
+    "pack": "Sonic Bat - Volleyball Match Ambience",
+    "file": "SBvma_Masculine Regional Match 005.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "walla_nigerian_busy_loop",
+   "category": "crowd",
+   "tags": [
+    "walla",
+    "crowd",
+    "nigerian",
+    "busy",
+    "bed"
+   ],
+   "use": "The busier Nigerian walla: more voices, more movement.",
+   "src": {
+    "pack": "TheWorkRoom - Nigerian Walla",
+    "file": "NIG065.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "walla_nigerian_loop",
+   "category": "crowd",
+   "tags": [
+    "walla",
+    "crowd",
+    "nigerian",
+    "voices",
+    "bed"
+   ],
+   "use": "Crowd walla recorded in Nigeria. The library's wallas were British and Spanish until now; a film set somewhere should be able to sound like it.",
+   "src": {
+    "pack": "TheWorkRoom - Nigerian Walla",
+    "file": "NIG015.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "walla_nigerian_short",
+   "category": "crowd",
+   "tags": [
+    "walla",
+    "crowd",
+    "nigerian",
+    "short"
+   ],
+   "use": "The ten-second take from the same session, for a cutaway.",
+   "src": {
+    "pack": "TheWorkRoom - Nigerian Walla",
+    "file": "NIG053.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "walla_south_african_alt_loop",
+   "category": "crowd",
+   "tags": [
+    "walla",
+    "crowd",
+    "south-african",
+    "alternate",
+    "bed"
+   ],
+   "use": "A second South African take. Use it where the first has already been heard.",
+   "src": {
+    "pack": "TheWorkRoom - South African Walla",
+    "file": "SAW002.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "walla_south_african_loop",
+   "category": "crowd",
+   "tags": [
+    "walla",
+    "crowd",
+    "south-african",
+    "voices",
+    "bed"
+   ],
+   "use": "Crowd walla recorded in South Africa.",
+   "src": {
+    "pack": "TheWorkRoom - South African Walla",
+    "file": "SAV004.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "electric_buzz_loop",
+   "category": "drone",
+   "tags": [
+    "electric",
+    "buzz",
+    "arc",
+    "mains",
+    "bed"
+   ],
+   "use": "An electrical buzz. Shorter and harsher than electric_hum_loop — a fault rather than a floor.",
+   "src": {
+    "pack": "InMotionAudio - Arc",
+    "file": "ELECBuzz_Buzz27_InMotionAudio_Arc.wav"
+   },
+   "loop": {
+    "length_s": 6.0,
+    "crossfade_s": 1.0
+   }
+  },
+  {
+   "id": "electric_hum_loop",
+   "category": "drone",
+   "tags": [
+    "electricity",
+    "hum",
+    "lightbulb",
+    "mains",
+    "bed"
+   ],
+   "use": "Mains hum picked up off a lightbulb coil. The electrical layer under an interior — also the honest sound for a film about the grid.",
+   "src": {
+    "pack": "344 Audio - East Coast America Vol. 1",
+    "file": "AMBSubn_Electricity Hum, Lightbulb,  Coil Pickup 01_344 Audio_East Coast America.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "factory_roomtone_loop",
+   "category": "drone",
+   "tags": [
+    "factory",
+    "machinery",
+    "roomtone",
+    "vent",
+    "bed"
+   ],
+   "use": "A factory's room tone: heavy machinery, a vent, and a dark tonal floor. The industrial interior bed.",
+   "src": {
+    "pack": "Epic Stock Media - Strange Game Ambient Loops 3",
+    "file": "AMBRoom_Factory Loop Heavy Machinery Tonal Roomtone Dark Wind Vent_ESM_SGA3.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "fridge_hum_rhythmic_loop",
+   "category": "drone",
+   "tags": [
+    "fridge",
+    "hum",
+    "buzz",
+    "appliance",
+    "bed"
+   ],
+   "use": "An electric fridge with a rhythm in its buzz. Rougher than room_tone_hum_loop, and the rhythm is audible — use it where a kitchen or a shop is the subject.",
+   "src": {
+    "pack": "Jake Fielding - Fridge Hums Vol.2",
+    "file": "MACHAppl_Rhythmic Electric Fridge Hum, Buzz, Static,_Jake Fielding_Fridge Hums Pt2.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "industrial_dark_loop",
+   "category": "drone",
+   "tags": [
+    "industrial",
+    "dark",
+    "ambience",
+    "machinery",
+    "bed"
+   ],
+   "use": "A dark industrial bed. Between machine_hum_loop and drone_low_loop: mechanical, but with unease in it.",
+   "src": {
+    "pack": "Cinematic Sound Design - Sci-Fi Drones",
+    "file": "Dark Industrial Ambience.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "metal_bangs_loop",
+   "category": "drone",
+   "tags": [
+    "metal",
+    "bangs",
+    "doors",
+    "haunting",
+    "bed"
+   ],
+   "use": "Banging on metal doors, three minutes of it. Institutional, industrial or frightening depending on what you put it under.",
+   "src": {
+    "pack": "344 Audio - Haunting Ambiences Vol. 3",
+    "file": "METLImpt_Metal Bangs, Metal Hits, Banging On Doors_344 Audio_Haunting Ambiences Vol 3.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "metal_bowed_screech",
+   "category": "drone",
+   "tags": [
+    "metal",
+    "bowed",
+    "screech",
+    "tonal"
+   ],
+   "use": "Twenty seconds of bowed metal screeching into reverb. Tonal, dissonant, and effective under something going wrong.",
+   "src": {
+    "pack": "The Noisery - Moaning Metal",
+    "file": "DSGNTonl_Designed Metal Bowed Screech Tonal Reverb 7_The Noisery_Moaning Metal.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "metal_scrape_low",
+   "category": "drone",
+   "tags": [
+    "metal",
+    "scrape",
+    "low",
+    "lfe"
+   ],
+   "use": "A low metal scrape with real sub content. Check it on speakers that can reproduce it.",
+   "src": {
+    "pack": "The Noisery - Moaning Metal",
+    "file": "DSGNTonl_Metal Scrape Low Tonal LFE 4_The Noisery_Moaning Metal.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "noise_box_hit",
+   "category": "drone",
+   "tags": [
+    "noise",
+    "box",
+    "hit",
+    "eerie"
+   ],
+   "use": "A struck noise box, ringing for fifteen seconds. An eerie one-shot with a very long decay — give it room.",
+   "src": {
+    "pack": "InMotionAudio - Sinister Textures 4",
+    "file": "DSGNErie_NoiseBoxHit_10_InMotionAudio_SinisterTextures4.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "noise_box_hit_alt",
+   "category": "drone",
+   "tags": [
+    "noise",
+    "box",
+    "hit",
+    "eerie"
+   ],
+   "use": "The second noise-box hit. Alternate them so a repeated scare does not repeat exactly.",
+   "src": {
+    "pack": "InMotionAudio - Sinister Textures 4",
+    "file": "DSGNErie_NoiseBoxHit_36_InMotionAudio_SinisterTextures4.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "radio_static_loop",
+   "category": "drone",
+   "tags": [
+    "radio",
+    "static",
+    "hum",
+    "shortwave",
+    "bed"
+   ],
+   "use": "Ham-radio static, powered on and garbled. Communications, isolation and the history of broadcast.",
+   "src": {
+    "pack": "Epic Stock Media - Fake Advertisements and Radio Sound Effects Audio Construction Kit",
+    "file": "COMStatic_Radio Ham Loop Static Hum Active Powered On Garbled Noise 01_ESM_FA.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wood_hits_dark",
+   "category": "drone",
+   "tags": [
+    "wood",
+    "hits",
+    "dark",
+    "haunting"
+   ],
+   "use": "Heavy wooden hits in a dark space, the first forty-five seconds of a three-minute take. Not a loop: the hits are sparse enough that a wrap announces itself (63.7 dB event prominence when it was tried), which is the same reason the library has no ticking-clock bed. Lay it under a passage and fade it.",
+   "src": {
+    "pack": "344 Audio - Haunting Ambiences Vol. 3",
+    "file": "WOODImpt_Wooden Hit, Dark, Heavy Hit, Vampire's Prison_344 Audio_Haunting Ambiences Vol 3.wav"
+   },
+   "whole": {
+    "bed": true,
+    "max_s": 45.0
+   }
+  },
+  {
+   "id": "barber_chair_pump",
+   "category": "foley",
+   "tags": [
+    "chair",
+    "pump",
+    "barber",
+    "hydraulic"
+   ],
+   "use": "A barber's chair being pumped up. Trades, high streets and small business.",
+   "src": {
+    "pack": "344 Audio - Barbershop Vol. 1",
+    "file": "OBJFurn_Barber Chair, Foot Pump 4_344 Audio_Barbershop Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "board_pieces_reset",
+   "category": "foley",
+   "tags": [
+    "board",
+    "pieces",
+    "wood",
+    "reset"
+   ],
+   "use": "Wooden game pieces being reset. Small, organic and very readable as a table.",
+   "src": {
+    "pack": "Epic Stock Media - Board Game - Sound Set Kit for Tabletop and Digital Games",
+    "file": "GAMEBoard_Event Board Reset Organic Multiple Pieces Wood Small 02_ESM_BG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "book_page_turns_slow",
+   "category": "foley",
+   "tags": [
+    "book",
+    "page",
+    "turn",
+    "slow"
+   ],
+   "use": "Fourteen seconds of slow, deliberate page turns. Long enough to lay under a whole archive shot.",
+   "src": {
+    "pack": "344 Audio - Antique Books",
+    "file": "PAPRMisc_Antique Books Slow Page Turns 6_344 Audio_Antiques - Books.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "book_pages_flick",
+   "category": "foley",
+   "tags": [
+    "book",
+    "pages",
+    "flick",
+    "paper"
+   ],
+   "use": "Flicking through a book. Archives, research and libraries — the sound of someone looking for something.",
+   "src": {
+    "pack": "344 Audio - Antique Books",
+    "file": "PAPRMisc_Antique Books Flicking Through Pages 11_344 Audio_Antiques - Books.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "books_falling",
+   "category": "foley",
+   "tags": [
+    "books",
+    "falling",
+    "pile",
+    "collapse"
+   ],
+   "use": "A pile of books going over. A small disaster; also a comic beat.",
+   "src": {
+    "pack": "344 Audio - Antique Books",
+    "file": "PAPRMisc_Pile Of Antique Books Falling Over 8_344 Audio_Antiques - Books.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "broom_sweeping",
+   "category": "foley",
+   "tags": [
+    "broom",
+    "sweeping",
+    "floor",
+    "cleaning"
+   ],
+   "use": "Sweeping debris off a hard floor. Work, closing time, aftermath.",
+   "src": {
+    "pack": "344 Audio - Cinema Experience Vol. 1",
+    "file": "FOODMisc_Broom Sweeping Up Snacks On Hard Floor 2_344 Audio_CInema Experience.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "campfire_extinguished",
+   "category": "foley",
+   "tags": [
+    "campfire",
+    "water",
+    "extinguish",
+    "hiss"
+   ],
+   "use": "A fire put out with water from a bottle. Thirty seconds of hiss and steam — the end of an evening, and an unusually specific cue.",
+   "src": {
+    "pack": "Ivo Vicic - Campfire - Bonfire FX",
+    "file": "42 Campfire, Putting Out Fire, Water from Bottle, Variation, Close.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "carabiner_lock",
+   "category": "foley",
+   "tags": [
+    "carabiner",
+    "climbing",
+    "lock",
+    "metal"
+   ],
+   "use": "A carabiner gate screwed shut. Climbing, safety and rigging.",
+   "src": {
+    "pack": "344 Audio - Climbing Gear Foley Vol. 1",
+    "file": "EQUISprt_Climbing Gear, Carabiner, Screwing Lock 01_344 Audio_Climbing Gear Foley Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "carabiner_rope",
+   "category": "foley",
+   "tags": [
+    "carabiner",
+    "rope",
+    "climbing",
+    "metal"
+   ],
+   "use": "A carabiner flicked along a rope.",
+   "src": {
+    "pack": "344 Audio - Climbing Gear Foley Vol. 1",
+    "file": "EQUISprt_Climbing Gear, Flicking Carabiner On Rope_344 Audio_Climbing Gear Foley Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "card_flip",
+   "category": "foley",
+   "tags": [
+    "card",
+    "flip",
+    "toss",
+    "paper"
+   ],
+   "use": "One card flipped. Retrigger it for a hand.",
+   "src": {
+    "pack": "Epic Stock Media - Board Game - Sound Set Kit for Tabletop and Digital Games",
+    "file": "PAPRHndl_Game Play Cards Dry Show Flip Toss Disgard Near 12_ESM_BG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "card_shuffler",
+   "category": "foley",
+   "tags": [
+    "cards",
+    "shuffler",
+    "machine",
+    "casino"
+   ],
+   "use": "An automatic card shuffler. Gambling, chance and randomness.",
+   "src": {
+    "pack": "344 Audio - Casino Cards Vol. 1",
+    "file": "GAMECas_Automatic Shuffler, Shuffling 1_344 Audio_Casino Cards Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cards_dealing",
+   "category": "foley",
+   "tags": [
+    "cards",
+    "dealing",
+    "table",
+    "casino"
+   ],
+   "use": "Cards being dealt. Seven seconds — enough for a whole hand.",
+   "src": {
+    "pack": "344 Audio - Casino Cards Vol. 1",
+    "file": "GAMECas_Dealing 3_344 Audio_Casino Cards Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cards_pick_up",
+   "category": "foley",
+   "tags": [
+    "cards",
+    "pick",
+    "hand",
+    "short"
+   ],
+   "use": "Picking cards up off a table. A third of a second.",
+   "src": {
+    "pack": "344 Audio - Casino Cards Vol. 1",
+    "file": "GAMECas_Pick Up Multiple Cards At Once 5_344 Audio_Casino Cards Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "case_close",
+   "category": "foley",
+   "tags": [
+    "case",
+    "close",
+    "latch",
+    "instrument"
+   ],
+   "use": "An instrument case closed. Music, travel, packing up.",
+   "src": {
+    "pack": "InMotionAudio - Instrument Case",
+    "file": "OBJLug_Case_Closed06_InMotionAudio_InstrumentCase.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "case_handle",
+   "category": "foley",
+   "tags": [
+    "case",
+    "handle",
+    "movement",
+    "carry"
+   ],
+   "use": "A case handle moving. Small and specific.",
+   "src": {
+    "pack": "InMotionAudio - Instrument Case",
+    "file": "OBJLug_Handle_Movement15_InMotionAudio_InstrumentCase.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "case_set_down",
+   "category": "foley",
+   "tags": [
+    "case",
+    "concrete",
+    "set",
+    "down"
+   ],
+   "use": "A case put down on concrete. An arrival, or the end of a journey.",
+   "src": {
+    "pack": "InMotionAudio - Instrument Case",
+    "file": "OBJLug_CaseDown_Concrete12_InMotionAudio_InstrumentCase.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cladding_scratch",
+   "category": "foley",
+   "tags": [
+    "scratch",
+    "cladding",
+    "surface",
+    "rough"
+   ],
+   "use": "A longer scrape across the same surface.",
+   "src": {
+    "pack": "InMotionAudio - Sinister Textures 5",
+    "file": "GOREMisc_Cladding_Scratch06_InMotionAudio_SinisterTextures5.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "clock_ticking",
+   "category": "foley",
+   "tags": [
+    "clock",
+    "tick",
+    "time",
+    "antique"
+   ],
+   "use": "A minute of an antique clock. Deliberately **not** loopable: a metronomic event inside a loop announces the wrap on every cycle, which is why the library has tick_light as a single tick. Lay this under a passage and fade it.",
+   "src": {
+    "pack": "344 Audio - Antique Clocks",
+    "file": "CLOCKTick_You're Running Late _344 Audio_Antique Clocks.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "cloth_bag_flip",
+   "category": "foley",
+   "tags": [
+    "cloth",
+    "bag",
+    "canvas",
+    "flip"
+   ],
+   "use": "A canvas bag flipped open. Light textile movement.",
+   "src": {
+    "pack": "Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms",
+    "file": "CLOTHFlp_Action Inventory Open Flip Cloth Canvas Bag Slide Light 02_ESM_FG2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cloth_movement",
+   "category": "foley",
+   "tags": [
+    "cloth",
+    "movement",
+    "fabric",
+    "clothing"
+   ],
+   "use": "Cloth moving. The generic clothing-move cue for a person shifting on camera.",
+   "src": {
+    "pack": "InMotionAudio - Foley T-Shirt",
+    "file": "FOLYClth_ClothMovement24_InMotionAudio_FoleyT-Shirt.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cloth_movement_short",
+   "category": "foley",
+   "tags": [
+    "cloth",
+    "movement",
+    "short",
+    "fabric"
+   ],
+   "use": "The shorter cloth move. Retrigger it under a gesture.",
+   "src": {
+    "pack": "InMotionAudio - Foley T-Shirt",
+    "file": "FOLYClth_ClothMovement29_InMotionAudio_FoleyT-Shirt.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cloth_pat",
+   "category": "foley",
+   "tags": [
+    "cloth",
+    "pat",
+    "clothing",
+    "tap"
+   ],
+   "use": "A single pat on clothing.",
+   "src": {
+    "pack": "InMotionAudio - Foley T-Shirt",
+    "file": "FOLYClth_SinglePats04_InMotionAudio_FoleyT-Shirt.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "coin_flip",
+   "category": "foley",
+   "tags": [
+    "coin",
+    "flip",
+    "toss",
+    "chance"
+   ],
+   "use": "A single coin flip. Chance, decision and money.",
+   "src": {
+    "pack": "Cinematic Sound Design - Hybrid Game & UI Elements",
+    "file": "Foley Coin Flip Single Fast.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cracker_grab",
+   "category": "foley",
+   "tags": [
+    "cracker",
+    "grab",
+    "paper",
+    "festive"
+   ],
+   "use": "Picking up a cracker. Small paper handling.",
+   "src": {
+    "pack": "InMotionAudio - Christmas Cracker",
+    "file": "OBJMisc_Cracker_Grab02_InMotionAudio_ChristmasCracker.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cracker_pull",
+   "category": "foley",
+   "tags": [
+    "cracker",
+    "pull",
+    "bang",
+    "festive"
+   ],
+   "use": "A Christmas cracker pulled, with the bang. Half a second.",
+   "src": {
+    "pack": "InMotionAudio - Christmas Cracker",
+    "file": "OBJMisc_CrackerPull_WithBang_Effected_03_InMotionAudio_ChristmasCracker.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dry_ice_squeak",
+   "category": "foley",
+   "tags": [
+    "ice",
+    "squeak",
+    "metal",
+    "small"
+   ],
+   "use": "The small squeak from the same technique. It reads as a mouse, which is what its author called it.",
+   "src": {
+    "pack": "Epic Stock Media - HD Game Materials",
+    "file": "ICEFric_Dry Ice Squeak Metal Animal Mouse Imitation Short 07_ESM_HDGM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dry_ice_squeal",
+   "category": "foley",
+   "tags": [
+    "ice",
+    "squeal",
+    "metal",
+    "dissonant"
+   ],
+   "use": "Dry ice squealing against metal. Unpleasant on purpose — a texture for tension.",
+   "src": {
+    "pack": "Epic Stock Media - HD Game Materials",
+    "file": "ICEFric_Dry Ice High Metal Squeal Groan Bright Squeak Dissonant Short 13_ESM_HDGM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "flip_flops_walking",
+   "category": "foley",
+   "tags": [
+    "footsteps",
+    "flipflops",
+    "walking",
+    "warm"
+   ],
+   "use": "Forty seconds of someone walking in flip-flops. Hot climates, beaches, home — footwear does a lot of characterisation.",
+   "src": {
+    "pack": "TheWorkRoom - Flip Flops",
+    "file": "FFG002.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "flip_flops_walking_alt",
+   "category": "foley",
+   "tags": [
+    "footsteps",
+    "flipflops",
+    "walking",
+    "alternate"
+   ],
+   "use": "A second flip-flop walk at a different pace.",
+   "src": {
+    "pack": "TheWorkRoom - Flip Flops",
+    "file": "FFW003.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "game_piece_drop",
+   "category": "foley",
+   "tags": [
+    "piece",
+    "drop",
+    "bounce",
+    "wood"
+   ],
+   "use": "A single piece falling and bouncing. A fifth of a second.",
+   "src": {
+    "pack": "Epic Stock Media - Board Game - Sound Set Kit for Tabletop and Digital Games",
+    "file": "GAMEBoard_Game Play Piece Action Organic Connect Dots Fall Bounce 04_ESM_BG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "hair_brushing",
+   "category": "foley",
+   "tags": [
+    "brush",
+    "hair",
+    "bristles",
+    "grooming"
+   ],
+   "use": "Brushing hair with a plastic brush. Close and domestic.",
+   "src": {
+    "pack": "344 Audio - Barbershop Vol. 2",
+    "file": "OBJMisc_Hair Brush, Plastic Bristles, Brushing Hair_344 Audio_Barbershop Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "hair_dryer",
+   "category": "foley",
+   "tags": [
+    "hairdryer",
+    "motor",
+    "salon",
+    "appliance"
+   ],
+   "use": "On, idle and off in one twelve-second take. A whole gesture rather than a loop.",
+   "src": {
+    "pack": "344 Audio - Barbershop Vol. 1",
+    "file": "OBJMisc_Hair Dryer, On, Idle, Off 4_344 Audio_Barbershop Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "hair_trimmer",
+   "category": "foley",
+   "tags": [
+    "trimmer",
+    "clippers",
+    "motor",
+    "salon"
+   ],
+   "use": "Forty-five seconds of clippers: on, idle, off. Bed level because it runs under a shot rather than landing on a frame.",
+   "src": {
+    "pack": "344 Audio - Barbershop Vol. 2",
+    "file": "OBJMisc_Wahl Sterling Trimmer, On, Idle, Off_344 Audio_Barbershop Vol 2.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "ice_crack",
+   "category": "foley",
+   "tags": [
+    "ice",
+    "crack",
+    "snap",
+    "cold"
+   ],
+   "use": "Ice snapping. The sharp one — a cue that lands on a frame.",
+   "src": {
+    "pack": "Alexander Kopeikin - 100 kHz Designed Ice",
+    "file": "ice, crack, ice block snapping-001.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ice_crushed",
+   "category": "foley",
+   "tags": [
+    "ice",
+    "crushed",
+    "block",
+    "cold"
+   ],
+   "use": "A block of ice crushed. Recorded at 100 kHz, so it holds up to pitching down.",
+   "src": {
+    "pack": "Alexander Kopeikin - 100 kHz Designed Ice",
+    "file": "ice, block of ice crushed, heavy-015.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ice_fissure",
+   "category": "foley",
+   "tags": [
+    "ice",
+    "fissure",
+    "cracking",
+    "fast"
+   ],
+   "use": "A fissure running fast through ice. Five seconds, and it moves.",
+   "src": {
+    "pack": "Alexander Kopeikin - 100 kHz Designed Ice",
+    "file": "ice, surface cracking, fissure, fast, hard-003.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "latch_thunk",
+   "category": "foley",
+   "tags": [
+    "latch",
+    "mechanism",
+    "click",
+    "thunk"
+   ],
+   "use": "A deep latch closing. The mechanical full stop.",
+   "src": {
+    "pack": "Epic Stock Media - HD Lock And Mechanism Sound Design Kit",
+    "file": "MECHLtch_Click Deep Mechanism Latch Button Nearfield Thunk 02_ESM_HDLM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "laundry_basket",
+   "category": "foley",
+   "tags": [
+    "laundry",
+    "basket",
+    "plastic",
+    "domestic"
+   ],
+   "use": "A washing basket patted and moved. Domestic routine.",
+   "src": {
+    "pack": "InMotionAudio - Washing Basket Foley",
+    "file": "FOLYMisc_WashingBasket_Pats&Movement12_InMotionAudio_WashingBasketFoley.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "laundry_basket_short",
+   "category": "foley",
+   "tags": [
+    "laundry",
+    "basket",
+    "pat",
+    "domestic"
+   ],
+   "use": "The short version of laundry_basket. For a single move.",
+   "src": {
+    "pack": "InMotionAudio - Washing Basket Foley",
+    "file": "FOLYMisc_WashingBasket_Pats&Movement43_InMotionAudio_WashingBasketFoley.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "lock_tinkering",
+   "category": "foley",
+   "tags": [
+    "lock",
+    "tinkering",
+    "metal",
+    "mechanism"
+   ],
+   "use": "Fiddling with an old lock. Four seconds of it — use it where a single click would be too neat.",
+   "src": {
+    "pack": "344 Audio - Antique Small Metals",
+    "file": "METLMvmt_  Tinkering Antique Lock_344 Audio_Antique Small Metals.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "measuring_tape",
+   "category": "foley",
+   "tags": [
+    "tape",
+    "measure",
+    "metal",
+    "tool"
+   ],
+   "use": "An antique measuring tape. Craft, making and precision.",
+   "src": {
+    "pack": "344 Audio - Antique Small Metals",
+    "file": "METLMvmt_  Antique Measuring Tape_344 Audio_Antique Small Metals.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "metal_box_drag",
+   "category": "foley",
+   "tags": [
+    "metal",
+    "drag",
+    "scrape",
+    "heavy"
+   ],
+   "use": "Sixty-seven seconds of a large metal box dragged across ground, recorded with a geophone. Heavy industry, and a striking texture in its own right.",
+   "src": {
+    "pack": "344 Audio - Extreme Winds Vol. 1",
+    "file": "METLFric_Large Metal Box, Drag, Geofon_344 Audio_Extreme Winds Vol 1.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "metal_lid_open",
+   "category": "foley",
+   "tags": [
+    "metal",
+    "lid",
+    "open",
+    "tool"
+   ],
+   "use": "A metal lid coming off a blowtorch. Small, mechanical, specific.",
+   "src": {
+    "pack": "344 Audio - Antique Small Metals",
+    "file": "METLMvmt_  Opening Lid Of Antique Blowtorch_344 Audio_Antique Small Metals.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "metal_tap",
+   "category": "foley",
+   "tags": [
+    "metal",
+    "tap",
+    "impact",
+    "small"
+   ],
+   "use": "A light metallic tap. Half a second.",
+   "src": {
+    "pack": "Epic Stock Media - HD Game Materials",
+    "file": "METLImpt_Metal Old File Impact Tap Against Tire Iron Metallic Hit 01_ESM_HDGM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_mount",
+   "category": "foley",
+   "tags": [
+    "motorcycle",
+    "mount",
+    "helmet",
+    "gear"
+   ],
+   "use": "Getting on a bike and putting a helmet on. Fourteen seconds of preparation — the human half of a riding sequence.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Honda",
+    "file": "MOVEMisc_Honda CB750 Hornet Get On Bike Helmet On 02_SNDBTS_MCH.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "nail_scratch",
+   "category": "foley",
+   "tags": [
+    "nail",
+    "scratch",
+    "cladding",
+    "unpleasant"
+   ],
+   "use": "A nail dragged down cladding. Deliberately unpleasant.",
+   "src": {
+    "pack": "InMotionAudio - Sinister Textures 5",
+    "file": "GOREMisc_Cladding_NailScratch19_InMotionAudio_SinisterTextures5.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "newspaper_rummage",
+   "category": "foley",
+   "tags": [
+    "newspaper",
+    "rummage",
+    "paper",
+    "press"
+   ],
+   "use": "Rummaging through a newspaper. Journalism, archives and the press.",
+   "src": {
+    "pack": "Cinematic Sound Design - Paper Foley",
+    "file": "Newspaper Static Foley Rummage.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "paper_a4_turn",
+   "category": "foley",
+   "tags": [
+    "paper",
+    "a4",
+    "turn",
+    "office"
+   ],
+   "use": "An A4 sheet turned, with a rattle and a tail. Office and print subjects — cleaner than page_change.",
+   "src": {
+    "pack": "Cinematic Sound Design - Paper Foley",
+    "file": "A4 Printing Paper Rattle Page Turn Tail.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "paper_hat_movement",
+   "category": "foley",
+   "tags": [
+    "paper",
+    "hat",
+    "movement",
+    "festive"
+   ],
+   "use": "Thin paper being handled. A party hat, and a good generic light-paper move.",
+   "src": {
+    "pack": "InMotionAudio - Christmas Cracker",
+    "file": "OBJMisc_CrackerHatMovement16_InMotionAudio_ChristmasCracker.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pipe_on_concrete",
+   "category": "foley",
+   "tags": [
+    "pipe",
+    "metal",
+    "concrete",
+    "tap"
+   ],
+   "use": "A metal pipe against concrete. Small, hard and industrial.",
+   "src": {
+    "pack": "InMotionAudio - Sinister Textures 5",
+    "file": "GOREMisc_Concrete_MetalPipe02_InMotionAudio_SinisterTextures5.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "punch_light",
+   "category": "foley",
+   "tags": [
+    "punch",
+    "light",
+    "hit",
+    "quick"
+   ],
+   "use": "A light quick punch. The small version of punch_fast.",
+   "src": {
+    "pack": "Epic Stock Media - Anime Game",
+    "file": "FGHTImpt_Combat Punch Impact Light Hit Delay Crunchy Vintage Quick Smack 05_ESM_AG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "punches_body",
+   "category": "foley",
+   "tags": [
+    "punch",
+    "body",
+    "impact",
+    "fight"
+   ],
+   "use": "Four body punches in a row. Sport and conflict; retrigger single hits from punch_fast instead if you need them placed.",
+   "src": {
+    "pack": "344 Audio - Cinematic Fight Vol. 1",
+    "file": "FGHTImpt_4 x Punch, Body 02_344 Audio_Cinematic Fight Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "radio_mode_wheel",
+   "category": "foley",
+   "tags": [
+    "radio",
+    "wheel",
+    "mode",
+    "switch"
+   ],
+   "use": "The mode wheel on a vintage radio.",
+   "src": {
+    "pack": "Sonic Bat - Vintage Radio",
+    "file": "SBvr_Mode Select Wheel 006.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "radio_power_button",
+   "category": "foley",
+   "tags": [
+    "radio",
+    "power",
+    "button",
+    "switch"
+   ],
+   "use": "The power button. A mechanical on, not a beep.",
+   "src": {
+    "pack": "Sonic Bat - Vintage Radio",
+    "file": "SBvr_Power Button 003.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "radio_tuning_sweep",
+   "category": "foley",
+   "tags": [
+    "radio",
+    "tuning",
+    "sweep",
+    "static"
+   ],
+   "use": "A hundred seconds of an AM radio being tuned across the band. Broadcast history, searching, and a striking transition if you cut a few seconds out of it.",
+   "src": {
+    "pack": "Sonic Bat - Vintage Radio",
+    "file": "SBvr_AM EQ Sweeping 002.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "sax_case_place",
+   "category": "foley",
+   "tags": [
+    "saxophone",
+    "case",
+    "place",
+    "instrument"
+   ],
+   "use": "A saxophone placed in its case. Music and rehearsal.",
+   "src": {
+    "pack": "InMotionAudio - Saxophone",
+    "file": "MUSCInst_Case_SaxPlace09_InMotionAudio_Saxophone.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sax_handling",
+   "category": "foley",
+   "tags": [
+    "saxophone",
+    "handling",
+    "grab",
+    "instrument"
+   ],
+   "use": "Picking up and releasing a saxophone. The handling, not the note.",
+   "src": {
+    "pack": "InMotionAudio - Saxophone",
+    "file": "MUSCInst_Grabandrelease30_InMotionAudio_Saxophone.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sax_key_press",
+   "category": "foley",
+   "tags": [
+    "saxophone",
+    "key",
+    "press",
+    "mechanism"
+   ],
+   "use": "A single saxophone key. Mechanical, quiet, and the detail a close-up wants.",
+   "src": {
+    "pack": "InMotionAudio - Saxophone",
+    "file": "MUSCInst_KeyPress64_InMotionAudio_Saxophone.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "scissor_snips",
+   "category": "foley",
+   "tags": [
+    "scissors",
+    "snip",
+    "cut",
+    "barber"
+   ],
+   "use": "Scissor snips. The literal cue for cutting, editing or trimming anything.",
+   "src": {
+    "pack": "344 Audio - Barbershop Vol. 2",
+    "file": "OBJMisc_Hair Scissor, Snips 4_344 Audio_Barbershop Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "scratchcard_movement",
+   "category": "foley",
+   "tags": [
+    "scratchcard",
+    "card",
+    "movement",
+    "paper"
+   ],
+   "use": "A scratch card handled. Gambling, chance and small stakes.",
+   "src": {
+    "pack": "InMotionAudio - Scratch Card",
+    "file": "OBJMisc_ScratchCard_CardMovement_09_InMotionAudio_ScratchCard.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "scratchcard_scratch",
+   "category": "foley",
+   "tags": [
+    "scratchcard",
+    "scratch",
+    "coin",
+    "reveal"
+   ],
+   "use": "Scratching a card with a coin. The literal sound of a reveal.",
+   "src": {
+    "pack": "InMotionAudio - Scratch Card",
+    "file": "OBJMisc_ScratchCard_CoinTapScratch_01_InMotionAudio_ScratchCard.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "scratchcard_wipe",
+   "category": "foley",
+   "tags": [
+    "scratchcard",
+    "wipe",
+    "surface",
+    "clear"
+   ],
+   "use": "Wiping the surface clear. Pairs with scratchcard_scratch.",
+   "src": {
+    "pack": "InMotionAudio - Scratch Card",
+    "file": "OBJMisc_ScratchCard_SurfaceWipe_04_InMotionAudio_ScratchCard.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "seat_creak",
+   "category": "foley",
+   "tags": [
+    "seat",
+    "creak",
+    "sitting",
+    "cinema"
+   ],
+   "use": "Someone sitting down on a creaky seat. Theatres, waiting rooms, old buildings.",
+   "src": {
+    "pack": "344 Audio - Cinema Experience Vol. 1",
+    "file": "FOLYProp_Sitting Down, Creaky Seat, Squeaks 3_344 Audio_CInema Experience.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sleigh_pulling",
+   "category": "foley",
+   "tags": [
+    "sleigh",
+    "bells",
+    "pulling",
+    "winter"
+   ],
+   "use": "A sleigh being pulled, bells moving with it. Winter and Christmas subjects.",
+   "src": {
+    "pack": "344 Audio - Christmas Vol. 1",
+    "file": "MAGMisc_Sleigh Movement, Pulling_344 Audio_Christmas.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "spray_bottle",
+   "category": "foley",
+   "tags": [
+    "spray",
+    "bottle",
+    "mist",
+    "water"
+   ],
+   "use": "One spray. Cleaning, gardening, salons.",
+   "src": {
+    "pack": "344 Audio - Barbershop Vol. 1",
+    "file": "OBJMisc_Spray Bottle, Spray 1_344 Audio_Barbershop Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "spring_wire_clatter",
+   "category": "foley",
+   "tags": [
+    "spring",
+    "wire",
+    "clatter",
+    "metal"
+   ],
+   "use": "Eleven seconds of spring wire flicked and clattering. A long, odd metallic texture.",
+   "src": {
+    "pack": "Epic Stock Media - HD Lock And Mechanism Sound Design Kit",
+    "file": "METLTonl_Item Spring Wire Impact Flick Top Clatter Light Tap Roll Handling Short 01_ESM_HDLM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "stairwell_door",
+   "category": "foley",
+   "tags": [
+    "door",
+    "stairwell",
+    "metal",
+    "close"
+   ],
+   "use": "A heavy stairwell door. Institutional buildings — hospitals, hotels, offices.",
+   "src": {
+    "pack": "InMotionAudio - USA Hotel",
+    "file": "DOORMetl_StairWellDoor01_InMotionAudio_USAHotel.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "suitcase_lock",
+   "category": "foley",
+   "tags": [
+    "suitcase",
+    "lock",
+    "latch",
+    "luggage"
+   ],
+   "use": "An old case being locked. A closing beat.",
+   "src": {
+    "pack": "344 Audio - Antique Luggage",
+    "file": "OBJLug_Suitcase Being Locked, Antique Suitcase 1_344 Audio_Antiques - Luggage.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "suitcase_open_close",
+   "category": "foley",
+   "tags": [
+    "suitcase",
+    "open",
+    "close",
+    "luggage"
+   ],
+   "use": "Opening and closing in one take, so you can cut either half out of it.",
+   "src": {
+    "pack": "344 Audio - Antique Luggage",
+    "file": "OBJLug_Suitcase Opening and Closing, Antique Suitcase_344 Audio_Antiques - Luggage_01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "suitcase_rummage",
+   "category": "foley",
+   "tags": [
+    "suitcase",
+    "rummage",
+    "search",
+    "luggage"
+   ],
+   "use": "Searching through an old suitcase. History, migration and personal-archive subjects.",
+   "src": {
+    "pack": "344 Audio - Antique Luggage",
+    "file": "OBJLug_Rumaging Through Suitcase, Antique Suitcase_344 Audio_Antiques - Luggage_02.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tape_measure_retract",
+   "category": "foley",
+   "tags": [
+    "tape",
+    "measure",
+    "retract",
+    "spring"
+   ],
+   "use": "A tape measure snapping back. Making, building and measurement.",
+   "src": {
+    "pack": "Epic Stock Media - HD Lock And Mechanism Sound Design Kit",
+    "file": "MECHMisc_Tool Tape Measure Pull Retract Spring Slide Spin Long 07_ESM_HDLM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tarot_shuffle",
+   "category": "foley",
+   "tags": [
+    "cards",
+    "tarot",
+    "shuffle",
+    "deck"
+   ],
+   "use": "A heavy deck shuffled. Slower and thicker than card_shuffler.",
+   "src": {
+    "pack": "Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms",
+    "file": "GAMEMisc_Source Card Tarot Deck Generic Neutral Dry Heavy Shuffle 01_ESM_FG2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "telephone_earpiece_drop",
+   "category": "foley",
+   "tags": [
+    "telephone",
+    "earpiece",
+    "drop",
+    "antique"
+   ],
+   "use": "An old telephone earpiece falling. The sound of a call ending badly.",
+   "src": {
+    "pack": "344 Audio - Antique Telephone",
+    "file": "COMTelph_Antique Telephone Ear Piece Falling Down_344 Audio_Antiques - Telephone_03.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "telephone_earpiece_handle",
+   "category": "foley",
+   "tags": [
+    "telephone",
+    "earpiece",
+    "handle",
+    "antique"
+   ],
+   "use": "Picking up and putting down an antique handset.",
+   "src": {
+    "pack": "344 Audio - Antique Telephone",
+    "file": "COMTelph_Antique Telephone Pick Up & Drop Ear Piece_344 Audio_Antiques - Telephone_05.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "telephone_rotary_dial",
+   "category": "foley",
+   "tags": [
+    "telephone",
+    "rotary",
+    "dial",
+    "antique"
+   ],
+   "use": "One digit dialled on a rotary telephone. Archive and mid-century subjects; retrigger it per digit.",
+   "src": {
+    "pack": "344 Audio - Antique Telephone",
+    "file": "COMTelph_Antique Telephone Rotary Dial Number  9_344 Audio_Antiques - Telephone.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "toilet_flush",
+   "category": "foley",
+   "tags": [
+    "toilet",
+    "flush",
+    "plumbing",
+    "water"
+   ],
+   "use": "A toilet flushing. Domestic and public interiors; also the plainest available water-plumbing cue.",
+   "src": {
+    "pack": "InMotionAudio - USA Hotel",
+    "file": "WATRPlmb_ToiletFlush01_InMotionAudio_USAHotel.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "typewriter_carriage",
+   "category": "foley",
+   "tags": [
+    "typewriter",
+    "carriage",
+    "return",
+    "antique"
+   ],
+   "use": "The carriage moving. Pairs with type_key, which is the key itself.",
+   "src": {
+    "pack": "344 Audio - Antique Typewriter",
+    "file": "COMType_Typewriter Carriage Movement, Typewriter_344 Audio_Antiques - Typewriter_01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "typewriter_paper",
+   "category": "foley",
+   "tags": [
+    "typewriter",
+    "paper",
+    "feed",
+    "antique"
+   ],
+   "use": "Paper going in and out of a typewriter.",
+   "src": {
+    "pack": "344 Audio - Antique Typewriter",
+    "file": "COMType_Typewriter Paper Movements, Typewriter 04_344 Audio_Antiques - Typewriter.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "velcro_rip",
+   "category": "foley",
+   "tags": [
+    "velcro",
+    "rip",
+    "fastener",
+    "quick"
+   ],
+   "use": "A velcro rip. Sport, medical and equipment handling.",
+   "src": {
+    "pack": "InMotionAudio - Velcro",
+    "file": "OBJTape_VelcroRip29_InMotionAudio_Velcro.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "velcro_squeeze",
+   "category": "foley",
+   "tags": [
+    "velcro",
+    "squeeze",
+    "fastener",
+    "slow"
+   ],
+   "use": "Velcro pressed and squeezed slowly. The long version.",
+   "src": {
+    "pack": "InMotionAudio - Velcro",
+    "file": "OBJTape_VelcroSqueeze01_InMotionAudio_Velcro.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wire_car_alt_loop",
+   "category": "foley",
+   "tags": [
+    "toy",
+    "wire",
+    "car",
+    "rolling",
+    "bed"
+   ],
+   "use": "A second wire-car take.",
+   "src": {
+    "pack": "TheWorkRoom - Wire Cars",
+    "file": "WIR028.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wire_car_loop",
+   "category": "foley",
+   "tags": [
+    "toy",
+    "wire",
+    "car",
+    "craft",
+    "bed"
+   ],
+   "use": "A wire car — the handmade toy — being pushed. Craft, childhood and improvisation; a specific and unusual texture.",
+   "src": {
+    "pack": "TheWorkRoom - Wire Cars",
+    "file": "WIR006.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wood_roll",
+   "category": "foley",
+   "tags": [
+    "wood",
+    "roll",
+    "shaker",
+    "grainy"
+   ],
+   "use": "Wood rolling across a table. Grainy and close.",
+   "src": {
+    "pack": "Epic Stock Media - HD Game Materials",
+    "file": "WOODFric_Wood Shaker Microphone Head Roll Table Alternate Grainy 05_ESM_HDGM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wrapping_paper",
+   "category": "foley",
+   "tags": [
+    "paper",
+    "wrapping",
+    "present",
+    "tearing"
+   ],
+   "use": "Opening a wrapped present. Gift, retail and festive sequences.",
+   "src": {
+    "pack": "344 Audio - Christmas Vol. 1",
+    "file": "MAGMisc_Wrapping Paper, Opening Present 1_344 Audio_Christmas.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "breath_annoyed",
+   "category": "human",
+   "tags": [
+    "breath",
+    "annoyed",
+    "grunt",
+    "female"
+   ],
+   "use": "An annoyed breath. A reaction with no words in it.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character British Female Detective",
+    "file": "HMNBrth_British Detective Breathing Vocal Female Idle Annoyed Breath Grunt_ESM_AAAGCBFD.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_male_alt",
+   "category": "human",
+   "tags": [
+    "cough",
+    "male",
+    "single",
+    "throat"
+   ],
+   "use": "A third male cough, drier than cough_man. Useful when a scene needs two different people coughing.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character Police Officer",
+    "file": "HMNCough_Police Officer Cough Vocal Male 11.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "crying_female",
+   "category": "human",
+   "tags": [
+    "crying",
+    "grief",
+    "distress",
+    "female"
+   ],
+   "use": "Four seconds of crying. Performed; handle it the way you would handle any depiction of grief.",
+   "src": {
+    "pack": "SoundBits - Vox Hominis - Human Effort Voices",
+    "file": "VOXCry_Crying Female 04 05_SNDBTS_VH.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "gasp_male",
+   "category": "human",
+   "tags": [
+    "gasp",
+    "shock",
+    "alert",
+    "male"
+   ],
+   "use": "A male gasp of shock. The counterpart to gasp_female.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character Police Officer",
+    "file": "HMNBrth_Police Officer Gasp Vocal Male Shocked Alert 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "laugh_female",
+   "category": "human",
+   "tags": [
+    "laugh",
+    "female",
+    "short",
+    "amusement"
+   ],
+   "use": "A short female laugh. The counterpart to laugh_male.",
+   "src": {
+    "pack": "SoundBits - Vox Hominis - Human Effort Voices",
+    "file": "VOXLaff_Laughing Female 02 06_SNDBTS_VH.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "laugh_male",
+   "category": "human",
+   "tags": [
+    "laugh",
+    "male",
+    "short",
+    "amusement"
+   ],
+   "use": "A short male laugh. The library had children and crowds laughing but no single adult.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character Police Officer",
+    "file": "VOXLaff_Police Officer Laugh Vocal Male 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pain_grunt_female",
+   "category": "human",
+   "tags": [
+    "pain",
+    "grunt",
+    "breath",
+    "female"
+   ],
+   "use": "A pained grunt. Injury, effort or collapse.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character British Female Detective",
+    "file": "VOXReac_British Detective Pain Vocal Female Dying High Grunt Breath_ESM_AAAGCBFD.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "panting_male",
+   "category": "human",
+   "tags": [
+    "panting",
+    "breath",
+    "exertion",
+    "male"
+   ],
+   "use": "Nine seconds of heavy panting. Exertion, sport, fear — the longest human effort here.",
+   "src": {
+    "pack": "SoundBits - Vox Hominis - Human Effort Voices",
+    "file": "HMNBrth_Panting Male 02 04_SNDBTS_VH.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "struggle_choking",
+   "category": "human",
+   "tags": [
+    "struggle",
+    "choking",
+    "strain",
+    "effort"
+   ],
+   "use": "Nine seconds of strained struggle. Strong material; it is performed, and it will read as violence.",
+   "src": {
+    "pack": "344 Audio - Cinematic Fight Vol. 1",
+    "file": "FGHTGrab_Choking, Tension 03_344 Audio_Cinematic Fight Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "weeping_female",
+   "category": "human",
+   "tags": [
+    "weeping",
+    "crying",
+    "grief",
+    "female"
+   ],
+   "use": "Low-energy weeping. Performed; strong material and easy to misuse.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character British Female Detective",
+    "file": "VOXCry_British Detective Crying Vocal Female Low Energy Weep_ESM_AAAGCBFD.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "whistle_human",
+   "category": "human",
+   "tags": [
+    "whistle",
+    "human",
+    "tune",
+    "casual"
+   ],
+   "use": "Someone whistling. Casual, human and instantly readable as a person off camera.",
+   "src": {
+    "pack": "SoundBits - Vox Hominis - Human Effort Voices",
+    "file": "WHSTHmn_Whistle Male 06 09_SNDBTS_VH.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_fast",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "drop",
+    "fast"
+   ],
+   "use": "A fast bass drop. The short one, for a cut that falls away.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 1",
+    "file": "DSGNBass_Bass Drop & Downer Fast 16_344 Audio_Bass Drops & Downers.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_fast_alt",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "drop",
+    "fast"
+   ],
+   "use": "A second fast downer with a different shape. Alternate it with bass_downer_fast so a run of them does not repeat.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 2",
+    "file": "DSGNBass_Bass Drop & Downer Fast 12_344 Audio_Bass Drops & Downers Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_medium",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "drop",
+    "medium"
+   ],
+   "use": "The middle bass downer. The default of the six.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 1",
+    "file": "DSGNBass_Bass Drop & Downer Medium 04_344 Audio_Bass Drops & Downers.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_medium_alt",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "drop",
+    "medium"
+   ],
+   "use": "The alternate medium downer.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 2",
+    "file": "DSGNBass_Bass Drop & Downer Medium 15_344 Audio_Bass Drops & Downers Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_rattling",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "rattle",
+    "texture"
+   ],
+   "use": "A downer with rattle in it. Rougher and more mechanical than the clean drops.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 3",
+    "file": "DSGNBass_Rattling Downer 3_344 Audio_Bass Drops and Downers Vol 3.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_slow",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "drop",
+    "slow"
+   ],
+   "use": "The slow one: four and a half seconds of descent. For a section ending, not a cut.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 2",
+    "file": "DSGNBass_Bass Drop & Downer Slow 07_344 Audio_Bass Drops & Downers Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_downer_tonal",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "downer",
+    "tonal",
+    "reverb"
+   ],
+   "use": "A tonal downer with a long reverb tail. It has a pitch, so check it against any music underneath.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 3",
+    "file": "DSGNBass_Tone Downer (Reverb)_344 Audio_Bass Drops and Downers Vol 3.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_drop_jump_start",
+   "category": "impact",
+   "tags": [
+    "bass",
+    "drop",
+    "start",
+    "jolt"
+   ],
+   "use": "A drop that starts rather than ends — it jolts into place. Use it on an opening cut.",
+   "src": {
+    "pack": "344 Audio - Bass Drops & Downers Vol. 3",
+    "file": "DSGNBass_Jump Start Drop 3_344 Audio_Bass Drops and Downers Vol 3.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "braam_creeping",
+   "category": "impact",
+   "tags": [
+    "braam",
+    "slow",
+    "dark",
+    "creeping"
+   ],
+   "use": "A slow, creeping braam. Between braam_soft and braam_horn in weight, and darker than both.",
+   "src": {
+    "pack": "Cinematic Sound Design - Ultra Transitions & Impacts",
+    "file": "Transition Braam Slow Dark Creepy.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "braam_huge",
+   "category": "impact",
+   "tags": [
+    "braam",
+    "horn",
+    "epic",
+    "huge"
+   ],
+   "use": "The largest horn braam in the library: fourteen seconds, dark and wide. One per film, and only for the title.",
+   "src": {
+    "pack": "Jake Fielding - Cinematic Horn Braams",
+    "file": "DSGNBram____Cinematic Horn Braam, Epic, Cinematic, Dark, Instrument, Huge-67.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_airy_impact",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "cartoon",
+    "airy",
+    "creak"
+   ],
+   "use": "A light impact with creaks in it. Softer than any of the cinematic hits.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon Impacts",
+    "file": "Cartoon Airy Impact Creaks.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "explosion_small",
+   "category": "impact",
+   "tags": [
+    "explosion",
+    "blast",
+    "small",
+    "crunchy"
+   ],
+   "use": "A small designed blast. Cartoonish rather than documentary.",
+   "src": {
+    "pack": "Epic Stock Media - Anime Game",
+    "file": "EXPLDsgn_Explosion Small Blast Enemy Death Crunchy Boom Cartoon Noisy Crash Impact Delay 03_ESM_AG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "gore_smash",
+   "category": "impact",
+   "tags": [
+    "gore",
+    "smash",
+    "heavy",
+    "transient"
+   ],
+   "use": "A heavy wet smash. Designed horror; unpleasant, and meant to be.",
+   "src": {
+    "pack": "Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit",
+    "file": "GORESplt_Gore Designed Transient Heavy Impact Smash 01_ESM_HALG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ice_shatter",
+   "category": "impact",
+   "tags": [
+    "ice",
+    "shatter",
+    "freeze",
+    "break"
+   ],
+   "use": "A freeze-and-shatter. Two and a half seconds, and it breaks in the middle.",
+   "src": {
+    "pack": "Epic Stock Media - Tower Defense Game",
+    "file": "ICEBrk_Skill Freeze Whoosh Break Impact Layered Movement Shatter 03_ESM_TDG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_chord",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "chord",
+    "reverb",
+    "tonal"
+   ],
+   "use": "An impact with a chord in it. Tonal — check it against any music underneath.",
+   "src": {
+    "pack": "Cinematic Sound Design - Ultra Transitions & Impacts",
+    "file": "Impact Hit Rapid Chord Reverb.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_electric",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "electric",
+    "tonal",
+    "glitch"
+   ],
+   "use": "An electric impact with movement in it. For a graphic that arrives with a charge.",
+   "src": {
+    "pack": "Epic Stock Media - Elemental Mutation Whooshes and Impacts",
+    "file": "ELECMisc_Impact Electric Tonal Deep Movement Motion Hiss Glitch 01_ESM_EMWI.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_submerge",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "water",
+    "submerge",
+    "bubble"
+   ],
+   "use": "Something going under water. Weight plus bubbles in two seconds.",
+   "src": {
+    "pack": "Epic Stock Media - Elemental Mutation Whooshes and Impacts",
+    "file": "WATRImpt_Impact Water Deep Submerge Bubble Drown Ship Hit 05_ESM_EMWI.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "splat_small",
+   "category": "impact",
+   "tags": [
+    "splat",
+    "squelch",
+    "wet",
+    "small"
+   ],
+   "use": "A small wet splat. A third of a second.",
+   "src": {
+    "pack": "Epic Stock Media - Tower Defense Game",
+    "file": "WOODImpt_Hit Blood Spill Splat Wood Impact Light Hit Squelch Small Thump 03_ESM_TDG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "trailer_boom_a",
+   "category": "impact",
+   "tags": [
+    "boom",
+    "trailer",
+    "deep",
+    "tail"
+   ],
+   "use": "A trailer boom with a long tail. The sibling of impact_cinematic from the same library.",
+   "src": {
+    "pack": "Federico Soler - Effective Trailer Booms Vol. 2",
+    "file": "EffectiveTrailer_Booms_Vol2_075.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "trailer_boom_b",
+   "category": "impact",
+   "tags": [
+    "boom",
+    "trailer",
+    "deep",
+    "alternate"
+   ],
+   "use": "The second boom. Alternate them across a film so no two act breaks sound the same.",
+   "src": {
+    "pack": "Federico Soler - Effective Trailer Booms Vol. 2",
+    "file": "EffectiveTrailer_Booms_Vol2_214.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "water_impact_scifi",
+   "category": "impact",
+   "tags": [
+    "water",
+    "impact",
+    "bubble",
+    "designed"
+   ],
+   "use": "A designed liquid hit. Synthetic — for a graphic, not for a river.",
+   "src": {
+    "pack": "344 Audio - Elemental Palette Designed Vol. 1",
+    "file": "WATRMisc_Water, Liquid Impact, Bubble, Sci Fi, Hit 04_344 Audio_Elemental Palette Designed Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "music_box_a",
+   "category": "instrument",
+   "tags": [
+    "music",
+    "box",
+    "melody",
+    "nostalgia"
+   ],
+   "use": "A music-box phrase. Childhood, memory and the passing of time — it carries all three whether you want them or not.",
+   "src": {
+    "pack": "Sonic Bat - Music Boxes",
+    "file": "SBmb_Music Box A 013.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "music_box_b",
+   "category": "instrument",
+   "tags": [
+    "music",
+    "box",
+    "melody",
+    "nostalgia"
+   ],
+   "use": "A second music box with a different tune.",
+   "src": {
+    "pack": "Sonic Bat - Music Boxes",
+    "file": "SBmb_Music Box B 028.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "music_box_c",
+   "category": "instrument",
+   "tags": [
+    "music",
+    "box",
+    "melody",
+    "nostalgia"
+   ],
+   "use": "A third. Rotate the three so a recurring motif does not repeat exactly.",
+   "src": {
+    "pack": "Sonic Bat - Music Boxes",
+    "file": "SBmb_Music Box C 059.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "music_box_wind_up",
+   "category": "instrument",
+   "tags": [
+    "music",
+    "box",
+    "winding",
+    "mechanism"
+   ],
+   "use": "The mechanism being wound. Use it before one of the melodies.",
+   "src": {
+    "pack": "Sonic Bat - Music Boxes",
+    "file": "SBmb_Music Box C Wind Up 006.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "christmas_bells_magic",
+   "category": "magic",
+   "tags": [
+    "bells",
+    "christmas",
+    "sparkle",
+    "festive"
+   ],
+   "use": "Designed sleigh bells with a shimmer on them. Festive, and openly synthetic.",
+   "src": {
+    "pack": "344 Audio - Christmas Vol. 1",
+    "file": "MAGMisc_Magic Christmas Bells 2_344 Audio_Christmas.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "death_whistle",
+   "category": "magic",
+   "tags": [
+    "whistle",
+    "aztec",
+    "ritual",
+    "dry"
+   ],
+   "use": "The dry whistle at pitch. The cleanest of the three, and the one to use if the film explains what it is.",
+   "src": {
+    "pack": "InMotionAudio - The Death Whistle",
+    "file": "CREAEthr_Aztec Death Whistle DryPitch12_IMA_Death Whistle Samples.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "death_whistle_distorted",
+   "category": "magic",
+   "tags": [
+    "whistle",
+    "aztec",
+    "distorted",
+    "scream"
+   ],
+   "use": "An Aztec death whistle with distortion on it. It sounds like a scream, which is what it was made to do.",
+   "src": {
+    "pack": "InMotionAudio - The Death Whistle",
+    "file": "CREAEthr_Aztec Death Whistle Distortion_02_IMA_Death Whistle Samples.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "death_whistle_loop",
+   "category": "magic",
+   "tags": [
+    "whistle",
+    "aztec",
+    "drone",
+    "ritual",
+    "bed"
+   ],
+   "use": "The death whistle held as a drone. Ritual, folklore and dread — a real instrument, not a synthesiser.",
+   "src": {
+    "pack": "InMotionAudio - The Death Whistle",
+    "file": "CREAEthr_Aztec Death Whistle Drone_05_IMA_Death Whistle Samples.wav"
+   },
+   "loop": {
+    "length_s": 12.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "evil_spell_loop",
+   "category": "magic",
+   "tags": [
+    "spell",
+    "evil",
+    "ambience",
+    "dark",
+    "bed"
+   ],
+   "use": "A designed malevolent ambience. Folklore, horror and myth; it is a composition, so keep music off it.",
+   "src": {
+    "pack": "344 Audio - Ghostly Presences Vol. 1",
+    "file": "AMBDsgn_Evil Spell Ambience_344 Audio_Ghostly Presences.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "magic_astonishment",
+   "category": "magic",
+   "tags": [
+    "magic",
+    "energy",
+    "wonder",
+    "swell"
+   ],
+   "use": "Nineteen seconds of rising designed energy. For a reveal that is meant to feel impossible.",
+   "src": {
+    "pack": "Alexander Kopeikin - Emotion and Magic",
+    "file": "magic, energy flow, astonishment-001.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "magic_creation",
+   "category": "magic",
+   "tags": [
+    "magic",
+    "creation",
+    "sparkle",
+    "build"
+   ],
+   "use": "Something being conjured into existence. Three seconds, bright.",
+   "src": {
+    "pack": "CB_Sounddesign - Applicable Sounds - Organic UI and Building Games SFX",
+    "file": "GAMEMisc_Magic Creation 23_CB Sounddesign_APPlicable Sounds.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "magic_flow_loop",
+   "category": "magic",
+   "tags": [
+    "magic",
+    "energy",
+    "flow",
+    "ethereal",
+    "bed"
+   ],
+   "use": "Continuous designed energy flow. A bed for a dream, a memory or a passage that has left the real world.",
+   "src": {
+    "pack": "Alexander Kopeikin - Emotion and Magic",
+    "file": "magic, energy flow, astral travel-015.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "magic_onslaught",
+   "category": "magic",
+   "tags": [
+    "magic",
+    "evil",
+    "gesture",
+    "onslaught"
+   ],
+   "use": "A designed malevolent gesture, thirty-eight seconds long. It arrives and builds — treat it as a cue, not a texture.",
+   "src": {
+    "pack": "Alexander Kopeikin - Emotion and Magic",
+    "file": "magic, action gesture, evil presence, onslaught-004.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "magic_tension_loop",
+   "category": "magic",
+   "tags": [
+    "magic",
+    "tension",
+    "drone",
+    "dark",
+    "bed"
+   ],
+   "use": "A spellbound tension drone. Where drone_low_loop is neutral, this one is telling you something is wrong.",
+   "src": {
+    "pack": "Alexander Kopeikin - Emotion and Magic",
+    "file": "magic, drone, tension, spellbound, evanescence-002.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "shimmer_bells_loop",
+   "category": "magic",
+   "tags": [
+    "shimmer",
+    "bells",
+    "metal",
+    "taps",
+    "bed"
+   ],
+   "use": "Small bells and metal taps, shimmering. Delicate, and a rare thing: a magical bed that is not dark.",
+   "src": {
+    "pack": "Epic Stock Media - Strange Game Ambient Loops 3",
+    "file": "MAGShim_Shimmer Loop Small Bell Metal Taps_ESM_SGA3.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "spell_light",
+   "category": "magic",
+   "tags": [
+    "spell",
+    "light",
+    "enchantment",
+    "bright"
+   ],
+   "use": "A bright enchantment. Five seconds of tonal shimmer.",
+   "src": {
+    "pack": "Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms",
+    "file": "MAGAngl_Magic Light Spell Enchantment Potion Effect Tonal Bright 03_ESM_FG2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bar_interior_loop",
+   "category": "place",
+   "tags": [
+    "bar",
+    "restaurant",
+    "walla",
+    "interior",
+    "bed"
+   ],
+   "use": "Ten minutes of a bar interior, looped to thirty seconds. Calmer than pub_walla_busy_loop and easier to sit under speech.",
+   "src": {
+    "pack": "Sonic Bat - Bars & Restaurants Ambience",
+    "file": "SBbra_Bar E 001.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "cauldron_fire_loop",
+   "category": "place",
+   "tags": [
+    "fire",
+    "crackling",
+    "popping",
+    "hearth",
+    "bed"
+   ],
+   "use": "Fire crackling and popping, close. Busier than fireplace_loop — more pops per second, which suits a cooking fire or a forge.",
+   "src": {
+    "pack": "344 Audio - Haunting Ambiences Vol. 5",
+    "file": "FIRECrkl_Fire Crackling, Popping, Witch's Cauldron_344 Audio_Haunting Ambiences Vol 5.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "church_bells_far_loop",
+   "category": "place",
+   "tags": [
+    "bells",
+    "church",
+    "distant",
+    "rural",
+    "bed"
+   ],
+   "use": "The same bells from a hillside, with spring countryside around them. The one to use under narration — distance turns the bells into landscape.",
+   "src": {
+    "pack": "Ivo Vicic - Church Bells",
+    "file": "25 Church Bells, Far Distance, Rural Soundscape Distant, Hills Ridge, Spring 02.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "church_bells_near_loop",
+   "category": "place",
+   "tags": [
+    "bells",
+    "church",
+    "tower",
+    "village",
+    "bed"
+   ],
+   "use": "Three bells rung from inside the tower. Close and loud; the bells are the subject, so expect to hear them recur.",
+   "src": {
+    "pack": "Ivo Vicic - Church Bells",
+    "file": "04 Church Bells, Near Distance, In Church Tower-3 Different Bell 02.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "city_nightlife_loop",
+   "category": "place",
+   "tags": [
+    "city",
+    "nightlife",
+    "street",
+    "walla",
+    "bed"
+   ],
+   "use": "A city street at night: voices and traffic, no music. The evening counterpart to city_day_loop.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Urban Life Exteriors",
+    "file": "AMBUrbn_City Nightlife Ext Street In Reutersplatz German Walla Traffic 01_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "city_soft_loop",
+   "category": "place",
+   "tags": [
+    "city",
+    "traffic",
+    "soft",
+    "birds",
+    "bed"
+   ],
+   "use": "A city with the traffic soft and birds still audible, recorded in 5.1 and folded to stereo. The gentlest urban bed here.",
+   "src": {
+    "pack": "Sonik Sound Library - Urban Life",
+    "file": "AMBUrbn_Ambience, City, Madrid, Spain, Soft Traffic and Human Activity, Some Birds-Surround_KSL_KS016.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "construction_street_loop",
+   "category": "place",
+   "tags": [
+    "construction",
+    "jackhammer",
+    "street",
+    "machinery",
+    "bed"
+   ],
+   "use": "Heavy street construction. Infrastructure, housing and urban-change subjects.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Urban Life Exteriors",
+    "file": "AMBCnst_Baltimore Construction Streetside Heavy Machinery And Jakchammers 01_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "cruise_ship_loop",
+   "category": "place",
+   "tags": [
+    "cruise",
+    "ship",
+    "walla",
+    "leisure",
+    "bed"
+   ],
+   "use": "Distant adults and children on a cruise ship. Holiday, tourism and leisure industry.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Crowds Walla and Everyday Ambiences",
+    "file": "AMBPubl_Cruise Ship Walla Distant Adults Children Laughing Screaming 4_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "dinner_party_loop",
+   "category": "place",
+   "tags": [
+    "dinner",
+    "party",
+    "terrace",
+    "walla",
+    "bed"
+   ],
+   "use": "A dinner party on a terrace, recorded in 7.1.2 and folded to stereo. Glasses, voices and a toast. Warmer and more domestic than crowd_murmur_loop.",
+   "src": {
+    "pack": "Sonik Sound Library - Spanish Wallas",
+    "file": "CRWDWalla_Dinner Party Crowd in Terrace, Walla, Toast with Pomada, Mixed Group of Adults, Men and Women, Spanish, Catalan Language, Menorcan Language-Atmos_KSL_KS014.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "downtown_traffic_loop",
+   "category": "place",
+   "tags": [
+    "downtown",
+    "traffic",
+    "construction",
+    "walla",
+    "bed"
+   ],
+   "use": "A working downtown: traffic, distant machinery and voices. Busier than city_day_loop and more American in character.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Basic Transportation Sounds",
+    "file": "AMBTraf_Downtown Construction Traffic Light Walla 03 Distant Beep_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "factory_hall_loop",
+   "category": "place",
+   "tags": [
+    "factory",
+    "industrial",
+    "machines",
+    "voices",
+    "bed"
+   ],
+   "use": "A busy factory hall with an alarm and voices in it. Where factory_roomtone_loop is the empty building, this one has people working in it.",
+   "src": {
+    "pack": "Victor Ermakov - Industrial Ambiences - Ship Repair Factory",
+    "file": "AMBInd_Factory Hall Busy Alarm Machines Voices_CW.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "film_crew_walla_loop",
+   "category": "place",
+   "tags": [
+    "work",
+    "crew",
+    "warehouse",
+    "walla",
+    "bed"
+   ],
+   "use": "Thirty people working in a warehouse: voices, ladders, construction. The bed for a workplace where something is being built.",
+   "src": {
+    "pack": "Sonik Sound Library - Spanish Crowds",
+    "file": "CRWDWalla_Crowd, Walla, Movement, 30 People Working Film Crew, Preparing a Movie Set in a Warehouse, Spanish Hum of Voice, Decor Mount, Ladders, Warning Alarm, Light Contruction-Stereo_KSL_KS015.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "fire_burn_loop",
+   "category": "place",
+   "tags": [
+    "fire",
+    "burning",
+    "crackle",
+    "flame",
+    "bed"
+   ],
+   "use": "A tight fire-crackle loop. Short window, so it repeats often — keep it low or use cauldron_fire_loop for a long hold.",
+   "src": {
+    "pack": "Epic Stock Media - Synthesized Nature Loops and Sounds",
+    "file": "FIREBurn_Loop Elements Fire Crackling Crunchy Flame Burn 03_ESM_SNLS.wav"
+   },
+   "loop": {
+    "length_s": 8.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "fireworks_dense_loop",
+   "category": "place",
+   "tags": [
+    "fireworks",
+    "explosions",
+    "whistles",
+    "celebration",
+    "bed"
+   ],
+   "use": "Dense fireworks with whistles. A display in progress; the events are constant enough to hold a loop.",
+   "src": {
+    "pack": "Ivo Vicic - Fireworks FX",
+    "file": "02 Fireworks_ explosions_dense_whistles.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "fireworks_distant_loop",
+   "category": "place",
+   "tags": [
+    "fireworks",
+    "distant",
+    "celebration",
+    "night",
+    "bed"
+   ],
+   "use": "Fireworks heard from far off. Almost weather — a soft irregular thud with no crowd in it.",
+   "src": {
+    "pack": "Sonic Bat - Fireworks Ambience",
+    "file": "SBfa_Distant Fireworks 005.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "fireworks_loop",
+   "category": "place",
+   "tags": [
+    "fireworks",
+    "display",
+    "celebration",
+    "bed"
+   ],
+   "use": "The middle-distance display: closer than fireworks_distant_loop, calmer than fireworks_dense_loop.",
+   "src": {
+    "pack": "Sonic Bat - Fireworks Ambience",
+    "file": "SBfa_Fireworks 001.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "fireworks_near",
+   "category": "place",
+   "tags": [
+    "fireworks",
+    "explosions",
+    "near",
+    "powerful"
+   ],
+   "use": "Powerful explosions in a row, close. Twenty-four seconds — a burst rather than a bed.",
+   "src": {
+    "pack": "Ivo Vicic - Fireworks FX",
+    "file": "13 Fireworks_powerful explosions_multiples in a row_near.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "glacial_lake_loop",
+   "category": "place",
+   "tags": [
+    "lake",
+    "waves",
+    "glacial",
+    "rock",
+    "bed"
+   ],
+   "use": "Small waves on rock slabs at a glacial lake. Recorded in quad and folded to stereo. Cold, still water — the counterpart to lake_shore_loop with mountains behind it.",
+   "src": {
+    "pack": "Just Sound Effects - Highlands of Norway",
+    "file": "WATRLap_Small Waves sloshing onto Rock Slabs at huge Glacial Lake _JSE_HoN_Quad.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "ice_field_loop",
+   "category": "place",
+   "tags": [
+    "ice",
+    "drift",
+    "glacier",
+    "arctic",
+    "bed"
+   ],
+   "use": "An ice field cracking and drifting, recorded wide. The bed for polar, glacial and climate subjects, and one of the few sounds here that cannot be faked.",
+   "src": {
+    "pack": "Alexander Kopeikin - 100 kHz Designed Ice",
+    "file": "ice, movement, ice drift, ice field cracking up, initial, wide-001.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jungle_night_loop",
+   "category": "place",
+   "tags": [
+    "jungle",
+    "night",
+    "humid",
+    "insects",
+    "bed"
+   ],
+   "use": "Synthesised jungle night: birds and bug chirps. Its author calls it synthesised, so do not present it as a field recording.",
+   "src": {
+    "pack": "Epic Stock Media - Synthesized Nature Loops and Sounds",
+    "file": "AMBTrop_Loop Ambience Jungle Night Humid Birds Bug Chirps 01_ESM_SNLS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "metro_hall_loop",
+   "category": "place",
+   "tags": [
+    "metro",
+    "station",
+    "hall",
+    "footsteps",
+    "bed"
+   ],
+   "use": "A metro entrance hall: door dings, walla, footsteps. Between station_hall_loop and bus_station_loop in scale.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Crowds Walla and Everyday Ambiences",
+    "file": "AMBPubl_Metro Station Entrance Hall Dings Walla Footsteps 01 Women Shopping_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "paintball_match_loop",
+   "category": "place",
+   "tags": [
+    "paintball",
+    "shots",
+    "match",
+    "sport",
+    "bed"
+   ],
+   "use": "A paintball firefight at close range. Sport, training and anything that needs shots without a weapon library.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Crowds Walla and Everyday Ambiences",
+    "file": "AMBWar_Paintball Match Firefight Shots Walla Nearfield Full 05_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "pebble_beach_loop",
+   "category": "place",
+   "tags": [
+    "waves",
+    "pebble",
+    "beach",
+    "coast",
+    "bed"
+   ],
+   "use": "Medium waves on a pebble beach. The stones are the difference: this is a Northern European coast, not a sandy one.",
+   "src": {
+    "pack": "Just Sound Effects - Rocky Coast of Norway",
+    "file": "WATRWave_Medium Waves at Pebble Beach_JSE_RCoN_Stereo.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "plane_interior_loop",
+   "category": "place",
+   "tags": [
+    "aircraft",
+    "interior",
+    "cruise",
+    "cabin",
+    "bed"
+   ],
+   "use": "Inside a small plane at cruise. The bed for aviation, travel and anything shot in the air.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Basic Transportation Sounds",
+    "file": "AEROInt_Airplane Interior Small Plane Cruise Altitude Calm Flight 01_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "pub_walla_busy_loop",
+   "category": "place",
+   "tags": [
+    "pub",
+    "bar",
+    "walla",
+    "crowd",
+    "bed"
+   ],
+   "use": "A busier pub than pub_walla_loop, from the same library. Use it where the room should feel full.",
+   "src": {
+    "pack": "Jake Fielding - British Walla and Crowd",
+    "file": "CRWDWalla_Pub Walla, Crowd, Bar, _Jake Fielding_British Walla and Crowd_14.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "swimming_pool_break_loop",
+   "category": "place",
+   "tags": [
+    "pool",
+    "swimming",
+    "break",
+    "leisure",
+    "bed"
+   ],
+   "use": "The same pool during a break — quieter, and closer to a public swimming session.",
+   "src": {
+    "pack": "Sonic Bat - Swimming Pool Ambience",
+    "file": "SBspa_Water Polo Masculine League Break 001.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "swimming_pool_loop",
+   "category": "place",
+   "tags": [
+    "pool",
+    "swimming",
+    "water",
+    "sport",
+    "bed"
+   ],
+   "use": "An indoor pool during a match presentation: water, tiled reverb and a crowd. Sport, leisure and public buildings.",
+   "src": {
+    "pack": "Sonic Bat - Swimming Pool Ambience",
+    "file": "SBspa_Water Polo Feminine League Match Presentation 001.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "town_street_loop",
+   "category": "place",
+   "tags": [
+    "town",
+    "street",
+    "daytime",
+    "traffic",
+    "bed"
+   ],
+   "use": "A big-town street in daylight: distant traffic, a brush cutter, people. Smaller than a city and busier than a village.",
+   "src": {
+    "pack": "Sonik Sound Library - Urban Life",
+    "file": "AMBTown_Ambience, Big Town, Streets, Valdemoro, Spain, Daytime, Brush Cutter, Far Traffica, Airplanes, People Activity, Spanish Voices-Stereo_KSL_KS016.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "traffic_passing",
+   "category": "place",
+   "tags": [
+    "traffic",
+    "cars",
+    "passing",
+    "road"
+   ],
+   "use": "Eighteen seconds of cars passing. A roadside cutaway where a full city bed would be too much.",
+   "src": {
+    "pack": "SoundBits - Pass-By - Trains, Trucks & Cars 2",
+    "file": "AMBTraf_Traffic Multiple Cars Passing By 25_SNDBTS_PB-TTC2.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "train_interior_busy_loop",
+   "category": "place",
+   "tags": [
+    "train",
+    "interior",
+    "busy",
+    "passengers",
+    "bed"
+   ],
+   "use": "The busier carriage: more passengers, more movement. Keep it under narration rather than beside it.",
+   "src": {
+    "pack": "InMotionAudio - The Commute",
+    "file": "AMBTran_TrainInterior12_InMotionAudio_UKTrainInteriorAmbience.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "train_interior_loop",
+   "category": "place",
+   "tags": [
+    "train",
+    "interior",
+    "carriage",
+    "travel",
+    "bed"
+   ],
+   "use": "Inside a UK train carriage. The bed for a journey, a commute or an interview on the move.",
+   "src": {
+    "pack": "InMotionAudio - The Commute",
+    "file": "AMBTran_TrainInterior09_InMotionAudio_UKTrainInteriorAmbience.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "train_platform_loop",
+   "category": "place",
+   "tags": [
+    "train",
+    "platform",
+    "station",
+    "whistle",
+    "bed"
+   ],
+   "use": "A German railway platform with a whistle in it. Outdoor rail, where train_station_loop is the concourse.",
+   "src": {
+    "pack": "The Noisery - Transit Tunes - The German Train Collection",
+    "file": "AMBTran_Ambience Platform Bahnhof Train Station Whistle_The Noisery_Transit Tunes_ The German Train Collection.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "alien_alert_swell",
+   "category": "scifi",
+   "tags": [
+    "alert",
+    "alien",
+    "swell",
+    "strange"
+   ],
+   "use": "A six-second alert that swells into something strange. Science fiction rather than an interface.",
+   "src": {
+    "pack": "Epic Stock Media - Halloween Game - Haunted House and Horror Audio Scare Kit",
+    "file": "UIAlert_Alert Designed Transition Swell Creature Strange Alien Layered 01_ESM_HALG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "electric_arc",
+   "category": "scifi",
+   "tags": [
+    "electric",
+    "arc",
+    "spark",
+    "discharge"
+   ],
+   "use": "A designed electrical arc. One second of discharge.",
+   "src": {
+    "pack": "InMotionAudio - Arc",
+    "file": "ELECArc_ArcDesign15_InMotionAudio_Arc.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "electric_arc_powerup",
+   "category": "scifi",
+   "tags": [
+    "electric",
+    "arc",
+    "powerup",
+    "charge"
+   ],
+   "use": "An arc charging up over seven seconds. For something coming online.",
+   "src": {
+    "pack": "InMotionAudio - Arc",
+    "file": "ELECArc_ArcPowerUpDesign04_InMotionAudio_Arc.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "emf_thermometer",
+   "category": "scifi",
+   "tags": [
+    "emf",
+    "electromagnetic",
+    "device",
+    "noise"
+   ],
+   "use": "The electromagnetic field of a thermometer, recorded directly. Not what the device sounds like — what it radiates. A texture for anything about invisible signals.",
+   "src": {
+    "pack": "InMotionAudio - Medical Thermometer",
+    "file": "ELECEmf_Thermometer02_InMotionAudio_MedicalThermometer.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "glitch_tones_loop",
+   "category": "scifi",
+   "tags": [
+    "glitch",
+    "screech",
+    "tones",
+    "noise",
+    "bed"
+   ],
+   "use": "Glitched screeching tones. A system failing over a long passage — glitch_data is the single event.",
+   "src": {
+    "pack": "Cinematic Sound Design - Sci-Fi Drones",
+    "file": "Psycho Glitched Screechy Tones Noise.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jet_encounter_loop",
+   "category": "scifi",
+   "tags": [
+    "designed",
+    "drone",
+    "aircraft",
+    "unidentified",
+    "bed"
+   ],
+   "use": "A designed aircraft drone with nothing recognisable in it. For a passage about something in the sky nobody can identify — it is a sound-design piece, not a recording of a plane.",
+   "src": {
+    "pack": "344 Audio - Air Designed",
+    "file": "AEROJet_Unidentified Encounter_344 Audio_Air Designed.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "respirator_loop",
+   "category": "scifi",
+   "tags": [
+    "respirator",
+    "breathing",
+    "machine",
+    "medical",
+    "bed"
+   ],
+   "use": "Mechanical breathing. Medical intensive care, or science fiction — it is designed, and it sits between the two.",
+   "src": {
+    "pack": "344 Audio - Haunting Ambiences Vol. 5",
+    "file": "HMNBrth_Respirator, Specimen Breathing, Mad Scientist Lab_344 Audio_Haunting Ambiences Vol 5.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "robot_servo",
+   "category": "scifi",
+   "tags": [
+    "robot",
+    "servo",
+    "motor",
+    "whine"
+   ],
+   "use": "A servo motor with a thump under it. Robotics and automation.",
+   "src": {
+    "pack": "Epic Stock Media - Tower Defense Game",
+    "file": "ROBTMvmt_Tower Deploy Hitech Robot Motor Dark Thump Servo Whine 04_ESM_TDG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ship_reactor_loop",
+   "category": "scifi",
+   "tags": [
+    "reactor",
+    "ship",
+    "synth",
+    "scifi",
+    "bed"
+   ],
+   "use": "A layered synthetic reactor hum. Science fiction, or a deliberately unreal machine.",
+   "src": {
+    "pack": "Epic Stock Media - Strange Game Ambient Loops 3",
+    "file": "DSGNSynth_Scifi Loop Ship Reactor Synth Layer Layered Saw Buzz_ESM_SGA3.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "spaceship_roomtone_loop",
+   "category": "scifi",
+   "tags": [
+    "roomtone",
+    "spaceship",
+    "interior",
+    "muted",
+    "bed"
+   ],
+   "use": "A muted interior room tone for a vehicle that does not exist. Also a good abstract room tone for anything sealed and humming.",
+   "src": {
+    "pack": "Cinematic Sound Design - Sci-Fi Drones",
+    "file": "Roomtone Space Ship Interior Muted.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "cartoon_bass_down",
+   "category": "transition",
+   "tags": [
+    "transition",
+    "cartoon",
+    "bass",
+    "down"
+   ],
+   "use": "A descending cartoon transition. Comic, and it lands low.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon & Animation Vol 2",
+    "file": "Cartoon Transition Bass Down.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_pull_swoosh",
+   "category": "transition",
+   "tags": [
+    "swoosh",
+    "cartoon",
+    "pull",
+    "readout"
+   ],
+   "use": "A cartoon pull-swoosh into a readout. Motion graphics with a sense of humour.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon & Animation Vol 2",
+    "file": "Cartoon Pull Swoosh Readout.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "metal_whoosh_pass",
+   "category": "transition",
+   "tags": [
+    "metal",
+    "whoosh",
+    "rattle",
+    "pass"
+   ],
+   "use": "A metal object passing with a rattle in it. A transition with material in it rather than filtered air.",
+   "src": {
+    "pack": "344 Audio - Elemental Palette Designed Vol. 1",
+    "file": "METLMisc_Metal, Slow Whoosh, Rattle, Pass By x4 01_344 Audio_Elemental Palette Designed Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "shaker_snap",
+   "category": "transition",
+   "tags": [
+    "transition",
+    "shaker",
+    "snap",
+    "frantic"
+   ],
+   "use": "A frantic shaker into a snap. Fast, dry, and good for a quick wipe.",
+   "src": {
+    "pack": "Cinematic Sound Design - Colossal Impacts",
+    "file": "Transition Frantic Shaker Snap.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "swish_deploy",
+   "category": "transition",
+   "tags": [
+    "swish",
+    "deploy",
+    "layered",
+    "quick"
+   ],
+   "use": "A layered swish for something being deployed. Quick and directional.",
+   "src": {
+    "pack": "Epic Stock Media - Tower Defense Game",
+    "file": "DSGNStngr_Action Deploy Units Sword Slice Special Move Layered Swish 04_ESM_TDG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "vibrato_spin_transition",
+   "category": "transition",
+   "tags": [
+    "transition",
+    "spin",
+    "vibrato",
+    "snap"
+   ],
+   "use": "A spinning transition with a snap on the end. Time the snap to the cut.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon Impacts",
+    "file": "Vibrato Impact Snap Spin Transition.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "whoosh_debris",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "debris",
+    "rubble",
+    "texture"
+   ],
+   "use": "A whoosh with debris in it. Rougher than whoosh_soft — for a cut to something wrecked.",
+   "src": {
+    "pack": "Cinematic Sound Design - Colossal Impacts",
+    "file": "Woosh Debris.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "whoosh_fire",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "fire",
+    "growl",
+    "heat"
+   ],
+   "use": "A whoosh with fire in it. Big, and it will read as heat.",
+   "src": {
+    "pack": "Epic Stock Media - Elemental Mutation Whooshes and Impacts",
+    "file": "FIREWhsh_Whoosh Fire Deep Growl Monster Saturated Crisp 03_ESM_EMWI.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "whoosh_glass",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "glass",
+    "crystal",
+    "shards"
+   ],
+   "use": "A whoosh made of glass fragments. Bright and sharp — good over a data reveal.",
+   "src": {
+    "pack": "Epic Stock Media - Elemental Mutation Whooshes and Impacts",
+    "file": "GLASMvmt_Whoosh Glass Crystal Fragments Sharp Shards Dry 05_ESM_EMWI.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "accept_boing",
+   "category": "ui",
+   "tags": [
+    "accept",
+    "boing",
+    "crunch",
+    "comic"
+   ],
+   "use": "An accept with a boing in it. Comic confirmation.",
+   "src": {
+    "pack": "Cinematic Sound Design - UI Interaction Elements",
+    "file": "Accept Boing Crunch.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "accept_glassy",
+   "category": "ui",
+   "tags": [
+    "accept",
+    "glassy",
+    "snap",
+    "confirm"
+   ],
+   "use": "A glassy accept. Crisper than success_chime and half as long.",
+   "src": {
+    "pack": "Cinematic Sound Design - Interface & Infographics",
+    "file": "Interface Accept Glassy Snap.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_flute_toon",
+   "category": "ui",
+   "tags": [
+    "flute",
+    "bird",
+    "cartoon",
+    "light"
+   ],
+   "use": "A flute figure standing in for a bird. Light, comic and openly artificial.",
+   "src": {
+    "pack": "CB_Sounddesign - Applicable Sounds - Organic UI and Building Games SFX",
+    "file": "TOONMisc_Bird Flutes 3_CB Sounddesign_APPlicable Sounds.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "button_arp",
+   "category": "ui",
+   "tags": [
+    "button",
+    "arpeggio",
+    "twinkle",
+    "press"
+   ],
+   "use": "A button press with an arpeggio on it. For a control that does something pleasant.",
+   "src": {
+    "pack": "Cinematic Sound Design - User Interface",
+    "file": "Button Arp Twinkle.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_bubbles",
+   "category": "ui",
+   "tags": [
+    "bubbles",
+    "cartoon",
+    "pop",
+    "light"
+   ],
+   "use": "Short cartoon bubbles. For something small appearing playfully.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon & Animation Vol 2",
+    "file": "Cartoon Bubbles Short.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_dizzy",
+   "category": "ui",
+   "tags": [
+    "cartoon",
+    "dizzy",
+    "confused",
+    "comic"
+   ],
+   "use": "The confused-and-dizzy cue. Broad comedy only.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon Bloopers",
+    "file": "Cartoon Confused Dizzy.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_pops",
+   "category": "ui",
+   "tags": [
+    "pops",
+    "cartoon",
+    "sequence",
+    "reverb"
+   ],
+   "use": "A random sequence of pops. For several things appearing at once, where pop_small would need retriggering.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon Impacts",
+    "file": "Cartoon Pops Random Sequence Reverb.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "click_double_vintage",
+   "category": "ui",
+   "tags": [
+    "click",
+    "double",
+    "vintage",
+    "button"
+   ],
+   "use": "A vintage double click. Mechanical where click_soft is a light switch and select_modern is software.",
+   "src": {
+    "pack": "Epic Stock Media - Board Game - Sound Set Kit for Tabletop and Digital Games",
+    "file": "UIClick_UI Button Analog Vintage Double Click Neutral Dry Press 11_ESM_BG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "coins_ting",
+   "category": "ui",
+   "tags": [
+    "coins",
+    "ting",
+    "money",
+    "reward"
+   ],
+   "use": "Coins tinging. Money, reward, transaction.",
+   "src": {
+    "pack": "Cinematic Sound Design - UI Interaction Elements",
+    "file": "Ting Coins.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "collect_scifi",
+   "category": "ui",
+   "tags": [
+    "collect",
+    "scifi",
+    "burst",
+    "pickup"
+   ],
+   "use": "A short electronic collect. Something acquired or counted.",
+   "src": {
+    "pack": "Epic Stock Media - Fantasy Game 2 - Sound Kit for Enchanted Realms",
+    "file": "UIAlert_Collect Scifi Futuristic Electronic Bass Burst Sweep Heavy 04_ESM_FG2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "confetti_spill",
+   "category": "ui",
+   "tags": [
+    "confetti",
+    "spill",
+    "celebration",
+    "pluck"
+   ],
+   "use": "Confetti spilling, with a pluck under it. A celebration cue for a result landing.",
+   "src": {
+    "pack": "Cinematic Sound Design - Hybrid Game & UI Elements",
+    "file": "Cofetti Whoosh Pluck Spill.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "deny_dark",
+   "category": "ui",
+   "tags": [
+    "deny",
+    "error",
+    "dark",
+    "refuse"
+   ],
+   "use": "A dark, low deny. The unfriendly sibling of error_soft.",
+   "src": {
+    "pack": "Cinematic Sound Design - System & UI Feedback Elements",
+    "file": "Interface Deny Low Fat Dark.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "entry_happy",
+   "category": "ui",
+   "tags": [
+    "entry",
+    "positive",
+    "short",
+    "arrival"
+   ],
+   "use": "A short happy entry. Something good arriving on screen.",
+   "src": {
+    "pack": "Cinematic Sound Design - Hybrid Game & UI Elements",
+    "file": "Game Entry Happy Short.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "glitch_high_electronic",
+   "category": "ui",
+   "tags": [
+    "glitch",
+    "electronic",
+    "high",
+    "corrupt"
+   ],
+   "use": "Twenty-four seconds of high electronic glitching. The long form of glitch_data — for a whole sequence of a system failing.",
+   "src": {
+    "pack": "The Noisery - Rich Glitch",
+    "file": "UIGlitch_User interface_Glitch_High_Electronic_The Noisery_Rich Glitch_05.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "medical_beep",
+   "category": "ui",
+   "tags": [
+    "beep",
+    "medical",
+    "thermometer",
+    "short"
+   ],
+   "use": "A medical thermometer beep. A quarter of a second — clinical rather than designed.",
+   "src": {
+    "pack": "InMotionAudio - Medical Thermometer",
+    "file": "BEEPMed_Thermometer_Beep11_InMotionAudio_MedicalThermometer.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "medical_button_beep",
+   "category": "ui",
+   "tags": [
+    "button",
+    "beep",
+    "medical",
+    "press"
+   ],
+   "use": "A button press and its beep, together. Clinical interfaces.",
+   "src": {
+    "pack": "InMotionAudio - Medical Thermometer",
+    "file": "MACHMed_Thermometer_ButtonPress_Beep03_InMotionAudio_MedicalThermometer.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ping_down",
+   "category": "ui",
+   "tags": [
+    "ping",
+    "down",
+    "scifi",
+    "notify"
+   ],
+   "use": "A descending sci-fi ping. State going the wrong way.",
+   "src": {
+    "pack": "Cinematic Sound Design - System & UI Feedback Elements",
+    "file": "Interface Sci-Fi Ping Down.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "power_up",
+   "category": "ui",
+   "tags": [
+    "power",
+    "up",
+    "positive",
+    "bright"
+   ],
+   "use": "A bright power-up. Something charging or becoming available.",
+   "src": {
+    "pack": "Epic Stock Media - Anime Game",
+    "file": "DSGNStngr_Power Up Bright Positive Successful Light Saturation Crash Shimmer 05_ESM_AG.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "snap_percussive",
+   "category": "ui",
+   "tags": [
+    "snap",
+    "percussion",
+    "dry",
+    "accent"
+   ],
+   "use": "A dry percussive snap. The most neutral accent in the ui set.",
+   "src": {
+    "pack": "Cinematic Sound Design - Interface & Infographics",
+    "file": "Interface Percussion Snap.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "trailer_alarm_half",
+   "category": "ui",
+   "tags": [
+    "alarm",
+    "trailer",
+    "pulse",
+    "slow",
+    "bed"
+   ],
+   "use": "A trailer alarm on half notes — the slowest of the three. A tension pulse for a countdown; it is scored, so it will fight music.",
+   "src": {
+    "pack": "Federico Soler - Effective Trailer Alarms Vol. 2",
+    "file": "EffectiveTrailer_Alarms_Vol2_HalfNotes_003.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "trailer_alarm_quarter",
+   "category": "ui",
+   "tags": [
+    "alarm",
+    "trailer",
+    "pulse",
+    "fast",
+    "bed"
+   ],
+   "use": "The same alarm at twice the rate. Use it where the deadline is closer.",
+   "src": {
+    "pack": "Federico Soler - Effective Trailer Alarms Vol. 2",
+    "file": "EffectiveTrailer_Alarms_Vol2_QuarterNotes_013.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "trailer_alarm_whole",
+   "category": "ui",
+   "tags": [
+    "alarm",
+    "trailer",
+    "pulse",
+    "sparse",
+    "bed"
+   ],
+   "use": "The sparsest of the three: one hit per bar. Delivered as a fixed thirty-second render and kept whole, because a window sweep cannot find a bar-aligned wrap in a pattern this sparse — it measured a 17.9 dB seam and a 33.5 dB event when it tried. Repeat it on a bar line in the edit rather than butt-joining it.",
+   "src": {
+    "pack": "Federico Soler - Effective Trailer Alarms Vol. 2",
+    "file": "EffectiveTrailer_Alarms_Vol2_WholeNotes_011.wav"
+   },
+   "whole": {
+    "bed": true,
+    "trim": false
+   }
+  },
+  {
+   "id": "xylophone_ringtone",
+   "category": "ui",
+   "tags": [
+    "xylophone",
+    "ringtone",
+    "melody",
+    "notification"
+   ],
+   "use": "A xylophone ringtone. Four seconds — a phone ringing on screen, or a soft alert.",
+   "src": {
+    "pack": "CB_Sounddesign - Applicable Sounds - Organic UI and Building Games SFX",
+    "file": "UIMisc_Xylophone Ringtone 2_CB Sounddesign_APPlicable Sounds.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "boat_diesel_loop",
+   "category": "vehicle",
+   "tags": [
+    "boat",
+    "diesel",
+    "engine",
+    "idle",
+    "bed"
+   ],
+   "use": "A boat's diesel idling. Fishing, ferries, ports — the steady one that runs under a whole scene.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Basic Transportation Sounds",
+    "file": "BOATMotr_Diesel Engine Boat Idle Steady Rpm Hum Motor Mic One 01_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "car_cup_holder",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "cupholder",
+    "release",
+    "interior"
+   ],
+   "use": "A cup holder springing open. Small, and instantly reads as inside a car.",
+   "src": {
+    "pack": "344 Audio - Car Foley Vol. 1",
+    "file": "VEHInt_CUP HOLDER, RELEASE 1_344 Audio_Car Foley Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "car_door",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "door",
+    "open",
+    "close"
+   ],
+   "use": "A car door opened and closed. Arrival and departure in three seconds.",
+   "src": {
+    "pack": "SoundBits - Cars - Mad Mustang Mercury",
+    "file": "VEHDoor_Car Foley Car Door Open and Close Exterior 04 Perspective A_SNDBTS_CRS-MMM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "car_driving_town_alt_loop",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "driving",
+    "interior",
+    "town",
+    "bed"
+   ],
+   "use": "A second take of the same drive. Use it where car_driving_town_loop has already been heard.",
+   "src": {
+    "pack": "InMotionAudio - Car Interior Driving Ambience",
+    "file": "VEHCar_TownDrivingAmbience13_InMotionAudio_CarInteriorDrivingAmbience.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "car_driving_town_loop",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "driving",
+    "interior",
+    "town",
+    "bed"
+   ],
+   "use": "Inside a car driving through a town. The bed for an interview shot on the move, or a journey sequence.",
+   "src": {
+    "pack": "InMotionAudio - Car Interior Driving Ambience",
+    "file": "VEHCar_TownDrivingAmbience06_InMotionAudio_CarInteriorDrivingAmbience.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "car_fan_dial",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "dial",
+    "fan",
+    "interior"
+   ],
+   "use": "A climate-control dial turned fast. Car-interior detail.",
+   "src": {
+    "pack": "344 Audio - Car Foley Vol. 1",
+    "file": "VEHInt_CLIMATE CONTROL SYSTEM, FAN SPEED DIAL, FAST_344 Audio_Car Foley Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "car_light_switch",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "switch",
+    "headlight",
+    "interior"
+   ],
+   "use": "A headlight stalk flashed. Half a second.",
+   "src": {
+    "pack": "344 Audio - Car Foley Vol. 1",
+    "file": "VEHInt_LIGHTING CONTROL, RELEASE, HEADLIGHT FLASH_344 Audio_Car Foley Vol 1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "car_pedals",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "pedals",
+    "brake",
+    "mechanical"
+   ],
+   "use": "Gas and brake pedals worked. Interior mechanical detail.",
+   "src": {
+    "pack": "SoundBits - Cars - Mad Mustang Mercury",
+    "file": "VEHMech_Car Foey Gas and Brakes Pedals 08 B_SNDBTS_CRS-MMM.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "car_slow_drive_loop",
+   "category": "vehicle",
+   "tags": [
+    "car",
+    "driving",
+    "slow",
+    "exterior",
+    "bed"
+   ],
+   "use": "A car driving slowly, from outside. Pairs with car_driving_town_loop, which is the interior.",
+   "src": {
+    "pack": "SoundBits - Cars - Mad Mustang Mercury",
+    "file": "VEHCar_Various Driving at Slow Speed 15 06_SNDBTS_CRS-MMM.wav"
+   },
+   "loop": {
+    "length_s": 22.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "crane_ride_loop",
+   "category": "vehicle",
+   "tags": [
+    "crane",
+    "industrial",
+    "motor",
+    "squeaks",
+    "bed"
+   ],
+   "use": "Riding on a working crane: motors and squeaks. Heavy industry, shipbuilding and ports.",
+   "src": {
+    "pack": "Victor Ermakov - Industrial Ambiences - Ship Repair Factory",
+    "file": "MACHInd_Crane Onboard Ride Squeaks Motors_CW.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jet_blast_off",
+   "category": "vehicle",
+   "tags": [
+    "jet",
+    "aircraft",
+    "launch",
+    "departure"
+   ],
+   "use": "A jet leaving: clean acceleration with no runway around it. Aviation, logistics and anything about speed.",
+   "src": {
+    "pack": "344 Audio - Air Designed",
+    "file": "AEROJet_Blast Off Clean_344 Audio_Air Designed.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_arrive",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "approach",
+    "arrive",
+    "engine"
+   ],
+   "use": "A bike approaching fast and stopping. Sixteen seconds, so it covers the whole arrival.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Honda",
+    "file": "VEHMoto_Honda CB500F Approach Fast Engine Stop 04_SNDBTS_MCH.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "motorcycle_depart",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "start",
+    "leave",
+    "engine"
+   ],
+   "use": "Engine start and ride away, cleanly. The undramatic departure.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Kawasaki",
+    "file": "VEHMoto_Kawasaki Ninja ZX 10R Engine Start Leave 06_SNDBTS_MCK.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "motorcycle_horn",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "horn",
+    "single",
+    "short"
+   ],
+   "use": "A single short horn.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Kawasaki",
+    "file": "VEHHorn_Kawasaki Ninja ZX 10R Horn Single 03_SNDBTS_MCK.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_horn_long",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "horn",
+    "long",
+    "warning"
+   ],
+   "use": "A long horn. Traffic and warning.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Honda",
+    "file": "VEHHorn_Honda CB500F Horn Long 02_SNDBTS_MCH.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_keys",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "keys",
+    "ignition",
+    "metal"
+   ],
+   "use": "Keys in and out of an ignition. Small, and it reads as a beginning.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Kawasaki",
+    "file": "VEHMech_Kawasaki Ninja ZX 10R Keys In Out 01_SNDBTS_MCK.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_passby",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "passby",
+    "fast",
+    "doppler"
+   ],
+   "use": "A fast pass-by, recorded mono so it sits centred. Place it on the frame the bike crosses.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Kawasaki",
+    "file": "VEHBy_Kawasaki Ninja ZX 10R Pass By Fast 04 mono_SNDBTS_MCK.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_start_skid",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "start",
+    "skid",
+    "departure"
+   ],
+   "use": "Engine start, then tyres skidding away. The departure counterpart to motorcycle_arrive.",
+   "src": {
+    "pack": "SoundBits - Motorcycles - Honda",
+    "file": "VEHSkid_Honda CB500F Engine Start Tires Skidding Stop 02_SNDBTS_MCH.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "quadcopter_loop",
+   "category": "vehicle",
+   "tags": [
+    "drone",
+    "quadcopter",
+    "rotor",
+    "flying",
+    "bed"
+   ],
+   "use": "A toy quadcopter held close to the microphone. Aerial filming, hobby technology and surveillance.",
+   "src": {
+    "pack": "Sonik Sound Library - Toy Quadcopter",
+    "file": "AERORadio_Quadcopter, Toy, Flying Sustained Close to Mic_KSL_KS013.wav"
+   },
+   "loop": {
+    "length_s": 16.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "quadcopter_startup",
+   "category": "vehicle",
+   "tags": [
+    "drone",
+    "quadcopter",
+    "startup",
+    "beeps"
+   ],
+   "use": "Turn on, sync, calibrate, turn off — with the beeps. A whole gesture in twelve seconds.",
+   "src": {
+    "pack": "Sonik Sound Library - Toy Quadcopter",
+    "file": "AERORadio_Quadcopter, Toy, Turn On, Turn Off, Syncing, Calibrate, Beeps_KSL_KS013.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tire_skids_gravel",
+   "category": "vehicle",
+   "tags": [
+    "tires",
+    "skid",
+    "gravel",
+    "loose"
+   ],
+   "use": "Thirty seconds of tyres skidding on gravel. Rally, farm tracks and rough roads.",
+   "src": {
+    "pack": "SoundBits - Cars - Mad Mustang Mercury",
+    "file": "VEHSkid_Tire Skids on Gravel 15 06_SNDBTS_CRS-MMM.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "train_passby",
+   "category": "vehicle",
+   "tags": [
+    "train",
+    "passby",
+    "rail",
+    "transit"
+   ],
+   "use": "A train passing. Twelve seconds — the standard rail cutaway.",
+   "src": {
+    "pack": "SoundBits - Pass-By - Trains, Trucks & Cars 2",
+    "file": "TRNMisc_Pass By Train 41_SNDBTS_PB-TTC2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "train_passby_close",
+   "category": "vehicle",
+   "tags": [
+    "train",
+    "passby",
+    "close",
+    "electric"
+   ],
+   "use": "An electric passenger train passing close. Forty-five seconds and very loud.",
+   "src": {
+    "pack": "The Noisery - Transit Tunes - The German Train Collection",
+    "file": "TRNElec_Train Electric Passenger By Close Right To_The Noisery_Transit Tunes_ The German Train Collection_01.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "train_passby_subway",
+   "category": "vehicle",
+   "tags": [
+    "train",
+    "subway",
+    "passby",
+    "electric"
+   ],
+   "use": "A long slow subway pass. Forty-five seconds, so it can cover a whole platform shot.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Basic Transportation Sounds",
+    "file": "TRNElec_Electric Train Passby 02 Long Subway Slow_ESM_CPS.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "tram_passby_long",
+   "category": "vehicle",
+   "tags": [
+    "tram",
+    "passby",
+    "rail",
+    "city"
+   ],
+   "use": "A tram passing, longer and slower than tram_passing. Bed level, so it can run under a street shot.",
+   "src": {
+    "pack": "SoundBits - Pass-By - Trains, Trucks & Cars 2",
+    "file": "TRNTram_Generic Tram Pass Py 13_SNDBTS_PB-TTC2.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "truck_passby",
+   "category": "vehicle",
+   "tags": [
+    "truck",
+    "freight",
+    "passby",
+    "road"
+   ],
+   "use": "A freight truck passing. Logistics and haulage.",
+   "src": {
+    "pack": "SoundBits - Pass-By - Trains, Trucks & Cars 2",
+    "file": "VEHFrght_Freight Truck Pass By 22_SNDBTS_PB-TTC2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "anime_attack_shout",
+   "category": "voice",
+   "tags": [
+    "shout",
+    "attack",
+    "anime",
+    "male"
+   ],
+   "use": "An attack cry. Stylised — it will read as animation wherever you put it.",
+   "src": {
+    "pack": "344 Audio - Anime Fight Voices Vol. 1",
+    "file": "VOXMale_Warrior Opponent Attack, 'Ai yah' 2_344 Audio_Anime Fight Voices.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "anime_boxer_shout",
+   "category": "voice",
+   "tags": [
+    "shout",
+    "fighter",
+    "anime",
+    "male"
+   ],
+   "use": "A performed fighting shout. Animation and game material — it is acting, not a person on location.",
+   "src": {
+    "pack": "344 Audio - Anime Fight Voices Vol. 1",
+    "file": "VOXMale_Boxer Level Up 1_344 Audio_Anime Fight Voices.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "anime_elf_yell",
+   "category": "voice",
+   "tags": [
+    "yell",
+    "aggressive",
+    "anime",
+    "female"
+   ],
+   "use": "An aggressive fantasy yell. The loudest of the performed voices here.",
+   "src": {
+    "pack": "344 Audio - Anime Fight Voices Vol. 2",
+    "file": "VOXFem_Anime, Warrior Elf Princess Aggressive Yell_344 Audio_Anime Fight Voices Vol 2_14.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "anime_fight_exhale",
+   "category": "voice",
+   "tags": [
+    "exhale",
+    "effort",
+    "anime",
+    "female"
+   ],
+   "use": "A short fight exhale.",
+   "src": {
+    "pack": "344 Audio - Anime Fight Voices Vol. 2",
+    "file": "VOXFem_Anime, Schoolgirl Fight Exhale 15_344 Audio_Anime Fight Voices Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "anime_warrior_breath",
+   "category": "voice",
+   "tags": [
+    "breath",
+    "effort",
+    "anime",
+    "female"
+   ],
+   "use": "A performed effort breath. Pairs with the yells rather than with human's real breaths.",
+   "src": {
+    "pack": "344 Audio - Anime Fight Voices Vol. 2",
+    "file": "VOXFem_Anime, Adult Warrior Breaths 40_344 Audio_Anime Fight Voices Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "anime_yell_short",
+   "category": "voice",
+   "tags": [
+    "yell",
+    "short",
+    "anime",
+    "male"
+   ],
+   "use": "Half a second of male battle yell.",
+   "src": {
+    "pack": "344 Audio - Anime Fight Voices Vol. 1",
+    "file": "VOXMale_Male Adventurer, Active Yell 19_344 Audio_Anime Fight Voices.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "announcer_countdown",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "announcer",
+    "countdown",
+    "processed"
+   ],
+   "use": "A processed game announcer counting down. Performed for a game — it carries that with it.",
+   "src": {
+    "pack": "Epic Stock Media - Shooter Game Announcer Voice",
+    "file": "VOXFutz_Announcer Vocal Male Wet Countdown Ten Kills Remaining 03_ESM_SGAV.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "announcer_kill",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "announcer",
+    "short",
+    "dry"
+   ],
+   "use": "A one-word announcer call. Game material.",
+   "src": {
+    "pack": "Epic Stock Media - Shooter Game Announcer Voice",
+    "file": "VOXMale_Announcer Vocal Male Dry Special Kill Headshot 01_ESM_SGAV.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "announcer_laugh",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "announcer",
+    "laugh",
+    "processed"
+   ],
+   "use": "The announcer laughing. Broad, and unmistakably a game.",
+   "src": {
+    "pack": "Epic Stock Media - Shooter Game Announcer Voice",
+    "file": "VOXFutz_Announcer Vocal Male Wet Special Kill Laugh Monster Kill Hahaha 02_ESM_SGAV.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "announcer_objective",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "announcer",
+    "statement",
+    "dry"
+   ],
+   "use": "\"Objective completed\", dry. Short enough to use as a stinger with words in it.",
+   "src": {
+    "pack": "Epic Stock Media - Shooter Game Announcer Voice",
+    "file": "VOXMale_Announcer Vocal Male Dry Game Statement Objective Completed 04_ESM_SGAV.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "detective_line",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "line",
+    "narration",
+    "female"
+   ],
+   "use": "Five seconds of scripted character narration in English. Dialogue, not a sound effect.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character British Female Detective",
+    "file": "VOXFem_British Detective Custom Lines Vocal Female In A World Of Lies And Deception Im The One They Turn To When They Need The Truth B_ESM_AAAGCBFD.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "elf_line_short",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "fantasy",
+    "line",
+    "character"
+   ],
+   "use": "A character line: \"it shall be done\". Performed fantasy dialogue — treat it as dialogue.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon Bloopers",
+    "file": "Character Elf It Shall Be Done.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "emergency_broadcast",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "broadcast",
+    "emergency",
+    "male"
+   ],
+   "use": "Fifteen seconds of a scripted emergency announcement. Performed for a game — never present it as archive.",
+   "src": {
+    "pack": "Epic Stock Media - Fake Advertisements and Radio Sound Effects Audio Construction Kit",
+    "file": "VOXMale_Voice Wet Male Emergency Broadcast Announcement Dry War 01_ESM_FA.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "police_line_backup",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "police",
+    "emergency",
+    "line"
+   ],
+   "use": "A scripted emergency line. Performed — never present it as a real transmission.",
+   "src": {
+    "pack": "Epic Stock Media - AAA Game Character Police Officer",
+    "file": "VOXMale_Police Officer Custom Lines Vocal Male Emergency Shots Fired Need Backup.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "police_radio_burglary",
+   "category": "voice",
+   "tags": [
+    "radio",
+    "police",
+    "dispatch",
+    "speech"
+   ],
+   "use": "A police-radio update, calmly delivered. It is scripted performance, not a real transmission — never present it as one.",
+   "src": {
+    "pack": "344 Audio - British Police Radio Vol. 1",
+    "file": "VOXMale_Police Radio, Burglary, Calm, Update, Warning_344 Audio_British Police Radio.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "police_radio_standing_by",
+   "category": "voice",
+   "tags": [
+    "radio",
+    "police",
+    "short",
+    "speech"
+   ],
+   "use": "\"Standing by\" — the short one, for a beat rather than a line.",
+   "src": {
+    "pack": "344 Audio - British Police Radio Vol. 1",
+    "file": "VOXMale_Police, Vehicle, Calm, 'Standing By'_344 Audio_British Police Radio.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "police_radio_theft",
+   "category": "voice",
+   "tags": [
+    "radio",
+    "police",
+    "dispatch",
+    "speech"
+   ],
+   "use": "A second radio update, relaxed in tone.",
+   "src": {
+    "pack": "344 Audio - British Police Radio Vol. 1",
+    "file": "VOXMale_Police Radio, Car Theft, Relaxed, Update, Helpful_344 Audio_British Police Radio.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "spectator_questions",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "questions",
+    "spectator",
+    "female"
+   ],
+   "use": "Eighteen seconds of a spectator asking questions. Scripted performance in English — treat it as dialogue, not atmosphere.",
+   "src": {
+    "pack": "344 Audio - Cinema Experience Vol. 1",
+    "file": "VOXReac_Spectator, Female, Various Questions_344 Audio_Cinema Experience.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tannoy_announcement",
+   "category": "voice",
+   "tags": [
+    "speech",
+    "tannoy",
+    "station",
+    "announcement"
+   ],
+   "use": "A station tannoy announcement in a big hall. Real reverberant public address — the one piece of speech here that is atmosphere rather than dialogue.",
+   "src": {
+    "pack": "InMotionAudio - Grand Central Station",
+    "file": "VOXFutz_TannoyAnnouncement_MainHall08_InMotionAudio_GrandCentralStation.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "arrow_hit",
+   "category": "weapon",
+   "tags": [
+    "arrow",
+    "hit",
+    "rattle",
+    "impact"
+   ],
+   "use": "An arrow striking and rattling. Also usable as a comic hit.",
+   "src": {
+    "pack": "Cinematic Sound Design - Cartoon Bloopers",
+    "file": "Arrow Hit Rattle.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "blade_hit_metal",
+   "category": "weapon",
+   "tags": [
+    "blade",
+    "hit",
+    "metal",
+    "resonant"
+   ],
+   "use": "A swing landing on metal, with a resonant tail.",
+   "src": {
+    "pack": "David Dumais Audio - Melee Weapons Sound Effects Pack 2",
+    "file": "METLImpt_METAL SWING HIT Weapon Swing To Metallic Body Impact And Resonant Tail 01_DDUMAIS_MWP2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "blade_swing_scrape",
+   "category": "weapon",
+   "tags": [
+    "blade",
+    "swing",
+    "scrape",
+    "metal"
+   ],
+   "use": "A long blade swung, with scrape in it.",
+   "src": {
+    "pack": "David Dumais Audio - Melee Weapons Sound Effects Pack 2",
+    "file": "METLFric_SWING SCRAPE Swift Melee Weapon Swing With A Long Blade 14_DDUMAIS_MWP2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "shield_spin",
+   "category": "weapon",
+   "tags": [
+    "shield",
+    "metal",
+    "spin",
+    "medieval"
+   ],
+   "use": "A metal shield spinning to rest on a floor. Thirty-six seconds, and the decay is the whole point.",
+   "src": {
+    "pack": "344 Audio - Historical Weapons Vol. 2",
+    "file": "WEAPArmr_Metal Shield Spin On Floor, Buckler MKH_344 Audio_Medieval Weapons Vol 2.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "spear_impact",
+   "category": "weapon",
+   "tags": [
+    "spear",
+    "wood",
+    "impact",
+    "medieval"
+   ],
+   "use": "Wooden shafts striking. Historical and combat material.",
+   "src": {
+    "pack": "344 Audio - Historical Weapons Vol. 2",
+    "file": "WEAPBlnt_Spear And Stick Impact, Wooden MKH 2_344 Audio_Medieval Weapons Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sword_cuts",
+   "category": "weapon",
+   "tags": [
+    "sword",
+    "metal",
+    "slide",
+    "cut"
+   ],
+   "use": "Metallic sword slides and cuts. Thirteen seconds of takes in one file.",
+   "src": {
+    "pack": "344 Audio - Historical Weapons Vol. 2",
+    "file": "WEAPSwrd_Sword Slide Cuts, Metallic, Impact CM4 2_344 Audio_Medieval Weapons Vol 2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "weapon_swing_impact",
+   "category": "weapon",
+   "tags": [
+    "weapon",
+    "swing",
+    "impact",
+    "thud"
+   ],
+   "use": "One heavy swing-to-impact, cut from a sixty-second reel of takes. Cap the reel rather than gate it, so the whole gesture survives.",
+   "src": {
+    "pack": "David Dumais Audio - Melee Weapons Sound Effects Pack 2",
+    "file": "SWSH_SWING IMPACTS Quick Heavy Weapon Swing To Thud Impact Var 01_DDUMAIS_MWP2.wav"
+   },
+   "whole": {
+    "max_s": 4.0
+   }
+  },
+  {
+   "id": "whip_crack",
+   "category": "weapon",
+   "tags": [
+    "whip",
+    "crack",
+    "snap",
+    "sharp"
+   ],
+   "use": "A whip crack. The sharpest transient in the library.",
+   "src": {
+    "pack": "David Dumais Audio - Melee Weapons Sound Effects Pack 2",
+    "file": "WEAPWhip_WHIP Snap Crack 05_DDUMAIS_MWP2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "chimney_wind_loop",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "chimney",
+    "interior",
+    "howl",
+    "bed"
+   ],
+   "use": "Wind in a chimney, heard from inside. The interior wind bed — it places the weather outside the room.",
+   "src": {
+    "pack": "InMotionAudio - Chimney Wind",
+    "file": "WINDInt_ChimneyWind05_InMotionAudio_ChimneyWind.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "city_storm_loop",
+   "category": "weather",
+   "tags": [
+    "storm",
+    "city",
+    "square",
+    "rain",
+    "bed"
+   ],
+   "use": "A storm over a city square. Between rain_city_loop and storm_bed_loop — rain on stone with a town around it.",
+   "src": {
+    "pack": "Sonic Bat - Stormy Night Ambience",
+    "file": "SBsna_City Block Square Storm 003.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "hurricane_vents_loop",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "hurricane",
+    "gusts",
+    "vents",
+    "bed"
+   ],
+   "use": "Hurricane-force gusts through vents. The most violent weather bed in the library.",
+   "src": {
+    "pack": "The Noisery - City Rain",
+    "file": "WINDTonl_Wind Strong Gusts Hurricane Vents Rattle 06_The Noisery_City Rain.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "rain_hail_interior_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "hail",
+    "interior",
+    "storm",
+    "bed"
+   ],
+   "use": "Light rain turning to hail, heard from inside. Between rain_window_loop and hail_window_loop, with both in one bed.",
+   "src": {
+    "pack": "The Noisery - City Rain",
+    "file": "RAINInt_Rain Light Interior Hail Storm_The Noisery_City Rain.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "texas_storm_loop",
+   "category": "weather",
+   "tags": [
+    "storm",
+    "thunder",
+    "rain",
+    "lightning",
+    "bed"
+   ],
+   "use": "A Texas storm with the initial crash in it. The most dramatic weather bed here — the clap is inside the loop, so use it where the storm is the subject.",
+   "src": {
+    "pack": "Epic Stock Media - Public Spaces - Storms Lakes Parks and Rural Nature Exteriors",
+    "file": "STORM_Texas Rain Thunder Initial Crash Boom Storm 01 Clap Lightning_ESM_CPS.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wind_metal_rattle_loop",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "metal",
+    "rattle",
+    "exposed",
+    "bed"
+   ],
+   "use": "Strong wind rattling metal. The urban storm bed — it needs a building in shot to make sense.",
+   "src": {
+    "pack": "The Noisery - City Rain",
+    "file": "WINDInt_Wind Strong Metal Rattle_The Noisery_City Rain.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wind_whipping_loop",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "whipping",
+    "turbulent",
+    "constricted",
+    "bed"
+   ],
+   "use": "Turbulent wind through a constriction. A four-second loop — for a gap, a vent or a doorway, not an open landscape.",
+   "src": {
+    "pack": "Epic Stock Media - Synthesized Nature Loops and Sounds",
+    "file": "WINDInt_Loop Weather Wind Whipping Constricted Flow Turbulent 01_ESM_SNLS.wav"
+   },
+   "loop": {
+    "length_s": 4.0,
+    "crossfade_s": 1.0
+   }
+  }
+ ]
 }

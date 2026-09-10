@@ -210,7 +210,13 @@ def test_a_half_applied_monochrome_instruction_blocks() -> None:
     assert grey and grey[0].passed is True
 
     # A style that never asked for monochrome is not judged on it.
-    assert colour_findings(_png((10, 90, 200)), expect_monochrome=False) == []
+    # The other direction: a colour brief that came back grey is the same half-applied style, and
+    # it went unchecked. A saturated frame passes it; a greyscale one does not.
+    colour_ok = colour_findings(_png((10, 90, 200)), expect_monochrome=False)
+    assert colour_ok and colour_ok[0].check == "colour_present" and colour_ok[0].passed is True
+    colour_missing = colour_findings(_png((128, 128, 128)), expect_monochrome=False)
+    assert colour_missing and colour_missing[0].passed is False
+    assert colour_missing[0].severity == "blocker"
 
 
 def test_background_churn_is_measured() -> None:
@@ -272,3 +278,136 @@ def test_reviewer_and_timestamp_must_be_set_together() -> None:
             created_at=dt.datetime.now(dt.UTC),
             reviewer="agent",
         )
+
+
+def test_a_pillarboxed_frame_is_a_blocker() -> None:
+    """A model asked for 16:9 that draws a narrower picture and pads the sides with flat colour.
+
+    Invisible to every other check here — the bars are mid grey, so nothing is crushed and nothing
+    is blown — and unmistakable once measured. Over one evening's anchors the separation was total:
+    the one pillarboxed frame put 60 % of its width in flat bars and every other frame measured 0.
+    """
+    import io
+
+    from PIL import Image
+
+    from content_factory.qc.frame_review import border_findings
+
+    padded = Image.new("RGB", (320, 180), (127, 127, 127))
+    padded.paste(_load_gradient((160, 180)), (80, 0))
+    buf = io.BytesIO()
+    padded.save(buf, "PNG")
+    finding = border_findings(buf.getvalue())[0]
+    assert finding.check == "fills_the_frame"
+    assert finding.passed is False and finding.severity == "blocker"
+    assert finding.measured is not None and finding.measured >= 0.4
+
+    # A picture that fills its frame passes.
+    assert border_findings(_gradient_png())[0].passed is True
+
+    # A flat band on ONE edge only is a photograph — a plain sky over a landscape — not a padded
+    # frame, so it passes. Bars on both edges is a letterbox and does not.
+    one_edge = Image.new("RGB", (320, 180), (127, 127, 127))
+    one_edge.paste(_load_gradient((320, 120)), (0, 60))
+    buf2 = io.BytesIO()
+    one_edge.save(buf2, "PNG")
+    assert border_findings(buf2.getvalue())[0].passed is True
+
+    letterboxed = Image.new("RGB", (320, 180), (127, 127, 127))
+    letterboxed.paste(_load_gradient((320, 100)), (0, 40))
+    buf3 = io.BytesIO()
+    letterboxed.save(buf3, "PNG")
+    assert border_findings(buf3.getvalue())[0].passed is False
+
+
+def _load_gradient(size: tuple[int, int]) -> Image.Image:
+    from PIL import Image
+
+    img = Image.new("L", size)
+    width, height = size
+    img.putdata([int(255 * (x / max(1, width - 1))) for _y in range(height) for x in range(width)])
+    return img.convert("RGB")
+
+
+def test_a_frame_a_person_rejected_is_redrawn_rather_than_cache_hit(tmp_path) -> None:
+    """`image-set`'s own note promises "rejecting one drawing costs one drawing, not the film".
+
+    Nothing implemented it: `review_frames` recorded the verdict and `generate_keyframes` never
+    read it, so a rejected frame stayed a cache hit and the gate blocked on the same picture on
+    every rerun. Measured 2026-09-10 on a malachite set — six consistent views of the wrong
+    object, rejected, and the resume printed the identical rejection.
+    """
+    import json
+
+    from content_factory.runners.local import make_context
+    from content_factory.workflows.stages import _clear_rejected_frames
+
+    ctx = make_context(project_dir=tmp_path / "prj")
+    frames = ctx.ddir() / "sequence" / "frames"
+    frames.mkdir(parents=True)
+    for idx in range(3):
+        (frames / f"{idx:04d}.png").write_bytes(b"png")
+        (frames / f"{idx:04d}.done.json").write_text(json.dumps({"input_hash": "h"}))
+
+    # No review on disk: nothing is touched.
+    assert _clear_rejected_frames(ctx, ctx.ddir() / "sequence") == []
+    assert sorted(p.name for p in frames.glob("*.png")) == ["0000.png", "0001.png", "0002.png"]
+
+    review = ctx.ddir() / "reviews" / "frames"
+    review.mkdir(parents=True)
+    review.joinpath("batch.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "deliverable_id": ctx.deliverable_id,
+                "contact_sheet_sha256": "a" * 64,
+                "contact_sheet_path": "reviews/frames/contact-sheet.png",
+                "reviewer": "agent",
+                "created_at": "2026-09-10T03:32:00Z",
+                "reviewed_at": "2026-09-10T03:32:10Z",
+                "frames": [
+                    {
+                        "frame_id": f"frame:{i:04d}",
+                        "png_sha256": f"{i}" * 64,
+                        "verdict": "reject" if i == 1 else "accept",
+                        "reason": "the subject is wrong" if i == 1 else "",
+                        "findings": [],
+                    }
+                    for i in range(3)
+                ],
+            }
+        )
+    )
+    assert _clear_rejected_frames(ctx, ctx.ddir() / "sequence") == [1]
+    # The rejected frame's marker is gone, so the next run redraws exactly that one...
+    assert not (frames / "0001.done.json").exists()
+    assert not (frames / "0001.png").exists()
+    # ...the accepted ones are untouched...
+    assert (frames / "0000.done.json").exists() and (frames / "0002.done.json").exists()
+    # ...and what was turned down can still be looked at.
+    kept = ctx.ddir() / "sequence" / "rejected"
+    assert (kept / "0001.reviewed1.png").exists()
+    assert (kept / "0001.reviewed1.done.json").exists()
+
+    # Idempotent: a second pass has nothing left to clear.
+    assert _clear_rejected_frames(ctx, ctx.ddir() / "sequence") == []
+
+    # And the redraw has to come back *different*: the backend derives its seed from the attempt
+    # number, so a rejection moves the seed. Measured 2026-09-10 — a rejected kilim frame was
+    # redrawn and came back as the drawing that had just been turned down.
+    from content_factory.workflows.stages import _rejection_seed_offsets
+
+    seq = ctx.ddir() / "sequence"
+    assert _rejection_seed_offsets(seq)[1] > 0
+    assert 0 not in _rejection_seed_offsets(seq), "an accepted frame keeps its seed"
+
+    # A second rejection of the same frame moves it again rather than landing where it was.
+    (frames / "0001.png").write_bytes(b"png")
+    (frames / "0001.done.json").write_text(json.dumps({"input_hash": "h"}))
+    review.joinpath("batch.json").write_text(
+        review.joinpath("batch.json").read_text()  # same verdicts, frame 1 still rejected
+    )
+    assert _clear_rejected_frames(ctx, seq) == [1]
+    assert _rejection_seed_offsets(seq)[1] > _rejection_seed_offsets(seq).get(0, 0)
+    kept = sorted(p.name for p in (seq / "rejected").glob("0001.reviewed*.png"))
+    assert kept == ["0001.reviewed1.png", "0001.reviewed2.png"], kept

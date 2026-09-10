@@ -205,3 +205,59 @@ async def test_a_file_the_pipeline_can_already_read_is_not_re_encoded(
     assert r.status_code == 201, r.text
     # No conversion at all: the null is the assertion.
     assert r.json()["conversion"] is None
+
+
+def an_mp4_of_black(path: Path, *, seconds: int = 2) -> Path:
+    """A recording as a phone or a meeting tool writes it: sound, and a picture of nothing."""
+    subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-nostdin", "-y", "-loglevel", "error",
+            "-f", "lavfi", "-i", f"color=c=black:s=320x240:r=15:d={seconds}",
+            "-f", "lavfi", "-i", f"sine=frequency=440:duration={seconds}",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", str(path),
+        ],
+        check=True, capture_output=True, timeout=120,
+    )  # fmt: skip
+    return path
+
+
+async def test_a_recording_in_an_mp4_lands_on_the_audio_node_and_says_why(
+    upload_client, sessionmaker, tmp_path: Path
+):
+    """The other half of the screen-recording case. A phone and a meeting tool write MP4 around
+    an hour of black, so the bytes say `video/mp4` and the canvas used to hand the operator a
+    Video node their audio lane would not take. The picture decides instead of the container."""
+    await seed(sessionmaker)
+    await upload_client.post("/v1/session", json={"username": "owner", "password": PW})
+
+    mp4 = an_mp4_of_black(tmp_path / "voice memo.mp4")
+    r = await upload_client.post(
+        "/v1/uploads", files={"file": ("voice memo.mp4", mp4.read_bytes(), "video/mp4")}
+    )
+
+    assert r.status_code == 201, r.text
+    body = r.json()
+    assert body["kind"] == "audio", "what it is, not what its container says"
+    assert body["mime"] == "video/mp4", "and the sniff is still reported honestly"
+    assert body["conversion"] is None, "nothing was converted — it was read correctly"
+    assert "black" in body["blank_picture"]
+    assert body["node_type"] == "input.audio" and body["node_slot"] == "audio"
+    assert {s["node_type"] for s in body["suggestions"]} >= {"transcribe_audio"}
+
+
+async def test_a_film_dropped_on_the_canvas_is_still_a_film(
+    upload_client, sessionmaker, tmp_path: Path
+):
+    """The measurement has to be able to say no. A clip with something in it stays a video, and
+    `blank_picture` comes back null rather than absent, so the canvas can tell the two apart."""
+    await seed(sessionmaker)
+    await upload_client.post("/v1/session", json={"username": "owner", "password": PW})
+
+    mp4 = a_matroska(tmp_path / "holiday.mkv")  # testsrc: a picture that actually moves
+    r = await upload_client.post(
+        "/v1/uploads", files={"file": ("holiday.mkv", mp4.read_bytes(), "video/x-matroska")}
+    )
+
+    body = r.json()
+    assert body["kind"] == "video" and body["node_type"] == "input.video"
+    assert body["blank_picture"] is None

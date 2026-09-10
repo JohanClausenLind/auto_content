@@ -27,7 +27,8 @@ description: >
 category: video
 tags: [audio, transcript, pictures, story, restore, upscale, captions]
 prerequisite: >
-  The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's
+  The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg, or an mp4/mov whose
+  picture is blank: a phone writes those, and the picture is measured) or dropped on the canvas's
   Audio File node. faster-whisper downloads its own model on first use, so the first run needs
   network; set transcribe.engine to fixture with your own transcript to stay offline.
 models:
@@ -100,7 +101,7 @@ nodes:
       digression gets its own picture instead of sharing one with the line before it.
   - key: shots
     type: plan_shots
-    values: {planner: story_presets, size: 576x1024, fps: 30}
+    values: {planner: story_presets, size: 576x1024, fps: 30, characters: none}
     note: >
       One shot per beat, its frame count taken from the beat's measured span of speech. The rate
       and the aspect are the deliverable's rather than a preference: a story planned from a
@@ -118,13 +119,21 @@ nodes:
     values:
       source: generate
       model: hidream-o1
-      prompt: "the moment this part of the recording describes, as a single drawn frame"
+      # Framing only, and nothing about "the recording". The model has never heard it, and
+      # "the moment this part of the recording describes, as a single drawn frame" is a sentence
+      # about the deliverable rather than about a picture -- so the model drew nothing from it and
+      # the shot preset's figure study was the only content left. What the film is *of* comes from
+      # the story's visual_subject: pass --subject, or let plan_story take the recording's opening
+      # line (see `_story_plan_from_recording`).
+      prompt: "the subject filling the picture, seen close, nothing else in shot"
       style: >
         hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper
         texture, one palette, one light direction, no text, no borders, no photographic lighting
     note: >
-      One drawing per shot. The prompt says frame rather than sentence on purpose: an image model
-      handed a line of narration illustrates an argument instead of describing a picture.
+      One drawing per shot. The prompt describes a picture rather than quoting the narration: an
+      image model handed a line of speech illustrates an argument instead of drawing a frame. It
+      also avoids the word "frame" as a noun - "one drawn frame" drew three literal framed
+      pictures hanging on walls out of six (2026-09-10). "Filling the picture" does not.
   - key: frames_gate
     type: review_frames
     note: >

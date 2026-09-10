@@ -8,6 +8,11 @@ content-addressed key, measured with ffprobe, and answered with everything the c
 put a node on the graph: which node type holds this kind of file, one line describing what
 arrived, what was done to it, and the type-correct next steps worth offering.
 
+One of those answers takes more than a sniff. A recording off a phone or a meeting tool is an
+MP4 with an hour of black in it, and its bytes are indistinguishable from a film's, so the
+picture is measured: a video container with sound and nothing to look at comes back as ``audio``,
+lands on the Audio File node, and carries the reason it was called one.
+
 Nothing here trusts the request beyond its bytes: the filename is sanitised and used only for
 display and for the name the file gets in the run's uploads folder, the kind comes from the sniff,
 and the stored key is derived from the content. Uploading is editor-level, like starting a run.
@@ -26,8 +31,10 @@ from content_factory.api.deps import Principal, require_role
 from content_factory.artifacts import open_store
 from content_factory.db.models import Role
 from content_factory.ingest.convert import (
+    BlankPicture,
     ConversionError,
     Converted,
+    blank_picture,
     convert_media,
     needs_conversion,
 )
@@ -99,14 +106,23 @@ async def upload(
         except UploadRejectedError as err:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(err)) from err
         facts = probe_media(source) if ingested.kind in ("audio", "video", "image") else {}
+        # A recording wrapped in MP4 sniffs as `video/mp4` like any film, and putting it on a
+        # Video node is how an operator ends up unable to wire their own interview into an audio
+        # lane. The picture is measured instead: nothing to look at means this is a recording,
+        # and the whole answer below — node, description, next steps — follows from that.
+        picture: BlankPicture | None = (
+            await run_in_threadpool(blank_picture, source) if ingested.kind == "video" else None
+        )
+        kind = "audio" if picture else ingested.kind
         stored_bytes = source.stat().st_size
 
-    node_type = SOURCE_NODE.get(ingested.kind, "ingest")
-    described = describe(ingested.kind, facts)
+    node_type = SOURCE_NODE.get(kind, "ingest")
+    described = describe(kind, facts)
     return {
         "asset_id": ingested.artifact.key,
         "filename": filename,
-        "kind": ingested.kind,
+        # What the file *is*, which for a video container is not always what its bytes say.
+        "kind": kind,
         "mime": ingested.sniffed_mime,
         "size_bytes": stored_bytes,
         "uploaded_bytes": written,
@@ -125,9 +141,13 @@ async def upload(
             if conversion is not None
             else None
         ),
+        # Why a file whose MIME says video is being offered as a recording, or null when the
+        # kind is simply what the bytes said. The canvas shows it: an operator handed an audio
+        # node for their MP4 is owed the measurement that decided it.
+        "blank_picture": picture.reason if picture else None,
         "node_type": node_type,
         "node_slot": SOURCE_SLOT.get(node_type, ""),
-        "suggestions": [s.as_dict() for s in suggestions_for(ingested.kind, facts)],
+        "suggestions": [s.as_dict() for s in suggestions_for(kind, facts)],
     }
 
 

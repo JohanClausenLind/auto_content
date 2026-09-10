@@ -236,3 +236,60 @@ def test_the_wrong_blender_is_diagnosed_as_the_wrong_blender(monkeypatch) -> Non
     with pytest.raises(RuntimeError, match="no such asset") as plain:
         blender_mod.run_blender_scene(Path("spec.json"), Path("out"), blender_bin="blender")
     assert "This is the Blender" not in str(plain.value)
+
+
+def test_blender_refuses_a_plan_whose_figures_nobody_described() -> None:
+    """The passes are renders of a bare mesh, so the model draws a bare mesh.
+
+    Measured on `picture-story` (2026-09-10): ten anchors of a grey untextured mannequin in a
+    T-pose standing in a desert, 22 minutes of GPU, every frame unusable — the same failure
+    ADR-0004 records for identity references, arriving through the control passes instead.
+    """
+    from content_factory.schemas.fixtures import sample_shot_plan
+    from content_factory.workflows.stages import _refuse_unclothed_staging
+
+    plan = sample_shot_plan()
+    described = [c for sh in plan.shots for c in sh.characters if c.appearance]
+    assert described, "the fixture is supposed to describe its figures"
+    _refuse_unclothed_staging(plan)  # as written: fine
+
+    bare = plan.model_copy(
+        update={
+            "shots": tuple(
+                sh.model_copy(
+                    update={
+                        "characters": tuple(
+                            c.model_copy(update={"appearance": None}) for c in sh.characters
+                        )
+                    }
+                )
+                for sh in plan.shots
+            )
+        }
+    )
+    with pytest.raises(RuntimeError, match="none of them has an `appearance`"):
+        _refuse_unclothed_staging(bare)
+
+    # A plan that stages nobody is most lanes, and is fine.
+    nobody = plan.model_copy(
+        update={"shots": tuple(sh.model_copy(update={"characters": ()}) for sh in plan.shots)}
+    )
+    _refuse_unclothed_staging(nobody)
+
+    # And the preset planner — the one that has no operator description to work from, and the one
+    # that produced the mannequins — describes its figure, so its plans pass this by construction.
+    from content_factory.schemas.fixtures import sample_story_plan
+    from content_factory.shots.planner import DEFAULT_APPEARANCE, plan_shots_from_story
+
+    preset = plan_shots_from_story(sample_story_plan(), width=1024, height=576, fps=24)
+    staged = [c for sh in preset.shots for c in sh.characters]
+    assert staged, "the preset planner stages one figure unless told otherwise"
+    assert all(c.appearance == DEFAULT_APPEARANCE for c in staged)
+    _refuse_unclothed_staging(preset)
+
+    # ...and `characters: none` still stages nobody, which also passes.
+    none = plan_shots_from_story(
+        sample_story_plan(), width=1024, height=576, fps=24, with_character=False
+    )
+    assert not [c for sh in none.shots for c in sh.characters]
+    _refuse_unclothed_staging(none)

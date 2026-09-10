@@ -61,7 +61,7 @@ def _duration_s(path: Path) -> float:
 
 
 def test_the_library_loads_and_every_sound_is_on_disk(library) -> None:
-    assert len(library.sounds) == 49
+    assert len(library.sounds) == 670
     for sound in library.sounds.values():
         assert sound.path.is_file(), sound.sound_id
         assert sound.duration_s > 0

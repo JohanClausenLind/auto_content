@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import cast
 
 import typer
@@ -468,6 +469,40 @@ def gpu_status() -> None:
         typer.echo("    " + " ".join(parked.resume_command()))
 
 
+@gpu_app.command("watch")
+def gpu_watch(
+    interval: float = typer.Option(10.0, help="Seconds between samples"),
+    out: str = typer.Option("", help="CSV to append to; default .services/gpu-telemetry.csv"),
+    limit: int = typer.Option(0, help="Stop after this many samples (0 = run until stopped)"),
+) -> None:
+    """Record what the card is doing, so the next Xid 79 is diagnosable rather than researched.
+
+    The 03:12 dropout on 2026-09-10 left no trace of the GPU's own state, so temperature, power,
+    clocks, throttle reasons and the root port's PCIe error counters all had to be argued about
+    from forum threads. One `nvidia-smi` call per interval closes that. See "Making it less
+    likely, and making it visible" in docs/gpu-hosts.md for the systemd unit.
+    """
+    from content_factory.doctor import _gpu_root_port
+    from content_factory.services import gpu_telemetry
+
+    path = Path(out) if out else gpu_telemetry.default_log_path()
+    port = _gpu_root_port()
+    typer.echo(f"sampling every {interval:g}s into {path}")
+    if port is None:
+        typer.echo("no NVIDIA display GPU on a PCIe root port: AER columns will be empty")
+    faulted = False
+    for sample in gpu_telemetry.samples(port, interval_s=interval, limit=limit or None):
+        gpu_telemetry.append(path, sample)
+        if sample.faulted and not faulted:
+            faulted = True
+            typer.echo(
+                f"PCIe ERROR on {port.name if port else 'the root port'}:"
+                f" {sample.aer_nonfatal} non-fatal, {sample.aer_fatal} fatal."
+                " The link this card is on has faulted; see docs/gpu-hosts.md.",
+                err=True,
+            )
+
+
 assets_app = typer.Typer(help="Character-asset review: check a built sculpture, then approve it.")
 app.add_typer(assets_app, name="assets")
 frames_app = typer.Typer(help="Frame review: look at the contact sheet, then record a verdict.")
@@ -546,14 +581,23 @@ def frames_review(
     accept_all: bool = typer.Option(False, "--accept-all", help="Accept every frame"),
     reject: str = typer.Option("", help="Comma-separated frame ids to reject"),
     reason: str = typer.Option("", help="Why those frames were rejected"),
-    reviewer: str = typer.Option("operator", "--as"),
+    reviewer: str = typer.Option("operator", "--as", help="operator, agent or vlm"),
 ) -> None:
     """Record a verdict on a batch of frames. Run the pipeline's review_frames stage first: it
     writes the contact sheet and the batch this command decides on."""
     import datetime as dt
     import pathlib
+    import typing
 
-    from content_factory.schemas.review import FrameReviewBatch
+    # Checked here, against the contract's own list, because it was not checked anywhere: this
+    # command accepted `--as overnight-review`, printed `{"passed": true}`, wrote the verdict —
+    # and the next `review_frames` refused the very file it had just written.
+    from content_factory.schemas.review import FrameReviewBatch, ReviewerKind
+
+    allowed = typing.get_args(ReviewerKind)
+    if reviewer not in allowed:
+        typer.echo(f"--as must be one of {', '.join(allowed)}; got {reviewer!r}", err=True)
+        raise typer.Exit(code=2)
 
     base = pathlib.Path(project_dir) / "deliverables" / deliverable / "reviews" / "frames"
     batch_path = base / "batch.json"
@@ -696,7 +740,8 @@ def run_local(
     subject: str = typer.Option(
         "",
         "--subject",
-        help="One sentence naming the film's world; leads the anchor prompt "
+        help="One sentence naming the film's world; leads the anchor prompt. Name no person or "
+        'trade in it, even attributively - "a blacksmith\'s anvil" draws the blacksmith '
         "(make_story_fixtures.py prints each scenario's)",
     ),
     style: str = typer.Option(
@@ -1113,3 +1158,116 @@ def config(
     settings = get_settings()
     console.print_json(json.dumps(settings.model_dump(mode="json"), indent=2))
     _ = show_defaults
+
+
+remote_app = typer.Typer(
+    help="The other machines that produce for this repo: what they have finished, and bringing it "
+    "home."
+)
+app.add_typer(remote_app, name="remote")
+
+
+def _remote_hosts(name: str) -> list:
+    from content_factory.config import get_settings
+
+    settings = get_settings().remote
+    if not settings.enabled():
+        typer.echo(
+            "no remote producers configured. Set CF__REMOTE__HOSTS in .env (single-quoted JSON):\n"
+            '  CF__REMOTE__HOSTS=\'[{"name":"nova","ssh":"nova@100.82.150.94"}]\'',
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    if not name:
+        return list(settings.hosts)
+    host = settings.host_named(name)
+    if host is None:
+        known = ", ".join(h.name for h in settings.hosts)
+        typer.echo(f"unknown host {name!r}; configured: {known}", err=True)
+        raise typer.Exit(code=2)
+    return [host]
+
+
+@remote_app.command("list")
+def remote_list(
+    host: str = typer.Option("", help="One host by name; default every configured host."),
+    as_json: bool = typer.Option(False, "--json", help="Machine-readable output."),
+) -> None:
+    """What each producer has, and which of it is ready to come home.
+
+    Reads only: one ssh round trip per host and not a byte of media. A run stopped at the human
+    review gate is reported as such rather than left out, because that is the resting state of an
+    `image-set` and silence about it reads as "nothing to collect".
+    """
+    from content_factory.services.harvest import HarvestError, already_harvested, discover
+
+    rows = []
+    for target in _remote_hosts(host):
+        try:
+            runs = discover(target)
+        except HarvestError as exc:
+            typer.echo(f"{target.name}: unreachable: {exc}", err=True)
+            continue
+        for run in runs:
+            state = "already here" if already_harvested(run) else run.state
+            rows.append(
+                {
+                    "host": target.name,
+                    "slug": run.slug,
+                    "state": state,
+                    "files": len(run.files) if run.packages else 0,
+                    "bytes": sum(f.bytes for f in run.files) if run.packages else 0,
+                    "qc_passed": run.qc_passed,
+                    "detail": run.detail,
+                }
+            )
+    if as_json:
+        typer.echo(json.dumps(rows, indent=1))
+        return
+    for row in rows:
+        size = f"{row['bytes'] / 1e6:.1f} MB" if row["bytes"] else ""
+        typer.echo(
+            f"{row['host']:<9} {row['slug']:<26} {row['state']:<16} {size:>9}  {row['detail']}"
+        )
+    typer.echo(
+        json.dumps({"runs": len(rows), "ready": sum(r["state"] == "finished" for r in rows)})
+    )
+
+
+@remote_app.command("harvest")
+def remote_harvest(
+    host: str = typer.Option("", help="One host by name; default every configured host."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Say what would come home; transfer nothing."
+    ),
+    limit: int = typer.Option(1, help="Passes to make (0 = keep going until stopped)."),
+    interval: float = typer.Option(60.0, help="Seconds between passes when limit is not 1."),
+) -> None:
+    """Bring finished deliverables home from the other producers.
+
+    Only what a lane actually delivers crosses — the manifest `compile_destination_packages` wrote,
+    verified digest by digest on arrival — plus a few hundred KB of evidence. Safe to run on a
+    timer: a deliverable already here transfers nothing.
+    """
+    import time
+
+    from content_factory.services.harvest import harvest as run_harvest
+
+    targets = _remote_hosts(host)
+    passes = 0
+    while limit == 0 or passes < limit:
+        outcomes = run_harvest(targets, dry_run=dry_run)
+        for outcome in outcomes:
+            typer.echo(str(outcome))
+        typer.echo(
+            json.dumps(
+                {
+                    "harvested": sum(o.result == "harvested" for o in outcomes),
+                    "ready": sum(o.result in {"harvested", "would harvest"} for o in outcomes),
+                    "refused": sum(o.result in {"refused", "unreachable"} for o in outcomes),
+                }
+            )
+        )
+        passes += 1
+        if limit == 0 or passes < limit:
+            time.sleep(interval)

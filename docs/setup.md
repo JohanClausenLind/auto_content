@@ -104,8 +104,9 @@ inside the platform safe zone; a `<name>.brand.json` sidecar picks paper/ink/acc
 word being spoken in the accent colour (`compose.caption_highlight`), and a story's optional `hook_text`
 is shown as a headline over the opening seconds (`compose.hook_seconds`). `exports/compose.json` reports
 pacing (mean and longest scene, changes per 10 s).
-`just setup-postchain` builds the Cutie / ProPainter / GIMM-VFI environments the post chain calls
-into.
+`just setup-postchain` builds the six upstream environments the post chain calls into (Cutie,
+ProPainter, GIMM-VFI, Practical-RIFE, SeedVR2, MMAudio), each with its own Python and venv. It
+needs the checkouts to exist first — see [docs/gpu-hosts.md](gpu-hosts.md) for the pinned list.
 
 ### Narration voice
 
@@ -267,96 +268,12 @@ uv sync --project skills/video/manim          # + optional: sudo apt install tex
 | Vega, Vega-Lite, Vega-Embed | not yet imported — kept for declarative statistical charts a hand-built scene would be tedious for (compile to a static SVG, never `vega-embed`) |
 | MapLibre GL | not yet imported — see above |
 
-## A second GPU host
-
-A sequence's frames are hub-and-spoke — each is an edit of the anchor, never of its neighbour —
-so at 100–385 s a frame they are worth generating on two machines at once. `image_sequences.
-hidream_endpoints` and `flux2_endpoints` take a list; each **replaces** its singular field, so the
-local server has to appear in the list to keep a share of the work. Unset is one endpoint and the
-serial path, byte for byte.
-
-Provisioning the second box (this tailnet: `nova`, 100.82.150.94):
-
-```bash
-# On the far host, as the operator (all of this needs sudo).
-sudo mkdir -p /mnt/fast
-sudo mount -o ro /dev/sda1 /mnt/fast && ls /mnt/fast   # LOOK before committing to the disk
-sudo umount /mnt/fast
-echo "UUID=$(sudo blkid -s UUID -o value /dev/sda1) /mnt/fast ext4 defaults,nofail 0 2" \
-  | sudo tee -a /etc/fstab
-sudo mount /mnt/fast && sudo chown "$USER:$USER" /mnt/fast
-
-sudo apt install -y ffmpeg git-lfs build-essential python3-dev libcairo2-dev libpango1.0-dev
-git lfs install
-curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash - && sudo apt install -y nodejs
-
-git clone <this repo> ~/git/auto_content && cd ~/git/auto_content && ./setup.sh
-```
-
-Use `/mnt/fast` **at the identical path**: `shots/planner.py`, `cli/workflows_cmd.py`,
-`controls/blender.py`, `reference/build.py` and `skills/video/postchain/common.py` hardcode it with
-no environment escape, so a different mount point means patching all five.
-
-Then, from the machine that has the weights:
-
-```bash
-rsync -aHAX --info=progress2 --partial /mnt/fast/models/  nova:/mnt/fast/models/
-rsync -aHAX --info=progress2 --partial ~/git/auto_content/models/  nova:~/git/auto_content/models/
-```
-
-The second copies the symlink index; its links resolve on both hosts because the store is at the
-same path. 278 GB takes about 45 minutes on gigabit — run it under `tmux`.
-
-Expose the far host's servers on its **tailnet** address, never `0.0.0.0`: neither server has any
-authentication, and both hand out a whole GPU.
-
-```bash
-# on nova
-CF_HIDREAM_HOST=100.82.150.94 uv run --project skills/image/hidream \
-  python skills/image/hidream/server.py &
-python ~/git/ComfyUI/main.py --listen 100.82.150.94 --port 8188 &
-```
-
-```bash
-# on the control-plane host, in .env
-CF__IMAGE_SEQUENCES__HIDREAM_ENDPOINTS=["http://127.0.0.1:8801","http://100.82.150.94:8801"]
-CF__LOCAL_SERVICES__AUTO_START=false   # it must not try to start and stop servers it does not own
-```
-
-Each frame's marker records `served_by`, so `jq -r .served_by <run>/sequence/frames/*.done.json`
-says which card drew what. `generate_video`'s clips are **not** pooled yet and still run one at a
-time against `CF__COMFYUI__ENDPOINT`.
-
-## Sharing the card with the flashcards agent
-
-`~/.openclaw/workspace/flashcards-agent` shares this machine's single 24 GB card. Its session LLM
-asks `ensure_vram()` for `OLLAMA_VRAM_GB` plus a 1.5 GB margin — 17.5 GB by default — and a Krea2
-anchor render is ~17.4 GB resident, so the two can never be co-resident. Its own `backend/vram.py`
-knows only how to unload Ollama models, so when a render holds the card it runs out of things to
-free and the session degrades.
-
-`content-factory gpu` is the other half:
-
-| Command | Does |
-| --- | --- |
-| `gpu status` | free VRAM, who holds the claim, what is parked and the command that resumes it |
-| `gpu yield --need-gb 17.5 --reason flashcards` | returns at once if enough is free; otherwise parks the local run at a stage boundary, unloads the model servers, and leaves a claim. Exits non-zero if it still cannot make room |
-| `gpu resume` | starts whatever was parked, from the stage it stopped at, with its original options; drops the claim. Idempotent |
-
-Parking reuses the stop the runner already survives: `stop_requested` is read at the next step
-boundary, the report is written, finished stages stay on disk, and the registration's own `step` is
-a node key that `run-local --from` accepts. A stage in flight can hold the card for ten minutes, so
-`--deadline` (90 s) escalates to the signalling stop — still resumable, from the interrupted stage
-rather than the one after it.
-
-While a claim is held, `run_plan` refuses to start: priority that works one way is not priority.
-The claim expires after `gpu_priority.MAX_CLAIM_HOLD_S` (2 h) because the other tenant is a separate
-program that can crash, and `CF_IGNORE_GPU_CLAIM=1` overrides it deliberately.
-
-**Wire it to demand, not to a clock.** The agent's 06:15 and 20:30 cron entries only send a Web
-Push nudge — they touch no GPU. The demand arrives when somebody opens the app, so the hook belongs
-in `ensure_vram()`, which already knows. Preempting a six-hour film on a schedule nobody consulted
-is how the film never finishes.
+## More than one GPU host, and sharing a card
+See **[docs/gpu-hosts.md](gpu-hosts.md)**: adding a second machine that generates frames alongside
+this one (driver, storage at the identical `/mnt/fast`, weights that no download script fetches,
+the pinned checkouts, the per-tool venvs, exposing the servers on the tailnet, wiring the endpoint
+pool), and `content-factory gpu yield|resume|status` for giving the card to a higher-priority
+tenant and resuming the parked run afterwards.
 
 ## Tailscale
 See README "Tailscale access". The app never binds beyond loopback; `tailscale serve` provides

@@ -251,6 +251,83 @@ def test_a_lane_with_no_recording_says_where_to_put_one(tmp_path: Path) -> None:
         stage_transcribe_audio(ctx)
 
 
+def _recording_in_an_mp4(path: Path, *, seconds: float = 12.0, moving: bool = False) -> Path:
+    """Sound in a video container: what a phone, a voice-memo app or a meeting tool hands over.
+
+    ``moving`` makes it an actual film instead — the same container, and the other answer."""
+    import subprocess
+
+    picture = (
+        f"testsrc=size=320x240:rate=25:duration={seconds}"
+        if moving
+        else f"color=c=black:s=320x240:r=25:d={seconds}"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-nostdin", "-y", "-loglevel", "error",
+            "-f", "lavfi", "-i", picture,
+            "-f", "lavfi", "-i", f"sine=frequency=440:duration={seconds}",
+            "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-shortest", str(path),
+        ],
+        check=True, capture_output=True, timeout=120,
+    )  # fmt: skip
+    return path
+
+
+def test_a_recording_that_arrived_as_an_mp4_is_read_rather_than_refused(tmp_path: Path) -> None:
+    """The operator's file is an MP4 because their recorder writes MP4, and the picture in it is
+    an hour of black. Refusing it for its container was the pipeline declining to read a file it
+    reads perfectly well — and the folder is where they were told to put a recording."""
+    from dataclasses import replace
+
+    ctx = make_context(project_dir=tmp_path / "prj")
+    _recording_in_an_mp4(ctx.project_dir / "uploads" / "voice-memo.mp4")
+
+    out = stage_transcribe_audio(replace(ctx, params={"engine": "fixture", "transcript": TALK}))
+
+    assert out.facts["source"] == "voice-memo.mp4"
+    # The stage read a file its own suffix list calls video, so the log carries the measurement
+    # that decided otherwise rather than leaving it to be rediscovered.
+    assert "black" in str(out.facts["picture"])
+    assert (ctx.ddir() / "audio" / "source.wav").is_file(), "normalised like any other recording"
+
+
+def test_a_film_in_the_uploads_folder_is_still_passed_over_and_said_so(tmp_path: Path) -> None:
+    """The container is not the licence — the picture is. A clip with something in it is not this
+    lane's material, and throwing its picture away silently would be the worse answer."""
+    from dataclasses import replace
+
+    ctx = make_context(project_dir=tmp_path / "prj")
+    _recording_in_an_mp4(ctx.project_dir / "uploads" / "holiday.mp4", moving=True)
+
+    with pytest.raises(RuntimeError, match=r"holiday\.mp4 is there, but carries picture"):
+        stage_transcribe_audio(replace(ctx, params={"engine": "fixture", "transcript": TALK}))
+
+
+def test_a_plain_recording_beside_a_clip_wins_without_the_clip_being_probed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A folder holding an interview and a clip is not ambiguous, and decoding the clip to find
+    that out is work done to learn nothing."""
+    from dataclasses import replace
+
+    from content_factory.workflows import stages
+
+    ctx = make_context(project_dir=tmp_path / "prj")
+    _recording(ctx.project_dir / "uploads" / "talk.wav", seconds=12)
+    _recording_in_an_mp4(ctx.project_dir / "uploads" / "holiday.mp4", moving=True, seconds=2)
+    monkeypatch.setattr(
+        stages, "_blank_pictured", lambda paths: pytest.fail("the clip should not be probed")
+    )
+
+    out = stage_transcribe_audio(replace(ctx, params={"engine": "fixture", "transcript": TALK}))
+
+    assert out.facts["source"] == "talk.wav"
+    assert "picture" not in out.facts
+
+
 def test_two_recordings_is_a_refusal_and_not_a_coin_flip(tmp_path: Path) -> None:
     from dataclasses import replace
 

@@ -340,6 +340,26 @@ class StoryPlan(VersionedModel):
     # farm under an overcast sky". Never narration and never display text — an anchor prompt built
     # from a beat's spoken words asks the model to illustrate a sentence instead of describing a
     # frame, which is the measured defect this field exists to remove (STATUS 1627, 1704).
+    #
+    # Name no person, trade or human action in it, not even attributively. A/B at one seed on the
+    # local model (2026-09-10): "one blacksmith's anvil on a dark workshop floor ... no people"
+    # drew a man with a hammer; "one iron anvil" — same sentence otherwise — drew the anvil alone,
+    # and dropping the "no people" as well changed nothing. The negative is inert (the dev weights
+    # run at guidance 0, so there is no classifier-free guidance for it to act through); the
+    # possessive was what summoned the smith.
+    #
+    # Necessary and not sufficient: an object whose ordinary existence is *being worked* draws
+    # somebody working it even with no person-word in the sentence. Of ten subjects written this
+    # way, eight were clean (amber, a geode, coral, a cogwheel, a chilli, moss, peppercorns, a
+    # quill) and the two that were instruments in use were not — an abacus came back held, a
+    # typewriter came back with hands at the keys. Name such a thing at rest and away from its
+    # use ("on a shelf", "packed in its case") rather than adding another negative.
+    #
+    # Both are one rule: **name only what you want in the picture**. "one warm lamp from the
+    # left" was written as a lighting note and drawn as a brass oil lamp, with a mug and a cloth
+    # to keep it company; "soft window light", "hard afternoon light and a sharp shadow" and "one
+    # cool light from above" put no fixture in frame and kept their plain grounds. Describe light
+    # as a quality, not as a thing.
     visual_subject: str | None = Field(default=None, min_length=1, max_length=400)
 
     @model_validator(mode="after")

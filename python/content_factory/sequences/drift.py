@@ -14,7 +14,7 @@ from PIL import Image, ImageChops, ImageFilter
 
 from content_factory.schemas.sequences import Box
 
-UNCALIBRATED = (0.30, 0.60)
+UNCALIBRATED = (0.30, 1.0)
 """The (locked_region_similarity, style_delta_max) pair for a **first run against a real model**.
 
 Not a recommendation and not a default: it is loose enough that drift QC observes rather than
@@ -23,6 +23,26 @@ threshold would be set from. It came out of `scripts/generate_holding_hands.py`,
 inline floats with the comment "calibrate before tightening" — a calibration living in a script.
 Named here so a caller selects it deliberately, and so the next person can see there is exactly one
 uncalibrated profile rather than a different pair of magic numbers in every script.
+
+**`style_delta` does not gate here, and the second number is 1.0 for a measured reason.** It was
+0.60, and it still gated: on a real HiDream sequence (2026-09-09, an owl set on nova) every frame
+came back between 0.617 and 0.724 and the lane could not finish. The number is not measuring what
+the name says. Measured on that run's own files:
+
+    anchor vs its own edited frame (same owl, same branch, same style)   style_delta 0.617
+    anchor vs a completely unrelated picture (a potter's hands indoors)  style_delta 0.347
+
+An unrelated photograph scores as **twice as close** as the frame the anchor was edited into, so a
+gate on this cannot do its job in either direction. It is a total-variation distance between two
+256-bin luminance histograms (`_style_delta`), which measures how much of the picture sits at each
+brightness — dominated by how much dark background there is, not by style. Coarsening the bins
+changes nothing (0.609 at 16 bins) and an earth-mover distance does not separate the pair either
+(0.154 against 0.132, the wrong way round). It needs replacing with a metric of colour and
+gradient statistics, not re-thresholding; until then it is recorded and not enforced, in the same
+spirit as `structural_similarity` below.
+
+`locked_region_similarity` still gates at 0.30 and still does something: on the same run a faithful
+edit measured 0.48 and the earlier run, whose instruction contradicted itself, measured 0.39.
 
 Once a style or a camera move has been measured, the answer is an entry in
 `ImageSequenceSettings.drift_thresholds.by_style` / `.by_camera`, not another use of this.

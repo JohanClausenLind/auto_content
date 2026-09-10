@@ -1,23 +1,40 @@
 # SFX skill — the video sound-effect and ambience library
 
-Builds `assets/sfx/`: **49 sounds** for video work, split into short one-shots (transitions,
-impacts, UI/motion-graphics cues) and long seamless ambience beds (weather, place, room tone,
-drones). Two builders fill it and they share everything downstream of the source:
+Builds `assets/sfx/`: **670 sounds** for video work, split into short one-shots (transitions,
+impacts, UI/motion-graphics cues, animals, human foley, instruments, vehicles) and long seamless
+ambience beds (weather, place, room tone, drones). Three builders fill it and they share
+everything downstream of the source:
 
 | builder | recipe | fills | source |
 |---|---|---|---|
-| `ingest_recorded.py` | `recorded.json` | 38 sounds | excerpts from a licensed recording bundle held locally |
+| `ingest_recorded.py` | `recorded.json` | 346 sounds | the #GameAudioGDC bundle held locally |
+| `ingest_packs.py` | `mixkit.json` | 294 sounds | individually downloaded files, **Mixkit Sound Effects Free License** |
+| `ingest_packs.py` | `local_renders.json` | 19 sounds | rendered locally by the operator before ingest; no recipe, no licence |
 | `build_library.py` | `library.json` | 11 sounds | generated with **Stable Audio 3 Small-SFX** (433M params, 44.1 kHz, SFX-only) |
 
-A recorded sound and a generated one are interchangeable in a mix: same 44.1 kHz stereo 24-bit
-FLAC, same loop wrap, same two loudness targets, same QC fields. Either builder re-renders the
-whole manifest and README through `index.py`, so a partial rebuild leaves the index describing
-the whole library — and `build_library.py` needs no bundle, `ingest_recorded.py` no GPU or model.
+Sounds from any origin are interchangeable in a mix: same 44.1 kHz stereo 24-bit FLAC, same loop
+wrap, same two loudness targets, same QC fields. Any builder re-renders the whole manifest and
+README through `index.py`, so a partial rebuild leaves the index describing the whole library —
+and `build_library.py` needs no bundle, the two ingests need no GPU or model.
 
-Recording beats generation wherever the bundle holds the sound, which is why the recorded half is
-the larger one. It does not hold everything: there is no stream in it, no night-only cricket bed
-and no office room tone, so those three stay generated rather than be filled with something that
-is nearly the right sound.
+Recording beats generation wherever a source holds the sound, which is why only 11 of the 670 are
+generated. No source holds everything: there is still no office room tone in the bundle, so that
+one stays generated rather than be filled with something that is nearly the right sound.
+
+**The three cut modes**, shared by both ingests and chosen per entry in the recipe:
+
+| mode | what it does | when |
+|---|---|---|
+| `whole` | take the file as delivered: trim the silence, optionally cap, high-pass, level | the source is already one cut sound — a stock one-shot, a supplier's sampler file. 495 of the 659 ingested sounds |
+| `loop` | sweep the whole recording for the evenest window, wrap the tail over the head | a long ambience, where a window is still to be chosen. 144 sounds |
+| `oneshot` | gate the file into events and take one | a take that warms up before the hit, or a minute of clock holding sixty ticks. 20 sounds |
+
+`whole` is the default for pack files and for most of the bundle because the supplier already
+decided where the sound starts and stops: an event gate over that decision throws away the edit
+being licensed, and crops the quiet approach of anything that swells. Two options tune it —
+`bed: true` levels a long continuous texture to the bed target instead of the one-shot target, and
+`trim: false` keeps the delivered length exactly, which matters for a musical render whose silence
+is part of its bar count.
 
 The control plane never imports this code, exactly like `skills/audio/breeze`.
 
@@ -26,17 +43,30 @@ Community License** and the bundled T5Gemma text encoder under the **Gemma Terms
 commercial use see <https://stability.ai/license>) — operator accepted these for local generation.
 The recording bundle is royalty-free with no attribution required, but its agreement **expressly
 prohibits using the sounds to train or enhance AI** and prohibits redistributing them other than
-incorporated into a project. So the recorded files are mix material only: never a training,
-fine-tuning or conditioning input, not even to this repo's own audio models. Full analysis in
-`docs/licensing.md`.
+incorporated into a project. The Mixkit pack is free for commercial use with no attribution
+clause, and forbids redistributing an Item on its own or aggregating Items "on a stock or
+inventory basis" — which is what a published copy of `assets/sfx` would be. Mixkit says nothing
+about AI, and that is not read as permission: the halves sit in one directory and are deliberately
+interchangeable, so **the strictest term governs the whole library**. Every file here is mix
+material only: never a training, fine-tuning or conditioning input, not even to this repo's own
+audio models. Full analysis in `docs/licensing.md` and
+`docs/research/2026-09-09-mixkit-sfx-pack-licence.md`.
 
 ## What is on disk
 - Weights: `models/sound_effects/StableAudio3-Small-SFX` (repo-local index link → `/mnt/fast/models/stable-audio-3-small-sfx`),
   HF `stabilityai/stable-audio-3-small-sfx`, complete: DiT + SAME-S autoencoder + `t5gemma-b-b-ul2/`.
 - Inference code: `external/stable-audio-3` @ `779434a` — git-ignored upstream checkout.
 - Recording bundle: **outside the repo**, default `~/Music/sonniss_gdc_2026`, override with
-  `CF_SONNISS_GDC_DIR`. 8.0 GB of 96/192 kHz WAV in 122 supplier packs, plus the tracklist
-  spreadsheet the ingest reads provenance out of. Never committed, never fetched by a build.
+  `CF_SONNISS_GDC_DIR`. 8.0 GB of 96/192 kHz WAV — 347 files in 122 supplier packs, 3.6 hours —
+  plus the tracklist spreadsheet the ingest reads provenance out of. Never committed, never
+  fetched by a build. **Its directory layout is load-bearing**: `src.pack` in the recipe is the
+  supplier-and-library directory name, so the bundle must stay exactly as it was extracted. It is
+  not sorted into library categories and must not be — that would break all 346 recipe entries
+  and throw away the attribution the directory names carry.
+- Pack roots: **outside the repo**, `/mnt/fast/sound-libraries/mixkit` (0.7 GB, override
+  `CF_MIXKIT_SFX_DIR`) and `/mnt/fast/sound-libraries/local-renders` (14 MB, override
+  `CF_LOCAL_SFX_DIR`). One directory per library category, a `SOURCES.sha256` beside them, and
+  `_duplicates/` holding downloads that turned out to be copies. `stage_pack.py` puts them there.
 - Design rationale, sources and measurements: `docs/research/2026-09-07-video-sfx-and-ambience-library.md`.
 
 ## Setup (once)
@@ -55,6 +85,22 @@ uv run --project skills/audio/sfx python skills/audio/sfx/ingest_recorded.py --a
 
 uv run --project skills/audio/sfx python skills/audio/sfx/ingest_recorded.py --list
 uv run --project skills/audio/sfx python skills/audio/sfx/ingest_recorded.py --only tick_light,ocean_waves_loop
+```
+
+```bash
+# sort a fresh download into the pack root by category (idempotent; --dry-run explains)
+uv run --project skills/audio/sfx python skills/audio/sfx/stage_pack.py \
+    --recipe skills/audio/sfx/mixkit.json --from ~/Downloads --dry-run
+
+# the Mixkit pack -> assets/sfx/ (~4 min; no GPU, no model load)
+uv run --project skills/audio/sfx python skills/audio/sfx/ingest_packs.py \
+    --recipe skills/audio/sfx/mixkit.json
+uv run --project skills/audio/sfx python skills/audio/sfx/ingest_packs.py \
+    --recipe skills/audio/sfx/local_renders.json
+
+# same --analyze / --list / --only flags as the recorded ingest
+uv run --project skills/audio/sfx python skills/audio/sfx/ingest_packs.py \
+    --recipe skills/audio/sfx/mixkit.json --analyze --only rain_thunder_loop
 ```
 
 ```bash
@@ -129,12 +175,49 @@ saying "this one is allowed to be what it is" — a check that has stopped check
 tilt are still recorded as description; `truncated` and `clipped` took the flag's place, because
 those are how an *excerpt* actually goes wrong.
 
+**Most of the bundle is already cut, which is why `whole` exists.** The first 38 excerpts were
+taken with the window sweep and the event gate, and the impression that stuck was "a 680 s
+food-court recording". That is the exception: measured across all 347 files, 199 are under eight
+seconds and the median pack is three sampler files totalling under a minute. For those the
+supplier has already made the edit, and `whole` keeps it. Only 90 of the 346 recorded entries
+still need a window swept, and 20 need an event gated.
+
+**Categories come from the filename where the supplier set one.** Three quarters of the bundle is
+named to the Universal Category System — `ANMLDog_`, `AMBTran_`, `WEAPSwrd_`, `VOXMale_`,
+`CREAMnstr_` — so the mapping onto this library's categories is a documented translation
+(`ANML`→animal, `AMB`→place, `CREA`→creature, `MAG`→magic, `DSGN`/`ROBT`→scifi,
+`VEH`/`TRN`/`AERO`→vehicle, `VOX` split between voice and human by whether there are words in it)
+rather than 308 separate judgements. The quarter that uses supplier-specific naming was classified
+by hand.
+
+**One file is deliberately not ingested.** `Camp fire, ... _B-format, Ambix.wav` is four-channel
+ambisonic with an unknown channel layout; `-ac 2` would fold the omni W against the X/Y/Z
+gradients rather than decode it, and this pipeline has no ambisonic decoder. The other four
+multichannel sources are quad, 5.1 and 7.1.2 — layouts ffmpeg has a real downmix matrix for — and
+those are ingested.
+
 **A ticking clock cannot be a bed.** The bundle holds a minute of antique clock and a ticking-clock
 loop is one of the most-used documentary beds, so one was cut — and then dropped, because a
 metronomic event inside a loop announces the wrap on every cycle. That is precisely what
 `event_prominence_db` exists to catch, and the honest response to the flag was to drop the entry,
 not to raise the threshold. The clock ships as `tick_light`, one tick out of the sixty the event
 gate found.
+
+**A pack can ship one recording under two names.** Mixkit items 2390 and 2401 are the same
+storm: 2401 is 2390 trimmed by one second at the head. Both window sweeps landed on the same span,
+so the library would have carried one sound under two ids, offering a choice it did not have. The
+byte-identical downloads a browser leaves behind (`x(1).wav`) are caught by `stage_pack.py`, which
+compares hashes rather than trusting the filename; this one was not byte-identical and was found
+by anchoring a fingerprint on the peak sample, which survives any head or tail trim. `index.write`
+now reports entries with matching FLAC sha256 on every build, so the next one is caught by the
+builder rather than by hand.
+
+**`harsh_band` fires often on a pack and that is not a defect.** 49 of the 294 Mixkit sounds trip
+it, against 2 of the 49 in the original library — because a dawn chorus, a kiss and a cartoon
+monkey genuinely put most of their energy in the harsh band. It is the same argument that removed
+`noise_like` from the recorded side, one threshold short of the same conclusion: the flag is kept
+because "listen to this before you put it under narration" is still useful advice, but it is
+description, not failure.
 
 **What QC does and does not tell you.** `harsh_band_ratio` is a cheap proxy for Zwicker sharpness,
 not a measurement of it. `event_prominence_db` is the one to read before shipping a bed: it is the
@@ -147,12 +230,17 @@ the build.
 |---|---|
 | `sfx.py` | shared DSP: offline model loading, loop wrap, filters, EBU R128 measurement, QC |
 | `index.py` | shared writer: renders `manifest.json` + `README.md` over both halves |
-| `recorded.json` | the recorded recipe: 38 sources, loop lengths, which event to take |
-| `recorded.py` | source side: ffmpeg/soxr decode, provenance, window search, event gate |
+| `recorded.json` | the bundle recipe: 346 sources, cut mode, loop lengths, which event to take |
+| `recorded.py` | source side: ffmpeg/soxr decode, provenance, window search, event gate, pack roots |
 | `ingest_recorded.py` | sweep → pick → level → write FLAC, and re-render the index |
+| `mixkit.json` | the Mixkit recipe: 294 files, one licence, per-sound mode/category/tags/use |
+| `local_renders.json` | the operator's 19 local renders, described from measurement |
+| `ingest_packs.py` | whole-file or loop-window ingest of a pack, and re-render the index |
+| `stage_pack.py` | sort a download into the pack root by category; sha256-verified, idempotent |
 | `library.json` | the generated recipe: prompts, seeds, durations, loop and level targets |
 | `build_library.py` | audition → pick → level → write FLAC, and re-render the index |
 | `run.py` | one ad-hoc prompt, one JSON line out |
 
-Env overrides: `CF_SA3_REPO`, `CF_SA3_SFX_MODEL_PATH`, `CF_SONNISS_GDC_DIR`. Model loading sets
+Env overrides: `CF_SA3_REPO`, `CF_SA3_SFX_MODEL_PATH`, `CF_SONNISS_GDC_DIR`,
+`CF_MIXKIT_SFX_DIR`, `CF_LOCAL_SFX_DIR`. Model loading sets
 `HF_HUB_OFFLINE=1`; nothing in this skill reaches the network.

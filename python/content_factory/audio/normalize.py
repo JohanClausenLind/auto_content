@@ -106,6 +106,148 @@ def is_number_word(word: str) -> bool:
     return stripped in _NUMBER_WORDS
 
 
+# British and American orthography, folded to one form on **both** sides of a comparison.
+#
+# The same reason `spoken_word_shape` masks numbers: this is two systems rendering the same spoken
+# word differently, and comparing the renderings measures the aligner's dictionary rather than
+# whether the model said the script. Measured on the narrated-video lane (2026-09-09), the beat
+# "Sunlight is white. It carries every colour at once." scored **0.74** against a 0.80 gate and
+# failed — the audio was correct, and `base.en` is an American-English model that writes "color"
+# for a correctly spoken "colour". One orthographic variant in a nine-word line is enough to fail
+# a good take.
+#
+# The fold is symmetric, so it can only ever make two spellings of one word agree; it cannot make
+# two *different* words agree unless they were already homophones, which an ASR transcript is no
+# evidence about either way. That is why the suffix rules below are safe even where they are crude:
+# "four" folding to "for" happens on both sides at once.
+_SPELLING_PAIRS: dict[str, str] = {
+    # -our / -or, and the forms that keep or drop the u
+    "colour": "color",
+    "colours": "colors",
+    "coloured": "colored",
+    "colourful": "colorful",
+    "honour": "honor",
+    "honours": "honors",
+    "honoured": "honored",
+    "favour": "favor",
+    "favours": "favors",
+    "favoured": "favored",
+    "favourite": "favorite",
+    "favourites": "favorites",
+    "behaviour": "behavior",
+    "behaviours": "behaviors",
+    "neighbour": "neighbor",
+    "neighbours": "neighbors",
+    "neighbourhood": "neighborhood",
+    "harbour": "harbor",
+    "harbours": "harbors",
+    "labour": "labor",
+    "labours": "labors",
+    "vapour": "vapor",
+    "vapours": "vapors",
+    "odour": "odor",
+    "rumour": "rumor",
+    "rigour": "rigor",
+    "splendour": "splendor",
+    "armour": "armor",
+    # -re / -er
+    "centre": "center",
+    "centres": "centers",
+    "centred": "centered",
+    "metre": "meter",
+    "metres": "meters",
+    "kilometre": "kilometer",
+    "kilometres": "kilometers",
+    "millimetre": "millimeter",
+    "millimetres": "millimeters",
+    "litre": "liter",
+    "litres": "liters",
+    "fibre": "fiber",
+    "fibres": "fibers",
+    "theatre": "theater",
+    "theatres": "theaters",
+    "calibre": "caliber",
+    "sombre": "somber",
+    "spectre": "specter",
+    # doubled consonants
+    "travelled": "traveled",
+    "travelling": "traveling",
+    "traveller": "traveler",
+    "modelled": "modeled",
+    "modelling": "modeling",
+    "cancelled": "canceled",
+    "cancelling": "canceling",
+    "labelled": "labeled",
+    "labelling": "labeling",
+    "fuelled": "fueled",
+    "marvellous": "marvelous",
+    # single words with no rule behind them
+    "grey": "gray",
+    "greyish": "grayish",
+    "aluminium": "aluminum",
+    "sulphur": "sulfur",
+    "sulphide": "sulfide",
+    "mould": "mold",
+    "moulds": "molds",
+    "moult": "molt",
+    "smoulder": "smolder",
+    "plough": "plow",
+    "draught": "draft",
+    "kerb": "curb",
+    "tyre": "tire",
+    "tyres": "tires",
+    "storey": "story",
+    "storeys": "stories",
+    "programme": "program",
+    "programmes": "programs",
+    "practise": "practice",
+    "defence": "defense",
+    "offence": "offense",
+    "licence": "license",
+    "pretence": "pretense",
+    "cheque": "check",
+    "cheques": "checks",
+    "jewellery": "jewelry",
+    "manoeuvre": "maneuver",
+    "oesophagus": "esophagus",
+    "foetus": "fetus",
+    "anaemia": "anemia",
+    "anaesthetic": "anesthetic",
+    "palaeontology": "paleontology",
+    "archaeology": "archeology",
+    "ageing": "aging",
+    "judgement": "judgment",
+    "learnt": "learned",
+    "spelt": "spelled",
+    "burnt": "burned",
+}
+
+_SPELLING_SUFFIXES: tuple[tuple[str, str], ...] = (
+    ("isation", "ization"),
+    ("isations", "izations"),
+    ("ising", "izing"),
+    ("ised", "ized"),
+    ("ises", "izes"),
+    ("ise", "ize"),
+    ("yse", "yze"),
+    ("ysed", "yzed"),
+    ("ysing", "yzing"),
+)
+"""Regular folds, longest first. Applied only when the word is at least two letters longer than
+the suffix, so "ise", "use" and "rise" are left alone."""
+
+
+def fold_spelling(word: str) -> str:
+    """One spelling for a word two dictionaries render differently. Idempotent."""
+    exact = _SPELLING_PAIRS.get(word)
+    if exact is not None:
+        return exact
+    for british, american in _SPELLING_SUFFIXES:
+        if len(word) >= len(british) + 2 and word.endswith(british):
+            return word[: -len(british)] + american
+    return word
+
+
 def spoken_word_shape(text: str) -> tuple[list[str], int]:
     """Words with each *run* of numbers collapsed to one sentinel, and how many runs there were.
 
@@ -146,5 +288,5 @@ def spoken_word_shape(text: str) -> tuple[list[str], int]:
                 in_run = True
             continue
         in_run = False
-        shape.append(word)
+        shape.append(fold_spelling(word))
     return shape, runs

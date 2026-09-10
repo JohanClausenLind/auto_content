@@ -194,21 +194,27 @@ def create_server() -> MCPServer:
             msg = f"no run {run_id!r} in workspace {workspace_id!r}"
             raise ValueError(msg)
         project_dir = projects_root() / view["project_id"]
-        patterns = (
-            "exports/*.mp4",
-            "audio/*-mastered.wav",
-            "captions/*.srt",
-            "animation/preview.mp4",
-        )
+        # The delivery candidates, not a second list. This had its own four patterns and they had
+        # drifted: a `single-image` run delivers `anchors/anchor.png` and an `image-set` run
+        # delivers `sequence/contact-sheet.png`, so both reported **no outputs at all** through
+        # this tool while their packages carried files. `compile_destination_packages` had the
+        # same hole and was fixed the same night (2026-09-10); one list is the fix for both.
+        from content_factory.workflows.stages import DELIVERY_CANDIDATES
+
         outputs = [
-            {"path": str(f), "bytes": f.stat().st_size}
-            for pattern in patterns
-            for f in sorted(project_dir.glob(f"deliverables/*/{pattern}"))
+            {"path": str(f), "bytes": f.stat().st_size, "role": role}
+            for role, relative in DELIVERY_CANDIDATES
+            for f in sorted(project_dir.glob(f"deliverables/*/{relative}"))
+            if f.is_file()
         ]
         return {
             "run_id": run_id,
             "state": view["state"],
             "project_dir": str(project_dir),
+            # An empty list means two different things and the caller cannot tell them apart:
+            # the run produced nothing, or the directory is not there at all (a durable run whose
+            # project dir was a temporary one, which is most of the rows in a dev database).
+            "project_dir_exists": project_dir.is_dir(),
             "outputs": outputs,
         }
 

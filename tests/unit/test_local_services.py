@@ -263,6 +263,29 @@ def test_backends_map_to_their_tenant_and_mocks_to_none() -> None:
     assert warmed == set()
 
 
+def test_a_pool_entry_on_the_other_box_is_not_this_machines_to_start() -> None:
+    """The second GPU host is in `hidream_endpoints`, and starting the local server for it puts
+    17-19 GB on a card the run never touches — measured 2026-09-10, and it was what killed the
+    `silent-video` running beside it (MMAudio met 15.5 GiB of somebody else's weights)."""
+    from content_factory.media.video_generate import ComfyUIVideoBackend
+    from content_factory.schemas.fixtures import sample_ltx_i2v_package
+    from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
+    from content_factory.workflows.stages import _same_endpoint, _service_for_backend
+
+    remote = HiDreamReferenceEditBackend(endpoint="http://100.82.150.94:8801")
+    assert _service_for_backend(remote) is None
+    # The same server written three ways is still the managed one.
+    for spelling in ("http://127.0.0.1:8801", "http://127.0.0.1:8801/", "127.0.0.1:8801"):
+        assert _service_for_backend(HiDreamReferenceEditBackend(endpoint=spelling)) == "hidream"
+    assert (
+        _service_for_backend(
+            ComfyUIVideoBackend("http://100.82.150.94:8188", sample_ltx_i2v_package())
+        )
+        is None
+    )
+    assert _same_endpoint("http://host:80", "http://host") and not _same_endpoint("a:1", "a:2")
+
+
 # --- the third GPU tenant, and what a generation cost ------------------------------------------
 
 
@@ -396,3 +419,51 @@ def test_a_pid_we_did_not_start_is_signalled_alone_not_by_process_group(
 
     assert plain == [9931]  # signalled exactly the process pgrep found
     assert world.killed == []  # and no process group at all
+
+
+def test_a_gpu_that_fell_off_the_bus_is_named_rather_than_retried(monkeypatch) -> None:
+    """Measured on vegaserv 2026-09-10 03:12: a PCIe AER uncorrectable error during an LTX-2.5
+    22B generation, then `Xid 79, GPU has fallen off the bus` and `Xid 154, recovery action
+    changed to Node Reboot Required`. Inside the pipeline that arrived as two unrelated bugs —
+    `ComfyTransientError: All connection attempts failed` on one lane and SeedVR2's
+    `SafetensorError: device cpu:0 is invalid` on the next — and a queue would have spent every
+    remaining job finding out.
+    """
+    import subprocess
+
+    import pytest
+
+    from content_factory.media.video_generate import MockVideoBackend
+    from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
+    from content_factory.workflows import stages as st
+    from content_factory.workflows.blocked import BlockedError
+
+    def smi(cmd, **kw):
+        return subprocess.CompletedProcess(
+            cmd,
+            9,
+            "No devices were found\n",
+            "Unable to determine the device handle for GPU0: 0000:01:00.0: Unknown Error\n",
+        )
+
+    # `gpu_is_gone` imports subprocess inside the function, so the real module is the seam.
+    monkeypatch.setattr(subprocess, "run", smi)
+    said = st.gpu_is_gone()
+    assert "No devices were found" in said
+
+    started: list[str] = []
+    monkeypatch.setattr(
+        "content_factory.services.local.ensure_service", lambda t: started.append(t)
+    )
+    with pytest.raises(BlockedError, match="Xid 79"):
+        st._ensure_backend_ready(HiDreamReferenceEditBackend(), set())
+    assert started == [], "nothing may be started on a card that is not there"
+
+    # A backend that needs no local tenant is untouched, and so is a host with no nvidia-smi.
+    st._ensure_backend_ready(MockVideoBackend(), set())
+
+    def missing(cmd, **kw):
+        raise FileNotFoundError(cmd[0])
+
+    monkeypatch.setattr(subprocess, "run", missing)
+    assert st.gpu_is_gone() == ""  # an offline machine is not a broken one

@@ -4,6 +4,13 @@
   "additionalProperties": false,
   "description": "The programme master: true-peak limiter → two-pass EBU R128 normalization → 48 kHz WAV.",
   "properties": {
+    "encode_headroom_db": {
+      "default": 0.3,
+      "maximum": 3,
+      "minimum": 0,
+      "title": "Encode Headroom Db",
+      "type": "number"
+    },
     "limiter": {
       "default": true,
       "title": "Limiter",
@@ -62,6 +69,7 @@
     }
   },
   "required": [
+    "encode_headroom_db",
     "limiter",
     "limiter_attack_ms",
     "limiter_ceiling_dbtp",

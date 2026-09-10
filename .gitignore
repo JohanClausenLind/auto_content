@@ -36,10 +36,12 @@ htmlcov/
 #   external/  upstream model-code checkouts (+ their .venv)    .venvs/   hf + scenedetect tool venvs
 #   models/    category-sorted symlink index into /mnt/fast/models
 #   output/    generated media, sequence workdirs, eval runs    sandbox/  throwaway prototypes
+#   videos/    finished films copied out of output/ for watching (see videos/README.md)
 /external/
 /.venvs/
 /models/
 /output/
+/videos/
 /out/
 /sandbox/
 

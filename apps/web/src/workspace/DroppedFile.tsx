@@ -188,6 +188,13 @@ export function DropSuggestions({ state, editor }: { state: DropState; editor: G
                 {`converted to ${entry.drop.filename.split(".").pop()}: ${entry.drop.conversion.detail}`}
               </span>
             )}
+            {entry.drop.blank_picture && (
+              // They dropped a video and were handed an audio node. That is the right answer for
+              // a recording, and wrong-looking without the measurement that reached it.
+              <span className="cf-drop__converted">
+                {`taken as a recording: ${entry.drop.blank_picture}`}
+              </span>
+            )}
             <button
               type="button"
               className="cf-drop__close"

@@ -22,6 +22,7 @@ from __future__ import annotations
 import io
 from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 from PIL import Image, ImageChops, ImageDraw, ImageStat
 
@@ -29,6 +30,15 @@ from content_factory.schemas.review import FrameFinding
 
 # Thresholds. Deliberately loose: a finding should mean "look at this", not "this is wrong".
 MIDTONE_MIN = 0.30
+"""A floor and never a ceiling, and the wording below says so on purpose.
+
+The detail string used to read "a photograph runs 60-80%", which invites somebody to add the
+matching maximum. Measured on nine frames of this model's output, scored by eye first
+(2026-09-10): the best frame in the set — a honeybee on lavender, 9/10 — is **0.960** midtones,
+and the worst — six consistent views of an object that is not what was asked for, 2/10 — is
+**0.935**. The lowest reading in the whole set, **0.679**, belongs to a 4/10 frame. Midtone
+fraction does not separate a good frame from a bad one here; it separates a *picture* from a
+frame crushed to two tones, which is the only thing this check is for."""
 """Fraction of pixels between 60 and 195 luma. Below this the tonal range has collapsed."""
 CLIP_BLACK_MAX = 0.35
 """Fraction crushed under luma 12."""
@@ -66,7 +76,7 @@ def tonal_findings(png: bytes) -> list[FrameFinding]:
             check="midtone_range",
             passed=midtones >= MIDTONE_MIN,
             severity="advisory",
-            detail=f"{midtones:.0%} of pixels are midtones (a photograph runs 60-80%)",
+            detail=f"{midtones:.0%} of pixels are midtones (under 30% is a crushed frame)",
             measured=round(midtones, 4),
             threshold=MIDTONE_MIN,
         ),
@@ -81,10 +91,55 @@ def tonal_findings(png: bytes) -> list[FrameFinding]:
     ]
 
 
+COLOUR_SAT_MIN = 0.06
+"""The least *any* colour picture has: of the pixels bright enough to carry a colour, the
+fraction with saturation above 25.
+
+The other direction of the same check, and it was missing. A style with no monochrome word in it
+can still come back grey — the model simply does not apply the instruction — and a grey frame from
+a colour brief is the same half-applied style the check below exists for, only more obvious.
+
+Measured over one evening's 27 HiDream anchors (2026-09-09), the separation is not close:
+
+    a sourdough loaf under a colour brief, returned grey     0.002
+    a deep-ocean frame under a colour brief, returned grey   0.011
+    a fogged grey "space" frame, three attempts running      0.014 - 0.040
+    ---------------------------------------------------------------
+    a genuinely dark frame that kept its colour              0.072
+    the least saturated ordinary frame                       0.19
+
+Both greyscale returns were bad pictures for other reasons too, which is the point: this catches a
+model that has stopped following the prompt, cheaply, before a person is asked to look.
+"""
+
+
 def colour_findings(png: bytes, *, expect_monochrome: bool) -> list[FrameFinding]:
-    """A style that asked for no colour and got some is a half-applied instruction, and looks it."""
+    """A style that asked for no colour and got some is a half-applied instruction, and looks it.
+
+    So is a style that asked for colour and got none.
+    """
     if not expect_monochrome:
-        return []
+        img = _load(png).convert("HSV")
+        sat = list(img.getchannel("S").tobytes())
+        val = list(img.getchannel("V").tobytes())
+        # Among the pixels bright enough to carry a colour at all. A near-black pixel has no
+        # meaningful hue, so counting the whole frame would mark every legitimately dark picture
+        # as greyscale — an underwater frame lit by one beam is mostly black on purpose.
+        lit = [s for s, v in zip(sat, val, strict=True) if v > 40]
+        coloured = (sum(1 for s in lit if s > 25) / len(lit)) if lit else 1.0
+        return [
+            FrameFinding(
+                check="colour_present",
+                passed=coloured >= COLOUR_SAT_MIN,
+                severity="blocker",
+                detail=(
+                    f"nothing in the style asked for monochrome and only {coloured:.1%} of pixels"
+                    " carry any colour — the model returned a greyscale frame"
+                ),
+                measured=round(coloured, 4),
+                threshold=COLOUR_SAT_MIN,
+            )
+        ]
     values = _channel_values(_load(png), "S")
     coloured = sum(1 for s in values if s > 60) / len(values)
     return [
@@ -98,6 +153,76 @@ def colour_findings(png: bytes, *, expect_monochrome: bool) -> list[FrameFinding
             ),
             measured=round(coloured, 4),
             threshold=MONOCHROME_SAT_MAX,
+        )
+    ]
+
+
+BORDER_BAND_MAX = 0.08
+"""How much of a frame may be flat bars along two opposite edges before it is a pillarbox.
+
+An image model asked for a 16:9 frame sometimes draws a narrower picture and fills the sides with
+one flat colour. It is never wanted, it is invisible to every other check here — the bars are mid
+grey, so nothing is crushed and nothing is blown — and it is unmistakable once measured. Over one
+evening's anchors the separation is total: the one pillarboxed frame put **60 %** of its width in
+flat bars, and every other frame measured **0**.
+"""
+
+
+def _flat_run(img: Image.Image, *, vertical: bool, tolerance: int = 6) -> float:
+    """The fraction of the frame taken by bars of **one flat colour** on both opposite edges.
+
+    Flatness alone is not enough to say "bar": every column of a horizontal gradient is flat, and
+    a plain sky is a legitimate picture. What makes a pad a pad is that the runs on the two
+    opposite edges are flat, are the *same* colour as each other, and are not the colour of the
+    picture between them.
+    """
+    width, height = img.size
+    span = width if vertical else height
+
+    def line(index: int) -> tuple[tuple[int, int], ...]:
+        """One row or column's per-band (min, max). RGB, so `getextrema` gives one pair a band."""
+        box = (index, 0, index + 1, height) if vertical else (0, index, width, index + 1)
+        return tuple(cast("tuple[tuple[int, int], ...]", img.crop(box).getextrema()))
+
+    def flat_as(index: int, colour: tuple[int, ...]) -> bool:
+        return all(
+            hi - lo <= tolerance and abs(lo - want) <= tolerance
+            for (lo, hi), want in zip(line(index), colour, strict=True)
+        )
+
+    head, tail = line(0), line(span - 1)
+    if any(hi - lo > tolerance for lo, hi in head) or any(hi - lo > tolerance for lo, hi in tail):
+        return 0.0
+    bar = tuple(lo for lo, _hi in head)
+    if any(abs(lo - want) > tolerance for (lo, _hi), want in zip(tail, bar, strict=True)):
+        return 0.0  # two different edge colours is a picture, not a pad
+    lead = 0
+    while lead < span and flat_as(lead, bar):
+        lead += 1
+    trail = 0
+    while trail < span - lead and flat_as(span - 1 - trail, bar):
+        trail += 1
+    # A frame that is flat all the way across has no picture in it to be padded around; that is a
+    # different fault and `tonal_findings` is the one that measures it.
+    return (lead + trail) / span if lead and trail and lead + trail < span else 0.0
+
+
+def border_findings(png: bytes) -> list[FrameFinding]:
+    """A picture drawn smaller than the frame it was asked for, with flat bars beside it."""
+    img = _load(png)
+    img = img.resize((160, 90) if img.width >= img.height else (90, 160))
+    worst = max(_flat_run(img, vertical=True), _flat_run(img, vertical=False))
+    return [
+        FrameFinding(
+            check="fills_the_frame",
+            passed=worst <= BORDER_BAND_MAX,
+            severity="blocker",
+            detail=(
+                f"{worst:.0%} of the frame is flat bars on two opposite edges — the model drew a"
+                " smaller picture and padded it"
+            ),
+            measured=round(worst, 4),
+            threshold=BORDER_BAND_MAX,
         )
     ]
 
@@ -155,6 +280,7 @@ def review_findings(
     for frame_id, png in pngs:
         findings = tonal_findings(png)
         findings += colour_findings(png, expect_monochrome=expect_monochrome)
+        findings += border_findings(png)
         findings += edge_findings(png)
         if previous is not None:
             findings.append(continuity_finding(previous, png))

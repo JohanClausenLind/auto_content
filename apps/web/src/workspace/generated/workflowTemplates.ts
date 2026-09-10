@@ -22,7 +22,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "captions"
     ],
     "caveat": "",
-    "prerequisite": "The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's Audio File node. faster-whisper downloads its own model on first use, so the first run needs network; set transcribe.engine to fixture with your own transcript to stay offline.\n",
+    "prerequisite": "The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg, or an mp4/mov whose picture is blank: a phone writes those, and the picture is measured) or dropped on the canvas's Audio File node. faster-whisper downloads its own model on first use, so the first run needs network; set transcribe.engine to fixture with your own transcript to stay offline.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -138,6 +138,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -260.0,
         "y": 0.0,
         "values": {
+          "characters": "none",
           "fps": 30,
           "planner": "story_presets",
           "size": "576x1024"
@@ -161,11 +162,11 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "y": 0.0,
         "values": {
           "model": "hidream-o1",
-          "prompt": "the moment this part of the recording describes, as a single drawn frame",
+          "prompt": "the subject filling the picture, seen close, nothing else in shot",
           "source": "generate",
           "style": "hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper texture, one palette, one light direction, no text, no borders, no photographic lighting\n"
         },
-        "note": "One drawing per shot. The prompt says frame rather than sentence on purpose: an image model handed a line of narration illustrates an argument instead of describing a picture.\n"
+        "note": "One drawing per shot. The prompt describes a picture rather than quoting the narration: an image model handed a line of speech illustrates an argument instead of drawing a frame. It also avoids the word \"frame\" as a noun - \"one drawn frame\" drew three literal framed pictures hanging on walls out of six (2026-09-10). \"Filling the picture\" does not.\n"
       },
       {
         "key": "frames_gate",
@@ -537,7 +538,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "delivery"
     ],
     "caveat": "",
-    "prerequisite": "The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's Audio File node. faster-whisper downloads its model on first use; transcribe.engine=fixture with your own transcript keeps the run offline.\n",
+    "prerequisite": "The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg, or an mp4/mov whose picture is blank: a phone writes those, and the picture is measured) or dropped on the canvas's Audio File node. faster-whisper downloads its model on first use; transcribe.engine=fixture with your own transcript keeps the run offline.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -1513,6 +1514,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 420.0,
         "y": 260.0,
         "values": {
+          "model": "hidream-o1",
           "prompt": "the scene staged exactly as the control passes show",
           "style": "one consistent editorial illustration look across every staged beat, restrained palette, clean shapes, no photographic lighting, no text or numerals in the image\n"
         },
@@ -1524,6 +1526,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 760.0,
         "y": 260.0,
         "values": {
+          "model": "ltx-2.5.i2v",
           "prompt": "camera moves exactly as staged in the 3D scene"
         },
         "note": "No size value. With a shot plan the clip is generated at the ShotSpec's own size \u2014 what the anchor was drawn at and the control passes were rendered at. `size` is read only on the `motion: hold` path. compose_video letterboxes into the timeline frame, never crops.\n"
@@ -1837,7 +1840,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -940.0,
         "y": 0.0,
         "values": {},
-        "note": "The list of views, as beats. Point its story widget at a written fixture when the views are decided in advance rather than drafted.\n"
+        "note": "The list of views, as beats. Point its story widget at a written fixture when the views are decided in advance rather than drafted.\nMeasured over six sets: an edit can re-view or rearrange what the anchor already holds and cannot invent a surface it never showed. \"Cut in half\" and \"from behind\" come back as the anchor. A beat needing an unseen face needs an anchor of its own.\n"
       },
       {
         "key": "anchor",
@@ -1845,6 +1848,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -600.0,
         "y": 0.0,
         "values": {
+          "model": "hidream-o1",
           "prompt": "the subject alone, centred, plain background, the reference view of the set",
           "seed": 424242,
           "style": "consistent character and material design, even flat lighting, no dramatic shadow, plain neutral background, same rendering idiom in every image\n"
@@ -1874,7 +1878,9 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "type": "generate_keyframes",
         "x": 420.0,
         "y": 0.0,
-        "values": {},
+        "values": {
+          "model": "hidream-o1"
+        },
         "note": "Hub and spoke: every image is an edit of the anchor under the lock, never an independent generation. Frames that fail the drift thresholds are regenerated here before drift_qc sees them.\n"
       },
       {
@@ -2127,6 +2133,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -940.0,
         "y": 0.0,
         "values": {
+          "model": "hidream-o1",
           "prompt": "the opening frame of the shot, as it should look before anything moves",
           "source": "upload"
         },
@@ -2138,6 +2145,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -600.0,
         "y": 0.0,
         "values": {
+          "model": "ltx-2.5.i2v",
           "prompt": "hold the framing of the first frame and let the motion develop out of it",
           "subject": "the scene in the supplied picture, moving gently"
         },
@@ -2803,7 +2811,9 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "type": "generate_keyframes",
         "x": 420.0,
         "y": 0.0,
-        "values": {},
+        "values": {
+          "model": "hidream-o1"
+        },
         "note": "No frames value is set, because the runner does not read one: stage_generate_keyframes takes its length from the builtin motion plan, which holds 8 frames. Setting the widget would look like it chose the length of the cut and would not.\n"
       },
       {
@@ -2979,7 +2989,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "review"
     ],
     "caveat": "",
-    "prerequisite": "A script (fixtures/story/<name>.json) and, for voice_over, recordings under takes/. Without recordings, swap voice_over for synthesize_narration.\n",
+    "prerequisite": "A script (fixtures/story/<name>.json) at **24 fps** - see the shots node - and, for voice_over, one recording per beat named by beat id (<beat_id>.wav) in the run's uploads folder or under takes/. `make` refuses the lane with none supplied rather than drawing for an hour and then failing at voice_over. Without recordings, swap voice_over for synthesize_narration.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -3073,7 +3083,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
           "planner": "reference",
           "size": "1024x576"
         },
-        "note": "One 3D shot per beat, each staged from the mocap clip retrieval chose, so the contact on screen is contact that was captured rather than contact that was guessed. A beat with no match falls back to the preset staging. Pass --shots to override the whole plan with a hand-authored fixture, e.g. fixtures/shots/two_hander_mocap.json.\n"
+        "note": "One 3D shot per beat, staged from the mocap clip retrieval chose, so the contact on screen was captured rather than guessed. A beat with no match falls back to preset staging; --shots overrides the plan. The only lane that pins a rate: 24 is the drawn-film rate, and plan_story writes 24 too. A --story from another lane says 30, which plan_shots refuses.\n"
       },
       {
         "key": "assets_gate",
@@ -3123,6 +3133,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 1440.0,
         "y": 0.0,
         "values": {
+          "model": "ltx-2.5.i2v",
           "motion": "ltx",
           "prompt": "camera and characters move exactly as staged in the 3D scene",
           "size": "1024x576"
@@ -3587,6 +3598,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 420.0,
         "y": 0.0,
         "values": {
+          "model": "hidream-o1",
           "prompt": "the scene exactly as the control passes stage it, held in one consistent look",
           "style": "cinematic practical-camera photography, natural light, shallow depth of field, filmic grading, physically plausible surfaces, no video-game gloss, no illustration\n"
         },
@@ -3598,6 +3610,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 760.0,
         "y": 0.0,
         "values": {
+          "model": "ltx-2.5.i2v",
           "prompt": "camera and bodies move exactly as staged in the 3D scene",
           "size": "1024x576"
         },
@@ -3835,6 +3848,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 80.0,
         "y": 0.0,
         "values": {
+          "model": "hidream-o1",
           "prompt": "the scene as the shot plan frames it, no text and no on-screen words",
           "style": "one consistent look across every shot, composed to read without narration, strong silhouette and clear subject, no captions, no lettering\n"
         },
@@ -3846,6 +3860,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": 420.0,
         "y": 0.0,
         "values": {
+          "model": "ltx-2.5.i2v",
           "prompt": "unhurried motion that reads on its own, camera and subject as the shot plan stages them",
           "size": "1024x576"
         },
@@ -4219,7 +4234,8 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "x": -600.0,
         "y": 130.0,
         "values": {
-          "prompt": "the subject of the brief, one clear vertical frame, nothing else competing for the eye",
+          "model": "hidream-o1",
+          "prompt": "the subject of the brief filling a vertical picture, nothing else competing for the eye",
           "style": "photographic, single strong light, shallow depth of field, muted palette, vertical framing with the subject off centre, no text, no logo, no collage\n"
         },
         "note": "The one frame the motion pass grows from, so the whole clip inherits its look."
@@ -4231,6 +4247,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "y": 130.0,
         "values": {
           "duration": 6.0,
+          "model": "ltx-2.5.i2v",
           "prompt": "slow push in on the subject, small real movement in the frame, no camera shake",
           "size": "576x1024"
         },
@@ -4558,7 +4575,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "y": 0.0,
         "values": {
           "model": "hidream-o1",
-          "prompt": "the subject of the brief, framed as a single finished picture",
+          "prompt": "one subject filling the frame, nothing else in shot",
           "style": "one clear subject, deliberate composition, even readable lighting, no collage, no panels, no text overlay\n"
         },
         "note": "model is the only thing that used to fork this lane into two workflows. krea2-turbo draws the same graph; megapixels is left at its default because hidream-o1 ignores it.\n"
@@ -4856,7 +4873,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "restoration"
     ],
     "caveat": "",
-    "prerequisite": "A written script for plan_story to freeze, and one recording per beat under takes/, named by beat id. A missing take fails voice_over and names the beat rather than filling the gap.\n",
+    "prerequisite": "A written script for plan_story to freeze, and one recording per beat named by beat id (<beat_id>.wav) in the run's uploads folder or under takes/. `make` refuses the lane with nothing supplied rather than failing inside voice_over; a set that is missing one beat fails there and names the beat rather than filling the gap.\n",
     "stages_without_executor": [],
     "models": [
       {
@@ -4962,23 +4979,33 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "values": {}
       },
       {
+        "key": "mix",
+        "type": "mix_audio",
+        "x": 420.0,
+        "y": 130.0,
+        "values": {
+          "target_lufs": -16.0
+        },
+        "note": "The step this lane was missing. restore_speech writes one repaired wav per beat and nothing assembled them, so a lane whose product is a clean spoken track delivered five per-beat files and no track. Loudness only: no music, no sound design, -16 LUFS for spoken word.\n"
+      },
+      {
         "key": "qc",
         "type": "qc_deliverable",
-        "x": 420.0,
+        "x": 760.0,
         "y": 130.0,
         "values": {}
       },
       {
         "key": "pack",
         "type": "compile_destination_packages",
-        "x": 760.0,
-        "y": 130.0,
+        "x": 1100.0,
+        "y": 0.0,
         "values": {}
       },
       {
         "key": "deliver",
         "type": "output.deliverables",
-        "x": 1100.0,
+        "x": 1440.0,
         "y": 0.0,
         "values": {},
         "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
@@ -5036,11 +5063,17 @@ export const WORKFLOW_TEMPLATE_DATA = [
       {
         "from_key": "clean_voice",
         "from_slot": "audio",
+        "to_key": "mix",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "mix",
+        "from_slot": "audio",
         "to_key": "qc",
         "to_slot": "deliverable"
       },
       {
-        "from_key": "clean_voice",
+        "from_key": "mix",
         "from_slot": "audio",
         "to_key": "pack",
         "to_slot": "deliverable"
@@ -5065,6 +5098,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
       "clean_voice",
       "timings",
       "captions",
+      "mix",
       "qc",
       "pack"
     ],
@@ -5082,6 +5116,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "key": "deliver",
         "name": "Check and deliver",
         "members": [
+          "mix",
           "qc",
           "pack",
           "deliver"

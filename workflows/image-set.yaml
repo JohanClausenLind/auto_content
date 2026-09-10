@@ -62,11 +62,16 @@ nodes:
   - key: story
     type: plan_story
     note: >
-      The list of views, as beats. Point its story widget at a written fixture when the views are
-      decided in advance rather than drafted.
+      The list of views, as beats. Point its story widget at a written fixture when the views
+      are decided in advance rather than drafted.
+
+      Measured over six sets: an edit can re-view or rearrange what the anchor already holds
+      and cannot invent a surface it never showed. "Cut in half" and "from behind" come back
+      as the anchor. A beat needing an unseen face needs an anchor of its own.
   - key: anchor
     type: generate_anchor
     values:
+      model: hidream-o1
       seed: 424242
       prompt: "the subject alone, centred, plain background, the reference view of the set"
       style: >
@@ -89,6 +94,7 @@ nodes:
       node is silent, and a settings change would otherwise reroute this lane through video.
   - key: spokes
     type: generate_keyframes
+    values: {model: hidream-o1}
     note: >
       Hub and spoke: every image is an edit of the anchor under the lock, never an independent
       generation. Frames that fail the drift thresholds are regenerated here before drift_qc sees

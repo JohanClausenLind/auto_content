@@ -190,12 +190,15 @@ export interface DropConversion {
 export interface UploadedDrop {
   asset_id: string;
   filename: string;
+  /** What the file is. Not always what `mime` says: an MP4 with nothing to look at is audio. */
   kind: "image" | "video" | "audio" | "document" | "data" | "text";
   mime: string;
   size_bytes: number;
   /** What arrived, before conversion; differs from size_bytes when it was re-encoded. */
   uploaded_bytes: number;
   conversion: DropConversion | null;
+  /** Why a file whose MIME says video is being offered as a recording; null when it is a film. */
+  blank_picture: string | null;
   sha256: string;
   facts: Record<string, string | number>;
   /** One line describing what actually arrived, measured rather than guessed. */

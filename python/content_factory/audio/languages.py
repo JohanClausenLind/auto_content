@@ -92,6 +92,31 @@ NO_LOCAL_SWEDISH = (
 )
 
 
+ENGLISH_ONLY_SUFFIX = ".en"
+"""What Whisper calls its English-only checkpoints: `base.en`, `small.en`, `medium.en`."""
+
+
+def aligner_model_for(locale: str, model: str, *, configured: bool) -> str:
+    """The forced-alignment model for a narration language, given what the settings asked for.
+
+    Qwen3-TTS speaks ten languages and the aligner was pinned to `base.en`, which is an
+    English-only Whisper checkpoint. It does not refuse other languages — it transcribes them as
+    English-sounding nonsense — so a word-perfect German take would score near zero against the
+    script and the beat would fail as a mis-speech. Nothing said which of the two was wrong.
+
+    So an English-only checkpoint left at its **default** is swapped for its multilingual sibling
+    (`base.en` -> `base`) when the narration is not English. A checkpoint the operator *configured*
+    is obeyed: a machine that has been told which weights it has on disk has to be believed, and
+    the run records which model actually aligned. Same precedence, and the same reason, as
+    `_anchor_backend_name`'s configured-versus-defaulted split.
+    """
+    if configured or locale_prefix(locale) == "en":
+        return model
+    if model.endswith(ENGLISH_ONLY_SUFFIX):
+        return model[: -len(ENGLISH_ONLY_SUFFIX)]
+    return model
+
+
 class LanguageUnsupportedError(RuntimeError):
     """The narration language asked for is not one the chosen voice can speak."""
 

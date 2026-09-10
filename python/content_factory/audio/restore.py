@@ -58,14 +58,21 @@ class RestorationError(Exception):
 # ---- the deterministic tail: de-esser -> EQ -> light compression -----------------------------
 
 
-def voice_chain_filters(spec: VoiceChainSpec, *, sample_rate_hz: int, length_samples: int) -> str:
+def voice_chain_filters(
+    spec: VoiceChainSpec, *, sample_rate_hz: int, length_samples: int, de_ess: bool = True
+) -> str:
     """The FFmpeg filter chain for one beat, in the order the audio travels it.
 
     ``length_samples`` is the output length at ``sample_rate_hz``: the chain pads a short result
     and trims a long one, so the beat comes out exactly as long as it went in.
+
+    ``de_ess`` is the caller's measurement, ANDed with the spec's own switch. At an intensity that
+    actually reduces esses (see :class:`VoiceChainSpec`) the filter takes a third of the 5-9 kHz
+    band off material that never needed it, so it runs on the beats the detector flagged and not
+    on the rest — the same gate every model step in this chain already uses.
     """
     parts = [f"aresample={sample_rate_hz}", "aformat=channel_layouts=mono:sample_fmts=fltp"]
-    if spec.de_ess:
+    if spec.de_ess and de_ess:
         parts.append(
             f"deesser=i={spec.de_ess_intensity}:m={spec.de_ess_max_reduction}"
             f":f={spec.de_ess_frequency}:s=o"
@@ -101,6 +108,7 @@ def apply_voice_chain(
     *,
     sample_rate_hz: int,
     length_samples: int,
+    de_ess: bool = True,
 ) -> None:
     out_wav.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg(
@@ -108,7 +116,12 @@ def apply_voice_chain(
             "-i",
             str(in_wav),
             "-af",
-            voice_chain_filters(spec, sample_rate_hz=sample_rate_hz, length_samples=length_samples),
+            voice_chain_filters(
+                spec,
+                sample_rate_hz=sample_rate_hz,
+                length_samples=length_samples,
+                de_ess=de_ess,
+            ),
             "-ar",
             str(sample_rate_hz),
             "-ac",
@@ -311,8 +324,10 @@ def restore_beat(
     else:
         skipped.append("enhancer: off")
 
-    # The chain tail always runs: it is the step that also guarantees the output length.
+    # The chain tail always runs: it is the step that also guarantees the output length. Only the
+    # de-esser inside it is conditional, and on the same measurement the model steps use.
     length_samples = round(report_before.duration_ms * spec.sample_rate_hz / 1000)
+    de_ess = spec.chain.de_ess and (forced or report_before.needs_de_ess)
     try:
         apply_voice_chain(
             current,
@@ -320,10 +335,16 @@ def restore_beat(
             spec.chain,
             sample_rate_hz=spec.sample_rate_hz,
             length_samples=length_samples,
+            de_ess=de_ess,
         )
     except AudioError as exc:
         raise RestorationError(f"voice chain failed on {beat_id}: {exc}") from exc
-    steps.append("voice_chain:de_ess+eq+compress")
+    steps.append(f"voice_chain:{'de_ess+' if de_ess else ''}eq+compress")
+    if spec.chain.de_ess and not de_ess:
+        skipped.append(
+            f"de_ess: 5-9 kHz energy is {report_before.sibilance_ratio:.3f} of the speech band"
+            f" (limit {report_before.thresholds.sibilance_ratio_max})"
+        )
 
     report_after = detect_artifacts(out_wav, asset_id=beat_id, thresholds=spec.thresholds)
     drift = abs(report_after.duration_ms - report_before.duration_ms)

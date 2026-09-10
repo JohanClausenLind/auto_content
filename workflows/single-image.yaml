@@ -58,8 +58,13 @@ nodes:
   - key: anchor
     type: generate_anchor
     values:
+      # Says how the picture is framed, never what a picture *is*. "framed as a single finished
+      # picture" was here and a diffusion model reads it literally: asked for a blacksmith at an
+      # anvil it drew an ornate picture frame hanging on a brick wall with a blacksmith inside it.
+      # Every word in a prompt is a thing the model can draw, so meta-language about the
+      # deliverable has to stay out of one.
+      prompt: "one subject filling the frame, nothing else in shot"
       model: hidream-o1
-      prompt: "the subject of the brief, framed as a single finished picture"
       style: >
         one clear subject, deliberate composition, even readable lighting, no collage, no panels,
         no text overlay

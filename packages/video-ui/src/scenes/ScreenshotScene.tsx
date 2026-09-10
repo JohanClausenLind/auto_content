@@ -5,7 +5,7 @@ import { continueRender, delayRender, Img, useCurrentFrame } from "remotion";
 import { useSceneEnv } from "../context";
 import { enter, motionFrames, progress } from "../motion";
 import { PlaceholderCard } from "./Placeholder";
-import { hostOf, SceneFrame, useSceneGeometry } from "./common";
+import { hostOf, minTextPx, SceneFrame, useSceneGeometry } from "./common";
 
 export interface Rect {
   left: number;
@@ -117,7 +117,7 @@ export function ScreenshotScene({ scene, compiled }: { scene: Spec; compiled: { 
           />
         )}
       </div>
-      <div style={{ marginTop: 8 * scale, color: theme.color.muted, fontSize: 20 * scale }}>
+      <div style={{ marginTop: 8 * scale, color: theme.color.muted, fontSize: Math.max(minTextPx(theme, scale), 20 * scale) }}>
         {source ? `${source.publisher || hostOf(source.url)} · ${source.accessed}` : scene.alt_text}
       </div>
     </SceneFrame>

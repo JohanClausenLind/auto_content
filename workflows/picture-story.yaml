@@ -18,8 +18,10 @@ description: >
 category: video
 tags: [pictures, story, 3d, consistency, voice, review]
 prerequisite: >
-  A script (fixtures/story/<name>.json) and, for voice_over, recordings under takes/. Without
-  recordings, swap voice_over for synthesize_narration.
+  A script (fixtures/story/<name>.json) at **24 fps** - see the shots node - and, for voice_over,
+  one recording per beat named by beat id (<beat_id>.wav) in the run's uploads folder or under
+  takes/. `make` refuses the lane with none supplied rather than drawing for an hour and then
+  failing at voice_over. Without recordings, swap voice_over for synthesize_narration.
 models:
   - kind: skill
     label: Blender scene controller
@@ -68,10 +70,10 @@ nodes:
     type: plan_shots
     values: {planner: reference, size: 1024x576, fps: 24}
     note: >
-      One 3D shot per beat, each staged from the mocap clip retrieval chose, so the contact on
-      screen is contact that was captured rather than contact that was guessed. A beat with no
-      match falls back to the preset staging. Pass --shots to override the whole plan with a
-      hand-authored fixture, e.g. fixtures/shots/two_hander_mocap.json.
+      One 3D shot per beat, staged from the mocap clip retrieval chose, so the contact on screen
+      was captured rather than guessed. A beat with no match falls back to preset staging;
+      --shots overrides the plan. The only lane that pins a rate: 24 is the drawn-film rate, and
+      plan_story writes 24 too. A --story from another lane says 30, which plan_shots refuses.
   - key: assets_gate
     type: review_assets
     note: Nothing is drawn from a character nobody has looked at.
@@ -92,7 +94,7 @@ nodes:
     note: Rejecting one drawing costs one drawing, not the film.
   - key: motion
     type: generate_video
-    values: {motion: ltx, size: 1024x576, prompt: "camera and characters move exactly as staged in the 3D scene"}
+    values: {model: ltx-2.5.i2v, motion: ltx, size: 1024x576, prompt: "camera and characters move exactly as staged in the 3D scene"}
     note: 'motion: hold turns the same lane into held drawings; ltx animates between them.'
   - key: smooth
     type: interpolate

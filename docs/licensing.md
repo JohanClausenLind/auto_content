@@ -54,7 +54,9 @@ trafilatura ≥1.8 (Apache-2.0), React Flow `@xyflow/react` 12.11.5 (MIT), Ajv (
 
 | Asset set | Origin | License |
 |---|---|---|
-| `assets/sfx` — 38 recorded files | Sonniss #GameAudioGDC Bundle 2026 (Part 9); 11 suppliers, per-file provenance in `assets/sfx/manifest.json` | Sonniss #GameAudioGDC Bundle licensing agreement (royalty-free) |
+| `assets/sfx` — 346 recorded files | Sonniss #GameAudioGDC Bundle 2026 (Part 9); 18 suppliers, per-file provenance in `assets/sfx/manifest.json` | Sonniss #GameAudioGDC Bundle licensing agreement (royalty-free) |
+| `assets/sfx` — 295 pack files | Mixkit (Envato), downloaded 2026-09-09; per-file provenance in `assets/sfx/manifest.json` | Mixkit Sound Effects Free License + Envato User Terms |
+| `assets/sfx` — 19 local renders | Rendered by the operator before ingest | none (own output; origin not recorded) |
 | `assets/sfx` — 11 generated files | Stable Audio 3 Small-SFX, run locally | Stability AI Community License (weights); Gemma Terms of Use (text encoder) |
 | `assets/music` — 22 generated tracks | MiniMax-Music3 (GGUF), run locally through the HOT-Step engine | MiniMax-Music3 Community License (weights); HOT-Step engine MIT |
 
@@ -84,8 +86,58 @@ Three clauses in it bind behaviour and are not optional:
   and loop-wrapping are the modification right being exercised; the recordings stay the
   suppliers'.
 
-The source bundle itself (8.0 GB of 96/192 kHz WAV) is never committed and never fetched by a
-build. It lives outside the repo at `CF_SONNISS_GDC_DIR`; only the 44.1 kHz excerpts are kept.
+The source bundle itself (8.0 GB of 96/192 kHz WAV, 347 files in 122 supplier packs) is never
+committed and never fetched by a build. It lives outside the repo at `CF_SONNISS_GDC_DIR`; only
+the 44.1 kHz excerpts are kept. **Its directory layout is part of the provenance** — the recipe
+addresses every source as `<supplier — library>/<file>` — so the bundle stays exactly as
+extracted and is never re-sorted.
+
+346 of its 347 files are now ingested (2026-09-10, up from 38). The one left out is a four-channel
+ambisonic B-format recording with an unknown channel layout, which this pipeline cannot decode
+honestly; the exclusion is recorded in `skills/audio/sfx/recorded.json`.
+
+### `assets/sfx` — Mixkit Sound Effects Free License
+
+Terms read on 2026-09-09 from the licence modal the site itself serves
+(<https://mixkit.co/license/#sfxFree>, JSON endpoint `/license/modal/sfxFree/`) and from the
+incorporated Envato User Terms (<https://mixkit.co/terms/>). Verbatim quotes and the full analysis:
+`docs/research/2026-09-09-mixkit-sfx-pack-licence.md`.
+
+The grant is broad and explicitly commercial: Items "can be used in your commercial and
+non-commercial projects for free", licensed "to create an End Product that incorporates the Item
+as well as other things, so that it is larger in scope and different in nature than the Item",
+with permission to "download, copy, modify, distribute and publicly perform" them in films,
+broadcast, on-demand and social platforms. **Attribution is not mentioned in the licence at all**;
+the supplier is recorded in the manifest anyway.
+
+Three clauses bind behaviour:
+
+- **No redistribution as stock.** "You can't redistribute the Item on its own, as stock, in a tool
+  or template, or with source files", and Envato User Terms cl.9 forbids aggregating Items and
+  making them "available on a stock or inventory basis". A public copy of `assets/sfx` is exactly
+  that, which is why `/assets/**/*.flac` is git-ignored and the 0.7 GB source pack lives outside
+  the repo at `CF_MIXKIT_SFX_DIR` (`/mnt/fast/sound-libraries/mixkit`).
+- **No claiming authorship** and no registering the sounds with a rights-management service.
+  Levelling, trimming and loop-wrapping are the modification right; the recordings stay Mixkit's.
+- **No building a competing service** (cl.9). A production pipeline that consumes sounds is not
+  one; a stock sound service built out of this library would be.
+
+**On AI: the Mixkit licence and User Terms say nothing about training, and that is not read as
+permission.** The #GameAudioGDC agreement bans it, the two halves sit in one directory and are
+deliberately interchangeable in a mix, and a per-supplier rule inside a single directory is a rule
+that will be got wrong. The stricter term governs the whole: nothing in `assets/sfx` is ever a
+training, fine-tuning, conditioning or reference input to any model, which is the existing
+exclusion from the `condition_sound` path. Envato's Acceptable Use and Fair Use policies are
+incorporated by reference but do not render as static text; they have not been read, and nothing
+here depends on them.
+
+### `assets/sfx` — the 19 local renders
+
+No third-party licence attaches: the operator rendered them before ingest. They are also the only
+part of `assets/sfx` that **cannot be rebuilt from a recipe** — no generator, prompt or seed was
+recorded — so they survive only as the staged source files at `CF_LOCAL_SFX_DIR`
+(`/mnt/fast/sound-libraries/local-renders`) plus the ingested FLACs. Until their origin is
+established they are clear for this repo's own deliverables and nothing further.
 
 ### `assets/music` — MiniMax-Music3 Community License
 

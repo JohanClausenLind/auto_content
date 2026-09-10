@@ -1,7 +1,9 @@
 """The curated sound library, and a deterministic cue sheet cut from a story plan.
 
-``assets/sfx`` has held 49 sounds since 2026-09-07 — recorded or generated, each loudness-measured
-to a common bed target, each with its provenance and a one-line ``use`` — and until now **nothing
+``assets/sfx`` has held a curated sound library since 2026-09-07 — 49 sounds then, 670 since the
+Mixkit and local-render packs landed on 2026-09-09 and the rest of the #GameAudioGDC bundle on
+2026-09-10, each loudness-measured to a common bed target,
+each with its provenance and a one-line ``use`` — and when this module was written **nothing
 placed a single one of them**. The only non-speech audio a film could get was a generated MMAudio
 bed over the whole picture, so a chart drawing itself on screen was silent, a hard cut between two
 cards had nothing on it, and the fifteen `ui` sounds written for exactly those moments were unused

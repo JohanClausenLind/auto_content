@@ -226,7 +226,9 @@ def test_a_silent_asset_is_refused(tmp_path: Path) -> None:
 
 def test_sound_design_conditions_the_generated_bed(tmp_path: Path) -> None:
     ctx = make_context(project_dir=tmp_path)
-    picture = ctx.ddir() / "exports" / "final.mp4"
+    # The post chain's silent cut, which is what sound_design scores. `final.mp4` is the
+    # delivered film and is written after this stage, not before it.
+    picture = ctx.ddir() / "exports" / "postchain.mp4"
     picture.parent.mkdir(parents=True, exist_ok=True)
     import subprocess
 

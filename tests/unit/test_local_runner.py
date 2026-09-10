@@ -325,11 +325,11 @@ def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkey
     assert report["passed"] and len(report["stages"]) == expected
     by = {s["stage"]: s for s in report["stages"]}
     # The voice chain runs on every beat with the FFmpeg tail only, because this run pinned both
-    # model steps off, and leaves the beat exactly as long as it found it.
-    assert by["restore_speech"]["facts"]["steps"] == [
-        "detect",
-        "voice_chain:de_ess+eq+compress",
-    ]
+    # model steps off, and leaves the beat exactly as long as it found it. No de-esser: the mock
+    # TTS is tone bursts with nothing in the 5-9 kHz band, and the de-esser is gated on that
+    # measurement now — at an intensity that actually works it takes a third of the band off
+    # material that never needed it.
+    assert by["restore_speech"]["facts"]["steps"] == ["detect", "voice_chain:eq+compress"]
     assert by["route_shots"]["facts"]["generate"] == 2
     assert by["compile_controls"]["facts"]["shots"] == 2  # per-shot bundles from the 2D compiler
     assert by["generate_video"]["facts"]["shots"] == 2
@@ -416,3 +416,75 @@ def test_a_single_clip_lane_with_no_subject_fails_before_any_server_starts(
     prompt = result["provenance"]["prompt"]
     assert "paper lantern drifting over still water" in prompt
     assert "electricity" not in prompt and "wind in 2025" not in prompt
+
+
+def test_a_resume_runs_the_configuration_the_run_was_started_with(tmp_path: Path) -> None:
+    """`--from` used to silently reconfigure the run it was resuming.
+
+    Measured 2026-09-10: an `image-set` resumed to redraw one rejected frame lost
+    `--set generate_keyframes.drift_profile=uncalibrated`, met the mock-calibrated 0.92 default
+    that no frame from a real diffusion backend reaches, and was BLOCKED after three attempts at
+    a measured 0.8491 — a number the profile it was started with passes easily.
+    """
+    import json
+
+    from content_factory.runners.local import recorded_values, resolved_steps
+    from content_factory.schemas.dag import Stage
+
+    steps = [("spokes", Stage.generate_keyframes, {"model": "hidream-o1"})]
+
+    report = tmp_path / "run.json"
+    assert recorded_values(report) == {}  # no report is no memory, which is what runs had before
+    report.write_text(
+        json.dumps(
+            {
+                "steps": [
+                    {
+                        "node": "spokes",
+                        "stage": "generate_keyframes",
+                        "values": {"model": "hidream-o1", "drift_profile": "uncalibrated"},
+                    }
+                ]
+            }
+        )
+    )
+    remembered = recorded_values(report)
+    assert remembered["spokes"]["drift_profile"] == "uncalibrated"
+
+    # Without the memory the resume runs the lane's defaults: the override is simply gone.
+    plain = resolved_steps(steps)
+    assert "drift_profile" not in plain[0][2]
+
+    # With it, the resume reproduces the original run...
+    resumed = resolved_steps(steps, recorded=remembered)
+    assert resumed[0][2]["drift_profile"] == "uncalibrated"
+
+    # ...and can still be told otherwise, because this invocation's own overrides win.
+    changed = resolved_steps(
+        steps, recorded=remembered, node_params={"spokes": {"drift_profile": "strict"}}
+    )
+    assert changed[0][2]["drift_profile"] == "strict"
+
+    # A garbled report is not an error either.
+    report.write_text("{not json")
+    assert recorded_values(report) == {}
+
+    # And the memory survives a slice: a `--from` run records only the steps it ran, so the
+    # record it writes has to keep the nodes before the resume point rather than forget them.
+    from content_factory.runners.local import _merged_step_record
+
+    report.write_text(
+        json.dumps(
+            {
+                "steps": [
+                    {"node": "anchor", "stage": "generate_anchor", "values": {"model": "mock"}},
+                    {"node": "spokes", "stage": "generate_keyframes", "values": {"model": "x"}},
+                ]
+            }
+        )
+    )
+    merged = _merged_step_record(report, [("spokes", Stage.generate_keyframes, {"model": "y"})])
+    by_node = {e["node"]: e["values"] for e in merged}
+    assert by_node["anchor"] == {"model": "mock"}, "the node before the resume point is kept"
+    assert by_node["spokes"] == {"model": "y"}, "and the one that ran is updated"
+    assert [e["node"] for e in merged] == ["anchor", "spokes"], "order follows the lane"

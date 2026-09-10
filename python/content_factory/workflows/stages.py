@@ -8,15 +8,16 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import ValidationError
 
 from content_factory.artifacts import ArtifactStore, open_store
 from content_factory.audio.alignment import validate_alignment
 from content_factory.audio.captions import to_srt, to_webvtt, wrap_words
-from content_factory.audio.languages import check_narration_language
+from content_factory.audio.languages import aligner_model_for, check_narration_language
 from content_factory.audio.mix import (
     add_music_bed,
     apply_measurements,
@@ -57,11 +58,16 @@ from content_factory.schemas.fixtures import (
     sample_dataset,
     sample_motion_plan,
     sample_sources,
+    sample_story_lexicon,
     sample_story_plan,
 )
 from content_factory.schemas.render import RenderBundle
 from content_factory.schemas.scenes import CompiledTimeline, StoryPlan, TextRef
-from content_factory.schemas.sequences import ControlKind, GenerationLock
+from content_factory.schemas.sequences import (
+    ControlKind,
+    GenerationLock,
+    MotionPlan,
+)
 from content_factory.schemas.shots import (
     ControlBundle,
     SegmentClipPose,
@@ -86,6 +92,9 @@ from content_factory.shots.prompt_compile import PROMPT_COMPILER_VERSION, compil
 from content_factory.timeline.compiler import compile_timeline
 from content_factory.video.render import REPO_ROOT, render_artboard, render_timeline
 from content_factory.workflows.blocked import BlockedError
+
+if TYPE_CHECKING:  # the runtime import stays inside `_delivery_files`
+    from content_factory.schemas.delivery import DeliveryFile
 
 
 @dataclass(frozen=True)
@@ -602,6 +611,20 @@ def _import_story_sidecars(ctx: StageContext, fixture: Path, hashes: list[str]) 
         )
         hashes.append(_hash_obj([c.model_dump(mode="json") for c in cards]))
         facts["sources"] = len(cards)
+    # `story_lexicon` reads `<project>/story/lexicon.json` and nothing ever put one there for a
+    # hand-authored film: every respelling the contracts can express was unreachable unless the
+    # operator wrote the file into the run directory by hand.
+    lexicon_path = stem.with_suffix(".lexicon.json")
+    if lexicon_path.exists():
+        entries = [
+            PronunciationEntry.model_validate(e) for e in json.loads(lexicon_path.read_text())
+        ]
+        _write(
+            ctx.project_dir / "story" / LEXICON_FILENAME,
+            json.dumps([e.model_dump(mode="json") for e in entries], indent=1, sort_keys=True),
+        )
+        hashes.append(_hash_obj([e.model_dump(mode="json") for e in entries]))
+        facts["lexicon_terms"] = len(entries)
     brand_path = stem.with_suffix(".brand.json")
     if brand_path.exists():
         from content_factory.schemas.render import BrandTokens
@@ -678,6 +701,19 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
         plan, drafted = _draft_story_plan(ctx)
     else:
         plan = sample_story_plan()
+        # The demo plan's last beat is "Sources: Energimyndigheten, Svenska kraftnät." — two words
+        # no English text-to-speech says and no English aligner spells. Without a respelling the
+        # model produced "enner's aminahin sventzka craftnet" and the script gate refused the beat
+        # at 0.22, so the lane that ships with this repo could not narrate its own demo film. The
+        # plan is a code fixture, so its lexicon is one too.
+        _write(
+            ctx.project_dir / "story" / LEXICON_FILENAME,
+            json.dumps(
+                [e.model_dump(mode="json") for e in sample_story_lexicon()],
+                indent=1,
+                sort_keys=True,
+            ),
+        )
     # ``--subject`` is one sentence naming the film's world, which is exactly StoryPlan's
     # ``visual_subject``. Putting it on the plan is what carries it to both models: the shot
     # planner's state sentence and the video prompt compiler both read it from here, so the
@@ -686,8 +722,31 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
     subject = _param(ctx, "subject").strip()
     if subject:
         plan = plan.model_copy(update={"visual_subject": subject[:400]})
+    # ``beats`` is the lane's shape, and it was read in transcript mode only — so every other
+    # lane's widget was decoration. `single-image` says `beats: 1` ("one beat is one image. More
+    # beats would plan frames nothing draws") and planned the demo fixture's four;
+    # `single-clip-post`
+    # says 3 and planned four. It is a cap, not a demand: a five-beat script asked for seven beats
+    # is a shorter film, not a failure, so the shortfall is recorded in the facts rather than
+    # raised — but a plan longer than the lane can use is trimmed here instead of downstream.
+    want = _param_int(ctx, "beats", 0)
+    trimmed = 0
+    if want > 0 and want < len(plan.beats):
+        trimmed = len(plan.beats) - want
+        keep = plan.beats[:want]
+        keep_ids = {b.beat_id for b in keep}
+        plan = plan.model_copy(
+            update={
+                "beats": keep,
+                "scenes": tuple(sc for sc in plan.scenes if sc.beat_id in keep_ids),
+            }
+        )
     _write(ctx.project_dir / "story" / "plan.json", plan.model_dump_json(indent=1))
     facts: dict = {"beats": len(plan.beats)}
+    if trimmed:
+        facts["beats_trimmed"] = trimmed
+    elif want > len(plan.beats):
+        facts["beats_short_of"] = want
     hashes: list[str] = [plan.content_hash()]
     if fixture:
         facts.update(_import_story_sidecars(ctx, REPO_ROOT / fixture, hashes))
@@ -772,6 +831,15 @@ def _story_plan_from_recording(ctx: StageContext, path: Path) -> tuple[StoryPlan
     width, height = aspect_dimensions(aspect_or_portrait(getattr(spec, "aspect", None)))
     fps = int(getattr(spec, "fps", 24) or 24)
     subject = _param(ctx, "subject").strip()
+    # A plan made from a recording has no world of its own, and `visual_subject` is the only thing
+    # that tells the image model what the film is *of*. Left empty, `plan_shots`' presets were the
+    # only content in the prompt, so a recording explaining why the sky is blue came back as six
+    # drawings of an unnamed man standing on open ground. The recording's opening line is a poor
+    # substitute for an operator's sentence and a far better one than nothing: it is at least about
+    # the thing that was said. `--subject` still wins, and the facts say which was used.
+    opening = " ".join(transcript.text.split())[:200].strip()
+    from_transcript = not subject and bool(opening)
+    subject_source = "--subject" if subject else ("transcript" if from_transcript else "none")
     plan = story_plan_from_transcript(
         transcript,
         deliverable_id=spec.deliverable_id,
@@ -779,10 +847,11 @@ def _story_plan_from_recording(ctx: StageContext, path: Path) -> tuple[StoryPlan
         width=width,
         height=height,
         fps=fps if fps in (24, 25, 30, 60) else 24,
-        visual_subject=subject or None,
+        visual_subject=subject or opening or None,
     )
     return plan, {
         "planned_from": "transcript",
+        "visual_subject_from": subject_source,
         "transcript_engine": transcript.engine,
         "transcript_timings": transcript.timing_source.value,
         "spoken_seconds": round(transcript.duration_ms / 1000, 1),
@@ -975,10 +1044,30 @@ def stage_render_static(ctx: StageContext) -> StageOutput:
 
 
 def stage_compile_cards(ctx: StageContext) -> StageOutput:
-    copy = json.loads((ctx.ddir() / "copy.json").read_text())
+    """One artboard per card. A carousel's cards are its copy; a film's cards are its beats.
+
+    ``write_copy`` writes a ``cards`` list only when the deliverable is a **carousel** — for
+    anything else it writes a caption and an alt text. This stage read ``copy["cards"]``
+    unconditionally, so `data-story-video`, whose deliverable is a video, died on a bare
+    ``KeyError: 'cards'`` at stage 13 of 22, every run. The beats are the right source there:
+    they are what `card_stills` renders and what the timeline cuts.
+    """
+    copy_path = ctx.ddir() / "copy.json"
+    copy = json.loads(copy_path.read_text()) if copy_path.is_file() else {}
+    source = "copy"
+    cards_in = copy.get("cards")
+    if not cards_in:
+        source = "beats"
+        cards_in = [
+            {"card_id": f"card_{i + 1:012d}", "text": beat.display_text}
+            for i, beat in enumerate(_load_story_plan(ctx).beats)
+        ]
+    # The label was the literal string "WIND POWER", which is the demo fixture's subject printed
+    # across the top of every card of every other film this lane has ever made.
+    label = (ctx.campaign.brief.topic or "").strip().upper()[:28] or "CARD"
     ds = sample_dataset()
     cards = []
-    for i, card in enumerate(copy["cards"]):
+    for i, card in enumerate(cards_in):
         art = ArtboardSpec(
             artboard_id=f"art_card{i + 1:08d}",
             deliverable_id=ctx.deliverable_id,  # type: ignore[arg-type]
@@ -990,7 +1079,7 @@ def stage_compile_cards(ctx: StageContext) -> StageOutput:
                     layer_id=f"lay_cardlabel{i + 1:03d}",
                     frame=Rect(x=0.08, y=0.08, w=0.84, h=0.07),
                     reading_order=0,
-                    text=TextRef(text=f"WIND POWER · {i + 1}/{len(copy['cards'])}"),
+                    text=TextRef(text=f"{label} · {i + 1}/{len(cards_in)}"),
                     role="label",
                 ),
                 TextLayer(
@@ -1023,7 +1112,7 @@ def stage_compile_cards(ctx: StageContext) -> StageOutput:
         cards.append({"card_id": card["card_id"], "bundle_hash": bundle.content_hash()})
     manifest = {"cards": cards}
     _write(ctx.ddir() / "artboards" / "cards.json", json.dumps(manifest, indent=1))
-    return StageOutput(_hash_obj(manifest), {"cards": len(cards)})
+    return StageOutput(_hash_obj(manifest), {"cards": len(cards), "from": source})
 
 
 def stage_render_cards(ctx: StageContext) -> StageOutput:
@@ -1242,6 +1331,7 @@ def stage_plan_shots(ctx: StageContext) -> StageOutput:
             height=height,
             fps=_param_int(ctx, "fps", default_fps),  # type: ignore[arg-type]
             snap_to_ltx_length=cfg.snap_to_ltx_length,
+            with_character=_param(ctx, "characters", "one").strip().lower() != "none",
         )
     else:
         width, height = _param_size(ctx, "size", cfg.shot_size)
@@ -1251,6 +1341,8 @@ def stage_plan_shots(ctx: StageContext) -> StageOutput:
             height=height,
             fps=_param_int(ctx, "fps", default_fps),  # type: ignore[arg-type]
             snap_to_ltx_length=cfg.snap_to_ltx_length,
+            with_character=_param(ctx, "characters", "one").strip().lower() != "none",
+            lighting_preset=_param(ctx, "lighting", "studio"),  # type: ignore[arg-type]
         )
     # Which styled identity sheet each character's anchor will be conditioned on. Named on the
     # PLAN, by digest, rather than looked up at anchor time by style: a sheet rebuilt in the same
@@ -1482,7 +1574,7 @@ def stage_compile_controls(ctx: StageContext) -> StageOutput:
     compiler = _param(ctx, "compiler", get_settings().controls.compiler)
     controls_dir = ctx.ddir() / "controls"
     if compiler == "motion_plan":
-        plan = sample_motion_plan()
+        plan, _instructions = _sequence_motion_plan(ctx)
         shot_plan_path = ctx.ddir() / "shots" / "plan.json"
         if shot_plan_path.exists():
             # Shots planned (hybrid / blender workflows on mock backends): one bundle per routed
@@ -1553,6 +1645,33 @@ def _control_passes(ctx: StageContext) -> tuple[ControlKind, ...]:
     return tuple(dict.fromkeys(wanted))
 
 
+def _refuse_unclothed_staging(plan: ShotPlan) -> None:
+    """Refuse a Blender plan whose figures nobody has described.
+
+    The mesh carries a body and nothing else, and the depth and normals passes are renders of
+    that bare body — so the image model, which draws what it is shown, draws a bare body. Measured
+    on `picture-story` (2026-09-10): ten anchors of a **grey untextured mannequin in a T-pose**
+    standing in a desert, 22 minutes of GPU, every frame unusable. It is the same failure ADR-0004
+    records for identity references, arriving through the control passes instead.
+
+    `CharacterSpec.appearance` is the field that fixes it and it is optional, so the refusal is
+    here rather than in the contract: a shot plan with no figures at all is fine (that is most
+    lanes), and one with figures nobody described cannot produce a picture worth the wait.
+    """
+    staged = [c for sh in plan.shots for c in sh.characters]
+    if not staged or any(c.appearance for c in staged):
+        return
+    who = ", ".join(sorted({c.asset for c in staged}))
+    msg = (
+        f"the shot plan stages {len(staged)} figure(s) ({who}) and none of them has an"
+        " `appearance`. The Blender compiler renders depth and normals of the bare mesh and the"
+        " image model draws exactly that — an untextured grey mannequin, measured over ten"
+        " anchors. Write CharacterSpec.appearance (build, hair, clothing) on the shot plan, or"
+        " use controls.compiler=motion_plan for a lane that stages nobody."
+    )
+    raise RuntimeError(msg)
+
+
 def _compile_controls_blender(ctx: StageContext) -> list[ControlBundle]:
     """One Blender skill run per shot, cached by shot hash + compiler settings. The skill writes
     its passes straight into ``controls/<shot_id>/``; the bundle builder verifies every digest and
@@ -1566,6 +1685,7 @@ def _compile_controls_blender(ctx: StageContext) -> list[ControlBundle]:
         msg = "controls.compiler=blender needs shots/plan.json: run plan_shots first"
         raise RuntimeError(msg)
     plan = ShotPlan.model_validate_json(plan_path.read_text())
+    _refuse_unclothed_staging(plan)
     routing = _load_routing(ctx)
     # Hybrid workflow: beats routed to Remotion never reach Blender; the shots that stay are the
     # ones compose_video will splice in as generated clips.
@@ -1630,17 +1750,45 @@ def _compile_controls_blender(ctx: StageContext) -> list[ControlBundle]:
 
 
 # --- anchors, lock, keyframes (image-sequence branch executors) --------------------------------
+def _same_endpoint(a: str, b: str) -> bool:
+    """Whether two service URLs name the same server, ignoring trailing slashes and the
+    scheme's default port."""
+    from urllib.parse import urlparse
+
+    def parts(url: str) -> tuple[str, str, int]:
+        u = urlparse(url if "://" in url else f"http://{url}")
+        return (
+            u.scheme or "http",
+            (u.hostname or "").lower(),
+            u.port or (443 if u.scheme == "https" else 80),
+        )
+
+    return parts(a) == parts(b)
+
+
 def _service_for_backend(backend: object) -> str | None:
-    """The local GPU tenant a backend talks to (None for mocks). Started lazily — only when a
-    stage is about to generate something that is not cached — so a fully cached rerun never
-    evicts whatever the other tenant is doing on the card."""
+    """The local GPU tenant a backend talks to (None for mocks, and None for another machine's).
+
+    Started lazily — only when a stage is about to generate something that is not cached — so a
+    fully cached rerun never evicts whatever the other tenant is doing on the card.
+
+    The endpoint check is not a detail. ``hidream_endpoints`` is a pool, and a pool entry pointing
+    at the second box is not this machine's to start: matching on type alone meant every run
+    dispatched to the remote host *also* booted the local server and left 17-19 GB resident on a
+    card the run never touched. Measured 2026-09-10: a `single-image` run whose pool was
+    `["http://100.82.150.94:8801"]` recorded `vram_before_mib=18994` locally, and the
+    `silent-video` running beside it died at `sound_design` because MMAudio met 15.5 GiB of
+    somebody else's weights. Only the endpoint `services.local` manages is ours to bring up.
+    """
     from content_factory.media.video_generate import ComfyUIVideoBackend
     from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
+    app = get_settings()
     if isinstance(backend, HiDreamReferenceEditBackend):
-        return "hidream"
+        managed = app.image_sequences.hidream_endpoint
+        return "hidream" if _same_endpoint(backend.endpoint, managed) else None
     if isinstance(backend, ComfyUIVideoBackend):
-        return "comfyui"
+        return "comfyui" if _same_endpoint(backend.endpoint, app.comfyui.endpoint) else None
     return None
 
 
@@ -1648,6 +1796,25 @@ def _ensure_backend_ready(backend: object, warmed: set[str]) -> None:
     tenant = _service_for_backend(backend)
     if tenant is None or tenant in warmed:
         return
+    # The one moment this run is about to put weights on the local card, and therefore the one
+    # place worth asking whether the card is still there. A GPU that has fallen off the bus is
+    # not a retryable condition — the driver's own recovery action is a reboot — and without
+    # this the failure arrives later wearing someone else's clothes: ComfyUI answering
+    # "All connection attempts failed", or SeedVR2 placing its VAE on the CPU and dying on
+    # "device cpu:0 is invalid". A queue would spend every remaining job finding that out.
+    gone = gpu_is_gone()
+    if gone:
+        from content_factory.workflows.blocked import BlockedError
+
+        raise BlockedError(
+            f'the GPU is not there: nvidia-smi says {gone!r}. Xid 79 ("GPU has fallen off the'
+            " bus\") sets the driver's recovery action to a node reboot, and no amount of"
+            " retrying or restarting a server changes that — check `journalctl -k | grep Xid`"
+            " and reboot the host. Runs that need no GPU still work: set"
+            " CF__IMAGE_SEQUENCES__BACKEND=mock and CF__VIDEO__BACKEND=mock, or point"
+            " CF__IMAGE_SEQUENCES__HIDREAM_ENDPOINTS at another machine.",
+            stage="ensure_backend",
+        )
     from content_factory.services.local import ensure_service
 
     ensure_service(tenant)  # type: ignore[arg-type]
@@ -1739,7 +1906,12 @@ def _reference_backend(ctx: StageContext | None = None) -> ReferenceEditBackend:
     if backend == "hidream":
         from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
-        return HiDreamReferenceEditBackend(endpoint=cfg.hidream_endpoint)
+        # The pool's first host, not the singular endpoint. They are the same value whenever no
+        # pool is configured (`hidream_pool()` falls back to it), so a single-machine run is
+        # unchanged — but a pool that deliberately names only *other* machines, because this card
+        # is doing something else, used to have its anchor drawn here anyway, starting a local
+        # server the operator had just configured out of the run.
+        return HiDreamReferenceEditBackend(endpoint=cfg.hidream_pool()[0])
     if backend == "flux2":
         from content_factory.sequences.flux2_backend import Flux2ReferenceBackend
 
@@ -1748,7 +1920,7 @@ def _reference_backend(ctx: StageContext | None = None) -> ReferenceEditBackend:
         workdir = (ctx.ddir() / "flux2") if ctx is not None else Path("output/flux2")
         return Flux2ReferenceBackend(
             workdir=workdir,
-            endpoint=cfg.flux2_endpoint,
+            endpoint=cfg.flux2_pool()[0],
             turbo=cfg.flux2_turbo,
             reference_roles=cfg.anchor_references,
         )
@@ -1838,11 +2010,42 @@ def _anchor_prompt(ctx: StageContext, shot: ShotSpec | None, lock: GenerationLoc
     ("the camera pushes slowly in") is an instruction the still cannot carry out: asking for it
     while generating a frame is how a static image acquires motion blur and a second pair of arms.
     The progression belongs to the clip, where ``shots.prompt_compile`` compiles it.
+
+    The **world** is the StoryPlan's ``visual_subject`` — "one sentence naming the film's world,
+    for the image and video models only", by the field's own definition. It reached the shot
+    planner and the video prompt compiler and never this stage, while the node's ``prompt`` widget
+    on these lanes is a *framing* instruction: "the subject alone, centred, plain background, the
+    reference view of the set". Framing with no subject in it is a prompt that asks the model to
+    invent one, and it does — an `image-set` run of a deep-sea documentary came back as a
+    character line-up of three strangers in coats, because the style clause said "consistent
+    character design" and nothing said what the picture was of. The two clauses are complementary,
+    so both go in: what it is, then how it is framed. ``--subject`` writes to both places, so an
+    exact repeat is emitted once.
     """
-    subject = _param(ctx, "prompt").strip() or ctx.campaign.brief.topic.strip()
-    parts = [lock.style_prompt, subject]
-    if shot is not None and shot.description:
-        parts.append(shot.description)
+    framing = _param(ctx, "prompt").strip()
+    world = ""
+    story_path = _story_plan_path(ctx)
+    if story_path is not None:
+        world = (StoryPlan.model_validate_json(story_path.read_text()).visual_subject or "").strip()
+    # The shot's state sentence is built by `shots.prompt_compile.state_sentence`, which already
+    # embeds the story's `visual_subject` — so appending the world clause as well said the whole
+    # thing twice. Measured on `audio-picture-story` (2026-09-10): 258 of a 480-character prompt
+    # were one 129-character world sentence, printed twice, and the six drawings that came back
+    # were six near-copies of the same vista — the camera clause is four words against two copies
+    # of a long one and lost. The dedup below could not see it, because it compares whole clauses
+    # and the repeat is a substring of a longer one.
+    staging = shot.description.strip() if shot is not None and shot.description else ""
+    said = [lock.style_prompt.rstrip("."), staging.rstrip(".")]
+    parts = [lock.style_prompt]
+    for clause in (world, framing):
+        bare = clause.rstrip(".")
+        if clause and not any(bare and bare in already for already in said):
+            parts.append(clause)
+            said.append(bare)
+    if len(parts) == 1 and not staging:
+        parts.append(ctx.campaign.brief.topic.strip())
+    if staging:
+        parts.append(staging)
     return ". ".join(p.rstrip(".") for p in parts if p) + "."
 
 
@@ -1923,6 +2126,32 @@ def _conditioning_for_frame(
                     }
                 )
     available = {t.kind.value for t in bundle.tracks}
+    # A skeleton of nobody is not conditioning, it is a scheduler switch. The docstring above
+    # names the trap and this is the other way into it: a shot that stages no figures still gets a
+    # `pose_skeleton` track compiled, and sending it made the anchor a **one-reference** request,
+    #
+    # The condition is the *shot's* character list, not the bundle's subject list, and getting
+    # that wrong first is instructive. `ps1-pinecone`'s bundle does carry a subject — labelled
+    # "one open pine cone on a plain grey slate" and carrying `subject_id: subj_hands0001` with
+    # joints for two wrists and two index fingers. That is the motion_plan compiler's **builtin
+    # hand-gesture fixture**, the one `image-set`'s own caveat warns about ("its per-image layout
+    # is that plan's hand-gesture fixture, not the views the brief asks for"). So every object
+    # subject gets a skeleton of two hands drawn over it and then sent as the anchor's reference.
+    # `shot.characters` is empty for these lanes and is the honest signal.
+    # which is exactly `is_editing` upstream. That routes the dev recipe onto `flow_match`, and
+    # `skills/image/hidream/server.py` has the measurement for what that costs: speckle at 0.175
+    # of pixels above a luma gradient of 60, against 0.0004 on `flash`.
+    #
+    # Measured on `audio-picture-story` 2026-09-10: "one open pine cone on a plain grey slate"
+    # came back six times covered in white speckle, `references: 1`, the single slot a pose
+    # skeleton of no one. The same prompt with no references at all renders clean on the same
+    # server, at either aspect — which is what finally isolated it after three wrong diagnoses of
+    # my own (paper texture from the style, the environment clause, the machine). The skeleton
+    # carried no information about a pine cone and its only effect was to pick the noisier
+    # scheduler.
+    staged_figures = bool(shot.characters) if shot is not None else bool(bundle.subjects)
+    if not staged_figures:
+        wanted = tuple(k for k in wanted if k != "pose_skeleton")
     for kind in wanted:
         if kind == "identity":
             continue
@@ -1968,6 +2197,51 @@ def _free_the_gpu(ctx: StageContext, reason: str) -> dict:
     if freed["stopped"] or freed["ollama_unloaded"]:
         _log_execution(ctx, f"free_gpu:{reason}", {**freed, "vram_mib": gpu_memory_used_mib()})
     return freed
+
+
+GPU_GONE_MARKERS = (
+    "no devices were found",
+    "unable to determine the device handle",
+    "has fallen off the bus",
+    "couldn\u2019t communicate with the nvidia driver",
+    "couldn't communicate with the nvidia driver",
+)
+"""What `nvidia-smi` says when the card is not there any more, lowercased.
+
+Measured 2026-09-10 03:12 on vegaserv: an uncorrectable PCIe AER error during an LTX-2.5 22B
+generation, then `Xid 79, GPU has fallen off the bus` and `Xid 154, GPU recovery action changed
+to 0x2 (Node Reboot Required)`. From inside the pipeline that looked like two unrelated bugs —
+`ComfyTransientError: All connection attempts failed` on one lane and SeedVR2's
+`SafetensorError: device cpu:0 is invalid` on the next, because with no GPU to see the upscaler
+put its VAE on the CPU — and a queue would have spent every remaining job finding out.
+"""
+
+
+def gpu_is_gone() -> str:
+    """`""` when the GPU is there (or there never was one), else what nvidia-smi said.
+
+    Deliberately not "is there a GPU": a machine with no NVIDIA driver at all is a normal offline
+    machine and every mock backend works on it. This is the narrower question of whether the
+    driver is present and has *lost* the device, which is not a condition any amount of retrying
+    fixes — the driver's own recovery action for it is a reboot.
+    """
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""  # no nvidia-smi: an offline machine, not a broken one
+    said = f"{proc.stdout}\n{proc.stderr}".strip()
+    low = said.lower()
+    if any(marker in low for marker in GPU_GONE_MARKERS):
+        return " ".join(said.split())[:300]
+    return ""
 
 
 def gpu_memory_used_mib() -> int | None:
@@ -2075,12 +2349,45 @@ def _generate_checked(
     cfg = get_settings().image_sequences
     expect_monochrome = any(w in (lock.style_prompt or "").lower() for w in MONOCHROME_WORDS)
     candidates: list[dict] = []
+
+    # Every host that can draw this, the given one first. A frame already falls back to another
+    # card when one goes away (`WorkerPool`), and the anchor did not: measured on this host, the
+    # local HiDream was killed by another tenant asking Ollama for a model and `silent-video`
+    # failed at stage 4 of 12 with "server unreachable", with a healthy second host in the pool.
+    # The anchor is one picture and every frame depends on it, so losing it loses the run.
+    # Deduplicated by endpoint, not by identity: `_reference_backend` and `_reference_backends`
+    # build separate client objects for the same URL, so an identity check left the first host in
+    # the list twice and every anchor paid two connection failures to a dead server instead of one.
+    def _where(host: object) -> str:
+        return str(getattr(host, "endpoint", getattr(host, "name", host)))
+
+    hosts = [backend]
+    seen_hosts = {_where(backend)}
+    for host in _reference_backends(ctx):
+        if _where(host) not in seen_hosts:
+            hosts.append(host)
+            seen_hosts.add(_where(host))
     for attempt in range(1, cfg.max_regen_attempts_per_frame + 1):
-        _ensure_backend_ready(backend, warmed)
+        png = None
+        last_error: Exception | None = None
         seed = lock.seed + attempt - 1
-        before = gpu_memory_used_mib()
+        # Bound before the host loop so the telemetry below always has values; the real readings
+        # are taken inside it, once, immediately before the generation that produced the frame.
+        before: int | None = None
         started = time.monotonic()
-        png = backend.generate(prompt, cond, lock, seed=seed)
+        for host in hosts:
+            try:
+                _ensure_backend_ready(host, warmed)
+                before = gpu_memory_used_mib()
+                started = time.monotonic()
+                png = host.generate(prompt, cond, lock, seed=seed)
+                backend = host
+                break
+            except Exception as exc:
+                last_error = exc
+                _log_execution(ctx, f"anchor-host-failed:{getattr(host, 'endpoint', host.name)}")
+        if png is None:
+            raise last_error if last_error is not None else RuntimeError("no host generated")
         telemetry = _generation_telemetry(
             before=before,
             seconds=time.monotonic() - started,
@@ -2313,7 +2620,16 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                 }
             )
     else:
+        # The story's frame, not the settings' default. A plan carries width and height because
+        # the film has a shape, and this branch read `default_working_resolution` (16:9) whatever
+        # it said — so a 1080x1920 story got a landscape picture. HiDream snaps to its own ~4 MP
+        # bucket by *aspect*, so what is passed here decides portrait or landscape and nothing
+        # else. Without a plan on disk the setting still decides, which is the brief-only path.
         width, height = get_settings().image_sequences.default_working_resolution
+        story_path = _story_plan_path(ctx)
+        if story_path is not None:
+            story = StoryPlan.model_validate_json(story_path.read_text())
+            width, height = story.width, story.height
         lock = _anchor_lock(width=width, height=height, backend=backend, ctx=ctx)
         prompt = _anchor_prompt(ctx, None, lock)
         cond = ControlConditioning()
@@ -2387,14 +2703,76 @@ def _first_anchor(ctx: StageContext) -> tuple[str, int, int]:
     return first["frames"][0]["sha256"], first["width"], first["height"]
 
 
+def _anchor_recorded_style(ctx: StageContext) -> str:
+    """The style clause the first anchor was actually drawn with, from its own marker.
+
+    `generate_anchor` records the exact prompt it sent, and that prompt begins with the style. The
+    style is everything up to the first sentence break, because `_anchor_prompt` joins its clauses
+    with ". " and puts the style first — deliberately, and measured (see its docstring).
+    """
+    for marker in (
+        ctx.ddir() / "anchors" / "anchor.done.json",
+        *sorted((ctx.ddir() / "anchors").glob("*/0000.done.json")),
+    ):
+        if marker.is_file():
+            prompt = str(json.loads(marker.read_text()).get("prompt", ""))
+            return prompt.split(". ", 1)[0].strip() if prompt else ""
+    return ""
+
+
+ANCHOR_BACKEND_MODELS: dict[str, str] = {
+    # A backend's `.name`, which is what `generate_anchor` writes into its marker, back to the
+    # `model` widget's spelling. Two of the three are already the widget's word; the mock's is
+    # not, and reading its marker has to give "mock" rather than nothing.
+    "hidream-o1": "hidream-o1",
+    "flux2-dev": "flux2-dev",
+    "mock-reference-edit": "mock",
+    "mock": "mock",
+}
+
+
+def _anchor_recorded_backend(ctx: StageContext) -> str:
+    """Which backend actually drew the first anchor, from its own marker — or `""`.
+
+    The same argument as :func:`_anchor_recorded_style`, for the other half of the lock. This
+    stage re-derived the backend from *its* node's `model` widget, and `lock_generation` has no
+    such widget, so it fell through to the settings default: a run whose anchors were drawn by
+    HiDream wrote a lock that said `mock-reference-edit` (measured on `image-set`, 2026-09-10).
+    The lock's model rides in every spoke's `input_hash`, so the wrong name is not only a wrong
+    record — it keys the whole frame set on a model that never touched it.
+    """
+    for marker in (
+        ctx.ddir() / "anchors" / "anchor.done.json",
+        *sorted((ctx.ddir() / "anchors").glob("*/0000.done.json")),
+    ):
+        if marker.is_file():
+            return str(json.loads(marker.read_text()).get("backend", "")).strip()
+    return ""
+
+
 def stage_lock_generation(ctx: StageContext) -> StageOutput:
     """Freeze the generation lock around the first anchor: same model, seed, sampler and prompts
-    for every frame that follows."""
-    backend = _reference_backend(ctx)
+    for every frame that follows.
+
+    The style comes from **the anchor's own node**, not from this one. `_anchor_lock` resolves the
+    style from `ctx.params`, and a `--style` or a canvas widget sets it on `generate_anchor` — so
+    this stage re-derived it from the settings default and wrote a lock whose art direction was
+    not the art direction the anchor was drawn in. Every spoke was then edited under a style the
+    hub had never seen, which is the one thing a lock exists to prevent.
+    """
     sha, width, height = _first_anchor(ctx)
-    lock = _anchor_lock(width=width, height=height, backend=backend, ctx=ctx).model_copy(
-        update={"reference_asset_sha256": sha}
-    )
+    anchor_style = _anchor_recorded_style(ctx)
+    params = dict(ctx.params)
+    if anchor_style and not _param(ctx, "style", "").strip():
+        params["style"] = anchor_style
+    # And the model, for the same reason and from the same marker.
+    drew_it = ANCHOR_BACKEND_MODELS.get(_anchor_recorded_backend(ctx), "")
+    if drew_it and not _param(ctx, "model", "").strip():
+        params["model"] = drew_it
+    backend = _reference_backend(replace(ctx, params=params))
+    lock = _anchor_lock(
+        width=width, height=height, backend=backend, ctx=replace(ctx, params=params)
+    ).model_copy(update={"reference_asset_sha256": sha})
     _write(ctx.ddir() / "sequence" / "lock.json", lock.model_dump_json(indent=1))
     return StageOutput(lock.content_hash(), {"reference": sha[:12], "backend": backend.name})
 
@@ -2422,6 +2800,148 @@ def _controls_compiler(ctx: StageContext) -> str | None:
     return json.loads(manifest.read_text())["compiler"] if manifest.exists() else None
 
 
+def _sequence_motion_plan(ctx: StageContext) -> tuple[MotionPlan, dict[int, str]]:
+    """The frame plan a keyframe lane draws, and what each frame is a picture *of*.
+
+    ``sample_motion_plan()`` is a fixture: eight frames of two hands sliding together on a
+    1024x576 canvas, every frame instructed "Move hands to the plotted position for frame N". It
+    was what `image-set` and `photo-sequence-video` drew whatever story they were given — so the
+    story widget those definitions describe as "the list of views, as beats" reached the anchor's
+    prompt and nothing else, and a deep-sea documentary and a children's book came back as the
+    same eight pictures of the fixture's subject moving its hands.
+
+    With a story on disk the plan is derived from it: one frame per beat, on the story's canvas,
+    and each frame's edit instruction is that beat's scene ``alt_text`` — the field whose whole
+    job is to say what the picture shows. The layout box is held still across the set, because
+    these lanes are views of one subject rather than a subject in motion, and the box is exactly
+    what drift masking treats as allowed to change.
+
+    Without a story on disk the fixture comes back unchanged, which is what the brief-only path
+    and every existing test get.
+    """
+    path = _story_plan_path(ctx)
+    if path is None:
+        return sample_motion_plan(), {}
+    story = StoryPlan.model_validate_json(path.read_text())
+    if not story.beats:
+        return sample_motion_plan(), {}
+    frames = len(story.beats)
+    # The fixture's subject and its trajectory are kept exactly as they are and only re-timed:
+    # what the story knows is how many pictures there are, how big they are and what each one
+    # shows, and it says nothing about where a subject sits in the frame. Re-deriving the layout
+    # here would change what drift masking treats as allowed to move, which is a separate decision
+    # from "draw the views the story lists".
+    base = sample_motion_plan()
+    # The label reaches the model: `compile_edit_instruction` writes "(subject: <label>)" into
+    # every frame's edit instruction. Left at the fixture's, an owl sequence asked HiDream for
+    # "The same tawny owl on the same mossy branch ... (subject: hands)", which is a contradiction
+    # in the one sentence that is supposed to say what to change.
+    label = (story.visual_subject or "").split(",")[0].strip()[:80] or base.subjects[0].label
+    subjects = tuple(
+        subject.model_copy(
+            update={
+                "label": label,
+                "keyframes": tuple(
+                    k.model_copy(update={"frame_index": min(k.frame_index, frames - 1)})
+                    for i, k in enumerate(subject.keyframes)
+                    if i == 0 or min(k.frame_index, frames - 1) > 0
+                ),
+            }
+        )
+        for subject in base.subjects
+    )
+    plan = base.model_copy(
+        update={
+            "plan_id": "mp_story00000001",
+            "sequence_id": "seq_story0000001",
+            "frame_count": frames,
+            "canvas_width": story.width,
+            "canvas_height": story.height,
+            "description": story.visual_subject or base.description,
+            "subjects": subjects,
+        }
+    )
+    scene_by_beat = {sc.beat_id: sc for sc in story.scenes}
+    instructions: dict[int, str] = {}
+    for i, beat in enumerate(story.beats):
+        scene = scene_by_beat.get(beat.beat_id)
+        what = getattr(scene, "alt_text", "") if scene is not None else ""
+        if what:
+            instructions[i] = what
+    return plan, instructions
+
+
+def _clear_rejected_frames(ctx: StageContext, workdir: Path) -> list[int]:
+    """Drop the cache markers of frames a person rejected, so the next run redraws them.
+
+    `image-set`'s own note promises that "rejecting one drawing costs one drawing, not the film",
+    and nothing implemented it: `review_frames` recorded the verdict and `generate_keyframes`
+    never read it, so a rejected frame was a cache hit for ever and the gate blocked on the same
+    picture on every rerun. Measured 2026-09-10 on a malachite set — six consistent views of the
+    wrong object, rejected, and the resume printed the identical rejection.
+
+    Only the marker is removed. The picture itself moves to `sequence/rejected/`, beside the ones
+    the drift check refuses, so what was turned down can still be looked at; and the frame is
+    listed in the stage's facts, because a redraw nobody can see in the record is a redraw nobody
+    can audit.
+    """
+    from content_factory.schemas.review import FrameReviewBatch
+
+    path = ctx.ddir() / "reviews" / "frames" / "batch.json"
+    if not path.exists():
+        return []
+    batch = FrameReviewBatch.model_validate_json(path.read_text())
+    frames_dir = workdir / "frames"
+    reject_dir = workdir / "rejected"
+    cleared: list[int] = []
+    for record in batch.rejected:
+        # "frame:0007" -> 7. Anything else is not one of this stage's frames.
+        _, _, tail = record.frame_id.partition(":")
+        if not tail.isdigit():
+            continue
+        idx = int(tail)
+        marker = frames_dir / f"{idx:04d}.done.json"
+        png = frames_dir / f"{idx:04d}.png"
+        if not marker.exists() and not png.exists():
+            continue
+        reject_dir.mkdir(parents=True, exist_ok=True)
+        # Numbered, so a second rejection does not overwrite the first and the seed offset below
+        # has something to count.
+        turn = 1 + len(list(reject_dir.glob(f"{idx:04d}.reviewed*.png")))
+        if png.exists():
+            png.replace(reject_dir / f"{idx:04d}.reviewed{turn}.png")
+        if marker.exists():
+            marker.replace(reject_dir / f"{idx:04d}.reviewed{turn}.done.json")
+        cleared.append(idx)
+    if cleared:
+        _log_execution(ctx, "frames-rejected", {"redrawing": sorted(cleared)})
+    return sorted(cleared)
+
+
+def _rejection_seed_offsets(workdir: Path) -> dict[int, int]:
+    """How far to move each frame's seed, from how many times it has been turned down.
+
+    A redraw has to come back *different*. Redrawing with the same instruction and the same first
+    attempt reproduces the picture exactly — measured 2026-09-10, when a rejected kilim frame was
+    redrawn and came back as the drawing that had just been rejected. The backend derives its
+    seed from the attempt number (`lock.seed + attempt - 1`), so one offset per rejection walks
+    it somewhere new and keeps doing so if the next one is rejected too. Counted off the files
+    in `sequence/rejected/`, which means it survives a crash and needs no extra state.
+    """
+    reject_dir = workdir / "rejected"
+    if not reject_dir.is_dir():
+        return {}
+    offsets: dict[int, int] = {}
+    for png in reject_dir.glob("[0-9]*.reviewed*.png"):
+        head = png.name.split(".", 1)[0]
+        if head.isdigit():
+            offsets[int(head)] = offsets.get(int(head), 0) + 1
+    # One rejection is worth more than one attempt: within a run the three drift retries already
+    # walk the seed by 0, 1, 2, so a redraw that only moved by one would land on the second
+    # attempt of the run that was rejected.
+    return {idx: n * 8 for idx, n in offsets.items()}
+
+
 def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
     """Hub-and-spoke keyframes from the MotionPlan (builtin controls). Blender-compiled shots are
     keyframed by their anchors instead and go straight to generate_video."""
@@ -2430,9 +2950,10 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
             _hash_obj({"skipped": "blender"}),
             {"skipped": "blender bundles keyframe through anchors; generate_video consumes them"},
         )
-    plan = sample_motion_plan()
+    plan, frame_instructions = _sequence_motion_plan(ctx)
     lock = _sequence_lock(ctx)
     workdir = ctx.ddir() / "sequence"
+    redrawing = _clear_rejected_frames(ctx, workdir)
     anchor = ctx.ddir() / "anchors" / "anchor.png"
     if anchor.exists() and not (workdir / "anchor.png").exists():
         workdir.mkdir(parents=True, exist_ok=True)
@@ -2441,16 +2962,31 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
     # Per style, not one pair for twelve art directions: a watercolour wash legitimately varies
     # more between frames than a photograph does. The lock freezes the prompt, so the preset name
     # is recovered from it; a hand-written prompt has no name and takes the defaults.
+    from content_factory.sequences.drift import UNCALIBRATED
     from content_factory.sequences.styles import style_name_for
 
     locked_min, delta_max = cfg.drift_thresholds.resolve(style=style_name_for(lock.style_prompt))
+    # The configured default (0.92 / 0.15) is a *mock* number: the stand-in backend repaints only
+    # inside the motion box, so everything outside it is byte-identical and 0.92 is met by
+    # construction. A diffusion model re-renders every pixel of a 4 MP frame, and measured here no
+    # real frame came near it -- six drawings, eighteen attempts, nothing written. `drift.py`
+    # already names the profile for that case and nothing selected it, so the node does:
+    # `--set spokes.drift_profile=uncalibrated` observes rather than gates, which is what the run
+    # that produces the numbers a real threshold is set from needs. `locked_min` and
+    # `style_delta_max` set a measured pair directly.
+    if _param(ctx, "drift_profile", "").strip().lower() == "uncalibrated":
+        locked_min, delta_max = UNCALIBRATED
+    locked_min = _param_float(ctx, "locked_min", locked_min)
+    delta_max = _param_float(ctx, "style_delta_max", delta_max)
     pool = _reference_backends(ctx)
     result = build_sequence(
         plan,
         lock,
         pool[0],
         workdir,
+        seed_offsets=_rejection_seed_offsets(workdir),
         backends=pool,
+        frame_instructions=frame_instructions,
         max_regen_attempts=cfg.max_regen_attempts_per_frame,
         locked_region_similarity_min=locked_min,
         style_delta_max=delta_max,
@@ -2459,15 +2995,42 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
         # Same distinction as the anchors: the engine already regenerated each of these with a
         # fresh seed up to max_regen_attempts_per_frame and they still drifted. Another attempt is
         # more GPU time for the same answer, so this blocks for a person rather than failing.
+        #
+        # The candidates name `sequence/rejected/`, which is where the drawing that did not pass
+        # actually is, with the measurement beside it. They used to name `sequence/frames/`, where
+        # nothing was ever written for a failed frame, and to carry the *name* of the check with
+        # no number in it -- so the block asked a person to look at a missing file and told them
+        # neither what it scored nor what it needed.
+        rejects = workdir / "rejected"
+        measured = {}
+        for idx in result.failed:
+            path = rejects / f"{idx:04d}.json"
+            if path.is_file():
+                measured[idx] = json.loads(path.read_text())
         raise BlockedError(
             f"keyframes {result.failed} still drift from the anchor after regeneration",
             stage="generate_keyframes",
             attempts=cfg.max_regen_attempts_per_frame,
             candidates=[
                 {
-                    "attempt": cfg.max_regen_attempts_per_frame,
-                    "path": f"sequence/frames/{idx:04d}.png",
-                    "blockers": [{"check": "locked_region_similarity", "frame_index": idx}],
+                    "attempt": measured.get(idx, {}).get(
+                        "attempts", cfg.max_regen_attempts_per_frame
+                    ),
+                    "path": f"sequence/rejected/{idx:04d}.png",
+                    "blockers": [
+                        {
+                            "check": "locked_region_similarity",
+                            "frame_index": idx,
+                            "measured": measured.get(idx, {}).get("locked_region_similarity"),
+                            "needed": locked_min,
+                        },
+                        {
+                            "check": "style_delta",
+                            "frame_index": idx,
+                            "measured": measured.get(idx, {}).get("style_delta"),
+                            "needed": delta_max,
+                        },
+                    ],
                 }
                 for idx in result.failed
             ],
@@ -2477,6 +3040,9 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
         {
             "frames": len(result.frames),
             "regenerated": sorted(set(result.regenerated)),
+            # Frames a person turned down on the last pass, which this run redrew. Kept in the
+            # facts because a redraw nobody can see in the record is a redraw nobody can audit.
+            "redrawn_after_rejection": redrawing,
             "anchor": result.anchor_sha256[:12],
         },
     )
@@ -2630,7 +3196,7 @@ def stage_package_sequence(ctx: StageContext) -> StageOutput:
         return StageOutput(
             _hash_obj({"skipped": "blender"}), {"skipped": "shots are packaged by generate_video"}
         )
-    pkg = package_sequence(sample_motion_plan(), ctx.ddir() / "sequence")
+    pkg = package_sequence(_sequence_motion_plan(ctx)[0], ctx.ddir() / "sequence")
     digest = _hash_obj({k: file_sha256(Path(v)) for k, v in pkg.items() if k != "frames"})
     return StageOutput(
         digest, {"frames": pkg["frames"], "outputs": sorted(k for k in pkg if k != "frames")}
@@ -2643,9 +3209,32 @@ than this; the list is short because a lane that grabs "the audio file" out of a
 grab something a person would call a recording, not the audio track of a video they also dropped.
 """
 
+CONTAINER_SUFFIXES_IN: tuple[str, ...] = (".mp4", ".mov", ".m4v", ".mkv", ".webm", ".avi")
+"""Containers this stage looks *inside* before deciding they are not recordings.
 
-def _source_recording(ctx: StageContext) -> Path:
-    """The one recording this run is about, or a failure that says where to put it.
+A phone, a voice-memo app and a meeting recorder all write MP4, so an operator's interview
+arrives as a video file whose picture is an hour of black — and refusing it for its container
+was the pipeline declining to read a file it can read perfectly well.
+``ingest.convert.blank_picture`` measures which of these have nothing to look at; one that
+carries real picture is a film and is still passed over, because "the audio track of a video they
+also dropped" is what the list above exists to avoid grabbing.
+"""
+
+
+def _blank_pictured(paths: Sequence[Path]) -> dict[Path, str]:
+    """Of these containers, the ones that are recordings, each with the reason it counted as one."""
+    from content_factory.ingest.convert import blank_picture
+
+    out: dict[Path, str] = {}
+    for path in paths:
+        blank = blank_picture(path)
+        if blank is not None:
+            out[path] = blank.reason
+    return out
+
+
+def _source_recording(ctx: StageContext) -> tuple[Path, str]:
+    """The one recording this run is about and why it counted, or a failure saying where to put one.
 
     Three places, in the order an operator would expect them to win:
 
@@ -2657,6 +3246,10 @@ def _source_recording(ctx: StageContext) -> Path:
 
     More than one candidate in uploads is an error rather than a coin flip: "which of these two
     interviews is the film" is not a question a stage may answer by sort order.
+
+    The second element is empty for a file anyone would call a recording, and carries the
+    measurement when the recording arrived in a video container — the one case where the stage
+    read a file its own suffix list says is not audio, and therefore has to say so.
     """
     named = _param(ctx, "source").strip()
     if named:
@@ -2665,15 +3258,15 @@ def _source_recording(ctx: StageContext) -> Path:
         if not path.is_file():
             msg = f"transcribe_audio: no recording at {path} (the node's source widget names it)"
             raise RuntimeError(msg)
-        return path
+        return path, ""
     uploads = ctx.project_dir / UPLOADS_DIRNAME
-    found = (
-        sorted(
-            p for p in uploads.glob("**/*") if p.is_file() and p.suffix.lower() in AUDIO_SUFFIXES_IN
-        )
-        if uploads.is_dir()
-        else []
-    )
+    files = sorted(p for p in uploads.glob("**/*") if p.is_file()) if uploads.is_dir() else []
+    found = [p for p in files if p.suffix.lower() in AUDIO_SUFFIXES_IN]
+    containers = [p for p in files if p.suffix.lower() in CONTAINER_SUFFIXES_IN]
+    # Only when there is no plain recording: a folder holding both an interview and a clip is not
+    # ambiguous, and probing the clip to discover that would be work done to learn nothing.
+    blanks = _blank_pictured(containers) if not found and containers else {}
+    found = found or sorted(blanks)
     if len(found) > 1:
         names = ", ".join(p.name for p in found)
         msg = (
@@ -2682,14 +3275,22 @@ def _source_recording(ctx: StageContext) -> Path:
         )
         raise RuntimeError(msg)
     if found:
-        return found[0]
+        return found[0], blanks.get(found[0], "")
     normalised = ctx.ddir() / "audio" / "source.wav"
     if normalised.is_file():
-        return normalised
+        return normalised, ""
+    # A folder holding only films is the one empty-handed case with something to say: the
+    # operator did supply material, and the reason it was passed over is a measurement.
+    passed_over = (
+        f" ({', '.join(p.name for p in containers)} is there, but carries picture: this lane"
+        " wants a recording, and the picture would be thrown away without being asked.)"
+        if containers
+        else ""
+    )
     msg = (
         "transcribe_audio has no recording. Put one in"
         f" {uploads} (`content-factory make <lane> --input <file>` does that for you), drop one on"
-        " the canvas's Audio File node, or name a path on the node's source widget."
+        f" the canvas's Audio File node, or name a path on the node's source widget.{passed_over}"
     )
     raise RuntimeError(msg)
 
@@ -2725,7 +3326,7 @@ def stage_transcribe_audio(ctx: StageContext) -> StageOutput:
     model = _param(ctx, "model", cfg.faster_whisper_model)
     language = _param(ctx, "language", cfg.language)
     audio_dir = ctx.ddir() / "audio"
-    source = _source_recording(ctx)
+    source, picture = _source_recording(ctx)
     normalised = audio_dir / "source.wav"
     # Normalising in place would read and write the same file; a recording that is already the
     # normalised copy is left exactly as it is.
@@ -2779,6 +3380,9 @@ def stage_transcribe_audio(ctx: StageContext) -> StageOutput:
             "seconds": round(transcript.duration_ms / 1000, 1),
             "timings": transcript.timing_source.value,
             "source": source.name,
+            # Empty unless the recording came out of a video container, where the run log has to
+            # carry what was measured to decide that.
+            **({"picture": picture} if picture else {}),
             "cache_hit": cached,
             # The first words, so a run log says which recording this was without opening a file.
             "opening": " ".join(transcript.text.split()[:12]),
@@ -2980,12 +3584,20 @@ def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceId
             ref_audio=ref_audio,
             ref_text=cfg.qwen_ref_text,
             aligner=param("aligner", cfg.aligner),
-            faster_whisper_model=cfg.faster_whisper_model,
+            # The aligner checkpoint for *this* language: `base.en` cannot transcribe German and
+            # does not say so, and a word-perfect take then fails the script gate. Configured
+            # values are obeyed; see `audio.languages.aligner_model_for`.
+            faster_whisper_model=aligner_model_for(
+                cfg.locale,
+                cfg.faster_whisper_model,
+                configured="faster_whisper_model" in cfg.model_fields_set,
+            ),
             compute_type=cfg.faster_whisper_compute_type,
             timeout_s=cfg.tts_timeout_s,
             aligner_timeout_s=cfg.aligner_timeout_s,
             script_similarity_min=cfg.script_similarity_min,
             seed=cfg.qwen_seed,
+            takes=cfg.tts_takes,
         )
         return executor, voice
     if backend == "kokoro":
@@ -3022,6 +3634,13 @@ def stage_synthesize_narration(ctx: StageContext) -> StageOutput:
     timing_sources: set[str] = set()
     script_checks: list[str] = []
     spoken = 0
+    # The same eviction `restore_speech` and `sound_design` already do, and this stage was left out
+    # of it. Qwen3-TTS loads its weights in its own uv environment through a subprocess, so nothing
+    # stops the managed servers first: measured on `hybrid-video`, it met a card with HiDream's
+    # 18.57 GB already resident and died on a 20 MiB allocation. Only on the uncached path — a
+    # rerun that speaks nothing must not evict a tenant somebody else is using — and only for a
+    # provider that actually loads a model on this card.
+    freed = tts.provider == "mock"
     for b in plan.beats:
         request = NarrationRequest(
             beat_id=b.beat_id,
@@ -3050,6 +3669,9 @@ def stage_synthesize_narration(ctx: StageContext) -> StageOutput:
         ):
             seg_hashes.append(json.loads(marker.read_text())["audio_sha256"])
             continue
+        if not freed:
+            _free_the_gpu(ctx, "synthesize_narration")
+            freed = True
         r = tts.synthesize(request)
         wav.write_bytes(r.audio)
         _write(seg_path, r.segment.model_dump_json(indent=1))
@@ -3282,7 +3904,11 @@ def stage_voice_over(ctx: StageContext) -> StageOutput:
     if _param(ctx, "source", "takes") == "recording":
         return _voice_over_from_recording(ctx, plan)
     try:
-        takes = discover_takes(takes_dir, [b.beat_id for b in plan.beats])
+        takes = discover_takes(
+            takes_dir,
+            [b.beat_id for b in plan.beats],
+            also=[ctx.project_dir / "uploads"],
+        )
     except TakeError as exc:
         raise RuntimeError(f"voice_over: {exc}") from exc
 
@@ -3518,6 +4144,76 @@ def _speech_end_ms(ctx: StageContext) -> int:
     return max((w.end_ms for b in laid for w in b.words), default=0)
 
 
+def _planned_beat_seconds(ctx: StageContext, count: int) -> list[float]:
+    """How long each of ``count`` pictures is on screen, from the story's beats. Empty if unknown.
+
+    A beat carries ``planned_duration_ms`` for exactly this: a silent lane has no narration to
+    measure, so the plan is the only thing that knows the pace.
+    """
+    path = _story_plan_path(ctx)
+    if path is None:
+        return []
+    beats = StoryPlan.model_validate_json(path.read_text()).beats
+    if len(beats) != count or not all(b.planned_duration_ms for b in beats):
+        return []
+    return [round((b.planned_duration_ms or 0) / 1000, 3) for b in beats]
+
+
+def _hold_frames(pngs: list[Path], target: Path, seconds: list[float], fps: int = 30) -> None:
+    """Cut stills together, each held for its own length, with no blending across the joins.
+
+    The same ffmpeg concat-demuxer shape `_hold_stills` uses for the shot-based lanes; this one
+    takes a flat list of frames because a sequence lane has no ShotSpecs to read lengths from.
+    """
+    from content_factory.audio.mix import ffmpeg
+
+    lines = [f"file '{p.resolve()}'\nduration {s}\n" for p, s in zip(pngs, seconds, strict=True)]
+    # The concat demuxer ignores the last entry's duration, so the final image is repeated.
+    lines.append(f"file '{pngs[-1].resolve()}'\n")
+    listing = target.with_suffix(".concat.txt")
+    listing.write_text("".join(lines))
+    size = _png_size(pngs[0].read_bytes())
+    width = int(size.get("png_width") or 1920)
+    height = int(size.get("png_height") or 1080)
+    width, height = width - (width % 2), height - (height % 2)
+    ffmpeg(
+        [
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(listing),
+            "-vf",
+            f"scale={width}:{height},fps={fps},format=yuv420p",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "18",
+            "-movflags",
+            "+faststart",
+            str(target),
+        ],
+        timeout=1800,
+    )
+
+
+POST_CHAIN_EXPORT = "postchain.mp4"
+"""What `interpolate` concatenates its finished clips into.
+
+It used to be `final.mp4` — the same path `compose_video` writes the delivered film to. On a lane
+that composes, the post chain wrote it first and the cut overwrote it later, so a run that died in
+between left a file at the deliverable's name that was not one: `silent-video` failed at
+`sound_design`, three stages before the cut, and `exports/final.mp4` was sitting there — thirty
+seconds of silent, uncaptioned, unmastered footage that anything reading the well-known path would
+take for the film (measured 2026-09-10; this audit did exactly that). `final.mp4` now means the
+finished cut and nothing else. A lane that ends at the post chain still delivers, because this
+name is a delivery candidate in its own right.
+"""
+
+
 def _silent_picture(ctx: StageContext) -> Path:
     """The silent cut: whatever the video branch has produced, most-finished first.
 
@@ -3526,7 +4222,7 @@ def _silent_picture(ctx: StageContext) -> Path:
     clips. Naming them here keeps one answer for both.
     """
     exports = ctx.ddir() / "exports"
-    for name in ("picture.mp4", "final.mp4", "generated.mp4"):
+    for name in ("picture.mp4", POST_CHAIN_EXPORT, "generated.mp4"):
         candidate = exports / name
         if candidate.exists():
             return candidate
@@ -3539,14 +4235,22 @@ def _silent_picture(ctx: StageContext) -> Path:
     # frames ARE the picture, and cutting them is this function's job rather than a new node's.
     # Before this, compose_video reached here and raised, which is why that lane had no picture.
     frames = ctx.ddir() / "sequence" / "frames"
-    if sorted(frames.glob("*.png")):
-        from content_factory.postchain import mux_frames
-
+    pngs = sorted(frames.glob("[0-9]*.png"))
+    if pngs:
         target = exports / "generated.mp4"
         target.parent.mkdir(parents=True, exist_ok=True)
-        # The flipbook rate the rest of the sequence branch previews at (package_sequence's
-        # contact sheet and stage_interpolate's "sequence" case both use 8).
-        mux_frames(frames, target, fps=SEQUENCE_PREVIEW_FPS)
+        # Held for the beats' own lengths when the story says how long they are. Cut at the
+        # flipbook rate instead — which is what this did unconditionally — a five-beat story
+        # planned at eighteen seconds came out as a **0.6-second** film, because eight frames per
+        # second is a preview of a frame set and not a cut of it. The lane's own description says
+        # the pictures carry the story and the cut carries the pace; the pace is in the plan.
+        held = _planned_beat_seconds(ctx, len(pngs))
+        if held:
+            _hold_frames(pngs, target, held)
+        else:
+            from content_factory.postchain import mux_frames
+
+            mux_frames(frames, target, fps=SEQUENCE_PREVIEW_FPS)
         return target
     raise RuntimeError(
         "no picture yet — run the video branch (render_scenes / generate_video / interpolate) "
@@ -3696,22 +4400,104 @@ def stage_align_words(ctx: StageContext) -> StageOutput:
     return StageOutput(_hash_obj(payload), {"reports": len(reports)})
 
 
+def _shown_words(measured: list, display_text: str) -> list:
+    """The words a caption shows, carrying the timings of the words that were said.
+
+    They are usually the same string. They are not when the beat carries a pronunciation
+    respelling: `spoken_line` substitutes it so the model says the name correctly, the aligner
+    measures what it heard, and the captions are built from those measured words — so a film about
+    the Swedish energy agency burned **"en-er-yee-MIN-dih-het-en"** across the bottom of the frame.
+    `display_text` is the contract's answer to exactly this ("Display text; if it carries a factual
+    statement it must link to claims") and it was not being used.
+
+    Substituted only when the two tokenise to the same count, which a respelling does by
+    construction — one token in, one token out. Anything else and the measured words stand, because
+    a guess at which measured word belongs to which displayed one would put the caption out of sync
+    with the voice, which is worse than showing the respelling.
+
+    The written form is preferred **with its punctuation**: the measured words come from an aligner
+    that emits bare tokens, so every caption in this repo read "Euclid asked whether they eventually
+    stop Suppose they did" — two sentences run together with nothing between them. Splitting the
+    display text on whitespace keeps the commas and full stops exactly where the author put them,
+    and falls back to the aligner's tokenisation, and then to the measured words, when the counts
+    do not line up.
+    """
+    from content_factory.audio.normalize import tokenize_words
+
+    for shown in (display_text.split(), tokenize_words(display_text)):
+        if shown and len(shown) == len(measured):
+            return [w.model_copy(update={"word": t}) for w, t in zip(measured, shown, strict=True)]
+    return measured
+
+
+HEADLINE_OPENERS = frozenset({"title", "section_intro", "chapter_transition"})
+"""Scene kinds that *are* a headline. A hook burned over one of these is a second headline over
+the first, whatever it says — measured on `narrated-video` (2026-09-10): a film opening on
+"Resistance is not learned" carried "Resistance is not something bacteria learn" across the top of
+the same frame, and the word-comparison below could not see it because the two are not the same
+sentence. They do not have to be: two headlines at once is the defect."""
+
+
+def _hook_overlay(plan: StoryPlan) -> str | None:
+    """The headline burned over the opening seconds, unless the opening card is already one.
+
+    The hook exists for "the words a muted viewer reads in the first 1-3 s", which is a real job
+    when the film opens on a picture. It has nothing to do when the film opens on typography.
+
+    Two tests, and the kind is the stronger one. A film that opens on a title card carrying the
+    same line — the natural thing for an author to write — showed it twice, in two type sizes, at
+    once; and a film whose title card *paraphrased* the hook showed two different headlines
+    stacked, which reads worse than either. So: no hook over a headline card, and no hook that
+    repeats the opening scene's words whatever kind of card carries them.
+    """
+    if not plan.hook_text:
+        return None
+    opening = next((sc for sc in plan.scenes if sc.beat_id == plan.beats[0].beat_id), None)
+    if opening is not None and getattr(opening, "kind", "") in HEADLINE_OPENERS:
+        return None
+    for slot in ("title", "heading", "label", "text"):
+        ref = getattr(opening, slot, None)
+        shown = getattr(ref, "text", None)
+        if shown and _same_words(shown, plan.hook_text):
+            return None
+    return plan.hook_text
+
+
+def _same_words(left: str, right: str) -> bool:
+    from content_factory.audio.normalize import tokenize_words
+
+    return tokenize_words(left) == tokenize_words(right)
+
+
 def stage_compile_captions(ctx: StageContext) -> StageOutput:
     """Cues never straddle a beat: each beat's words are compiled on their own and the cues are
     concatenated, so a caption always belongs to the scene on screen (the compiler alone breaks
     on pauses, and a short beat gap can be under its 700 ms threshold)."""
-    from content_factory.audio.captions import balanced_groups, cues_from_groups, to_ass
+    from content_factory.audio.captions import (
+        balanced_groups,
+        cues_from_groups,
+        to_ass,
+        wrap_chars_for,
+    )
     from content_factory.schemas.audio import CaptionCue, CaptionTrack
 
     plan, segs, _files = _load_segments(ctx)
     laid = lay_out(segs, AudioMixSpec(deliverable_id=ctx.deliverable_id))  # type: ignore[arg-type]
     cfg = get_settings().compose
+    # One wrap width for the sidecar cues and for the burn-in, resolved from the frame when the
+    # setting is 0: a file and a picture that break a cue in different places are two captions.
+    wrap_chars = wrap_chars_for(
+        plan.width, plan.height, cfg.caption_size_frac, cfg.caption_max_chars_per_line
+    )
+    display_by_beat = {b.beat_id: b.display_text for b in plan.beats}
     groups: list[list] = []
+    respelled_beats = 0
     for beat in laid:
         if beat.words:
-            groups.extend(
-                balanced_groups(list(beat.words), max_chars_per_line=cfg.caption_max_chars_per_line)
-            )
+            words = _shown_words(list(beat.words), display_by_beat.get(beat.beat_id, ""))
+            if any(w.word != o.word for w, o in zip(words, beat.words, strict=True)):
+                respelled_beats += 1
+            groups.extend(balanced_groups(words, max_chars_per_line=wrap_chars))
     cues: list[CaptionCue] = []
     for group in groups:
         for cue in cues_from_groups(ctx.deliverable_id or "", [group], first_index=len(cues) + 1):
@@ -3733,10 +4519,10 @@ def stage_compile_captions(ctx: StageContext) -> StageOutput:
         font=cfg.caption_font,
         size_frac=cfg.caption_size_frac,
         bottom_frac=cfg.caption_bottom_frac,
-        max_chars_per_line=cfg.caption_max_chars_per_line,
+        max_chars_per_line=wrap_chars,
         highlight=(brand.accent or cfg.caption_highlight_color) if cfg.caption_highlight else None,
         box_alpha=cfg.caption_box_alpha,
-        hook=plan.hook_text if cfg.hook_overlay else None,
+        hook=_hook_overlay(plan) if cfg.hook_overlay else None,
         hook_seconds=cfg.hook_seconds,
         hook_font=cfg.hook_font,
         hook_size_frac=cfg.hook_size_frac,
@@ -3748,7 +4534,10 @@ def stage_compile_captions(ctx: StageContext) -> StageOutput:
         {
             "cues": len(track.cues),
             "words": sum(len(g) for g in groups),
-            "hook": bool(plan.hook_text),
+            "shown_as_written": respelled_beats,
+            # Whether the headline was *drawn*, not whether the plan carries one: it is dropped
+            # when the opening card already says the same words.
+            "hook": bool(_hook_overlay(plan)) if cfg.hook_overlay else False,
         },
     )
 
@@ -4097,7 +4886,13 @@ def stage_mix_audio(ctx: StageContext) -> StageOutput:
     )
     _write(ctx.ddir() / "audio" / "loudness.json", report.model_dump_json(indent=1))
     if not report.passed:
-        raise RuntimeError(f"mastering missed target: {report}")
+        # Which constraint bound: over the ceiling is a different problem from short of the target.
+        why = (
+            "true peak is over the ceiling"
+            if report.true_peak_dbtp > report.target_true_peak_dbtp + 0.1
+            else "loudness is off target and the peak ceiling was not what held it"
+        )
+        raise RuntimeError(f"mastering missed target ({why}): {report}")
     return StageOutput(
         file_sha256(mastered),
         {
@@ -4552,6 +5347,41 @@ def stage_compose_video(ctx: StageContext) -> StageOutput:
     return StageOutput(ref.sha256, {"artifact_key": ref.key, **facts})
 
 
+VIDEO_MODEL_PACKAGES: dict[str, str] = {
+    "ltx-2.5.i2v": "ltx-2.5.i2v",
+    "wan-animate-2.pose": "wan-animate-2.pose",
+}
+"""The `generate_video` `model` widget, spelled by package name, for the ComfyUI backend. `mock`
+is the third option and is absent here because it selects no package at all."""
+
+
+def _video_model(ctx: StageContext | None) -> tuple[str, str]:
+    """Which generator animates, and with which package — the same precedence as the anchor's.
+
+    1. ``video.backend`` **when it was explicitly configured**, because a machine that has said
+       "no ComfyUI here" has to be obeyed on every lane;
+    2. the node's ``model`` widget, which is what a lane definition freezes;
+    3. the setting's default, which is ``mock``.
+
+    It was 1 and 3 only, and the widget did not exist. So a lane could name its LTX weight files —
+    this node has three widgets for exactly that — and still run the deterministic ffmpeg
+    stand-in, with nothing in the run saying the model had not been asked. Measured 2026-09-10:
+    ``image-to-video``, ``silent-video``, ``scene-controlled-video``, ``hybrid-video`` and
+    ``single-clip-post`` had every one of their generated clips recorded as ``"backend": "mock"``.
+    """
+    cfg = get_settings().video
+    if "backend" in cfg.model_fields_set or ctx is None:
+        return cfg.backend, cfg.package
+    model = _param(ctx, "model", "").strip()
+    if not model or model == "mock":
+        return ("mock" if model == "mock" else cfg.backend), cfg.package
+    if model not in VIDEO_MODEL_PACKAGES:
+        known = ["mock", *sorted(VIDEO_MODEL_PACKAGES)]
+        msg = f"unknown generate_video model {model!r}; the widget offers {known}"
+        raise RuntimeError(msg)
+    return "comfyui", VIDEO_MODEL_PACKAGES[model]
+
+
 def _video_backend(ctx: StageContext | None = None):
     """The video executor, with the LTX weight file names the node asks for.
 
@@ -4563,8 +5393,9 @@ def _video_backend(ctx: StageContext | None = None):
     from content_factory.media.video_generate import ComfyUIVideoBackend, MockVideoBackend
 
     cfg = get_settings().video
-    if cfg.backend == "comfyui":
-        if cfg.package == "wan-animate-2.pose":
+    backend_name, package = _video_model(ctx)
+    if backend_name == "comfyui":
+        if package == "wan-animate-2.pose":
             from content_factory.media.wan_packages import wan_animate2_pose_package
 
             return ComfyUIVideoBackend(
@@ -4850,6 +5681,71 @@ def _story_plan_or_none(ctx: StageContext) -> StoryPlan | None:
     return StoryPlan.model_validate_json(path.read_text()) if path is not None else None
 
 
+def _codec_size(width: int, height: int) -> tuple[int, int]:
+    """The nearest frame size at or above ``width x height`` that a video codec will take.
+
+    `VideoGenerationRequest` requires a multiple of 16 on both axes, because that is what h264
+    macroblocks and every diffusion video model's latent grid are built on. **1080 is not one** —
+    1080 / 16 is 67.5 — so every 1080x1920 story, which is the vertical format, failed the contract
+    at `generate_video` with "Input should be a multiple of 16". (It is the same arithmetic that
+    makes 1080p video encode as 1088 lines and crop.)
+
+    Rounded up rather than down: the clip is composited into the timeline's frame afterwards, and
+    scaling a slightly larger picture down keeps detail that scaling a smaller one up invents.
+    """
+    grid = 16
+
+    def snap(value: int, limit: int) -> int:
+        return max(64, min(limit, -(-value // grid) * grid))
+
+    return snap(width, 3840), snap(height, 2160)
+
+
+def _backend_size_cap(backend: object) -> tuple[int, int] | None:
+    """The largest frame the backend's workflow package will accept, or None if it says.
+
+    Read off the package's own parameter bindings rather than configured anywhere: the graph is
+    what has the limit, and the LTX-2.5 package declares 1344 on both axes.
+    """
+    params = getattr(getattr(backend, "package", None), "parameters", None)
+    if not params:
+        return None
+    caps = {b.name: b.maximum for b in params if b.name in {"width", "height"}}
+    if caps.get("width") is None or caps.get("height") is None:
+        return None
+    return int(caps["width"]), int(caps["height"])  # type: ignore[arg-type]
+
+
+def _clip_size(
+    backend: object, width: int, height: int, *, fit: bool, what: str
+) -> tuple[int, int]:
+    """``_codec_size``, but inside what the video model can actually generate.
+
+    Measured 2026-09-10: `image-to-video` on a 2560x1440 photograph, and `silent-video` on a
+    1920x1080 story, both died at `generate_video` with "parameter 'width' above maximum 1344.0"
+    — raised by the ComfyUI package validator, after the anchors had already been generated. The
+    limit belongs to the graph and nothing upstream had asked it.
+
+    The two paths want different answers and that is deliberate. A *supplied still* has an
+    incidental size — a phone took it — so the clip is fitted into the cap with its aspect kept
+    (``fit=True``). A *shot plan* has a deliberate one, chosen with the deliverable, so silently
+    shrinking a whole film is the wrong repair: it is refused, early, naming the cap and the knob.
+    """
+    cap = _backend_size_cap(backend)
+    if cap is None or (width <= cap[0] and height <= cap[1]):
+        return _codec_size(width, height)
+    if not fit:
+        msg = (
+            f"{what} is {width}x{height} and this video package generates at most"
+            f" {cap[0]}x{cap[1]}. Plan the story at or below that, or point"
+            f" video.package at a graph that takes the larger frame — a clip generated"
+            f" smaller and scaled up would invent the difference."
+        )
+        raise RuntimeError(msg)
+    scale = min(cap[0] / width, cap[1] / height)
+    return _codec_size(int(width * scale), int(height * scale))
+
+
 def _video_prompt_for(ctx: StageContext, shot: ShotSpec | None, story: StoryPlan | None) -> str:
     """The compiled cinematography paragraph for one shot, under the lane's own preamble.
 
@@ -4959,12 +5855,19 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
                 )
             fps = shot.fps if shot else cfg.fps
             frame_count = shot.frame_count if shot else round(cfg.default_duration_s * fps)
+            clip_width, clip_height = _clip_size(
+                backend,
+                entry["width"],
+                entry["height"],
+                fit=False,
+                what=f"shot {entry['shot_id']}",
+            )
             request = VideoGenerationRequest(
                 request_id=f"vid_{sha256_hex(entry['shot_id'].encode())[:12]}",
                 purpose=f"shot {entry['shot_id']} for {ctx.deliverable_id or 'shared'}",
                 prompt=_video_prompt_for(ctx, shot, story),
-                width=entry["width"],
-                height=entry["height"],
+                width=clip_width,
+                height=clip_height,
                 duration_s=max(1.0, round(frame_count / fps, 3)),
                 fps=fps,
                 # The node's seed wins over the shot's, so an operator can re-roll a whole film's
@@ -5072,12 +5975,16 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
     duration_s = _param_float(
         ctx, "duration", cfg.default_duration_s if backend.name != "mock" else 4.0
     )
+    # The supplied still's own size, fitted into what the model takes: see `_clip_size`.
+    clip_width, clip_height = _clip_size(
+        backend, width, height, fit=True, what="the supplied first frame"
+    )
     request = VideoGenerationRequest(
         request_id=f"vid_{sha256_hex(ctx.campaign.campaign_id.encode())[:12]}",
         purpose=f"generated clip for {ctx.deliverable_id or 'shared'}",
         prompt=prompt,
-        width=width,
-        height=height,
+        width=clip_width,
+        height=clip_height,
         duration_s=duration_s,
         fps=cfg.fps,
         # Derived from what is being generated rather than from the brief: a clip regenerated after
@@ -5456,7 +6363,7 @@ def stage_upscale_video(ctx: StageContext) -> StageOutput:
 
 def stage_interpolate(ctx: StageContext) -> StageOutput:
     """Frame interpolation as the last step; muxes ``exports/final.mp4`` (shots concatenated)."""
-    from content_factory.postchain import mux_frames
+    from content_factory.postchain import PostChainError, mux_frames
 
     cfg = get_settings().postchain
     engine = _param(ctx, "engine", cfg.interpolator)
@@ -5477,7 +6384,21 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
     finals: list[Path] = []
     shots = _shots_by_id(ctx)
     for name, workdir in _chain_inputs(ctx):
-        record = _chain_step(ctx, name, workdir, "interpolated", engine, {"factor": factor})
+        try:
+            record = _chain_step(ctx, name, workdir, "interpolated", engine, {"factor": factor})
+        except PostChainError as exc:
+            # An optical-flow interpolator's memory is quadratic in the frame area: GIMM-VFI's
+            # RAFT correlation asked for **12.36 GiB** on a single 1088x1920 pair and died on a
+            # 24 GB card. That is a size limit, not a broken install, and the answer is the film
+            # without the invented frames rather than no film — recorded, because a lane that
+            # quietly stopped interpolating would look like one that never tried.
+            if "OutOfMemoryError" not in str(exc):
+                raise
+            return _mux_without_interpolation(
+                ctx,
+                skipped=f"{engine} ran out of memory on this frame size",
+                requested=engine,
+            )
         if name == "sequence":
             fps = 8 * factor  # keyframe flipbooks preview at 8 fps
         else:
@@ -5488,7 +6409,7 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
             mux_frames(workdir / "interpolated" / "frames", final, fps=fps)
         finals.append(final)
         results.append({"clip": name, "fps": fps, **record})
-    target = ctx.ddir() / "exports" / "final.mp4"
+    target = ctx.ddir() / "exports" / POST_CHAIN_EXPORT
     _concat_clips(finals, target)
     ref = ctx.store.put_file(ctx.workspace_id, "renders", target)
     return StageOutput(
@@ -5519,8 +6440,14 @@ def _mux_without_interpolation(ctx: StageContext, *, skipped: str, requested: st
     """
     from content_factory.postchain import mux_frames
 
-    picture = _silent_picture(ctx)
+    # Resolved where it is used, not up front. This function *produces* the picture on a lane that
+    # has none yet — `video-finish` and `image-upscale` end at the post chain — so asking for one
+    # first turned the out-of-memory fallback into a second failure: GIMM-VFI OOMed on a 1088x1920
+    # pair (1.99 GiB), the fallback ran, and the run died on "no picture yet" instead of
+    # delivering the film without the invented frames (measured 2026-09-10, the first run to get
+    # past the CuPy break and reach this path at all).
     if skipped == "held cut":
+        picture = _silent_picture(ctx)
         return StageOutput(
             file_sha256(picture),
             {
@@ -5556,6 +6483,9 @@ def _mux_without_interpolation(ctx: StageContext, *, skipped: str, requested: st
         finals.append(final)
         muxed.append({"clip": name, "fps": fps, "steps": list(state["steps"])})
     if not finals:
+        # Nothing came out of the chain, so whatever picture the run already had is the answer —
+        # and if it has none, "no picture yet" is the honest failure.
+        picture = _silent_picture(ctx)
         return StageOutput(
             file_sha256(picture),
             {
@@ -5566,7 +6496,7 @@ def _mux_without_interpolation(ctx: StageContext, *, skipped: str, requested: st
                 "picture": picture.name,
             },
         )
-    target = ctx.ddir() / "exports" / "final.mp4"
+    target = ctx.ddir() / "exports" / POST_CHAIN_EXPORT
     _concat_clips(finals, target)
     ref = ctx.store.put_file(ctx.workspace_id, "renders", target)
     return StageOutput(
@@ -5741,6 +6671,64 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
                 "beats": [s.beat_id for s in story.scenes if s.kind not in IMPLEMENTED_KINDS],
             },
         }
+        # The same fault one step along. A scene whose asset is not in the bundle draws the same
+        # labelled grey card an unimplemented kind does, and it passed everything here too: a
+        # thirty-second film in which every single scene read "missing asset · ast_sky02000" came
+        # back QC-passed and packaged. Only asked of a lane that renders a bundle — a generative
+        # lane cuts its own frames and has no assets dict to check against.
+        # ...but only on a lane that has no pictures of its own. A generative lane names assets in
+        # its plan that the *shots* fill — hybrid-video routes some beats to a generated clip and
+        # renders the rest as cards — so an empty bundle assets dict there means "the picture came
+        # from somewhere else", not "the picture is missing".
+        draws_its_own = (ctx.ddir() / "anchors" / "manifest.json").is_file() or (
+            ctx.ddir() / "shots" / "plan.json"
+        ).is_file()
+        bundle_path = ctx.ddir() / "timeline" / "bundle.json"
+        bundle = json.loads(bundle_path.read_text()) if bundle_path.is_file() else None
+        if bundle is not None and not draws_its_own:
+            have = set(bundle.get("assets") or {})
+            wanted = [
+                (sc.scene_id, str(getattr(sc, "asset_id", "")))
+                for sc in story.scenes
+                if getattr(sc, "asset_id", None)
+            ]
+            missing = [{"scene_id": sid, "asset_id": aid} for sid, aid in wanted if aid not in have]
+            checks["scene_assets_present"] = {
+                "passed": not missing,
+                "facts": {
+                    "scenes_naming_an_asset": len(wanted),
+                    "in_the_bundle": len(have),
+                    "missing": missing[:12],
+                },
+            }
+        # The same fault a third time, on the other kind of reference a scene can dangle. A
+        # scene names a source as `source_id` (quote, screenshot) or `source_ids` (source card,
+        # chart), and when the bundle has no such source the renderer prints **the raw id** where
+        # the citation goes. Measured on `f02-penny` (2026-09-10): a quote card shipped reading
+        # "Source: src_authored000001", and all seven checks here passed. `scenes/kinds.py`
+        # already says why it matters — "a quote attributed to a source that does not exist is a
+        # fabricated citation" — and the script writer is held to it, so this only bites a story
+        # that went round the writer. That is exactly how the placeholder films got out too.
+        #
+        # Not gated on `draws_its_own`, unlike the assets check above: a shot can supply a
+        # picture the bundle does not carry, but nothing downstream ever invents a source.
+        if bundle is not None:
+            known = set(bundle.get("sources") or {})
+            named: list[tuple[str, str]] = []
+            for sc in story.scenes:
+                one = getattr(sc, "source_id", None)
+                if one:
+                    named.append((sc.scene_id, str(one)))
+                named.extend((sc.scene_id, str(s)) for s in getattr(sc, "source_ids", ()) or ())
+            dangling = [{"scene_id": sid, "source_id": s} for sid, s in named if s not in known]
+            checks["scene_sources_present"] = {
+                "passed": not dangling,
+                "facts": {
+                    "scenes_naming_a_source": len(named),
+                    "in_the_bundle": len(known),
+                    "dangling": dangling[:12],
+                },
+            }
     leaks = scan_deliverable(ctx.project_dir, ctx.ddir(), ctx.deliverable_id)
     checks["no_credentials_in_output"] = {
         "passed": leaks.passed,
@@ -5949,8 +6937,23 @@ def stage_originality_gate(ctx: StageContext) -> StageOutput:
 # in this order so the manifest reads the way a person would list it: the film first.
 DELIVERY_CANDIDATES: tuple[tuple[str, str], ...] = (
     ("video", "exports/final.mp4"),
+    # The post chain's own output. It is the deliverable on a lane that ends there — `image-upscale`
+    # and `video-finish` have no cut to make — and an intermediate on a lane that goes on to
+    # compose, where `final.mp4` above wins because it is listed first.
+    ("video", f"exports/{POST_CHAIN_EXPORT}"),
     ("video", "exports/generated.mp4"),
     ("image", "exports/artboard.png"),
+    # A still lane's deliverable is the anchor itself. `single-image` draws one picture and stops,
+    # so there is no export, no cards and no audio to scan — and without this line the scan found
+    # only `qc/report.json`, so `DeliveryPackage` refused a package carrying only metadata and the
+    # four-stage lane failed on its last stage having already drawn the picture it was asked for.
+    ("image", "anchors/anchor.png"),
+    # `package_sequence` writes these three beside `sequence/frames/`, and for a set-of-stills lane
+    # they *are* the deliverable, which is what the `sequence` role means: the frame set is the
+    # thing being published, not a description of it. A lane that also cuts a film ships that film
+    # as the video and these alongside it — see the guard in `_delivery_files`.
+    ("sequence", "sequence/preview.mp4"),
+    ("sequence", "sequence/contact-sheet.png"),
     ("audio", "audio/narration-mastered.wav"),
     ("caption", "captions/captions.srt"),
     ("caption", "captions/captions.vtt"),
@@ -5995,9 +6998,18 @@ def _delivery_files(ctx: StageContext) -> list:
 
     files = []
     seen: set[str] = set()
+    # A lane that cut a film already ships that film. `sequence/preview.mp4` is an 8 fps proof
+    # reel of the same frames, so on those lanes it is the same footage a second time; on a
+    # set-of-stills lane, which cuts nothing, it is the deliverable. Decided here rather than in
+    # the table because it depends on what else the run produced.
+    cut_a_film = any(
+        (ctx.ddir() / rel).is_file() for rel in ("exports/final.mp4", "exports/generated.mp4")
+    )
     for role, relative in DELIVERY_CANDIDATES:
         path = ctx.ddir() / relative
         if not path.is_file() or relative in seen:
+            continue
+        if relative == "sequence/preview.mp4" and cut_a_film:
             continue
         size = path.stat().st_size
         if size == 0:
@@ -6051,6 +7063,35 @@ def _delivery_files(ctx: StageContext) -> list:
                 content_type=guessed or "application/octet-stream",
             )
         )
+    # The post chain's own output. `image-upscale` and `video-finish` end in a chain step, not in
+    # an export: SeedVR2 enlarged a still from 2560x1440 to 3840x2160, wrote it under
+    # `sequence/upscaled/frames/`, and the package came back carrying `qc/report.json` and nothing
+    # else — a finishing lane failing on its last stage having already done the work. `chain.json`
+    # names the final directory in `latest`, which is the one thing that knows which step was last.
+    chain = ctx.ddir() / "sequence" / "chain.json"
+    if chain.is_file():
+        latest = Path(json.loads(chain.read_text()).get("latest", ""))
+        if latest.is_dir():
+            pngs = sorted(latest.glob("[0-9]*.png"))
+            # One picture is an image; several are the frame set the `sequence` role is for.
+            role = "image" if len(pngs) == 1 else "sequence"
+            for path in pngs:
+                try:
+                    relative = str(path.relative_to(ctx.ddir()))
+                except ValueError:
+                    continue
+                if relative in seen or path.stat().st_size == 0:
+                    continue
+                seen.add(relative)
+                files.append(
+                    DeliveryFile(
+                        role=role,  # type: ignore[arg-type]
+                        path=relative,
+                        sha256=file_sha256(path),
+                        bytes=path.stat().st_size,
+                        content_type="image/png",
+                    )
+                )
     # Keep the documented reading order — the film first, metadata last — now that files arrive
     # from two scans rather than one ordered list.
     files.sort(key=lambda f: _DELIVERY_ROLE_ORDER.index(f.role))
@@ -6097,6 +7138,7 @@ def stage_compile_destination_packages(ctx: StageContext) -> StageOutput:
         ctx.ddir() / "destination-packages" / "packages.json",
         json.dumps([p.model_dump(mode="json") for p in packages], indent=1),
     )
+    published = _publish_to_gallery(ctx, files)
     return StageOutput(
         # The digests, not the timestamp: two packages of the same bytes are the same package,
         # and hashing `built_at` would make this stage cache-miss on every run.
@@ -6107,8 +7149,56 @@ def stage_compile_destination_packages(ctx: StageContext) -> StageOutput:
             "bytes": sum(f.bytes for f in files),
             "roles": sorted({f.role for f in files}),
             "qc_passed": qc_passed,
+            **({"gallery": published} if published else {}),
         },
     )
+
+
+def _publish_to_gallery(ctx: StageContext, files: Sequence) -> str | None:
+    """Hard-link the run's film into one flat directory a person can browse.
+
+    A deliverable lives at ``deliverables/<id>/exports/final.mp4``, which is correct and unusable:
+    213 run directories held 34 films between them and finding one meant knowing the path. The
+    last stage of a run now also puts the film in ``<gallery>/<run>.mp4`` — one directory, named
+    by the run, so "where are the videos" has an answer that does not involve a glob.
+
+    A hard link rather than a copy: the bytes exist once, the gallery costs nothing, and deleting
+    it cannot lose a deliverable. Falls back to a copy across filesystems.
+
+    Only for a run whose project directory is inside the repo. A test with a `tmp_path` project
+    would otherwise litter the checkout with one file per test that happens to package something,
+    and the gallery is for the operator's own runs.
+
+    The primary video only, and only the first: `DELIVERY_CANDIDATES` is ordered, so `final.mp4`
+    wins over the post chain's own export on a lane that has both, which is the same precedence
+    the packages use.
+    """
+    from content_factory.deliverables.gallery import publish_film
+
+    film = primary_film(files)
+    if film is None:
+        return None
+    try:
+        ctx.project_dir.resolve().relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return None  # a run outside the checkout: not ours to publish
+    return publish_film(
+        name=ctx.project_dir.resolve().name,
+        source=ctx.ddir() / film.path,
+        gallery_dir=get_settings().gallery.dir,
+        repo_root=REPO_ROOT,
+    )
+
+
+def primary_film(files: Sequence) -> DeliveryFile | None:
+    """The one file that is the film, or None for a lane that cut none.
+
+    ``DELIVERY_CANDIDATES`` is ordered and `_delivery_files` preserves that order, so the first
+    ``video`` is ``exports/final.mp4`` on a lane that has both it and the post chain's own export.
+    Shared with the harvest, which has to pick the same file out of the same manifest read on
+    another machine — two implementations of "which one is the film" would eventually disagree.
+    """
+    return next((f for f in files if getattr(f, "role", "") == "video"), None)
 
 
 def stage_package_qc(ctx: StageContext) -> StageOutput:

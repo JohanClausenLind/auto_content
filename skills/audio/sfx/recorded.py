@@ -54,6 +54,22 @@ def bundle_root() -> Path:
     return root
 
 
+def pack_root(pack: dict, must_exist: bool = True) -> Path:
+    """The staging root of a pack recipe: its own env var, else the default it names.
+
+    Pack sources live outside the repo for the same reason the bundle does -- their licences
+    permit an End Product that incorporates a sound, not redistribution of the sound.
+    `must_exist=False` is for the stager, which is allowed to create the root it is filling.
+    """
+    root = Path(os.environ.get(pack["root_env"], pack["root_default"])).expanduser()
+    if must_exist and not root.is_dir():
+        raise SystemExit(
+            f"pack root not found at {root}\n"
+            f"Set {pack['root_env']}, or stage the pack with stage_pack.py."
+        )
+    return root
+
+
 # --------------------------------------------------------------------------- provenance
 
 
@@ -376,6 +392,42 @@ def cap_and_fade(
     if f > 1:
         y[:, -f:] *= np.linspace(1.0, 0.0, f)
     return y, round(20.0 * math.log10(max(at / peak, 1e-12)), 1)
+
+
+def cut_whole(
+    path: Path, sr: int, highpass_hz: float, max_s: float | None = None, trim: bool = True
+) -> tuple[np.ndarray, dict]:
+    """The file as delivered: trim the silence around it, optionally cap, high-pass.
+
+    The mode for a source that has already been cut by whoever made it -- a stock one-shot, a
+    supplier's sampler file. There is nothing to choose here and choosing anyway is the mistake:
+    an event gate over a file whose author already decided where the sound starts and stops
+    throws away the edit being licensed, and crops the quiet approach of anything that swells.
+
+    `max_s` is for the one case where the delivered file is a reel of takes rather than one
+    sound; `cap_and_fade` reports how audible the cut is and the caller flags it.
+
+    `trim=False` keeps the delivered length exactly. Silence is usually dead weight in front of a
+    one-shot, but in a *musical* render it is part of the bar count: trimming 8.8 s off a
+    thirty-second trailer alarm leaves 21.21 s, which no longer repeats on a bar line.
+
+    Returns (audio, provenance) with the same shape the other cut modes report.
+    """
+    raw = decode(path, sr)
+    source_peak_dbfs = db(float(np.abs(raw).max()))
+    x = sfx.trim_oneshot(raw, sr) if trim else raw
+    trimmed_s = round((raw.shape[-1] - x.shape[-1]) / sr, 3)
+    trunc_db = None
+    if max_s is not None:
+        x, trunc_db = cap_and_fade(x, sr, float(max_s))
+    x = sfx.highpass_linear(x, sr, highpass_hz)  # zero-padded -> no circular fold
+    return x, {
+        "mode": "whole",
+        "silence_trimmed_s": trimmed_s,
+        "max_s": float(max_s) if max_s is not None else None,
+        "truncated_at_db": trunc_db,
+        "source_peak_dbfs": source_peak_dbfs,
+    }
 
 
 def source_sha256(path: Path) -> str:

@@ -2,8 +2,11 @@ import type { DatasetTable, DiagramEdge, DiagramNode } from "@content-factory/co
 import { classificationNotice, refClassification } from "@content-factory/content-ui";
 import { describe, expect, it } from "vitest";
 
+import { editorialTheme, fitText } from "@content-factory/content-ui";
+
 import { isImplementedKind } from "../src/mapping";
-import { stepPath } from "../src/scenes/ChartScene";
+import { fitFloorPx } from "../src/scenes/common";
+import { readingLabels, stepPath } from "../src/scenes/ChartScene";
 import { comparisonValues } from "../src/scenes/ComparisonScene";
 import { FLOW_GAP_RATIO, edgePath, flowBoxes, flowLayers, flowRevealStep } from "../src/scenes/FlowDiagramScene";
 import { IMAGE_MOTION_TRAVEL, imageScale } from "../src/scenes/ImageScene";
@@ -215,5 +218,70 @@ describe("step chart path", () => {
   it("is empty for no points and a bare move for one, never a malformed path", () => {
     expect(stepPath([])).toBe("");
     expect(stepPath([{ x: 7, y: 9 }])).toBe("M 7 9");
+  });
+});
+
+describe("a line chart writes the readings nothing else on the card writes", () => {
+  const pts = [
+    { x: 100, y: 400 },
+    { x: 200, y: 300 },
+    { x: 300, y: 120 },
+  ];
+
+  it("puts a step's reading over the middle of the interval it holds for", () => {
+    const marks = readingLabels(pts, { span: 100, stepped: true, left: 90, right: 400, lift: 12 });
+    expect(marks.map((m) => m.x)).toEqual([150, 250, 350]);
+    expect(marks.map((m) => m.y)).toEqual([388, 288, 108]);
+    expect(new Set(marks.map((m) => m.anchor))).toEqual(new Set(["middle"]));
+  });
+
+  it("keeps a line's first and last reading inside the plot", () => {
+    const marks = readingLabels(pts, { span: 100, stepped: false, left: 120, right: 280, lift: 12 });
+    expect(marks.map((m) => m.x)).toEqual([120, 200, 280]);
+    expect(marks.map((m) => m.anchor)).toEqual(["start", "middle", "end"]);
+  });
+
+  it("is pure and total", () => {
+    expect(readingLabels([], { span: 10, stepped: true, left: 0, right: 10, lift: 1 })).toEqual([]);
+    const once = readingLabels(pts, { span: 100, stepped: true, left: 0, right: 400, lift: 12 });
+    expect(readingLabels(pts, { span: 100, stepped: true, left: 0, right: 400, lift: 12 })).toEqual(once);
+  });
+});
+
+describe("the floor a video card's type may not go below", () => {
+  it("is the theme's declared 1080 minimum, not half the role's own", () => {
+    // Measured 2026-09-10 on the portrait geometry: 815 characters of body text used to set at
+    // 14px with `truncated: false`, and nothing on the video path checks a fitted size.
+    expect(editorialTheme.legibility.minFontPx1080).toBe(24);
+    expect(fitFloorPx(editorialTheme, "body", 1)).toBe(24);
+    expect(fitFloorPx(editorialTheme, "headline", 1)).toBe(24);
+    expect(fitFloorPx(editorialTheme, "source", 1)).toBe(24);
+    // Half the role minimum, which is what it was, is below the floor for every one of them.
+    expect(editorialTheme.type.body.min * 0.5).toBeLessThan(24);
+  });
+
+  it("scales with the frame and never exceeds the role's preferred size", () => {
+    expect(fitFloorPx(editorialTheme, "body", 0.5)).toBe(12);
+    // A hypothetical role set smaller than the floor still renders at its own size.
+    const tiny = { ...editorialTheme, type: { ...editorialTheme.type, caption: { ...editorialTheme.type.caption, size: 18 } } };
+    expect(fitFloorPx(tiny, "caption", 1)).toBe(18);
+  });
+
+  it("cuts long text with an ellipsis instead of shrinking it out of legibility", () => {
+    const long = "A thin lip of steel that folds over the far side of the edge. ".repeat(13);
+    const t = editorialTheme.type.body;
+    const at = (minSize: number) =>
+      fitText({
+        text: long, weight: t.weight, family: t.family,
+        maxWidth: 928, maxHeight: 400, maxLines: 6,
+        preferredSize: t.size, minSize, lineHeight: t.lineHeight, letterSpacing: t.letterSpacing,
+      });
+    const before = at(Math.max(8, t.min * 0.5));
+    const after = at(fitFloorPx(editorialTheme, "body", 1));
+    expect(before.fontSize).toBeLessThan(24);
+    expect(before.truncated).toBe(false);
+    expect(after.fontSize).toBe(24);
+    expect(after.truncated).toBe(true);
+    expect(after.lines.at(-1)?.endsWith("…")).toBe(true);
   });
 });

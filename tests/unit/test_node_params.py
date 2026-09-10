@@ -277,6 +277,11 @@ def test_the_model_widget_picks_the_anchor_backend_and_a_host_setting_still_wins
     from content_factory.workflows.stages import _anchor_backend_name
 
     ctx = make_context(project_dir=tmp_path)
+    # This test's whole subject is configured-versus-defaulted, so it sets its own premise rather
+    # than inheriting one: `tests/conftest.py` configures the mock backends for the suite (a lane
+    # definition may now pin a real model, and an offline test must not run it), and "nothing
+    # configured" has to mean nothing configured.
+    monkeypatch.delenv("CF__IMAGE_SEQUENCES__BACKEND", raising=False)
     get_settings.cache_clear()  # type: ignore[attr-defined]
     try:
         # Nothing configured: the lane's model decides.

@@ -71,6 +71,7 @@ nodes:
   - key: anchor
     type: generate_anchor
     values:
+      model: hidream-o1
       prompt: "the scene as the shot plan frames it, no text and no on-screen words"
       style: >
         one consistent look across every shot, composed to read without narration, strong silhouette
@@ -79,6 +80,7 @@ nodes:
   - key: motion
     type: generate_video
     values:
+      model: ltx-2.5.i2v
       prompt: "unhurried motion that reads on its own, camera and subject as the shot plan stages them"
       size: 1024x576
     note: 'motion: hold instead cuts the drawings as held stills, which suits a slower silent piece.'

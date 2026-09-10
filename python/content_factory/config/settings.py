@@ -178,9 +178,25 @@ class MediaLibrarySettings(StrictModel):
     each library carries a manifest whose entries are validated contracts."""
 
     music_dir: str = "fixtures/music"
-    # The curated sound library: 49 loudness-measured, provenance-tracked sounds under
+    # The curated sound library: 670 loudness-measured, provenance-tracked sounds under
     # assets/sfx, indexed by assets/sfx/manifest.json. Read-only, like the music library.
     sfx_dir: str = "assets/sfx"
+
+
+class GallerySettings(StrictModel):
+    """Where a finished film is put so a person can find it.
+
+    A run's deliverable lives at
+    ``output/<project>/deliverables/<id>/exports/final.mp4`` — correct, addressable, and no use to
+    anybody browsing. 213 run directories held 34 films between them and the only way to watch one
+    was to know the path. So the last stage of a run also publishes the film into one flat
+    directory, named by the run, and that directory is the answer to "where are the videos".
+
+    Hard-linked, not copied: same filesystem, no second copy of the bytes, and deleting the
+    gallery cannot lose anything. ``dir`` empty turns it off.
+    """
+
+    dir: str = "videos"
 
 
 class AnimationSettings(StrictModel):
@@ -631,15 +647,21 @@ class ComposeSettings(StrictModel):
     hook_overlay: bool = True
     hook_seconds: float = Field(default=2.8, ge=0.5, le=10.0)
     hook_font: str = "Sora"
-    hook_size_frac: float = Field(default=0.04, ge=0.02, le=0.1)
+    hook_size_frac: float = Field(default=0.0711, ge=0.02, le=0.12)
     hook_top_frac: float = Field(default=0.14, ge=0.03, le=0.5)
-    # Fractions of the frame height: caption text size and the bottom margin under the text
-    # (0.22 keeps the block above the ~320 px platform UI band on a 1920 px frame).
-    caption_size_frac: float = Field(default=0.03, ge=0.015, le=0.08)
+    # Text sizes are fractions of the frame's SHORTER SIDE, so one number is one physical size in
+    # both orientations. They were fractions of the height, and every one of them was calibrated
+    # on a 1080x1920 vertical frame — so a 16:9 film got captions at 32 px and a headline at 43 px,
+    # 55 % of their intended size. 0.0533 x 1080 is the same 58 px that 0.03 x 1920 was.
+    caption_size_frac: float = Field(default=0.0533, ge=0.02, le=0.1)
+    # A position, not a size, so still a fraction of the height: 0.22 keeps the block above the
+    # ~320 px platform UI band on a 1920 px phone frame.
     caption_bottom_frac: float = Field(default=0.22, ge=0.05, le=0.5)
     # Cue text is re-wrapped to this many characters per line before burning, so the block stays
-    # two or three short lines inside the safe width on any background.
-    caption_max_chars_per_line: int = Field(default=22, ge=10, le=48)
+    # two or three short lines inside the safe width on any background. 0 derives it from the
+    # frame — 22 on a phone, 39 on 16:9 — because a fixed 22 makes a landscape caption a line one
+    # third of the frame wide, stacked four deep.
+    caption_max_chars_per_line: int = Field(default=0, ge=0, le=48)
     # Semi-transparent box behind white text reads on cream cards and on dark footage alike.
     caption_box_alpha: float = Field(default=0.55, ge=0.0, le=1.0)
 
@@ -688,6 +710,12 @@ class NarrationSettings(StrictModel):
     # so. Lower than the recorded-take floor (0.85): a TTS reads normalized text, so the aligner's
     # transcript legitimately differs more around numbers and units.
     script_similarity_min: float = Field(default=0.8, ge=0.0, le=1.0)
+    # How many times a beat may be spoken before the gate above is treated as the script's fault
+    # rather than the sample's. Qwen3-TTS is a sampling model and it drops material: one beat of a
+    # curveball explainer came back as its second sentence alone (similarity 0.76) and failed a
+    # fourteen-stage run at stage four, and the next sample said the whole thing. Three takes, each
+    # reseeded; the cost is only paid by beats that actually failed.
+    tts_takes: int = Field(default=3, ge=1, le=6)
 
     # ---- Kokoro (fallback) -------------------------------------------------------------------
     kokoro_voice: str = Field(default="af_heart", min_length=1, max_length=80)
@@ -833,6 +861,13 @@ class LocalServicesSettings(StrictModel):
 
     auto_start: bool = True
     exclusive_gpu: bool = True
+    # Stop the model servers when the last run finishes. A server keeps its weights loaded so the
+    # next request does not pay the ~72 s load, which is right *while work is queued* and wrong
+    # once the queue is empty: measured on 2026-09-10, an idle HiDream held **18,936 MiB** and the
+    # card reported 3.2 GiB free, so the other tenant on this machine could not have used it.
+    # Idle *power* is not the argument — 34.11 W with the model resident against 34.09 W without,
+    # both at P8, indistinguishable. The 19 GB is.
+    release_when_idle: bool = True
     startup_timeout_s: int = Field(default=1200, ge=30)
     poll_interval_s: float = Field(default=2.0, ge=0.2, le=30.0)
     hidream_skill_dir: str = "skills/image/hidream"
@@ -857,6 +892,72 @@ class LocalServicesSettings(StrictModel):
     # store into ComfyUI's model folders (idempotent; existing files are never replaced).
     link_models: bool = True
     weight_store: str = "/mnt/fast/models"
+
+
+class RemoteHost(StrictModel):
+    """Another machine in this tailnet that runs whole lanes of its own.
+
+    Producing on a second box is the only way to use the stages that cannot be pooled over HTTP —
+    the post chain, MMAudio, TTS and Blender all take absolute local paths (postchain/runner.py),
+    so unlike HiDream they cannot be pointed at an endpoint. The cost of that is finished work on
+    the wrong disk, which is what `content-factory remote harvest` collects.
+    """
+
+    name: str = Field(min_length=1, max_length=32, pattern=r"^[a-z][a-z0-9_-]*$")
+    """How the operator refers to the host, and the directory harvested work lands under."""
+    ssh: str = Field(min_length=1, max_length=128)
+    """An ssh target, not an address: `~/.ssh/config` already carries the host, and a tailnet IP
+    written here is the same configuration in two places, renumbering under you. The connection is
+    one-way by design - the control plane reaches the worker, never the reverse."""
+    repo_root: str = "~/git/auto_content"
+    runs_root: str = "output"
+    """Where that host's runs live, relative to `repo_root` or absolute. Every project directory
+    directly under it is a candidate."""
+    services_dir: str = ".services"
+    """That host's own `CF_SERVICES_DIR`, holding the active-run registry a harvest must not
+    collect from underneath."""
+
+
+class RemoteSettings(StrictModel):
+    """The other producers, and bringing their finished work home.
+
+    Empty `hosts` turns the whole feature off, including its doctor checks, and is byte for byte
+    what this repo did before.
+
+    In `.env`, **single-quote the JSON**. `.env` is sourced by bash, which eats the inner double
+    quotes and hands pydantic `[{name:nova,...}]`; the error says
+    `SettingsError: error parsing value for field "remote"` and does not mention quoting. Same
+    trap as `CF__IMAGE_SEQUENCES__HIDREAM_ENDPOINTS`:
+
+        CF__REMOTE__HOSTS='[{"name":"nova","ssh":"nova@100.82.150.94"}]'
+    """
+
+    hosts: tuple[RemoteHost, ...] = ()
+    harvest_root: str = "output/harvest"
+    """Where collected deliverables land, relative to the repo. One directory per host per run."""
+    publish_to_gallery: bool = True
+    evidence: tuple[str, ...] = (
+        "run.json",
+        "qc/report.json",
+        "sequence/chain.json",
+        "sequence/lock.json",
+        "reviews/frames/batch.json",
+        "reviews/frames/verdict.json",
+    )
+    """Small files beyond the package that make a harvested run diagnosable rather than only
+    watchable - a few hundred KB against a deliverable's tens of MB. Fetched when present; a
+    missing one is never an error, because which of them exists depends on the lane."""
+    bwlimit_kbps: int = Field(default=0, ge=0)
+    """0 is no limit. Worth setting if a harvest loop runs while this machine is rendering: both
+    write to the same NVMe."""
+    ssh_timeout_s: int = Field(default=20, ge=5, le=300)
+    transfer_timeout_s: int = Field(default=1800, ge=30)
+
+    def host_named(self, name: str) -> RemoteHost | None:
+        return next((h for h in self.hosts if h.name == name), None)
+
+    def enabled(self) -> bool:
+        return bool(self.hosts)
 
 
 class WebPushSettings(StrictModel):
@@ -922,6 +1023,7 @@ class Settings(BaseSettings):
     video: VideoSettings = VideoSettings()
     postchain: PostChainSettings = PostChainSettings()
     media_library: MediaLibrarySettings = MediaLibrarySettings()
+    gallery: GallerySettings = GallerySettings()
     animation: AnimationSettings = AnimationSettings()
     search: SearchSettings = SearchSettings()
     research: ResearchSettings = ResearchSettings()
@@ -949,6 +1051,7 @@ class Settings(BaseSettings):
     speech_restoration: SpeechRestorationSettings = SpeechRestorationSettings()
     sound_design: SoundDesignSettings = SoundDesignSettings()
     local_services: LocalServicesSettings = LocalServicesSettings()
+    remote: RemoteSettings = RemoteSettings()
     notifications: NotificationSettings = NotificationSettings()
     privacy: PrivacySettings = PrivacySettings()
     security: SecuritySettings = SecuritySettings()

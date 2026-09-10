@@ -208,10 +208,10 @@ def test_sound_design_scores_the_silent_cut_and_leaves_a_bed_for_the_mix(tmp_pat
     ctx = make_context(project_dir=tmp_path)
     exports = ctx.ddir() / "exports"
     exports.mkdir(parents=True, exist_ok=True)
-    _mp4(exports / "final.mp4", seconds=3)
+    _mp4(exports / "postchain.mp4", seconds=3)
     out = stage_sound_design(ctx)
     assert out.facts["backend"] == "mock"
-    assert out.facts["scored"] == "final.mp4"
+    assert out.facts["scored"] == "postchain.mp4"
     sfx = ctx.ddir() / "audio" / "sfx.wav"
     assert sfx.exists()
     with wave.open(str(sfx)) as wf:
@@ -236,7 +236,7 @@ def test_sound_design_falls_back_to_the_blind_cut_when_conditioning_is_off(
         ctx = make_context(project_dir=tmp_path)
         exports = ctx.ddir() / "exports"
         exports.mkdir(parents=True, exist_ok=True)
-        _mp4(exports / "final.mp4", seconds=3)
+        _mp4(exports / "postchain.mp4", seconds=3)
         out = stage_sound_design(ctx)
         assert out.facts["gain_db"] == -22.0
         assert "conditioned" not in out.facts
@@ -309,7 +309,7 @@ def test_recorded_takes_and_sfx_reach_the_mastered_mix(tmp_path: Path) -> None:
         _wav(tmp_path / "takes" / f"{beat.beat_id}.johan.wav", seconds=3.0)
     exports = ctx.ddir() / "exports"
     exports.mkdir(parents=True, exist_ok=True)
-    _mp4(exports / "final.mp4", seconds=4)
+    _mp4(exports / "postchain.mp4", seconds=4)
 
     stage_voice_over(ctx)
     stage_align_words(ctx)
@@ -336,8 +336,14 @@ def test_the_final_mux_takes_whichever_picture_the_lane_produced(tmp_path: Path)
 
     _mp4(exports / "generated.mp4", seconds=1)
     assert _silent_picture(ctx).name == "generated.mp4"
-    _mp4(exports / "final.mp4", seconds=1)
-    assert _silent_picture(ctx).name == "final.mp4"  # the post chain's output wins
+    _mp4(exports / "postchain.mp4", seconds=1)
+    # The post chain's own output wins over the concatenated generated clips. `final.mp4` is
+    # deliberately absent from the search: it is the *delivered cut*, written by compose_video,
+    # and treating it as an input would feed a finished film with burned-in captions back into
+    # the next compose. The post chain writes `postchain.mp4` for exactly that reason.
+    assert _silent_picture(ctx).name == "postchain.mp4"
+    _mp4(exports / "postchain.mp4", seconds=1)
+    assert _silent_picture(ctx).name == "postchain.mp4"
     _mp4(exports / "picture.mp4", seconds=1)
     assert _silent_picture(ctx).name == "picture.mp4"  # …until the mux has set it aside
 

@@ -76,6 +76,7 @@ nodes:
   - key: anchor
     type: generate_anchor
     values:
+      model: hidream-o1
       prompt: "the scene exactly as the control passes stage it, held in one consistent look"
       style: >
         cinematic practical-camera photography, natural light, shallow depth of field, filmic
@@ -83,7 +84,7 @@ nodes:
     note: One anchor per shot keyframe, conditioned on the passes rather than on a described camera.
   - key: motion
     type: generate_video
-    values: {size: 1024x576, prompt: "camera and bodies move exactly as staged in the 3D scene"}
+    values: {model: ltx-2.5.i2v, size: 1024x576, prompt: "camera and bodies move exactly as staged in the 3D scene"}
     note: >
       Anchors become the first frame and the LTX keyframe guides, so the motion the model invents is
       bounded by the staged one. Landscape, unlike the portrait default.

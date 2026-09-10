@@ -20,18 +20,41 @@ STYLE_PRESETS: dict[str, str] = {
     # what keeps the range open. Negations name what the model otherwise reaches for by default
     # here — outlines and posterisation — rather than generic quality words.
     "photographic": (
-        "photographic, natural available light, physically convincing materials, wet surfaces "
-        "with real specular reflections, full tonal range with detail held in both the shadows "
+        "photographic, natural available light, physically convincing materials with a true "
+        "specular response, full tonal range with detail held in both the shadows "
         "and the highlights, shallow depth of field, no outlines, no posterisation, "
         "no illustration, not a drawing"
     ),
+    # A style clause says how the picture is *rendered* and must not name anything the picture
+    # could contain: the style leads the prompt (`_anchor_prompt`), so a noun here outranks the
+    # subject. Two were caught by looking at what came out.
+    #
+    #   "photographed on a cinema camera ... practical street lighting only"  -> a cinema camera
+    #       on a tripod, on a snowy street, with the deep ocean it had been asked for out of
+    #       focus behind it
+    #   "wet surfaces with real specular reflections"                          -> a glossy globe
+    #       ornament on a wet rooftop terrace, for "the curve of the Earth from low orbit"
+    #
+    # "life-drawing study", "Nordic figurative painting", "gouache sky", "figures reduced to
+    # silhouettes" and "natural skin tones" were re-worded in the same pass for the same reason.
+    # The last put a smiling woman in front of a chalkboard that had been asked for on its own.
     "cinematic": (
-        "photographed on a cinema camera, anamorphic, practical street lighting only, deep "
-        "shadows that still hold detail, muted naturalistic colour, fine grain, no outlines, "
-        "no posterisation, not a drawing"
+        "anamorphic widescreen, oval highlight bokeh and shallow focus, motion-picture colour "
+        "response, lit only by sources inside the scene, deep shadows that still hold detail, "
+        "muted naturalistic colour, fine grain, no outlines, no posterisation, not a drawing"
+    ),
+    # The twelve presets had no dark one, and every photographic clause here asks for the opposite:
+    # "full tonal range with detail held in both the shadows and the highlights" is exactly wrong
+    # for a subject whose point is that most of the frame is black. Measured on two of them — the
+    # Earth's limb against space, and the deep ocean at two thousand metres — `photographic` came
+    # back fogged grey where it should have been black, and `cinematic` lit the ocean like a reef.
+    "low_key": (
+        "low-key photography, one hard light source and everything outside it falling to true "
+        "black, deep crushed shadows with no lift and no fill, high contrast, fine grain, "
+        "no outlines, no posterisation, not a drawing"
     ),
     "documentary": (
-        "candid documentary photograph, available light, neutral colour, natural skin tones, "
+        "candid documentary photograph, available light, neutral true-to-life colour, "
         "unposed, slight motion blur, full tonal range, no stylisation, no outlines, "
         "not a drawing"
     ),
@@ -46,7 +69,7 @@ STYLE_PRESETS: dict[str, str] = {
     ),
     "charcoal": (
         "charcoal and white chalk on grey toned paper, monochrome, smudged tone, torn hatching, "
-        "no colour, life-drawing study, soft edges, heavy grain"
+        "no colour, drawn from life, soft edges, heavy grain"
     ),
     "watercolour": (
         "loose watercolour on cold-press paper, wet-in-wet bleeding, no outlines, large areas of "
@@ -54,7 +77,7 @@ STYLE_PRESETS: dict[str, str] = {
     ),
     "oil": (
         "oil painting, thick impasto, visible brush marks and palette-knife edges, no outlines, "
-        "muted earth palette, Nordic figurative painting, matte canvas texture"
+        "muted earth palette, Nordic painting tradition, matte canvas texture"
     ),
     "riso": (
         "two-colour risograph print, fluorescent pink and teal only, coarse halftone dots, "
@@ -66,13 +89,28 @@ STYLE_PRESETS: dict[str, str] = {
     ),
     "cel": (
         "hand-painted animation background, cel shading, two flat tone steps, clean thin line, "
-        "gouache sky, restrained palette, Studio-era anime background art, no photographic detail"
+        "gouache washes, restrained palette, Studio-era anime background art, "
+        "no photographic detail"
     ),
     "silhouette": (
-        "graphic poster, two flat colours and a paper ground, figures reduced to silhouettes, "
+        "graphic poster, two flat colours and a paper ground, the subject reduced to a silhouette, "
         "no interior detail, hard geometric shapes, mid-century screenprint, generous empty space"
     ),
 }
+
+
+# **Do not add a "no lettering" clause here.** It was tried and measured on 2026-09-10: the same
+# subject and the same seed, with and without
+# "no lettering, no signage text, no watermark, no caption burned into the picture", produced two
+# street scenes each carrying the same amount of gibberish signage ("FCOORCARO", "HI5ONI" against
+# "DECORLANS", "RLIONI"). It cannot work: the skill server has no negative-prompt field, upstream
+# has none either, and the dev weights are distilled to guidance 0, so there is no
+# classifier-free guidance for a negative to act through. Every "no ..." in the presets below is a
+# hint the model may or may not take, and a new one buys nothing but a longer prompt.
+#
+# What *does* work is a positive instruction about the scene: "no people" in the subject sentence
+# keeps a figure out of an architecture frame, because it describes what is in the picture rather
+# than how it is rendered.
 
 
 def style_name_for(prompt: str) -> str:

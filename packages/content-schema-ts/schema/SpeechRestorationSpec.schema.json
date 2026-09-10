@@ -133,7 +133,7 @@
           "type": "number"
         },
         "de_ess_intensity": {
-          "default": 0.25,
+          "default": 0.45,
           "maximum": 1,
           "minimum": 0,
           "title": "De Ess Intensity",
@@ -240,7 +240,7 @@
         "compressor": true,
         "de_ess": true,
         "de_ess_frequency": 0.5,
-        "de_ess_intensity": 0.25,
+        "de_ess_intensity": 0.45,
         "de_ess_max_reduction": 0.5,
         "high_pass_hz": 85,
         "low_shelf_db": -1.5,

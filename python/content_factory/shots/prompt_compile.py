@@ -112,10 +112,26 @@ def subject_clause(characters: tuple[CharacterSpec, ...]) -> str:
     return f"{head}, {', '.join(described)}"
 
 
-def environment_clause(environment: EnvironmentSpec) -> str:
-    """Where the shot is, from the staged geometry rather than from a guess."""
+def environment_clause(environment: EnvironmentSpec, *, has_figures: bool = True) -> str:
+    """Where the shot is, from the staged geometry rather than from a guess.
+
+    ``has_figures`` exists because "standing on open level ground" is a sentence about a body.
+    Applied to an object it is both wrong and load-bearing: measured on `audio-picture-story`
+    2026-09-10, "one open pine cone on a plain grey slate" plus this clause plus the preamble's
+    "shallow depth of field" produced six frames of a cone on **wet outdoor gravel**, the stated
+    slate gone, the background thrown into bokeh and the whole picture covered in specular glints
+    that I first mistook for sensor noise. The subject line had named its own ground and this
+    overrode it.
+
+    So a shot that stages nobody says nothing about the environment and lets the subject line
+    carry it — the same reasoning the caller already applies to ``"of no figures"``, one clause
+    along. A staged room is still worth naming, because a room is a place rather than a surface
+    the subject might have brought with it.
+    """
     if environment.walls is not None:
         return "inside a bare room with plain walls"
+    if not has_figures:
+        return ""
     if environment.ground.enabled:
         return "standing on open level ground"
     return "against an empty backdrop with no floor"
@@ -135,11 +151,14 @@ def state_sentence(
     written in here, so inserting a beat mid-story renumbered every later beat, changed every later
     anchor prompt, and re-generated a whole film's worth of anchors that had not changed.
     """
+    # "of no figures" is a sentence about an absence, and an image model draws what a prompt
+    # names. A shot that stages nobody says nothing about figures at all and lets the framing run
+    # straight into the subject.
     parts = [
         FRAMING_CLAUSE[preset],
-        f"of {subject_clause(characters)}",
+        f"of {subject_clause(characters)}" if characters else "",
         _clean(visual_subject or DEFAULT_VISUAL_SUBJECT),
-        environment_clause(environment),
+        environment_clause(environment, has_figures=bool(characters)),
         LIGHTING_CLAUSE.get(lighting_preset, LIGHTING_CLAUSE["studio"]),
     ]
     return ", ".join(_clean(p) for p in parts if _clean(p)) + "."

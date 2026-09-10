@@ -11,7 +11,7 @@ import io
 import json
 import subprocess
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -276,6 +276,14 @@ class _FrameJob:
     marker_hash: str
     marker_path: Path
     boxes: list[Box]
+    seed_offset: int = 0
+    """Added to the attempt number, and so to the seed the backend derives from it.
+
+    A frame a person rejected has to come back *different*. Redrawing it with the same
+    instruction and the same first attempt reproduces the same picture exactly — measured
+    2026-09-10, when a rejected kilim frame was redrawn and came back byte-for-byte the drawing
+    that had just been turned down. It is the same lesson the TTS retake learned: a retry that
+    reuses the seed reproduces what it was retrying."""
 
 
 @dataclass(frozen=True)
@@ -287,6 +295,10 @@ class _FrameOutcome:
     """How many attempts drifted. The caller expands this back into one entry per failure so the
     ``regenerated`` list keeps the shape the serial loop gave it."""
     served_by: str
+    record: dict | None = None
+    """The frame's manifest entry, already written to disk beside the PNG, or None if it never
+    passed its drift check. Built in the worker rather than in the caller because that is where
+    the frame stops being in flight."""
 
 
 def build_sequence(
@@ -301,6 +313,7 @@ def build_sequence(
     max_regen_attempts: int = 3,
     locked_region_similarity_min: float = 0.92,
     style_delta_max: float = 0.15,
+    seed_offsets: Mapping[int, int] | None = None,
 ) -> SequenceResult:
     """Build every frame of a hub-and-spoke sequence from one anchor.
 
@@ -371,6 +384,7 @@ def build_sequence(
                 control_sha256=compiled.asset.png_sha256,
                 instruction=instruction,
                 conditioning=conditioning,
+                seed_offset=(seed_offsets or {}).get(idx, 0),
                 marker_hash=marker_hash,
                 marker_path=marker_path,
                 # The motion region: where the subject IS this frame plus where it started
@@ -393,11 +407,15 @@ def build_sequence(
                     layout_boxes=job.conditioning.layout_boxes,
                 )
                 png = worker.edit_conditioned(
-                    anchor_png, full, job.instruction, lock, attempt=attempt
+                    anchor_png, full, job.instruction, lock, attempt=attempt + job.seed_offset
                 )
             else:
                 png = worker.edit(
-                    anchor_png, job.control_png, job.instruction, lock, attempt=attempt
+                    anchor_png,
+                    job.control_png,
+                    job.instruction,
+                    lock,
+                    attempt=attempt + job.seed_offset,
                 )
             report = drift_report(
                 job.idx,
@@ -411,12 +429,67 @@ def build_sequence(
                 break
             regen += 1
         assert png is not None and report is not None
+        served_by = getattr(worker, "endpoint", worker.name)
+        # Written here, the moment the frame exists, rather than after the whole pool comes back.
+        # Every frame already carried its own ``input_hash`` marker so that a rerun could skip the
+        # ones that were finished -- and it could not, because nothing reached disk until the last
+        # frame did. A sequence is tens of minutes to hours of GPU time; one interruption threw all
+        # of it away and the next run redrew every picture. Paths are keyed by frame index, so two
+        # workers never write the same file.
+        record: dict | None = None
+        if not report.passed:
+            # The picture that did not pass, kept where it can be looked at. The block this
+            # becomes says "look at sequence/frames/0000.png" -- and that file was never written,
+            # because only a passing frame reached disk. An operator was being sent to a path that
+            # did not exist, to judge a rejection they could not see, and the measurement that
+            # rejected it existed only in memory. Out of `frames/` so the review sheet's glob and
+            # the cut do not pick a rejected drawing up.
+            reject_dir = workdir / "rejected"
+            reject_dir.mkdir(parents=True, exist_ok=True)
+            (reject_dir / f"{job.idx:04d}.png").write_bytes(png)
+            (reject_dir / f"{job.idx:04d}.json").write_text(
+                json.dumps(
+                    {
+                        "frame_index": job.idx,
+                        "attempts": attempts,
+                        "locked_region_similarity": report.locked_region_similarity,
+                        "style_delta": report.style_delta,
+                        "locked_region_similarity_min": locked_region_similarity_min,
+                        "style_delta_max": style_delta_max,
+                        "reasons": list(report.reasons),
+                        "instruction": job.instruction,
+                        "served_by": served_by,
+                    },
+                    indent=1,
+                    sort_keys=True,
+                )
+            )
+        if report.passed:
+            (frames_dir / f"{job.idx:04d}.png").write_bytes(png)
+            record = {
+                "frame_index": job.idx,
+                "input_hash": job.marker_hash,
+                "png_sha256": sha256_hex(png),
+                "control_sha256": job.control_sha256,
+                "lock_sha256": sha256_hex(canonical_dumps(lock.model_dump(mode="json")).encode()),
+                "reference": "anchor",
+                "anchor_sha256": anchor_sha,
+                "attempts": attempts,
+                "drift": {
+                    "locked": report.locked_region_similarity,
+                    "style": report.style_delta,
+                },
+                "served_by": served_by,
+                "cache_hit": False,
+            }
+            job.marker_path.write_text(json.dumps(record, indent=1, sort_keys=True))
         return _FrameOutcome(
             png=png,
             report=report,
             attempts=attempts,
             regenerated=regen,
-            served_by=getattr(worker, "endpoint", worker.name),
+            served_by=served_by,
+            record=record,
         )
 
     outcomes = WorkerPool(list(backends) if backends else [backend]).map_ordered(jobs, _render)
@@ -427,32 +500,13 @@ def build_sequence(
         if cached_record is not None:
             frames.append(cached_record)
             continue
-        job, outcome = by_idx[idx]
+        _job, outcome = by_idx[idx]
         # One entry per failed attempt, in frame order: the shape the serial loop produced.
         regenerated.extend([idx] * outcome.regenerated)
-        if not outcome.report.passed:
+        if outcome.record is None:
             failed.append(idx)
             continue
-        frame_path = frames_dir / f"{idx:04d}.png"
-        frame_path.write_bytes(outcome.png)
-        record = {
-            "frame_index": idx,
-            "input_hash": job.marker_hash,
-            "png_sha256": sha256_hex(outcome.png),
-            "control_sha256": job.control_sha256,
-            "lock_sha256": sha256_hex(canonical_dumps(lock.model_dump(mode="json")).encode()),
-            "reference": "anchor",
-            "anchor_sha256": anchor_sha,
-            "attempts": outcome.attempts,
-            "drift": {
-                "locked": outcome.report.locked_region_similarity,
-                "style": outcome.report.style_delta,
-            },
-            "served_by": outcome.served_by,
-            "cache_hit": False,
-        }
-        job.marker_path.write_text(json.dumps(record, indent=1, sort_keys=True))
-        frames.append(record)
+        frames.append(outcome.record)
 
     packaging = package_sequence(plan, workdir) if not failed else {}
     return SequenceResult(anchor_sha, lock, frames, regenerated, failed, packaging)

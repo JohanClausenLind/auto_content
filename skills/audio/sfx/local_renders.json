@@ -1,0 +1,344 @@
+{
+ "$comment": "Recipe for the 19 sounds the operator rendered locally before ingest. They are not reproducible from a recipe: no generator, prompt or seed was recorded, which is what separates them from the build_library.py half. Their descriptions were written from measurement (fundamental, spectral centroid, decay to -20 dB) rather than from a prompt, so nothing here claims to know what made them.",
+ "pack": {
+  "id": "local-renders",
+  "name": "Operator's local renders",
+  "supplier": "",
+  "root_env": "CF_LOCAL_SFX_DIR",
+  "root_default": "/mnt/fast/sound-libraries/local-renders",
+  "licence": "Rendered locally by the operator before ingest; no third-party licence attaches. The generator and its settings were not recorded, so unlike the rest of the library these cannot be rebuilt from a recipe -- only re-ingested from the staged source file.",
+  "licence_url": "",
+  "terms_url": "",
+  "licence_retrieved": "",
+  "downloaded": "2026-09-09",
+  "headline": "rendered locally by the operator"
+ },
+ "sample_rate": 44100,
+ "channels": 2,
+ "defaults": {
+  "highpass_hz": 25,
+  "crossfade_law": "equal_power",
+  "search": {
+   "hop_s": 1.0,
+   "finalists": 6
+  }
+ },
+ "targets": {
+  "oneshot": {
+   "metric": "max_momentary_lufs",
+   "value": -16.0,
+   "true_peak_dbtp": -3.0
+  },
+  "bed": {
+   "metric": "integrated_lufs",
+   "value": -23.0,
+   "true_peak_dbtp": -1.0
+  }
+ },
+ "sounds": [
+  {
+   "id": "braam_short",
+   "category": "impact",
+   "tags": [
+    "braam",
+    "horn",
+    "accent",
+    "short"
+   ],
+   "use": "A four-second braam: the middle size between braam_soft and braam_horn. For a grave point that is not the film's gravest.",
+   "src": {
+    "pack": "impact",
+    "file": "transition-braam-01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_hit",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "hit",
+    "accent",
+    "dry"
+   ],
+   "use": "A dry two-second hit with almost no tail. The everyday accent for a card landing, where impact_soft would ring.",
+   "src": {
+    "pack": "impact",
+    "file": "transition-impact-hit-01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bell_bright",
+   "category": "instrument",
+   "tags": [
+    "bell",
+    "bright",
+    "high",
+    "mark"
+   ],
+   "use": "A high bell around 1 kHz. Cuts through a busy mix, so use it where bell_low_dry disappears.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-bell-12.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bell_low_dry",
+   "category": "instrument",
+   "tags": [
+    "bell",
+    "low",
+    "dry",
+    "mark"
+   ],
+   "use": "A low bell struck once and damped — half a second of ring. A section mark for a contemplative film, where a UI chime would be wrong.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-bell-09.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bell_low_long",
+   "category": "instrument",
+   "tags": [
+    "bell",
+    "low",
+    "sustain",
+    "mark"
+   ],
+   "use": "The same low bell left to ring for two seconds. For the end of a chapter rather than the start of one.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-bell-23.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "chime_bar",
+   "category": "instrument",
+   "tags": [
+    "chime",
+    "bar",
+    "bright",
+    "reveal"
+   ],
+   "use": "A struck chime bar near 1.6 kHz. Bright and tuned — for a figure resolving or a small good thing happening.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-chime-bar-15.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "chime_bar_bright",
+   "category": "instrument",
+   "tags": [
+    "chime",
+    "bar",
+    "glassy",
+    "reveal"
+   ],
+   "use": "The glassier chime bar: same pitch, more air above it. Sits over narration without masking it.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-chime-bar-22.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "gong_long",
+   "category": "instrument",
+   "tags": [
+    "gong",
+    "long",
+    "sustain",
+    "mark"
+   ],
+   "use": "The longest gong: over a second of decay. Give it silence on either side or it reads as noise.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-gong-26.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "gong_mid",
+   "category": "instrument",
+   "tags": [
+    "gong",
+    "accent",
+    "meditative",
+    "mark"
+   ],
+   "use": "The middle gong. For a transition in a film about practice, ritual or slowness.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-gong-20.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "gong_small",
+   "category": "instrument",
+   "tags": [
+    "gong",
+    "small",
+    "accent",
+    "meditative"
+   ],
+   "use": "A small gong, under a second of decay. The gentlest of the three — a beat, not a full stop.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-gong-17.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kalimba_bright",
+   "category": "instrument",
+   "tags": [
+    "kalimba",
+    "pluck",
+    "bright",
+    "warm"
+   ],
+   "use": "A bright kalimba pluck. Warmer than success_chime and unmistakably played rather than designed.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-kalimba-01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kalimba_low",
+   "category": "instrument",
+   "tags": [
+    "kalimba",
+    "low",
+    "pluck",
+    "warm"
+   ],
+   "use": "The low kalimba, ringing for a second and a half. The one that can carry a section change on its own.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-kalimba-34.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kalimba_mid",
+   "category": "instrument",
+   "tags": [
+    "kalimba",
+    "pluck",
+    "tuned",
+    "warm"
+   ],
+   "use": "A mid-register kalimba note around 525 Hz. Retrigger it for a sequence of points appearing.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-kalimba-14.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "singing_bowl",
+   "category": "instrument",
+   "tags": [
+    "bowl",
+    "singing",
+    "meditative",
+    "tone"
+   ],
+   "use": "A struck singing bowl around 540 Hz. Calm, tuned, and long enough to sit under a fade.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-singing-bowl-10.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "singing_bowl_long",
+   "category": "instrument",
+   "tags": [
+    "bowl",
+    "singing",
+    "sustain",
+    "meditative"
+   ],
+   "use": "The same bowl held for nearly two seconds. For an ending, or for silence that needs a floor under it.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-singing-bowl-14.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "singing_bowl_low",
+   "category": "instrument",
+   "tags": [
+    "bowl",
+    "low",
+    "meditative",
+    "tone"
+   ],
+   "use": "A low bowl near 130 Hz — felt more than heard on small speakers. Check it on something with bass response.",
+   "src": {
+    "pack": "instrument",
+    "file": "instrument-singing-bowl-29.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "glitch_transition",
+   "category": "transition",
+   "tags": [
+    "glitch",
+    "digital",
+    "corrupt",
+    "cut"
+   ],
+   "use": "A digital tear across a cut. Use where the picture itself glitches; over a clean cut it reads as a mistake.",
+   "src": {
+    "pack": "transition",
+    "file": "transition-glitch-01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "record_scratch",
+   "category": "transition",
+   "tags": [
+    "scratch",
+    "record",
+    "stop",
+    "comic"
+   ],
+   "use": "The comic full stop: everything halts. One per film at most, and only in a film with a sense of humour.",
+   "src": {
+    "pack": "transition",
+    "file": "transition-record-scratch-01.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "riser_bright",
+   "category": "transition",
+   "tags": [
+    "riser",
+    "build",
+    "reveal",
+    "bright"
+   ],
+   "use": "A two-second bright build into a reveal. Brighter and more insistent than riser_short — for a statistic that is meant to land hard.",
+   "src": {
+    "pack": "transition",
+    "file": "transition-riser-01.wav"
+   },
+   "whole": {}
+  }
+ ]
+}

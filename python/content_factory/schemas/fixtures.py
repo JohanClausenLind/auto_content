@@ -8,6 +8,7 @@ from typing import Any
 
 from content_factory.schemas import (
     artboards,
+    audio,
     comfyui,
     content,
     editing,
@@ -559,6 +560,31 @@ def sample_control_bundle() -> shots.ControlBundle:
                 layouts=tuple(layouts),
                 poses=tuple(poses),
             ),
+        ),
+    )
+
+
+def sample_story_lexicon() -> tuple[audio.PronunciationEntry, ...]:
+    """How to say the two proper nouns in :func:`sample_story_plan`'s last beat.
+
+    They are Swedish, the narrator is English, and both halves of the chain fail on them: the
+    text-to-speech guesses ("enner's aminahin sventzka craftnet") and the aligner cannot spell what
+    it hears either, so the script gate refused the beat at 0.22 and the demo film could not be
+    narrated at all. A respelling fixes the audio and, because it is deliberately not orthographic,
+    also tells the gate to skip that beat rather than measure the aligner's vocabulary.
+    """
+    return (
+        audio.PronunciationEntry(
+            term="Energimyndigheten",
+            respelling="en-er-yee-MIN-dih-het-en",
+            locale="en",
+            notes="the Swedish Energy Agency",
+        ),
+        audio.PronunciationEntry(
+            term="kraftnät",
+            respelling="KRAFT-net",
+            locale="en",
+            notes="Svenska kraftnat, the Swedish grid operator",
         ),
     )
 

@@ -103,9 +103,46 @@ def test_a_second_identical_stage_does_not_copy_again(tmp_path: Path) -> None:
 
 
 def test_the_wrong_kind_of_file_for_the_lane_is_refused_by_name(tmp_path: Path) -> None:
+    """`_mp4` writes a real picture, which is the point: the exception below it is for a video
+    container with nothing in it, and a check that cannot still say no is not a check."""
     clip = _mp4(tmp_path / "holiday.mp4")
     with pytest.raises(ValueError, match=r"holiday\.mp4 is video, and this lane takes audio"):
         stage_inputs(tmp_path / "prj", [clip], wanted=["audio"], log=lambda _m: None)
+
+
+def _recording_in_an_mp4(path: Path, *, seconds: float = 3.0) -> Path:
+    """A recording as a phone writes it: an MP4 whose picture is nothing but black."""
+    from content_factory.audio.mix import ffmpeg
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg(
+        [
+            "-f", "lavfi", "-i", f"color=c=black:s=320x240:r=25:d={seconds}",
+            "-f", "lavfi", "-i", f"sine=frequency=440:duration={seconds}",
+            "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-shortest", str(path),
+        ],
+        timeout=120,
+    )  # fmt: skip
+    return path
+
+
+def test_a_recording_that_arrived_in_an_mp4_is_staged_for_an_audio_lane(tmp_path: Path) -> None:
+    """The mismatch that is not a mistake. `video/mp4` is what a phone, a voice-memo app and a
+    meeting recorder all write, so an audio lane that refuses every one of them sends an operator
+    to ffmpeg for a file it can already read. The record says audio while the MIME says video,
+    and carries the measurement that settled the disagreement."""
+    source = _recording_in_an_mp4(tmp_path / "elsewhere" / "voice-memo.mp4")
+    project = tmp_path / "prj"
+
+    staged = stage_inputs(project, [source], wanted=["audio"], log=lambda _m: None)
+
+    assert staged[0]["kind"] == "audio"
+    assert staged[0]["mime"] == "video/mp4"
+    assert "black" in str(staged[0]["picture"])
+    # Copied as it is: the stages convert on their own terms, and `transcribe_audio` normalises
+    # this to mono PCM exactly as it would an m4a off the same phone.
+    assert (project / "uploads" / "voice-memo.mp4").read_bytes() == source.read_bytes()
 
 
 def test_a_file_the_pipeline_cannot_read_is_refused_with_what_it_is(tmp_path: Path) -> None:
@@ -214,3 +251,82 @@ def test_two_pictures_for_one_anchor_is_a_refusal(tmp_path: Path) -> None:
     _png(ctx.project_dir / "uploads" / "b.png")
     with pytest.raises(RuntimeError, match="found 2 pictures"):
         _anchor_from_upload(ctx)
+
+
+def test_material_already_in_the_run_satisfies_the_input_requirement(tmp_path: Path) -> None:
+    """A `--from` resume must not argue about an input the earlier stages staged themselves.
+
+    Measured on `audio-picture-story --from finish` (2026-09-10): refused with "this lane works
+    on material you supply", nine stages past the one that reads the recording, about a file
+    sitting in the run's own uploads folder. The refusal pointed at `--force`, which is the wrong
+    instrument — it also waves through absent weights and unrunnable stages.
+    """
+    from typer.testing import CliRunner
+
+    from content_factory.cli.main import app
+
+    runner = CliRunner()
+    project = tmp_path / "run"
+    (project / "uploads").mkdir(parents=True)
+
+    # Nothing staged: still refused, and the hint names the folder as well as the flag.
+    empty = tmp_path / "empty"
+    result = runner.invoke(app, ["make", "audio-picture-story", "--project-dir", str(empty)])
+    assert result.exit_code == 3
+    assert '"needs_input": ["audio"]' in result.output
+    assert "uploads" in result.output
+
+    # One file staged by hand: accepted, and `--plan` gets far enough to print the steps.
+    (project / "uploads" / "reading.wav").write_bytes(b"RIFF....WAVEfmt ")
+    planned = runner.invoke(
+        app, ["make", "audio-picture-story", "--project-dir", str(project), "--plan"]
+    )
+    assert planned.exit_code == 0, planned.output
+    assert '"workflow": "audio-picture-story"' in planned.output
+
+
+def test_a_story_of_pictures_is_refused_by_a_lane_that_draws_none(tmp_path: Path) -> None:
+    """Five `narrated-video` runs delivered films that are five "PLACEHOLDER · IMAGE / missing
+    asset" cards end to end, with narration over them and an mp4 in the delivery package
+    (measured 2026-09-10). `qc_deliverable` catches it now, but only after the render; this is
+    the same fact, knowable in the first second."""
+    import json
+
+    from content_factory.cli.workflows_cmd import _story_wants_pictures_the_lane_cannot_make
+    from content_factory.workflows.catalog import load_definitions
+
+    lanes = load_definitions()
+    pictures = tmp_path / "pictures.json"
+    pictures.write_text(
+        json.dumps({"scenes": [{"kind": "image", "asset_id": f"ast_{i}"} for i in range(5)]})
+    )
+    cards = tmp_path / "cards.json"
+    cards.write_text(json.dumps({"scenes": [{"kind": "title"}, {"kind": "callout"}]}))
+
+    run = tmp_path / "run"
+    (run / "uploads").mkdir(parents=True)
+
+    # A lane with no drawing stage and nothing supplied: refused, and the message says what to do.
+    said = _story_wants_pictures_the_lane_cannot_make(lanes["narrated-video"], str(pictures), run)
+    assert "5 of the story's 5 scenes are pictures" in said
+    assert "image-set" in said and "--input" in said
+
+    # A story of cards is fine on the same lane.
+    assert (
+        _story_wants_pictures_the_lane_cannot_make(lanes["narrated-video"], str(cards), run) == ""
+    )
+
+    # So is the same picture story on a lane that draws.
+    assert _story_wants_pictures_the_lane_cannot_make(lanes["image-set"], str(pictures), run) == ""
+
+    # And supplying the stills lifts it, which is what the one clean run of the five did.
+    (run / "uploads" / "still.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    assert (
+        _story_wants_pictures_the_lane_cannot_make(lanes["narrated-video"], str(pictures), run)
+        == ""
+    )
+
+    # An unreadable story is the runner's problem to report, not this check's.
+    assert (
+        _story_wants_pictures_the_lane_cannot_make(lanes["narrated-video"], "nope.json", run) == ""
+    )

@@ -59,6 +59,14 @@ reference-search question:
 run-local workflow="hybrid-video" *args="":
     set -a; [ -f .env ] && . ./.env; set +a; uv run content-factory run-local {{workflow}} {{args}}
 
+# What the other producers have finished (read-only; one ssh per host, no media)
+remote-list *args:
+    set -a; [ -f .env ] && . ./.env; set +a; uv run content-factory remote list {{args}}
+
+# Bring finished deliverables home from the other producers (--dry-run first)
+harvest *args:
+    set -a; [ -f .env ] && . ./.env; set +a; uv run content-factory remote harvest {{args}}
+
 # Regenerate cross-language contracts (Pydantic -> JSON Schema -> TS -> Ajv)
 schemas:
     scripts/schemas.sh

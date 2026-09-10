@@ -402,7 +402,11 @@ def test_every_declared_widget_is_one_the_stage_actually_reads() -> None:
             assert len(reason) > 40, f"{stage}.{widget} needs a real reason, not a shrug"
 
     catalog = node_catalog()
-    assert catalog["generate_keyframes"]["widgets"] == []
+    # `frames` and `seed` were removed here because the stage reads neither; `model` was added
+    # because it reads that one — `_reference_backends` resolves the spoke backend from this
+    # node's own widget, and without it `photo-sequence-video` drew a real anchor and mock
+    # spokes (2026-09-10). The audit above proves the binding; this pins the intent.
+    assert catalog["generate_keyframes"]["widgets"] == ["model"]
     # The three the audit found and this check now covers by construction.
     reads = widget_reads()
     assert "resolution" in reads["upscale_video"]
@@ -478,6 +482,34 @@ def test_load_definition_names_the_known_ids_when_asked_for_a_missing_one() -> N
         load_definition("no-such-lane")
 
 
+def test_one_broken_definition_does_not_take_down_every_other_lane(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Measured 2026-09-10 05:14: a note in ``image-set.yaml`` was one sentence over the
+    contract's 400-character limit and fifteen queued runs died a second apart - twelve of them
+    ``single-image``, a lane that never reads that file. Whole-catalogue readers still refuse a
+    bad catalogue; running one lane needs only that lane's own file to be right.
+    """
+    import shutil
+
+    from content_factory.workflows import catalog as catalog_mod
+
+    # Two real lanes, one of them corrupted the way the live one was.
+    shutil.copy(DEFINITIONS_DIR / "single-image.yaml", tmp_path / "single-image.yaml")
+    (tmp_path / "broken.yaml").write_text("nodes: [{}]\n")
+    monkeypatch.setattr(catalog_mod, "DEFINITIONS_DIR", tmp_path)
+    catalog_mod.load_definitions.cache_clear()
+
+    with pytest.raises(WorkflowDefinitionError, match=r"broken\.yaml"):
+        catalog_mod.load_definitions()
+    with pytest.warns(UserWarning, match=r"broken\.yaml"):
+        assert catalog_mod.load_definition("single-image").id == "single-image"
+    # A lane that has no file of its own still fails, and with the catalogue's own message.
+    with pytest.raises(WorkflowDefinitionError, match=r"broken\.yaml"):
+        catalog_mod.load_definition("no-such-lane")
+    catalog_mod.load_definitions.cache_clear()
+
+
 def test_a_truncated_stage_line_cannot_swallow_the_framing_warning() -> None:
     """The runner truncates a stage's facts to keep a run cheap to read, so a warning arriving as
     the tail of a cut fact blob is a warning nobody sees. It gets its own line instead, emitted
@@ -510,3 +542,36 @@ def test_nothing_to_report_prints_nothing() -> None:
     assert stage_warnings({"shots": 6}) == []
     assert stage_warnings({"underframed": [{"no": "fields"}]}) == []
     assert stage_warnings({"underframed": "not a list"}) == []
+
+
+def test_a_lane_that_requires_a_model_says_which_node_uses_it() -> None:
+    """A lane declaring weights and then drawing mock rectangles is the defect this prevents.
+
+    The backend is resolved from the node's own `model` widget when the setting is not explicitly
+    configured (`_anchor_backend_name`'s documented precedence), and only four of the ten HiDream
+    lanes had the pin. Measured 2026-09-10: `image-set` produced **six red rectangles in three
+    seconds** and then gated for human review on them, on a lane whose preflight had just verified
+    the HiDream weights were on disk. `photo-sequence-video` had pinned the anchor and not the
+    spokes, so it drew a real anchor and mock spokes.
+    """
+    from content_factory.workflows.catalog import load_definitions
+
+    # Which node types resolve a real backend from their own `model` widget.
+    resolves_its_own = {"generate_anchor", "generate_keyframes"}
+    unpinned: list[str] = []
+    for lane_id, template in sorted(load_definitions().items()):
+        requires_hidream = any(
+            "hidream" in f"{m.kind} {m.label} {getattr(m, 'path_includes', '')}".lower()
+            for m in template.models
+            if not getattr(m, "optional", False)
+        )
+        if not requires_hidream:
+            continue
+        for node in template.nodes:
+            if node.type in resolves_its_own and (node.values or {}).get("model") != "hidream-o1":
+                unpinned.append(f"{lane_id}.{node.key} ({node.type})")
+    assert unpinned == [], (
+        "these lanes declare HiDream weights as a requirement and leave the backend to the"
+        " settings default, which is `mock` — pin `model: hidream-o1` on the node or drop the"
+        f" weights from the lane's `models:` block: {unpinned}"
+    )

@@ -52,15 +52,26 @@ class Take:
         return f"{self.beat_id}.{self.speaker}"
 
 
-def discover_takes(takes_dir: Path, beat_ids: Sequence[str]) -> dict[str, Take]:
+def discover_takes(
+    takes_dir: Path, beat_ids: Sequence[str], *, also: Sequence[Path] = ()
+) -> dict[str, Take]:
     """One take per beat: ``<beat_id>.wav`` or ``<beat_id>.<speaker>.wav``.
 
     Two speakers in one beat is a directing decision, not a file-naming one — record the beat as
     two beats. Here, more than one candidate for a beat is an error rather than a coin flip.
+
+    ``also`` are further directories to look in, searched after ``takes_dir``. The run's uploads
+    folder is passed there by the stage, because "the material goes in ``<project>/uploads``" is
+    the one rule every other lane follows and a take set had been the single exception: an
+    operator who used ``--input`` or dropped the files on the canvas put them exactly where this
+    function did not look.
     """
+    roots = [takes_dir, *also]
     found: dict[str, list[Take]] = {b: [] for b in beat_ids}
-    if takes_dir.is_dir():
-        for path in sorted(takes_dir.iterdir()):
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.iterdir()):
             if path.suffix.lower() not in AUDIO_SUFFIXES or not path.is_file():
                 continue
             stem = path.name[: -len(path.suffix)]
@@ -69,8 +80,9 @@ def discover_takes(takes_dir: Path, beat_ids: Sequence[str]) -> dict[str, Take]:
                 found[beat].append(Take(beat, speaker or "voice", path))
     missing = [b for b in beat_ids if not found[b]]
     if missing:
+        where = " or ".join(str(r) for r in roots)
         raise TakeError(
-            f"no recording for {len(missing)} beat(s) in {takes_dir}: {', '.join(missing)} "
+            f"no recording for {len(missing)} beat(s) in {where}: {', '.join(missing)} "
             f"(expected <beat_id>{AUDIO_SUFFIXES[0]})"
         )
     ambiguous = {b: [t.path.name for t in ts] for b, ts in found.items() if len(ts) > 1}
@@ -159,18 +171,24 @@ def snap_to_script(
 
 
 def faster_whisper_words(
-    wav: Path, *, model: str, compute_type: str, timeout_s: int
+    wav: Path, *, model: str, compute_type: str, timeout_s: int, language: str = ""
 ) -> tuple[list[str], list[tuple[float, float]]]:
     """Transcribe with word timestamps in an isolated environment (no torch in this process).
 
     faster-whisper 1.2.1 is the ADR-0004 fallback aligner and the one installed on this host; it
     runs CPU int8, so it costs no VRAM while the image models hold the card.
+
+    ``language`` is the ISO subtag of what is being *spoken*, and it is told rather than detected:
+    this is forced alignment against a script somebody already wrote, so the language is known and
+    letting Whisper guess it from a 3-second beat only adds a way to be wrong. Empty keeps the
+    detection, for a recording whose language nobody declared.
     """
     script = (
         "import json,sys\n"
         "from faster_whisper import WhisperModel\n"
         "m=WhisperModel(sys.argv[1], device='cpu', compute_type=sys.argv[2])\n"
-        "segs,_=m.transcribe(sys.argv[3], word_timestamps=True, vad_filter=False)\n"
+        "segs,_=m.transcribe(sys.argv[3], word_timestamps=True, vad_filter=False,\n"
+        "                    language=sys.argv[4] or None)\n"
         "w=[[x.word.strip(), x.start, x.end] for s in segs for x in (s.words or [])]\n"
         "json.dump(w, sys.stdout)\n"
     )
@@ -186,6 +204,7 @@ def faster_whisper_words(
             model,
             compute_type,
             str(wav),
+            language,
         ],
         capture_output=True,
         text=True,

@@ -252,8 +252,92 @@ def test_qwen3tts_refuses_a_beat_that_does_not_say_the_script(tmp_path: Path, mo
         "SUBPROCESS_RUN",
         lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, json.dumps(rows), ""),
     )
-    with pytest.raises(TTSError, match="did not speak the locked script"):
+    with pytest.raises(TTSError, match="did not speak the locked script") as caught:
         Qwen3TTS(tmp_path, aligner="faster_whisper").synthesize(_qwen_request())
+    # A catastrophic score under an English locale usually means nobody set the locale, so the
+    # message says so. `narration.locale` is global configuration and a StoryPlan carries no
+    # language of its own: measured 2026-09-10, a French script on a default-config machine was
+    # spoken by an English voice and scored by an English ASR — "trois choses rendent ce bleu"
+    # came back "trasho's rance sublo" at 0.29 — and the message sent the reader hunting for a
+    # TTS fault instead of a one-line env var.
+    assert "CF__NARRATION__LOCALE" in str(caught.value)
+    assert "narration.locale is 'en'" in str(caught.value)
+
+
+def test_qwen3tts_retakes_a_beat_the_model_only_half_said(tmp_path: Path, monkeypatch) -> None:
+    """A dropped sentence is a sample, not a script error, so the executor speaks it again.
+
+    Measured on the narrated-video lane (2026-09-10): "A pitcher cannot make a ball turn by
+    throwing it harder. The turn comes from the spin." came back as the second sentence alone,
+    scored 0.76 against the 0.80 gate, and killed a fourteen-stage run at stage four.
+    """
+    import subprocess
+
+    from content_factory.audio import takes as takes_mod
+    from content_factory.audio import tts as tts_mod
+    from content_factory.audio.normalize import tokenize_words
+    from content_factory.audio.tts import Qwen3TTS
+
+    seen = _fake_skill(monkeypatch)
+    seeds: list[str | None] = []
+    words = tokenize_words(QWEN_LINE)
+    heard = [
+        [[w, i * 0.25, i * 0.25 + 0.2] for i, w in enumerate(words[-2:])],  # take 1: half of it
+        [[w, i * 0.25, i * 0.25 + 0.2] for i, w in enumerate(words)],  # take 2: the whole line
+    ]
+    monkeypatch.setattr(
+        takes_mod,
+        "SUBPROCESS_RUN",
+        lambda cmd, **kw: subprocess.CompletedProcess(
+            cmd, 0, json.dumps(heard[min(len(seeds) - 1, len(heard) - 1)]), ""
+        ),
+    )
+    real_run = tts_mod.subprocess.run
+
+    def counting_run(cmd, **kw):  # the skill call, not the aligner's
+        seeds.append(cmd[cmd.index("--seed") + 1] if "--seed" in cmd else None)
+        return real_run(cmd, **kw)
+
+    monkeypatch.setattr(tts_mod.subprocess, "run", counting_run)
+    exe = Qwen3TTS(tmp_path, aligner="faster_whisper")
+    seg = exe.synthesize(_qwen_request()).segment
+
+    assert [w.word for w in seg.words] == words
+    assert len(seeds) == 2, "the first take should have been retaken, and only once"
+    # A retake that reuses the seed reproduces the dropped sentence, so it has to differ; and the
+    # first take keeps whatever the executor was configured with, which is normally nothing.
+    assert seeds[0] is None and seeds[1] is not None
+    assert "take 2 of 3" in exe.last_script_check
+    assert seen["cmd"], "the skill really ran"
+
+
+def test_qwen3tts_takes_budget_of_one_is_the_old_single_shot_behaviour(
+    tmp_path: Path, monkeypatch
+) -> None:
+    import subprocess
+
+    from content_factory.audio import takes as takes_mod
+    from content_factory.audio.tts import Qwen3TTS, TTSError
+
+    _fake_skill(monkeypatch)
+    calls: list[int] = []
+
+    def aligner(cmd, **kw):
+        calls.append(1)
+        rows = [["completely", 0.0, 0.4], ["different", 0.4, 0.9]]
+        return subprocess.CompletedProcess(cmd, 0, json.dumps(rows), "")
+
+    monkeypatch.setattr(takes_mod, "SUBPROCESS_RUN", aligner)
+    with pytest.raises(TTSError, match=r"in 1 take\(s\)"):
+        Qwen3TTS(tmp_path, aligner="faster_whisper", takes=1).synthesize(_qwen_request())
+    assert len(calls) == 1
+
+
+def test_qwen3tts_take_budget_stays_out_of_the_cache_key(tmp_path: Path) -> None:
+    """A beat that passed on take 1 is the same audio whichever budget was in force."""
+    from content_factory.audio.tts import Qwen3TTS
+
+    assert Qwen3TTS(tmp_path, takes=1).fingerprint() == Qwen3TTS(tmp_path, takes=5).fingerprint()
 
 
 def test_qwen3tts_fingerprint_makes_a_delivery_note_a_cache_miss(tmp_path: Path) -> None:
@@ -326,3 +410,54 @@ def test_a_canvas_node_overrides_the_configured_voice(env, tmp_path: Path) -> No
     env(CF__NARRATION__TTS="qwen3tts", CF__NARRATION__QWEN_SPEAKER="aiden")
     _tts, voice = st._tts_executor(node())
     assert voice.voice_id == "aiden"
+
+
+def test_the_aligner_checkpoint_follows_the_narration_language() -> None:
+    """`base.en` is an English-only Whisper checkpoint and Qwen3-TTS speaks ten languages.
+
+    It does not refuse the other nine — it transcribes them as English-sounding nonsense, so a
+    word-perfect German take scores near zero against its own script and the beat fails as a
+    mis-speech, with nothing saying which of the two was wrong.
+    """
+    from content_factory.audio.languages import aligner_model_for
+
+    # Defaulted and not English: the multilingual sibling.
+    assert aligner_model_for("de-DE", "base.en", configured=False) == "base"
+    assert aligner_model_for("ja", "medium.en", configured=False) == "medium"
+    # English keeps the English-only checkpoint, which is the better model for it.
+    assert aligner_model_for("en-GB", "base.en", configured=False) == "base.en"
+    # A checkpoint the operator configured is obeyed, whatever the language: that machine has been
+    # told which weights are on its disk.
+    assert aligner_model_for("de-DE", "base.en", configured=True) == "base.en"
+    # Already multilingual, or a name with no `.en` at all: left alone.
+    assert aligner_model_for("de-DE", "large-v3", configured=False) == "large-v3"
+
+
+def test_the_aligner_is_told_the_language_rather_than_guessing_it(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Forced alignment runs against a script somebody wrote, so the language is known."""
+    import subprocess
+
+    from content_factory.audio import takes as takes_mod
+    from content_factory.audio.normalize import tokenize_words
+    from content_factory.audio.tts import Qwen3TTS
+    from content_factory.schemas.audio import VoiceIdentity
+
+    _fake_skill(monkeypatch)
+    seen: dict[str, list[str]] = {}
+    words = tokenize_words(QWEN_LINE)
+    rows = [[w, i * 0.25, i * 0.25 + 0.2] for i, w in enumerate(words)]
+
+    def aligner(cmd, **kw):
+        seen["cmd"] = list(cmd)
+        return subprocess.CompletedProcess(cmd, 0, json.dumps(rows), "")
+
+    monkeypatch.setattr(takes_mod, "SUBPROCESS_RUN", aligner)
+    request = _qwen_request()
+    german = request.model_copy(
+        update={"voice": VoiceIdentity(**{**request.voice.model_dump(), "locale": "de-DE"})}
+    )
+    Qwen3TTS(tmp_path, aligner="faster_whisper").synthesize(german)
+    # The subtag, not the full locale: Whisper takes `de`, not `de-DE`.
+    assert seen["cmd"][-1] == "de"

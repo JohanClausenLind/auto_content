@@ -144,6 +144,7 @@ nodes:
   - key: anchor
     type: generate_anchor
     values:
+      model: hidream-o1
       prompt: "the scene staged exactly as the control passes show"
       style: >
         one consistent editorial illustration look across every staged beat, restrained palette,
@@ -153,7 +154,7 @@ nodes:
       card where it is typeset rather than drawn.
   - key: motion
     type: generate_video
-    values: {prompt: "camera moves exactly as staged in the 3D scene"}
+    values: {model: ltx-2.5.i2v, prompt: "camera moves exactly as staged in the 3D scene"}
     note: >
       No size value. With a shot plan the clip is generated at the ShotSpec's own size — what the
       anchor was drawn at and the control passes were rendered at. `size` is read only on the

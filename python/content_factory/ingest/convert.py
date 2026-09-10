@@ -25,10 +25,18 @@ Three things make it cheap and safe:
 Not accepted, on purpose: MPEG-TS, whose bytes ``python-magic`` reports as
 ``application/octet-stream`` on this host. Accepting that MIME would accept every unidentifiable
 file in exchange for one container.
+
+The module also answers a second question, about files the allowlist already accepts:
+:func:`blank_picture` — *is this MP4 a film, or a recording with nothing to look at?* A phone, a
+meeting recorder and a screen recorder pointed at a blanked display all write MP4, and the bytes
+say ``video/mp4`` whether the picture is an interview or an hour of black. Only the picture can
+tell those apart, so it is measured rather than assumed.
 """
 
 from __future__ import annotations
 
+import io
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -308,3 +316,155 @@ def convert_media(path: Path, sniffed_mime: str, out_dir: Path) -> Converted:
     if kind == "audio":
         return _convert_audio(path, dest, sniffed_mime)
     return _convert_image(path, dest, sniffed_mime)
+
+
+# --- a recording wearing a video container -----------------------------------------------------
+
+BLANK_PICTURE_SAMPLES = 12
+"""How many frames are looked at, spread evenly across the file.
+
+Bounded on purpose. This runs before a lane starts, in front of an operator waiting for an error
+or a run, so a verdict about a three-hour file may not cost three hours: each sample is an input
+seek and one decoded frame, so twelve of them is well under a second whatever the duration. A
+full ``blackdetect`` pass over thirty minutes of 1080p black measured 14 s on this host, and the
+same pass over thirty minutes of *picture* would be minutes — the wrong cost to pay for a check
+whose usual answer is "no, that is a film".
+"""
+
+BLACK_LUMA_MAX = 24
+"""At or below this, a pixel is black. Limited-range black is 16 and a codec puts a few levels of
+noise around it, so the bar sits above 16 rather than at it."""
+
+STILL_LUMA_DELTA_MAX = 3
+"""How far two samples may differ, per pixel, and still be the same picture: an unchanging image
+re-encoded moves a level or two between keyframes."""
+
+SAMPLE_EDGE = 32
+"""Frames are compared as 32x32 greyscale thumbnails. Small enough that the comparison is free,
+large enough that a caption, a face or a moving cursor survives the shrink."""
+
+
+@dataclass(frozen=True)
+class BlankPicture:
+    """Why a file with a video track is really a recording, in the operator's terms."""
+
+    reason: str
+    certainty: Literal["exact", "sampled"]
+    """``exact`` when the container itself settles it — no video stream, cover art, a single
+    frame. ``sampled`` when it took looking at the pixels, which is a measurement of
+    :data:`BLANK_PICTURE_SAMPLES` frames rather than of every frame, and says so."""
+
+
+def _span(seconds: float) -> str:
+    if seconds >= 60:
+        return f"{int(seconds) // 60} min {int(seconds) % 60:02d} s"
+    return f"{seconds:.1f} s"
+
+
+def _grey_frame(path: Path, at_s: float) -> bytes | None:
+    """One frame, seeked to and shrunk to a greyscale thumbnail. ``None`` if it cannot be had.
+
+    Input seeking (``-ss`` *before* ``-i``) so the cost is a seek and a GOP rather than a decode
+    from the start of the file. PNG through Pillow rather than a raw pipe because ``ffmpeg()`` —
+    the repo's one entry point — reads its output as text, which would mangle raw bytes; the same
+    trade ``qc.delivery`` makes for the same reason.
+    """
+    from PIL import Image, UnidentifiedImageError
+
+    proc = subprocess.run(  # noqa: S603
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-nostdin",
+            "-v",
+            "error",
+            "-ss",
+            f"{max(0.0, at_s):.3f}",
+            "-i",
+            str(path),
+            "-map",
+            "0:v:0",
+            "-frames:v",
+            "1",
+            "-vf",
+            f"scale={SAMPLE_EDGE}:{SAMPLE_EDGE}:flags=bilinear,format=gray",
+            "-f",
+            "image2pipe",
+            "-vcodec",
+            "png",
+            "-",
+        ],
+        capture_output=True,
+        check=False,
+        timeout=120,
+    )
+    if proc.returncode != 0 or not proc.stdout:
+        return None
+    try:
+        with Image.open(io.BytesIO(proc.stdout)) as img:
+            return img.convert("L").tobytes()
+    except (OSError, UnidentifiedImageError):
+        return None
+
+
+def blank_picture(path: Path) -> BlankPicture | None:
+    """Why this video file is really a recording — or ``None`` when it carries a picture.
+
+    An MP4 is the container a phone, a meeting recorder and a screen recorder with a blanked
+    display all reach for, so "the file is video/mp4" answers nothing about whether there is
+    anything to look at. This is the measurement that does answer it, and it is deliberately hard
+    to satisfy: a file qualifies only when it has sound *and* its picture is either absent, one
+    attached still, or unchanging — black or otherwise — everywhere it was sampled.
+
+    A file with no audio is never blank-pictured here even if every frame is black: the whole
+    point of the question is "can the sound stand on its own", and silence cannot.
+
+    The verdict is a reason rather than a boolean because every caller has to say it out loud. An
+    operator whose hour of interview was taken as a recording, or refused as a film, is owed the
+    measurement that decided it.
+    """
+    try:
+        video, audio, duration = _probe(path)
+    except ConversionError:
+        return None
+    if audio is None:
+        return None
+    if video is None:
+        return BlankPicture("it has no video stream at all", "exact")
+    if int((video.get("disposition") or {}).get("attached_pic") or 0):
+        return BlankPicture("its only picture is attached cover art", "exact")
+    if int(video.get("nb_frames") or 0) == 1:
+        return BlankPicture("its picture is a single frame held for the whole file", "exact")
+
+    times = (
+        [duration * (i + 0.5) / BLANK_PICTURE_SAMPLES for i in range(BLANK_PICTURE_SAMPLES)]
+        if duration > 0
+        else [0.0]
+    )
+    first: bytes | None = None
+    black = still = True
+    seen = 0
+    for at_s in times:
+        frame = _grey_frame(path, at_s)
+        if frame is None:
+            continue
+        seen += 1
+        if first is None:
+            first = frame
+        black = black and max(frame) <= BLACK_LUMA_MAX
+        still = (
+            still
+            and max(abs(a - b) for a, b in zip(frame, first, strict=True)) <= STILL_LUMA_DELTA_MAX
+        )
+        if not black and not still:
+            return None
+    # One frame makes "it never changes" true by having nothing to change against, which is not a
+    # measurement. Two is the least that can disagree.
+    if seen < 2 or not (black or still):
+        return None
+    where = f"{seen} frames sampled across {_span(duration)}"
+    if black:
+        return BlankPicture(f"its picture is black in all {where}", "sampled")
+    return BlankPicture(
+        f"its picture never changes across {where} — a cover, not a film", "sampled"
+    )

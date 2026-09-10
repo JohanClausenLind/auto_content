@@ -242,7 +242,7 @@ def main() -> int:
             flush=True,
         )
 
-    manifest, missing = index.write(
+    manifest, missing, duplicated = index.write(
         OUT_ROOT,
         existing,
         lib["targets"],
@@ -267,6 +267,9 @@ def main() -> int:
     print(f"flagged: {', '.join(flagged) if flagged else 'none'}", file=sys.stderr)
     if missing:
         print(f"MISSING FILES (in manifest, not on disk): {', '.join(missing)}", file=sys.stderr)
+    if duplicated:
+        for ids in duplicated:
+            print(f"DUPLICATE BYTES (one sound, several ids): {', '.join(ids)}", file=sys.stderr)
     return 0
 
 

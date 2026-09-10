@@ -19,6 +19,7 @@ from content_factory.schemas.shots import (
     CharacterSpec,
     EnvironmentSpec,
     LibraryPose,
+    LightingPreset,
     LightingSpec,
     SegmentClipPose,
     ShotPlan,
@@ -64,6 +65,22 @@ POSE_CLIFF_FRACTION = 0.33
 height the image model ignored the conditioning and invented its own scene. A shot that solves
 under it has thrown away the reason it was staged from a real take, so it is re-solved."""
 
+UNIFORM_KIND_ROTATION: tuple[CameraPreset, ...] = (
+    CameraPreset.slow_push_in,
+    CameraPreset.static,
+    CameraPreset.pan_right,
+    CameraPreset.crane_down,
+    CameraPreset.slow_pull_out,
+    CameraPreset.orbit_left,
+)
+"""Framings to rotate through when every beat is the same scene kind, in beat order.
+
+Ordered as a cut is: open moving in, hold, move across, come down, pull back out, and around.
+Six because six is the length of a picture story on this repo's own lanes and a rotation that
+divides evenly into a shorter one still varies it.
+"""
+
+
 # A lens per camera preset, so a lane still gets some variety of framing across its shots even
 # though every staged shot is solved the same way.
 _LENS_BY_PRESET: dict[CameraPreset, float] = {
@@ -93,6 +110,18 @@ def _azimuth_for(shot_id: str) -> float:
 
 DEFAULT_BEAT_MS = 4000
 DEFAULT_CHARACTER_ASSET = "man_01"
+DEFAULT_APPEARANCE = "a person in plain unbranded clothes, no logos, no props"
+"""What the preset planner's one staged figure looks like when the operator wrote nothing.
+
+The mesh carries a body and nothing else, and the Blender compiler renders that body's depth and
+normals — so an undescribed figure is an *untextured* figure, and the image model draws exactly
+what it is shown: ten anchors of a grey mannequin in a T-pose (measured on `picture-story`,
+2026-09-10). The preset planner has no source for a description, which is precisely why it needs
+a default rather than an empty field. Deliberately dull, for the same reason as
+``prompt_compile.DEFAULT_VISUAL_SUBJECT``: the planner must not invent a character the operator
+did not ask for. Anything real goes in the shot plan.
+"""
+
 DEFAULT_CHARACTER_HEIGHT_M = 1.75
 LTX_MIN_FRAMES = 9
 LTX_MAX_FRAMES = 257
@@ -100,6 +129,7 @@ LTX_MAX_FRAMES = 257
 
 def snap_ltx_length(frames: int, *, lo: int = LTX_MIN_FRAMES, hi: int = LTX_MAX_FRAMES) -> int:
     """Nearest 8k+1 frame count within [lo, hi] (LTX-2.5 generates 8k+1 frames)."""
+
     k = max(1, round((frames - 1) / 8))
     snapped = 8 * k + 1
     return min(max(snapped, lo), hi)
@@ -157,29 +187,65 @@ def plan_shots_from_story(
     fps: int = 24,
     snap_to_ltx_length: bool = True,
     character_asset: str = DEFAULT_CHARACTER_ASSET,
+    with_character: bool = True,
+    lighting_preset: LightingPreset = "studio",
 ) -> ShotPlan:
-    """One shot per beat, in beat order. Pure: same story and arguments -> same plan."""
+    """One shot per beat, in beat order. Pure: same story and arguments -> same plan.
+
+    ``with_character`` is for a lane that stages nobody. The staged figure is named in the shot's
+    *description*, which is the sentence the image model is given — so on a lane whose controls
+    compiler is the 2D motion plan, that sentence asked for a person nothing had staged, and a
+    recording about the sky came back as six drawings of a man standing on open ground.
+    """
     if fps not in (24, 25, 30, 60):
         msg = f"unsupported fps {fps}"
         raise ValueError(msg)
     beats = sorted(story.beats, key=lambda b: b.order)
-    character = CharacterSpec(
-        id="subject",
-        asset=character_asset,
-        transform=Transform(),
-        pose=LibraryPose(name="idle"),
+    characters: tuple[CharacterSpec, ...] = (
+        (
+            CharacterSpec(
+                id="subject",
+                asset=character_asset,
+                transform=Transform(),
+                pose=LibraryPose(name="idle"),
+                appearance=DEFAULT_APPEARANCE,
+            ),
+        )
+        if with_character
+        else ()
     )
     # The ShotSpec defaults, named here because the description is compiled from them: what the
     # prompt says about light and place has to be what Blender actually stages, or the image model
     # is told one scene and conditioned on another.
-    lighting = LightingSpec()
+    # `studio` was the only reachable value and it is the wrong default for a still life.
+    # "even studio light from a single soft key, shadows contained" is product-photography light,
+    # and measured across three subjects on 2026-09-10 it renders everything as smooth glazed
+    # ceramic on a soft ground: a pine cone that looks turned from clay, a whelk that looks like a
+    # painted porcelain ornament, an amber that reads as moulded resin. The two best stills the
+    # project has made went the other way — `bee.png` at 9 on ordinary light, `n-amber` at 8.5 on
+    # "warm raking light" — and `LIGHTING_CLAUSE` has carried `exterior_dusk` ("low warm dusk light
+    # raking across the scene, long shadows") the whole time with no way for a caller to ask for it.
+    lighting = LightingSpec(preset=lighting_preset)
     environment = EnvironmentSpec()
     specs: list[ShotSpec] = []
+    # The preset comes from the scene kind, which is right when the kinds differ and produces one
+    # film of N identical shots when they do not. A plan cut from a recording is every beat the
+    # same kind, so `audio-picture-story` staged six shots whose camera, lens, framing and
+    # description were byte-identical and drew the same picture six times — measured on a six-beat
+    # recording. Where the kinds carry no variation the *order* does: a fixed rotation of framings,
+    # by beat index, so the film moves from wide to close and back the way a cut film does. Still
+    # pure: index in, preset out, same plan every time.
+    kinds = [_scene_kind_for(story, b.beat_id) for b in beats]
+    uniform = len(set(kinds)) <= 1 and len(beats) > 1
     for i, beat in enumerate(beats):
         frames = round(_beat_duration_ms(beat) / 1000 * fps)
         frames = snap_ltx_length(frames) if snap_to_ltx_length else min(max(frames, 1), 600)
-        kind = _scene_kind_for(story, beat.beat_id)
-        preset = SCENE_KIND_PRESET.get(kind, CameraPreset.static)
+        kind = kinds[i]
+        preset = (
+            UNIFORM_KIND_ROTATION[i % len(UNIFORM_KIND_ROTATION)]
+            if uniform
+            else SCENE_KIND_PRESET.get(kind, CameraPreset.static)
+        )
         specs.append(
             ShotSpec(
                 shot_id=f"shot_{_short_hash(story.plan_id, beat.beat_id)}",
@@ -199,7 +265,7 @@ def plan_shots_from_story(
                         height=height,
                     ),
                 ),
-                characters=(character,),
+                characters=characters,
                 anchor_frames=anchor_frames_for(preset, frames),
                 # Never the beat's own words. ``display_text`` is narration: it is written to be
                 # spoken over a picture, and handed to an image model it asks for an illustration
@@ -209,7 +275,7 @@ def plan_shots_from_story(
                     preset=preset,
                     lighting_preset=lighting.preset,
                     environment=environment,
-                    characters=(character,),
+                    characters=characters,
                     visual_subject=story.visual_subject,
                 )[:2000],
             )
@@ -237,6 +303,7 @@ def plan_shots_from_reference(
     height: int,
     fps: int = 24,
     snap_to_ltx_length: bool = True,
+    with_character: bool = True,
     cast: tuple[tuple[str, str], ...] = (("man", "man_01"), ("woman", "woman_01")),
 ) -> ShotPlan:
     """One shot per beat, each staged from the reference clip retrieval chose for that beat.
@@ -273,8 +340,14 @@ def plan_shots_from_reference(
         height=height,
         fps=fps,
         snap_to_ltx_length=snap_to_ltx_length,
+        with_character=with_character,
     )
-    if not chosen:
+    # `characters: none` is a lane saying it stages nobody, and it has to mean that here too.
+    # It was honoured only on the preset branch, so `picture-story --set
+    # plan_shots.characters=none` still staged five figures and the Blender compiler refused the
+    # plan (measured 2026-09-10). Retrieval's whole job is to find a captured *interaction*, so
+    # with nobody to stage there is nothing for it to contribute and the preset plan is the plan.
+    if not chosen or not with_character:
         return fallback.model_copy(update={"planner": "reference"})
 
     specs: list[ShotSpec] = []

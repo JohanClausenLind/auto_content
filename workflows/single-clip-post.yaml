@@ -96,7 +96,8 @@ nodes:
   - key: anchor
     type: generate_anchor
     values:
-      prompt: "the subject of the brief, one clear vertical frame, nothing else competing for the eye"
+      model: hidream-o1
+      prompt: "the subject of the brief filling a vertical picture, nothing else competing for the eye"
       style: >
         photographic, single strong light, shallow depth of field, muted palette, vertical framing
         with the subject off centre, no text, no logo, no collage
@@ -104,6 +105,7 @@ nodes:
   - key: motion
     type: generate_video
     values:
+      model: ltx-2.5.i2v
       prompt: "slow push in on the subject, small real movement in the frame, no camera shake"
       size: 576x1024
       duration: 6.0

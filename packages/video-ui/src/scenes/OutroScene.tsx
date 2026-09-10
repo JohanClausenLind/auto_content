@@ -16,7 +16,7 @@ export function OutroScene({ scene }: SceneProps<Spec>): ReactElement {
   const padY = Math.round(theme.space[5]! * scale);
   const padX = Math.round(theme.space[7]! * scale);
   return (
-    <SceneFrame testId="outro" backgroundAssetId={scene.background_asset_id}>
+    <SceneFrame testId="outro" backgroundAssetId={scene.background_asset_id} typeWidth={Math.max(text.fit.widthPx, cta.fit.widthPx + 2 * padX)}>
       {scene.cta ? (
         <div
           style={{

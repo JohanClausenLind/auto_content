@@ -128,7 +128,7 @@ def test_upscale_then_interpolate_chain_and_final_mux(pipeline: StageContext) ->
         (pipeline.ddir() / "video" / shot.shot_id / "interpolated" / "frames").glob("*.png")
     )
     assert len(frames) == len(exploded) * 2
-    final = pipeline.ddir() / "exports" / "final.mp4"
+    final = pipeline.ddir() / "exports" / "postchain.mp4"
     assert final.exists() and final.stat().st_size > 0
     state = json.loads((pipeline.ddir() / "video" / shot.shot_id / "chain.json").read_text())
     assert state["steps"] == ["upscaled", "interpolated"]
@@ -154,6 +154,6 @@ def test_interpolate_works_on_motion_plan_keyframes(
         out = stage_interpolate(ctx)
         assert out.facts["clips"] == 1
         frames = sorted((ctx.ddir() / "sequence" / "interpolated" / "frames").glob("*.png"))
-        assert len(frames) == 16 and (ctx.ddir() / "exports" / "final.mp4").exists()
+        assert len(frames) == 16 and (ctx.ddir() / "exports" / "postchain.mp4").exists()
     finally:
         get_settings.cache_clear()  # type: ignore[attr-defined]

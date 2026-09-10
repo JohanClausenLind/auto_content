@@ -26,9 +26,10 @@ description: >
 category: audio
 tags: [audio, restoration, denoise, transcript, loudness, delivery]
 prerequisite: >
-  The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg) or dropped on the canvas's
-  Audio File node. faster-whisper downloads its model on first use; transcribe.engine=fixture with
-  your own transcript keeps the run offline.
+  The recording, passed as --input <file> (wav, mp3, flac, m4a, ogg, or an mp4/mov whose
+  picture is blank: a phone writes those, and the picture is measured) or dropped on the canvas's
+  Audio File node. faster-whisper downloads its model on first use; transcribe.engine=fixture
+  with your own transcript keeps the run offline.
 models:
   - kind: path
     label: ClearerVoice MossFormer2 enhancement (48 kHz)

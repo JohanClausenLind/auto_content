@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from content_factory.schemas.audio import CaptionCue, CaptionTrack
 from content_factory.schemas.scenes import WordTiming
 
@@ -26,11 +28,56 @@ def wrap_words(words: list[str], max_chars: int) -> list[str]:
     return lines
 
 
+BINDS_FORWARD: frozenset[str] = frozenset(
+    # English
+    "a an the and or but nor so yet of to in on at by for from with as into onto over under"
+    " is are was were be been being has have had do does did will would can could may might"
+    " that this these those my your his her its our their".split()
+    # German, because the catalogue narrates in ten languages and this was found on a German cut
+    + "der die das den dem des ein eine einen einem einer eines und oder aber auf in im an am"
+    " zu zum zur von vom mit für bei nach aus ist sind war waren hat haben wird werden".split()
+    # Spanish / French / Italian / Portuguese articles and the commonest prepositions
+    + "el la los las un una unos unas y o de del al en con por para es son".split()
+    + "le les une des du au aux et ou dans sur avec pour est sont".split()
+    + "il lo gli una uno di da nel sul con per è sono".split()
+    + "o os as um uma e ou do da no na com".split()
+)
+"""Closed-class words that bind to what follows them, so a cue must not end on one.
+
+Measured on a German cut (2026-09-10): a cue read "Oben auf einem Berg ist die Luft dünner. Der"
+— a dangling article, on screen alone for the last third of a second. English does it too, and
+had been doing it all evening without being noticed: "Any sort that works by comparing / two
+things has a", "It rains here two hundred days a". The set is small and per-language on purpose:
+guessing part of speech is a different problem, and a fixed list of function words is the part
+that is safe to be sure about.
+"""
+
+
+def _unhang(groups: list[list[WordTiming]]) -> list[list[WordTiming]]:
+    """Move a trailing binding word onto the next cue, so no cue ends on "a" or "der".
+
+    At most two words per boundary ("and the"), and never the last word a cue has: a cue with
+    one word in it is worse than a cue that ends on an article.
+    """
+    for i in range(len(groups) - 1):
+        for _ in range(2):
+            if len(groups[i]) < 2:
+                break
+            last = groups[i][-1]
+            if last.word.strip().strip(".,;:!?\u2014\u2013").lower() not in BINDS_FORWARD:
+                break
+            groups[i + 1].insert(0, groups[i].pop())
+    return groups
+
+
 def balanced_groups(
     timed_words: list[WordTiming], *, max_chars_per_line: int = 32
 ) -> list[list[WordTiming]]:
     """Split one beat's words into the number of cues the greedy compiler would need, but with
-    the words spread evenly across them (no one-word straggler at the end)."""
+    the words spread evenly across them (no one-word straggler at the end).
+
+    A cue also never ends on a word that binds to the next one — see :func:`_unhang`.
+    """
     if not timed_words:
         return []
     greedy = compile_captions(
@@ -48,7 +95,7 @@ def balanced_groups(
             groups.append([])
         groups[-1].append(w)
         used += len(w.word) + 1
-    return groups
+    return _unhang(groups)
 
 
 def cues_from_groups(
@@ -192,6 +239,24 @@ def _ass_ts(ms: int) -> str:
     return f"{h}:{m:02d}:{sec:02d}.{c:02d}"
 
 
+def wrap_chars_for(width: int, height: int, size_frac: float, configured: int = 0) -> int:
+    """Characters per caption line for this frame, or ``configured`` when it is set.
+
+    One number has to serve the SRT/VTT cue grouping and the burn-in wrap, or the file and the
+    picture disagree about where a cue breaks. A fixed 22 is the vertical calibration: 22
+    characters of 58 px type fills 71 % of a 1080 px frame's usable width. On a 1920 px one the
+    same 22 is a line a third of the frame wide and the block stacks four deep in the middle of
+    the picture, so the count is derived from the frame instead and comes out at 39 there and at
+    22 — unchanged — on the phone frame it was tuned on.
+    """
+    if configured > 0:
+        return configured
+    cap = max(12, round(size_frac * min(width, height)))
+    usable = max(1, width - 2 * round(0.07 * width))
+    # 0.52 em is Inter Bold's average advance. Clamped to the range caption practice lives in.
+    return min(42, max(16, round(0.71 * usable / (0.52 * cap))))
+
+
 def _ass_colour(hex_rgb: str, alpha: int = 0) -> str:
     """#RRGGBB -> ASS &HAABBGGRR."""
     r, g, b = hex_rgb[1:3], hex_rgb[3:5], hex_rgb[5:7]
@@ -208,27 +273,46 @@ def to_ass(
     width: int,
     height: int,
     font: str = "Inter",
-    size_frac: float = 0.03,
+    size_frac: float = 0.0533,
     bottom_frac: float = 0.22,
-    max_chars_per_line: int = 22,
+    max_chars_per_line: int = 0,
     highlight: str | None = "#8BBDEB",
     box_alpha: float = 0.55,
     hook: str | None = None,
     hook_seconds: float = 2.8,
     hook_font: str = "Sora",
-    hook_size_frac: float = 0.04,
+    hook_size_frac: float = 0.0711,
     hook_top_frac: float = 0.14,
 ) -> str:
     """Burn-in captions as ASS: one event per spoken word, the whole cue visible and the current
     word in the highlight colour (colour only — no scale, no bounce), plus an optional headline
-    over the opening seconds. Sizes are in frame pixels (PlayRes = frame), so the same fractions
-    hold for 9:16 and 16:9."""
-    cap_size = max(12, round(size_frac * height))
+    over the opening seconds.
+
+    **Text sizes are fractions of the frame's shorter side, not of its height.** They used to be
+    fractions of the height, with a docstring claiming "the same fractions hold for 9:16 and 16:9"
+    — which is exactly what they do not do. Every default here was calibrated on a 1080x1920
+    vertical frame, so on a 1920x1080 one the same fraction of height produced captions at 32 px
+    instead of 58 and a hook headline at 43 px instead of 77: 55 % of the size they were designed
+    to be, measured on a rendered landscape film. The shorter side is 1080 either way, so one
+    fraction now means one physical size in both orientations, and the vertical output is
+    unchanged to the pixel (0.0533 x 1080 rounds to the same 58 px that 0.03 x 1920 did).
+
+    ``max_chars_per_line`` of 0 derives the wrap from the frame: the same share of the usable
+    width the vertical calibration used (22 characters of 58 px type inside a 1080 px frame is
+    71 % of it), which is 22 on a phone frame and 39 on a landscape one. A fixed 22 on 16:9 is a
+    line a third of the frame wide, and the block stacks four deep in the middle of the picture.
+
+    Positions are still fractions of the height, because they are about the frame and not about
+    the type: ``bottom_frac`` exists to clear the platform UI band at the bottom of a phone.
+    """
+    short = min(width, height)
+    cap_size = max(12, round(size_frac * short))
     margin_v = round(bottom_frac * height)
     margin_h = round(0.07 * width)
     alpha = round((1.0 - box_alpha) * 255)
-    hook_size = max(12, round(hook_size_frac * height))
+    hook_size = max(12, round(hook_size_frac * short))
     hook_margin = round(hook_top_frac * height)
+    max_chars_per_line = wrap_chars_for(width, height, size_frac, max_chars_per_line)
     white = "&H00FFFFFF"
     lines = [
         "[Script Info]",
@@ -242,8 +326,18 @@ def to_ass(
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, "
         "BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, "
         "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+        # The box padding (the Outline field, under BorderStyle 3) has to stay under half the
+        # leading, or a two-line cue's boxes overlap and the overlap composites darker: a
+        # horizontal dark band straight through the middle of the block. libass advances a line by
+        # about 1.2x the size, so the gap between glyph boxes is ~0.2x and the padding gets half.
         f"Style: Cap,{font},{cap_size},{white},{white},&H{alpha:02X}000000,&H{alpha:02X}000000,"
-        f"-1,0,0,0,100,100,0,0,3,{max(6, round(cap_size * 0.22))},0,2,"
+        f"-1,0,0,0,100,100,0,0,3,{max(3, round(cap_size * 0.07))},0,2,"
+        f"{margin_h},{margin_h},{margin_v},1",
+        # The highlight layer: the same font, size, margins and alignment as Cap, so a word lands
+        # exactly on its twin below -- but BorderStyle 1 with no outline and no shadow, so it
+        # draws glyphs and no box at all. See the loop below for why the colour cannot go on Cap.
+        f"Style: CapHL,{font},{cap_size},{white},{white},&H00000000,&H00000000,"
+        f"-1,0,0,0,100,100,0,0,1,0,0,2,"
         f"{margin_h},{margin_h},{margin_v},1",
         f"Style: Hook,{hook_font},{hook_size},{white},{white},&H60000000,&H60000000,"
         f"-1,0,0,0,100,100,0,0,1,{max(2, round(hook_size * 0.08))},0,8,"
@@ -271,23 +365,49 @@ def to_ass(
             count += len(line.split())
             breaks.add(count)
         cue_end = max(group[-1].end_ms, group[0].start_ms + MIN_CUE_MS)
+
+        def _laid_out(
+            render: Callable[[int, str], str],
+            words: list[WordTiming] = group,
+            line_breaks: set[int] = breaks,
+        ) -> str:
+            """One cue laid out identically however each word is rendered, so two layers of the
+            same cue break in the same places and stay in register."""
+            out: list[str] = []
+            for j, other in enumerate(words):
+                if j in line_breaks:
+                    out.append("\\N")
+                elif j > 0:
+                    out.append(" ")
+                out.append(render(j, _ass_escape(other.word)))
+            return "".join(out)
+
+        plain = _laid_out(lambda _j, word: word)
         for i, w in enumerate(group):
             start = w.start_ms
             end = group[i + 1].start_ms if i + 1 < len(group) else cue_end
             if end <= start:
                 end = start + 1
-            parts: list[str] = []
-            for j, other in enumerate(group):
-                if j in breaks:
-                    parts.append("\\N")
-                elif j > 0:
-                    parts.append(" ")
-                word = _ass_escape(other.word)
-                if hl and j == i:
-                    parts.append("{\\1c" + hl + "&}" + word + "{\\1c" + white + "&}")
-                else:
-                    parts.append(word)
-            lines.append(
-                f"Dialogue: 0,{_ass_ts(start)},{_ass_ts(end)},Cap,,0,0,0,,{''.join(parts)}"
-            )
+            # The cue, boxed, with no override tag anywhere in it. A `{\1c}` mid-line makes libass
+            # draw the BorderStyle-3 box **per span**, and adjacent spans overlap by the box
+            # padding -- so a translucent box composited over itself came out as two hard dark
+            # bars either side of whichever word was highlighted, on every frame of every film.
+            lines.append(f"Dialogue: 0,{_ass_ts(start)},{_ass_ts(end)},Cap,,0,0,0,,{plain}")
+            if hl:
+                # The current word alone, in the highlight colour, on a boxless style laid out
+                # identically -- so it lands exactly on its white twin underneath. Every other
+                # word is transparent and still occupies its space, which is what keeps the two
+                # layers in register.
+                painted = _laid_out(
+                    lambda j, word, _i=i: (
+                        "{\\alpha&H00&\\1c" + hl + "&}" + word + "{\\alpha&HFF&}"
+                        if j == _i
+                        else word
+                    )
+                )
+                lines.append(
+                    f"Dialogue: 1,{_ass_ts(start)},{_ass_ts(end)},CapHL,,0,0,0,,"
+                    + "{\\alpha&HFF&}"
+                    + painted
+                )
     return "\n".join(lines) + "\n"

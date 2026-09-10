@@ -572,8 +572,16 @@
    "title": "Generate Keyframes",
    "category": "image sequence",
    "executor": "ai",
-   "widgets": [],
-   "widget_options": {},
+   "widgets": [
+    "model"
+   ],
+   "widget_options": {
+    "model": [
+     "hidream-o1",
+     "flux2-dev",
+     "mock"
+    ]
+   },
    "inputs": [
     "lock",
     "controls"
@@ -601,6 +609,7 @@
    "widgets": [
     "prompt",
     "motion",
+    "model",
     "subject",
     "size",
     "duration",
@@ -614,6 +623,11 @@
     "motion": [
      "ltx",
      "hold"
+    ],
+    "model": [
+     "mock",
+     "ltx-2.5.i2v",
+     "wan-animate-2.pose"
     ],
     "size": [
      "512x896",
@@ -1017,7 +1031,9 @@
     "planner",
     "fixture_path",
     "size",
-    "fps"
+    "fps",
+    "characters",
+    "lighting"
    ],
    "widget_options": {
     "planner": [
@@ -1038,6 +1054,16 @@
      "25",
      "30",
      "60"
+    ],
+    "characters": [
+     "one",
+     "none"
+    ],
+    "lighting": [
+     "studio",
+     "exterior_day",
+     "exterior_dusk",
+     "interior_warm"
     ]
    },
    "inputs": [

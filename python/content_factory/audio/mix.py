@@ -372,7 +372,10 @@ def master(
         limit_true_peak(in_wav, limited, spec)
         source = limited
     target_lufs = spec.target_lufs
-    target_tp = spec.target_true_peak_dbtp
+    # What the master aims at, which is below the delivery ceiling: the AAC encode raises the
+    # true peak (see `MasterChainSpec.encode_headroom_db`). The *report* is still measured
+    # against the delivery ceiling, so `passed` keeps meaning "the file that ships is legal".
+    target_tp = spec.master_true_peak_dbtp
     lra = spec.loudness_range_lu
     first = subprocess.run(
         [
@@ -413,6 +416,49 @@ def master(
     )
     if limited is not None:
         limited.unlink(missing_ok=True)
+    report = measure_loudness(out_wav, target_lufs=target_lufs, target_tp=target_tp)
+    report = _trim_to_ceiling(out_wav, report, target_lufs=target_lufs, target_tp=target_tp)
+    # Reported against the delivery ceiling, which is the number a caller's gate is about.
+    return report.model_copy(update={"target_true_peak_dbtp": spec.target_true_peak_dbtp})
+
+
+TRUE_PEAK_TRIM_MARGIN_DB = 0.05
+"""How far under the ceiling the corrective trim aims, so rounding cannot leave it on the line."""
+
+
+def _trim_to_ceiling(
+    out_wav: Path, report: LoudnessReport, *, target_lufs: float, target_tp: float
+) -> LoudnessReport:
+    """Pull the master back under the true-peak ceiling if the linear pass pushed it over.
+
+    `loudnorm` in `linear=true` mode applies one measured gain and does **not** limit: its `TP`
+    argument only informs the gain it picks, and its true-peak estimate is a prediction. When the
+    prediction is low the delivered file is over the ceiling and nothing catches it — measured on
+    `audio-picture-story` (2026-09-10): the master landed on -14.2 LUFS, right on target, with a
+    true peak of **-0.8 dBTP** against a -1.0 ceiling, and the stage refused the run at stage
+    nine of twenty rather than deliver it.
+
+    The correction is a second linear gain of exactly the overshoot, which moves the true peak by
+    the same number of dB and the programme loudness by the same number too — a fifth of a decibel
+    on the measured case, well inside the 1 LU tolerance. Linear, because the alternative is to
+    compress, and this chain deliberately does not.
+    """
+    over = report.true_peak_dbtp - target_tp
+    if over <= 0:
+        return report
+    trimmed = out_wav.with_name(out_wav.stem + "-trim.wav")
+    ffmpeg(
+        [
+            "-i",
+            str(out_wav),
+            "-af",
+            f"volume={-(over + TRUE_PEAK_TRIM_MARGIN_DB):.2f}dB",
+            "-c:a",
+            "pcm_s16le",
+            str(trimmed),
+        ]
+    )
+    trimmed.replace(out_wav)
     return measure_loudness(out_wav, target_lufs=target_lufs, target_tp=target_tp)
 
 

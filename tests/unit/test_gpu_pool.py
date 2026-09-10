@@ -185,3 +185,69 @@ def test_cached_frames_are_not_redispatched(tmp_path: Path) -> None:
 
     assert second.calls == []
     assert all(f["cache_hit"] for f in again.frames)
+
+
+class _DeadMock(_NamedMock):
+    """A host that is gone: every call raises the way an unreachable server does."""
+
+    def edit(self, *args: object, **kwargs: object) -> bytes:
+        msg = f"hidream server unreachable at {self.endpoint}"
+        raise RuntimeError(msg)
+
+
+def test_a_host_that_dies_does_not_lose_the_sequence(tmp_path: Path) -> None:
+    """One card is preempted or rebooted; the other finishes the frames it was going to share."""
+    alive = _NamedMock("http://host-a:8801")
+    gone = _DeadMock("http://host-b:8801")
+
+    result = build_sequence(
+        six_keyframe_plan(), LOCK, alive, tmp_path / "seq", backends=[alive, gone]
+    )
+
+    assert not result.failed
+    assert len(result.frames) == 6
+    assert {f["served_by"] for f in result.frames} == {"http://host-a:8801"}
+
+
+def test_every_host_failing_still_raises() -> None:
+    """The retry must not turn a broken item into a silent success or an endless loop."""
+
+    def _work(worker: str, item: int) -> int:
+        msg = "endpoint refused the job"
+        raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError, match="endpoint refused"):
+        WorkerPool(["a", "b", "c"]).map_ordered([0, 1, 2], _work)
+
+
+def test_a_frame_written_before_the_run_stopped_is_not_drawn_again(tmp_path: Path) -> None:
+    """Frames reach disk as they finish, so an interrupted sequence resumes where it stopped.
+
+    They used to be written only after the whole pool came back, so an interruption threw away
+    every finished drawing -- hours of GPU time on a long sequence -- and the marker each frame
+    carries for exactly this purpose was never there to be read.
+    """
+    plan = six_keyframe_plan()
+    workdir = tmp_path / "seq"
+
+    class _StopsHalfway(_NamedMock):
+        drawn = 0
+
+        def edit(self, *args: object, **kwargs: object) -> bytes:
+            if _StopsHalfway.drawn >= 3:
+                msg = "the operator stopped the run"
+                raise KeyboardInterrupt(msg)
+            _StopsHalfway.drawn += 1
+            return super().edit(*args, **kwargs)  # type: ignore[arg-type]
+
+    first = _StopsHalfway("http://host-a:8801")
+    with pytest.raises(KeyboardInterrupt):
+        build_sequence(plan, LOCK, first, workdir, backends=[first])
+    on_disk = sorted(p.name for p in (workdir / "frames").glob("*.done.json"))
+    assert len(on_disk) == 3, "the finished frames survived the stop"
+
+    second = _NamedMock("http://host-b:8801")
+    again = build_sequence(plan, LOCK, second, workdir, backends=[second])
+    assert not again.failed
+    assert sum(1 for f in again.frames if f["cache_hit"]) == 3
+    assert len(second.calls) == 3, "only the missing frames were drawn again"

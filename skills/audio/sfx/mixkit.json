@@ -1,0 +1,4990 @@
+{
+ "$comment": "Recipe for the Mixkit half of assets/sfx: 294 individually downloaded sound effects (295 were staged; one turned out to be a second copy of another recording, see the end of this note), staged outside the repo at the pack root below and sorted into one directory per library category. Unlike recorded.json these files arrive already cut -- Mixkit chose the excerpt -- so the default mode here is `whole`: take the file as delivered, trim the silence around it, high-pass and level it. `loop` is for the long ambiences, where the builder still has to find the evenest window; it is the same window sweep the #GameAudioGDC half uses. What is deliberately NOT here: nothing. Every unique file the operator downloaded on 2026-09-09 has an entry, because the operator chose them; the 17 byte-identical duplicate downloads are in _duplicates/ under the pack root and are not ingested. Where two files are near-variants of one sound (six coughs, five yawns, eleven thunderstorms) both are kept with distinct ids and the `use` line says which to reach for -- a variant set is what a working library is made of. One further duplicate was found by content rather than by bytes and is not ingested: mixkit-thunder-rumble-and-light-rain-2401.wav is mixkit-rain-and-thunder-storm-2390.wav trimmed by one second at the head, so the two window sweeps landed on the same span and would have written one sound under two ids. 2390 is kept as rain_thunder_loop and 2401 is in _duplicates/. index.write() now reports byte-identical entries so the next one is caught by the builder rather than by hand.",
+ "pack": {
+  "id": "mixkit",
+  "name": "Mixkit free sound effects",
+  "supplier": "Mixkit (Envato)",
+  "root_env": "CF_MIXKIT_SFX_DIR",
+  "root_default": "/mnt/fast/sound-libraries/mixkit",
+  "licence": "Mixkit Sound Effects Free License: free use in commercial and non-commercial projects; licensed to download, copy, modify, distribute and publicly perform the Item as part of an End Product that is larger in scope and different in nature than the Item; no attribution clause in the licence. Prohibited: redistributing the Item on its own, as stock, in a tool or template, or with source files; claiming it as your own; registering it with a rights management service. Envato User Terms cl.9 additionally forbids aggregating Items and making them available on a stock or inventory basis.",
+  "licence_url": "https://mixkit.co/license/#sfxFree",
+  "terms_url": "https://mixkit.co/terms/",
+  "licence_retrieved": "2026-09-09",
+  "downloaded": "2026-09-09",
+  "headline": "from the Mixkit free sound-effects pack"
+ },
+ "sample_rate": 44100,
+ "channels": 2,
+ "defaults": {
+  "highpass_hz": 25,
+  "crossfade_law": "equal_power",
+  "search": {
+   "hop_s": 1.0,
+   "finalists": 6
+  }
+ },
+ "targets": {
+  "oneshot": {
+   "metric": "max_momentary_lufs",
+   "value": -16.0,
+   "true_peak_dbtp": -3.0
+  },
+  "bed": {
+   "metric": "integrated_lufs",
+   "value": -23.0,
+   "true_peak_dbtp": -1.0
+  }
+ },
+ "sounds": [
+  {
+   "id": "animal_eating_long",
+   "category": "animal",
+   "tags": [
+    "eating",
+    "flesh",
+    "predator",
+    "feeding"
+   ],
+   "use": "Twenty seconds of the same. Long enough to run under a whole feeding sequence.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-animal-eating-flesh-2245.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "animal_eating_meat",
+   "category": "animal",
+   "tags": [
+    "eating",
+    "meat",
+    "predator",
+    "feeding"
+   ],
+   "use": "A predator at a kill. Five seconds, and unpleasant on purpose.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-animal-eating-juicy-meat-2246.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "ape_call",
+   "category": "animal",
+   "tags": [
+    "ape",
+    "jungle",
+    "call",
+    "primate"
+   ],
+   "use": "An ape calling in the canopy. Primate and rainforest subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-jungle-ape-sound-2419.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bat_squeak",
+   "category": "animal",
+   "tags": [
+    "bat",
+    "squeak",
+    "echolocation",
+    "night"
+   ],
+   "use": "A bat's squeak. Caves, dusk and urban wildlife.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-bat-squeak-314.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bee_flying",
+   "category": "animal",
+   "tags": [
+    "bee",
+    "flying",
+    "insect",
+    "buzz"
+   ],
+   "use": "A bee working hard. Pollination, agriculture and garden subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-big-bee-hard-flying-sound-42.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "big_cat_purr",
+   "category": "animal",
+   "tags": [
+    "cat",
+    "purr",
+    "wild",
+    "large"
+   ],
+   "use": "A big cat purring — lower and rougher than cat_purr. Wildlife.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-big-wild-cat-long-purr-96.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "big_cat_roar",
+   "category": "animal",
+   "tags": [
+    "cat",
+    "roar",
+    "wild",
+    "large"
+   ],
+   "use": "A big cat roaring. A real recording, unlike the creature roars.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-big-wild-cat-scary-roar-88.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_chirp_call",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "chirp",
+    "call",
+    "small"
+   ],
+   "use": "One small bird calling. The plain single chirp.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-bird-calling-chirp-23.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_chirp_tropical",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "chirp",
+    "tropical",
+    "forest"
+   ],
+   "use": "A third of a second of tropical chirp. The shortest sound in the library.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-tropical-forest-bird-chirp-22.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_chirp_wild",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "chirp",
+    "wild",
+    "exterior"
+   ],
+   "use": "Five seconds of a bird calling in the open, with air around it.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-bird-chirp-in-the-wild-66.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_flutter_ambience",
+   "category": "animal",
+   "tags": [
+    "birds",
+    "flutter",
+    "wings",
+    "aviary"
+   ],
+   "use": "Twenty-eight unbroken seconds of wingbeats at close range: an aviary, a loft, a flock working over a field. Not loopable — the passes are too uneven to wrap (seam 5.0 dB, event prominence 19.5 dB when it was tried) — so lay it under a shot and fade it. bird_flutter_medium is the single pass that lands on a frame.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-medium-size-bird-flutter-pass-by-64.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "bird_flutter_medium",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "flutter",
+    "wings",
+    "medium"
+   ],
+   "use": "A larger bird's wings. Slower beats, more air moved.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-medium-size-bird-flutter-63.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_flutter_small",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "flutter",
+    "wings",
+    "small"
+   ],
+   "use": "A small bird's wings, close. For a cutaway to something landing.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-small-bird-flutter-2694.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_flying_away",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "wings",
+    "flight",
+    "departure"
+   ],
+   "use": "A single bird leaving. Three seconds, and it moves.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-bird-flying-away-2702.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_screech_jungle",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "screech",
+    "jungle",
+    "harsh"
+   ],
+   "use": "A harsh jungle screech. Alarm rather than song.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-jungle-bird-screech-311.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_song_wings",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "song",
+    "wings",
+    "flight"
+   ],
+   "use": "Song and wingbeats together.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-bird-singing-and-flapping-wings-2432.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_squeak_tropical",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "squeak",
+    "tropical",
+    "call"
+   ],
+   "use": "A squeaking tropical call. Distinctive enough to carry a location.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-tropical-bird-squeak-27.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bird_whistle_toy",
+   "category": "animal",
+   "tags": [
+    "bird",
+    "whistle",
+    "toy",
+    "imitation"
+   ],
+   "use": "A bird imitated by a whistle. Honest about being an imitation; use it where a real call would over-claim.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-toy-whistler-bird-sound-18.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bumblebee_buzz",
+   "category": "animal",
+   "tags": [
+    "bumblebee",
+    "buzz",
+    "insect",
+    "short"
+   ],
+   "use": "A short bumblebee pass. Lower and rounder than bee_flying.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-bumblebee-short-buzz-329.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cat_meow_attention",
+   "category": "animal",
+   "tags": [
+    "cat",
+    "meow",
+    "attention",
+    "domestic"
+   ],
+   "use": "A cat asking for something. Short and direct.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-cat-attention-meow-86.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cat_meow_pain",
+   "category": "animal",
+   "tags": [
+    "cat",
+    "meow",
+    "pain",
+    "distress"
+   ],
+   "use": "A distressed meow. Veterinary and welfare subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-cat-pain-meow-87.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cat_meow_sweet",
+   "category": "animal",
+   "tags": [
+    "cat",
+    "meow",
+    "sweet",
+    "domestic"
+   ],
+   "use": "The softest meow here. Domestic and affectionate.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-sweet-kitty-meow-93.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cat_purr",
+   "category": "animal",
+   "tags": [
+    "cat",
+    "purr",
+    "domestic",
+    "close"
+   ],
+   "use": "Seven seconds of purring, close-miked. Warmth in a shot that has none.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-sphinx-cat-purr-3091.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "chickens_alarmed",
+   "category": "animal",
+   "tags": [
+    "chickens",
+    "alarm",
+    "distress",
+    "farm"
+   ],
+   "use": "Chickens alarmed. Use it where something has disturbed the flock.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-chickens-crying-1766.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "chickens_pigeons",
+   "category": "animal",
+   "tags": [
+    "chickens",
+    "pigeons",
+    "yard",
+    "birds"
+   ],
+   "use": "Chickens and pigeons together in a yard. Five seconds of small-holding.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-chickens-and-pigeons-1769.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cockerel_call",
+   "category": "animal",
+   "tags": [
+    "cockerel",
+    "rooster",
+    "call",
+    "farm"
+   ],
+   "use": "A cockerel calling. Morning, farms, and the passage of a day.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cock-calling-1759.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cockerel_cry",
+   "category": "animal",
+   "tags": [
+    "cockerel",
+    "rooster",
+    "crow",
+    "farm"
+   ],
+   "use": "A longer, more strained crow. The alternative take to cockerel_call.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cock-cry-1761.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_breath",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "breath",
+    "close",
+    "cattle"
+   ],
+   "use": "A cow breathing close to the microphone. For a close-up where a moo would be too much.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-animal-breath-1746.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_eating",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "eating",
+    "grazing",
+    "feed"
+   ],
+   "use": "Seven seconds of a cow eating. Feed, grazing and food-system sequences.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-eating-close-1767.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_moo",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "moo",
+    "cattle",
+    "farm"
+   ],
+   "use": "The default cow. One clear moo in the open.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-moo-1744.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_moo_barn",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "moo",
+    "barn",
+    "interior"
+   ],
+   "use": "A moo with a barn around it. The reflections do the work of an establishing shot.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-moo-in-the-barn-1751.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_moo_indoors",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "moo",
+    "indoor",
+    "shed"
+   ],
+   "use": "Indoors and closer still — intensive rather than pastoral farming.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-moo-indoors-1749.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_moo_sick",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "moo",
+    "sick",
+    "distress"
+   ],
+   "use": "A strained moo. Animal-welfare and veterinary subjects; it sounds wrong, which is the point.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-sick-moo-1752.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cow_moo_single",
+   "category": "animal",
+   "tags": [
+    "cow",
+    "moo",
+    "single",
+    "cattle"
+   ],
+   "use": "A shorter, closer moo. Use it where cow_moo runs long against the picture.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-cow-single-moo-1747.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cricket_single",
+   "category": "animal",
+   "tags": [
+    "cricket",
+    "chirp",
+    "single",
+    "night"
+   ],
+   "use": "One cricket. For a silence that needs exactly one thing in it.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-single-cricket-screech-1780.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_bark_angry",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "bark",
+    "angry",
+    "warning"
+   ],
+   "use": "An angry bark from a mid-sized dog. Warning rather than greeting.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-medium-size-angry-dog-bark-54.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_bark_big",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "bark",
+    "large",
+    "annoyed"
+   ],
+   "use": "A big dog, annoyed. Three seconds of it.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-annoyed-big-dog-barking-51.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_bark_twice",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "bark",
+    "twice",
+    "domestic"
+   ],
+   "use": "Two barks. The everyday dog cue.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-dog-barking-twice-1.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_growl",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "growl",
+    "angry",
+    "threat"
+   ],
+   "use": "A growl building towards a bark. Threat.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-angry-and-agitated-dog-growling-53.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_growl_aggressive",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "growl",
+    "aggressive",
+    "threat"
+   ],
+   "use": "Six seconds of sustained aggressive growling.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-aggressive-medium-sized-dog-growling-56.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_growl_giant",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "growl",
+    "large",
+    "menace"
+   ],
+   "use": "The largest dog in the library. Use it where the animal is meant to frighten.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-giant-dog-aggressive-growl-59.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dog_sniffing",
+   "category": "animal",
+   "tags": [
+    "dog",
+    "sniffing",
+    "search",
+    "nose"
+   ],
+   "use": "A dog working a scent. Search, detection and tracking sequences.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-dog-sniffing-the-ground-49.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dogs_pack_barking",
+   "category": "animal",
+   "tags": [
+    "dogs",
+    "pack",
+    "barking",
+    "kennel"
+   ],
+   "use": "Many dogs at once. Kennels, shelters, or a village at night.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horde-of-barking-dogs-60.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "donkey_bray",
+   "category": "animal",
+   "tags": [
+    "donkey",
+    "bray",
+    "distress",
+    "farm"
+   ],
+   "use": "Twelve seconds of braying. Loud, unmistakable, and hard to place under narration.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-donkey-crying-310.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "donkey_bray_sad",
+   "category": "animal",
+   "tags": [
+    "donkey",
+    "bray",
+    "sad",
+    "distress"
+   ],
+   "use": "A more mournful bray. Animal-welfare subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-sad-donkey-crying-313.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "donkey_scream",
+   "category": "animal",
+   "tags": [
+    "donkey",
+    "scream",
+    "bray",
+    "alarm"
+   ],
+   "use": "A single scream rather than a run of brays. Nine seconds.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-donkey-scream-1770.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "donkey_screech",
+   "category": "animal",
+   "tags": [
+    "donkey",
+    "screech",
+    "bray",
+    "harsh"
+   ],
+   "use": "The harshest of the three: fifteen seconds of screeching bray.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-donkey-crying-screech-312.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "eaglet_chirp",
+   "category": "animal",
+   "tags": [
+    "eagle",
+    "chick",
+    "chirp",
+    "raptor"
+   ],
+   "use": "A young raptor calling for food. Not the adult scream people expect — which is why it is worth having.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-eagle-hungry-chirp-72.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "fly_buzzing",
+   "category": "animal",
+   "tags": [
+    "fly",
+    "buzz",
+    "insect",
+    "close"
+   ],
+   "use": "A large fly. Heat, decay, and discomfort in one and a third seconds.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-large-fly-buzzing-41.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "fly_wings",
+   "category": "animal",
+   "tags": [
+    "fly",
+    "wings",
+    "insect",
+    "movement"
+   ],
+   "use": "Wings without the tonal buzz. Closer and more physical than fly_buzzing.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-fly-wings-movement-2697.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "forest_birds_short",
+   "category": "animal",
+   "tags": [
+    "birds",
+    "singing",
+    "forest",
+    "short"
+   ],
+   "use": "Two seconds of forest birdsong. For a cutaway too short for a bed.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-forest-birds-singing-1212.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "geese_flock",
+   "category": "animal",
+   "tags": [
+    "geese",
+    "flock",
+    "migration",
+    "wild"
+   ],
+   "use": "Geese calling in flight. Migration and wetland subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-flock-of-wild-geese-20.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "goat_baa",
+   "category": "animal",
+   "tags": [
+    "goat",
+    "baa",
+    "farm",
+    "livestock"
+   ],
+   "use": "One goat, once. The clean single bleat.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-farm-goat-baa-1763.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "goat_baa_single",
+   "category": "animal",
+   "tags": [
+    "goat",
+    "baa",
+    "single",
+    "pasture"
+   ],
+   "use": "A second goat with a different voice — two are better than one when a herd is on screen.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-goat-single-baa-1760.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "goat_kid_bleat",
+   "category": "animal",
+   "tags": [
+    "goat",
+    "kid",
+    "bleat",
+    "young"
+   ],
+   "use": "A young goat. Higher and shorter than the adults.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-goat-bleat-319.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "hens_clucking",
+   "category": "animal",
+   "tags": [
+    "hens",
+    "clucking",
+    "chickens",
+    "farm"
+   ],
+   "use": "Hens clucking. The short one, for a cutaway.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-chicken-hens-clucking-1768.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_gallop_concrete",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "gallop",
+    "hooves",
+    "concrete"
+   ],
+   "use": "A gallop on hard ground. Thirteen seconds, so it can run under a whole sequence.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horse-fast-gallop-on-a-concrete-surface-83.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "horse_gallop_dirt",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "gallop",
+    "hooves",
+    "dirt"
+   ],
+   "use": "The same gallop on earth: duller, softer, and the one for open country.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horse-fast-gallop-in-the-dirt-77.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "horse_gallop_puddles",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "gallop",
+    "hooves",
+    "water"
+   ],
+   "use": "A gallop through standing water. Weather and picture in one sound.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horse-gallop-on-puddles-in-the-road-79.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "horse_neigh",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "neigh",
+    "stallion",
+    "equine"
+   ],
+   "use": "The default neigh. Three seconds, clean.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-stallion-horse-neigh-1762.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_neigh_intense",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "neigh",
+    "intense",
+    "stallion"
+   ],
+   "use": "A harder neigh with more effort in it.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-intense-horse-stallion-neigh-76.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_neigh_scared",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "neigh",
+    "scared",
+    "alarm"
+   ],
+   "use": "A frightened horse. For an incident, not for a paddock.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-scared-horse-neighing-85.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_scared",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "scared",
+    "agitated",
+    "alarm"
+   ],
+   "use": "Six seconds of an agitated horse: breath, movement and voice together.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-scared-stallion-horse-30.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_snore",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "snore",
+    "rest",
+    "stable"
+   ],
+   "use": "A horse asleep. Stables at night.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horse-stallion-snore-75.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_snort",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "snort",
+    "breath",
+    "equine"
+   ],
+   "use": "A snort. The small close sound that says a large animal is standing there.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-hard-big-horse-snort-80.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "horse_trot_concrete",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "trot",
+    "hooves",
+    "concrete"
+   ],
+   "use": "A trot on the same surface — the pace up from horse_walk_concrete.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horse-trot-on-a-concrete-surface-82.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "horse_walk_concrete",
+   "category": "animal",
+   "tags": [
+    "horse",
+    "walking",
+    "hooves",
+    "concrete"
+   ],
+   "use": "Shod hooves walking on hard ground. Streets and yards.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-horse-walking-fast-on-concrete-84.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "insect_pass",
+   "category": "animal",
+   "tags": [
+    "insect",
+    "pass",
+    "fast",
+    "buzz"
+   ],
+   "use": "An insect crossing the frame. Barely a second.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-fast-insect-pass-by-321.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "jungle_birds_short",
+   "category": "animal",
+   "tags": [
+    "birds",
+    "jungle",
+    "chirping",
+    "tropical"
+   ],
+   "use": "Seven seconds of tropical birds. The short form of jungle_river_loop's bird layer.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-birds-chirping-in-the-jungle-2433.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "jungle_call",
+   "category": "animal",
+   "tags": [
+    "jungle",
+    "call",
+    "animal",
+    "tropical"
+   ],
+   "use": "An unidentified jungle call. Atmosphere for a rainforest sequence where a named species would be a claim.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-jungle-animal-call-318.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "lion_growl_wounded",
+   "category": "animal",
+   "tags": [
+    "lion",
+    "growl",
+    "wounded",
+    "pain"
+   ],
+   "use": "A wounded lion growling. Conservation and hunting subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wounded-lion-growling-5.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "lion_roar",
+   "category": "animal",
+   "tags": [
+    "lion",
+    "roar",
+    "wild",
+    "africa"
+   ],
+   "use": "A lion. The one everyone recognises.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wild-lion-animal-roar-6.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "monkey_chest_call",
+   "category": "animal",
+   "tags": [
+    "monkey",
+    "chest",
+    "call",
+    "display"
+   ],
+   "use": "The same display with a call over it.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-excited-monkey-thumping-chest-call-106.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "monkey_chest_scared",
+   "category": "animal",
+   "tags": [
+    "monkey",
+    "chest",
+    "scared",
+    "alarm"
+   ],
+   "use": "A frightened version of the display.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-scared-monkey-thumping-chest-98.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "monkey_chest_thump",
+   "category": "animal",
+   "tags": [
+    "monkey",
+    "chest",
+    "thump",
+    "display"
+   ],
+   "use": "A chest display. Percussive as well as vocal.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-excited-monkey-thumping-chest-97.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "monkey_grunt",
+   "category": "animal",
+   "tags": [
+    "monkey",
+    "grunt",
+    "excited",
+    "primate"
+   ],
+   "use": "Grunting. The quieter primate cue.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-excited-monkey-grunt-99.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "monkey_screech",
+   "category": "animal",
+   "tags": [
+    "monkey",
+    "screech",
+    "excited",
+    "primate"
+   ],
+   "use": "An excited screech. Real, unlike the cartoon monkeys.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-monkey-excited-screech-105.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "nestlings",
+   "category": "animal",
+   "tags": [
+    "birds",
+    "nest",
+    "chicks",
+    "begging"
+   ],
+   "use": "Nestlings begging. Breeding-season and conservation subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-small-birds-in-the-nest-29.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "owl_shriek",
+   "category": "animal",
+   "tags": [
+    "owl",
+    "shriek",
+    "night",
+    "raptor"
+   ],
+   "use": "An owl's shriek — the barn-owl scream, not the hoot. Night.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-owl-shriek-2479.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pig_drinking",
+   "category": "animal",
+   "tags": [
+    "pig",
+    "drinking",
+    "water",
+    "trough"
+   ],
+   "use": "A pig drinking. Ten seconds of a very specific and very readable sound.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-farm-pig-drinking-water-2242.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pig_grunt_short",
+   "category": "animal",
+   "tags": [
+    "pig",
+    "grunt",
+    "short",
+    "farm"
+   ],
+   "use": "A single short grunt. The smallest pig sound here.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-farm-pig-short-grunt-315.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pig_grunting",
+   "category": "animal",
+   "tags": [
+    "pig",
+    "grunting",
+    "farm",
+    "livestock"
+   ],
+   "use": "Twelve seconds of a pig going about its business. Continuous enough to run under a shot.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-pig-grunting-3.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "pigeons_cooing",
+   "category": "animal",
+   "tags": [
+    "pigeons",
+    "cooing",
+    "urban",
+    "birds"
+   ],
+   "use": "Pigeons cooing. City squares, lofts and station roofs.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-pigeon-coo-ambiance-sounds-74.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pigeons_flutter",
+   "category": "animal",
+   "tags": [
+    "pigeons",
+    "flutter",
+    "wings",
+    "urban"
+   ],
+   "use": "A flock of pigeons taking off. The wings are the sound.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-pigeons-flutter-ambience-73.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "rattlesnake",
+   "category": "animal",
+   "tags": [
+    "rattlesnake",
+    "rattle",
+    "desert",
+    "warning"
+   ],
+   "use": "A rattlesnake warning. Four seconds, and it needs no explanation.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-rattlesnake-in-desert-2493.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "raven_call",
+   "category": "animal",
+   "tags": [
+    "raven",
+    "crow",
+    "call",
+    "corvid"
+   ],
+   "use": "A raven. Cold, northern and slightly ominous.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wild-raven-bird-calling-62.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "rooster_morning",
+   "category": "animal",
+   "tags": [
+    "rooster",
+    "morning",
+    "dawn",
+    "farm"
+   ],
+   "use": "The clean dawn crow with a quiet yard behind it. The one to use if you only use one.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-rooster-crowing-in-the-morning-2462.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sheep_baa",
+   "category": "animal",
+   "tags": [
+    "sheep",
+    "baa",
+    "flock",
+    "pasture"
+   ],
+   "use": "Sheep. Upland farming, wool and pasture subjects.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-sheep-sounds-1741.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "small_birds_trees",
+   "category": "animal",
+   "tags": [
+    "birds",
+    "singing",
+    "trees",
+    "small"
+   ],
+   "use": "Eight seconds of small birds in a tree. Between a cue and a bed.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-little-birds-singing-in-the-trees-17.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wild_grunting",
+   "category": "animal",
+   "tags": [
+    "grunting",
+    "hungry",
+    "wild",
+    "feeding"
+   ],
+   "use": "An unidentified large animal feeding. Use it where the species does not need naming.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wild-animal-hungry-grunting-8.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wolf_howl",
+   "category": "animal",
+   "tags": [
+    "wolf",
+    "howl",
+    "night",
+    "wild"
+   ],
+   "use": "A single wolf howling. Eight seconds — give it space.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wolf-howling-1775.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wolves_forest",
+   "category": "animal",
+   "tags": [
+    "wolves",
+    "forest",
+    "night",
+    "menace"
+   ],
+   "use": "Wolves with a forest around them. Closer to a scene than a cue.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wolves-at-scary-forest-2485.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wolves_pack_howl",
+   "category": "animal",
+   "tags": [
+    "wolves",
+    "pack",
+    "howl",
+    "wild"
+   ],
+   "use": "A pack answering each other.",
+   "src": {
+    "pack": "animal",
+    "file": "mixkit-wolves-pack-howling-1776.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "beast_growl",
+   "category": "creature",
+   "tags": [
+    "growl",
+    "beast",
+    "mythical",
+    "low"
+   ],
+   "use": "A low growl rather than a roar. Threat approaching, not arriving.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-mythical-beast-growl-308.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "beast_roar",
+   "category": "creature",
+   "tags": [
+    "roar",
+    "beast",
+    "wild",
+    "monster"
+   ],
+   "use": "A fuller roar with more body. For the creature being seen rather than heard off-screen.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-wild-beast-roar-12.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "beast_roar_aggressive",
+   "category": "creature",
+   "tags": [
+    "roar",
+    "beast",
+    "aggressive",
+    "monster"
+   ],
+   "use": "A short aggressive roar. The default creature accent.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-aggressive-beast-roar-13.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "beast_roar_long",
+   "category": "creature",
+   "tags": [
+    "roar",
+    "beast",
+    "long",
+    "sustain"
+   ],
+   "use": "A three-second sustained roar. Long enough to carry a reveal.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-beast-long-roar-306.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_animal_pain",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "animal",
+    "pain",
+    "comic"
+   ],
+   "use": "A cartoon animal yelping. Broad comedy only.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-animal-crying-in-pain-2.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_cat_angry",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "cat",
+    "angry",
+    "comic"
+   ],
+   "use": "A cross cartoon meow, half a second long.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-angry-cartoon-kitty-meow-94.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_cat_beg",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "cat",
+    "begging",
+    "comic"
+   ],
+   "use": "A pleading cartoon meow.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-kitty-begging-meow-92.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_cat_meow",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "cat",
+    "meow",
+    "comic"
+   ],
+   "use": "A performed cartoon meow. Not a recording of a cat — cat_meow_sweet is.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-little-cat-meow-91.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_hyena_laugh",
+   "category": "creature",
+   "tags": [
+    "hyena",
+    "laugh",
+    "cartoon",
+    "comic"
+   ],
+   "use": "A cartoon hyena laugh. Comic, and clearly performed.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-hyena-cartoon-laugh-419.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_insect",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "insect",
+    "complain",
+    "comic"
+   ],
+   "use": "A grumbling cartoon insect. For animation, not for entomology.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-insect-complain-32.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_monkey_applause",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "monkey",
+    "applause",
+    "comic"
+   ],
+   "use": "Cartoon applause with a monkey in it. Four seconds of pure silliness.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-monkey-applause-103.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_monkey_laugh",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "monkey",
+    "laugh",
+    "comic"
+   ],
+   "use": "A cartoon monkey laughing.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-monkey-laugh-100.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_monkey_laugh_baby",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "monkey",
+    "baby",
+    "laugh"
+   ],
+   "use": "The smaller, higher version of cartoon_monkey_laugh.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-baby-monkey-laugh-102.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_monkey_mock",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "monkey",
+    "mocking",
+    "giggle"
+   ],
+   "use": "Mocking giggles. A reaction cue for animation.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-monkey-mocking-and-giggling-108.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cartoon_wolf_howl",
+   "category": "creature",
+   "tags": [
+    "cartoon",
+    "wolf",
+    "howl",
+    "comic"
+   ],
+   "use": "A cartoon howl. For the joke version of wolf_howl.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-cartoon-wolf-howling-1774.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "creature_breath",
+   "category": "creature",
+   "tags": [
+    "breathing",
+    "creature",
+    "heavy",
+    "menace"
+   ],
+   "use": "Heavy creature breathing. Something large just out of frame.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-loud-creature-breathing-2231.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "creature_roar",
+   "category": "creature",
+   "tags": [
+    "roar",
+    "creature",
+    "nasty",
+    "designed"
+   ],
+   "use": "A wet, unpleasant roar. Horror rather than fantasy.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-nasty-criature-roar-2781.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "desert_creature",
+   "category": "creature",
+   "tags": [
+    "desert",
+    "creature",
+    "strange",
+    "call"
+   ],
+   "use": "An unidentifiable desert call. Use it where the film wants the unknown rather than a named species.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-strange-animal-of-the-desert-2487.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dragon_growl",
+   "category": "creature",
+   "tags": [
+    "dragon",
+    "growl",
+    "fantasy",
+    "angry"
+   ],
+   "use": "Five seconds of dragon. Fantasy, folklore and mythology subjects.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-angry-dragon-growl-309.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dragon_roar",
+   "category": "creature",
+   "tags": [
+    "dragon",
+    "roar",
+    "fantasy",
+    "large"
+   ],
+   "use": "The full dragon roar. Big enough to be the loudest thing in a scene.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-big-dragon-in-the-wild-roar-16.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "monster_roar",
+   "category": "creature",
+   "tags": [
+    "roar",
+    "monster",
+    "aggressive",
+    "large"
+   ],
+   "use": "The largest of the roars: layered and clearly designed. Titles and trailers.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-aggressive-monster-beast-roar-14.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "venom_squirt",
+   "category": "creature",
+   "tags": [
+    "venom",
+    "squirt",
+    "snake",
+    "wet"
+   ],
+   "use": "A designed venom spray. Wholly synthetic — do not use it in a wildlife film as if it were a recording.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-snake-poison-squirt-sound-327.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "zombie_breath",
+   "category": "creature",
+   "tags": [
+    "zombie",
+    "breath",
+    "horror",
+    "undead"
+   ],
+   "use": "One rasping breath. Quieter and more effective than zombie_roar.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-single-zombie-breath-2233.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "zombie_roar",
+   "category": "creature",
+   "tags": [
+    "zombie",
+    "roar",
+    "horror",
+    "undead"
+   ],
+   "use": "A short zombie snarl. Horror and Halloween material.",
+   "src": {
+    "pack": "creature",
+    "file": "mixkit-frightening-zombie-roar-2235.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "applause_light",
+   "category": "crowd",
+   "tags": [
+    "applause",
+    "stadium",
+    "light",
+    "polite"
+   ],
+   "use": "Polite applause in a large space. The restrained one — for a conference, an award or a result.",
+   "src": {
+    "pack": "crowd",
+    "file": "mixkit-stadium-crowd-light-applause-362.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "crowd_cheer_applause",
+   "category": "crowd",
+   "tags": [
+    "cheer",
+    "applause",
+    "group",
+    "celebration"
+   ],
+   "use": "A small group cheering. Ten seconds, so it can run under a whole celebration shot.",
+   "src": {
+    "pack": "crowd",
+    "file": "mixkit-small-group-cheer-and-applause-518.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "crowd_laugh",
+   "category": "crowd",
+   "tags": [
+    "laughter",
+    "crowd",
+    "audience",
+    "reaction"
+   ],
+   "use": "An audience laughing. For a joke that landed, or an archive clip that needs a room around it.",
+   "src": {
+    "pack": "crowd",
+    "file": "mixkit-crowd-laugh-424.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "crowd_laugh_applause",
+   "category": "crowd",
+   "tags": [
+    "laughter",
+    "applause",
+    "audience",
+    "reaction"
+   ],
+   "use": "Laughter turning into applause. A small room — a lecture theatre rather than a stadium.",
+   "src": {
+    "pack": "crowd",
+    "file": "mixkit-small-crowd-laugh-and-applause-422.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kids_playing",
+   "category": "crowd",
+   "tags": [
+    "children",
+    "playing",
+    "laughter",
+    "school"
+   ],
+   "use": "Children playing and laughing. Shorter than playground_loop and closer to the camera.",
+   "src": {
+    "pack": "crowd",
+    "file": "mixkit-kids-playing-and-laughing-2261.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kids_screaming",
+   "category": "crowd",
+   "tags": [
+    "children",
+    "screaming",
+    "play",
+    "excitement"
+   ],
+   "use": "Children shrieking with excitement. Loud and unmistakably play, not distress.",
+   "src": {
+    "pack": "crowd",
+    "file": "mixkit-vocal-kids-playing-and-screaming-2262.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bass_pulse_loop",
+   "category": "drone",
+   "tags": [
+    "pulse",
+    "bass",
+    "tension",
+    "mystery",
+    "bed"
+   ],
+   "use": "Slow pulsing low end under an unresolved passage. Musical in a way drone_low_loop is not, so do not run it under a music bed.",
+   "src": {
+    "pack": "drone",
+    "file": "mixkit-mystwrious-bass-pulse-2298.wav"
+   },
+   "loop": {
+    "length_s": 14.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "machine_hum_loop",
+   "category": "drone",
+   "tags": [
+    "machine",
+    "industrial",
+    "factory",
+    "hum",
+    "bed"
+   ],
+   "use": "Factory and plant-room interiors. A steady mechanical hum with no cycle audible in it — also usable as an oppressive room tone under an interview about work.",
+   "src": {
+    "pack": "drone",
+    "file": "mixkit-industrial-machine-hum-2504.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "suspense_waiting_loop",
+   "category": "drone",
+   "tags": [
+    "suspense",
+    "waiting",
+    "tension",
+    "quiz",
+    "bed"
+   ],
+   "use": "The televised-suspense cue: a ticking musical loop for a result about to be revealed. It is music, not texture — use it instead of a score, never under one.",
+   "src": {
+    "pack": "drone",
+    "file": "mixkit-game-show-suspense-waiting-667.wav"
+   },
+   "loop": {
+    "length_s": 24.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "tech_hum_loop",
+   "category": "drone",
+   "tags": [
+    "technology",
+    "hum",
+    "futuristic",
+    "server",
+    "bed"
+   ],
+   "use": "Server rooms, labs and anywhere the subject is a machine thinking. A short tonal loop: repeat it as long as the passage needs.",
+   "src": {
+    "pack": "drone",
+    "file": "mixkit-technological-futuristic-hum-2133.wav"
+   },
+   "loop": {
+    "length_s": 4.0,
+    "crossfade_s": 1.0
+   }
+  },
+  {
+   "id": "atm_key_press",
+   "category": "foley",
+   "tags": [
+    "atm",
+    "keypad",
+    "press",
+    "machine"
+   ],
+   "use": "A cash-machine key press. Mechanical and public — different in character from a soft UI click.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-atm-cash-machine-key-press-2841.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "doorbell",
+   "category": "foley",
+   "tags": [
+    "doorbell",
+    "press",
+    "arrival",
+    "home"
+   ],
+   "use": "Someone at the door. Domestic arrival, one press.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-doorbell-single-press-333.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "dry_leaves",
+   "category": "foley",
+   "tags": [
+    "leaves",
+    "dry",
+    "rustle",
+    "autumn"
+   ],
+   "use": "A handful of dry leaves moving. Small, close and specific — for a cutaway to the forest floor.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-dry-leaves-sound-2428.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "fish_in_water",
+   "category": "foley",
+   "tags": [
+    "fish",
+    "water",
+    "splash",
+    "movement"
+   ],
+   "use": "A fish moving just under the surface. Small water movement for an aquaculture or river sequence.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-fish-moving-in-water-2921.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "footsteps_grass_loop",
+   "category": "foley",
+   "tags": [
+    "footsteps",
+    "grass",
+    "walking",
+    "field",
+    "bed"
+   ],
+   "use": "Walking through long grass. The movement bed for a field sequence — under a walking shot it does what a music cue would otherwise have to.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-footsteps-on-tall-grass-532.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "hydraulic_door",
+   "category": "foley",
+   "tags": [
+    "hydraulic",
+    "door",
+    "bus",
+    "pneumatic"
+   ],
+   "use": "The pneumatic hiss of a bus door. Places a shot in public transport in under two seconds.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-hydraulic-bus-door-2709.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "keyboard_typing_loop",
+   "category": "foley",
+   "tags": [
+    "keyboard",
+    "typing",
+    "office",
+    "work",
+    "bed"
+   ],
+   "use": "Someone working at a keyboard. A bed, not a per-character trigger — type_key is the one you retrigger.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-keyboard-typing-1386.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "metal_door_close",
+   "category": "foley",
+   "tags": [
+    "metal",
+    "door",
+    "close",
+    "heavy"
+   ],
+   "use": "A heavy metal door closing. Industrial, institutional, or the end of an act.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-metal-tank-door-closing-2754.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "metal_hatch_open",
+   "category": "foley",
+   "tags": [
+    "metal",
+    "hatch",
+    "open",
+    "mechanism"
+   ],
+   "use": "A metal hatch being opened. The opening counterpart to metal_door_close.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-small-tank-hatch-opening-2755.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "mic_hit",
+   "category": "foley",
+   "tags": [
+    "microphone",
+    "hit",
+    "thud",
+    "studio"
+   ],
+   "use": "Something striking a live microphone. For an interview cutaway or as an honest imperfection at the top of a piece.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-microphone-hit-2181.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "punch_fast",
+   "category": "foley",
+   "tags": [
+    "punch",
+    "hit",
+    "fight",
+    "body"
+   ],
+   "use": "A fast body punch. Sport, conflict and anywhere the picture shows contact.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-martial-arts-fast-punch-2047.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "shop_door_bell",
+   "category": "foley",
+   "tags": [
+    "shop",
+    "bell",
+    "door",
+    "retail"
+   ],
+   "use": "The bell over a shop door. Small-business and high-street subjects.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-store-door-bell-ring-934.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "telephone_vintage",
+   "category": "foley",
+   "tags": [
+    "telephone",
+    "ring",
+    "vintage",
+    "call"
+   ],
+   "use": "An old telephone ringing. Archive and historical sequences; also the honest sound for a call that is being dramatised.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-vintage-telephone-ringtone-1356.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "toy_whistle",
+   "category": "foley",
+   "tags": [
+    "whistle",
+    "toy",
+    "comic",
+    "play"
+   ],
+   "use": "A toy slide whistle. Children, play and comic beats only.",
+   "src": {
+    "pack": "foley",
+    "file": "mixkit-cartoon-toy-whistle-616.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "blow_breath",
+   "category": "human",
+   "tags": [
+    "blow",
+    "breath",
+    "mouth",
+    "sustained"
+   ],
+   "use": "A longer sustained blow. Wind instruments, hot drinks, cold hands.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-persons-mouth-blowing-2661.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "blow_fast",
+   "category": "human",
+   "tags": [
+    "blow",
+    "mouth",
+    "puff",
+    "dust"
+   ],
+   "use": "A fast puff of air. Blowing out a candle, clearing dust, or a small comic exhale.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-human-mouth-fast-blow-2659.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "breath_artificial",
+   "category": "human",
+   "tags": [
+    "breath",
+    "artificial",
+    "mask",
+    "machine"
+   ],
+   "use": "A single processed breath — through a mask, a machine or a helmet. Medical or science-fiction, not a person in a room.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-single-artificial-breathe-2239.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "chewing_crunchy",
+   "category": "human",
+   "tags": [
+    "chewing",
+    "crunchy",
+    "eating",
+    "food"
+   ],
+   "use": "One crunchy bite. Food, agriculture and anything about what people actually eat.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-chewing-something-crunchy-2244.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "child_babble",
+   "category": "human",
+   "tags": [
+    "babble",
+    "child",
+    "talk",
+    "gibberish"
+   ],
+   "use": "A small child talking without words. Family, early-years and language subjects; no language to date or place it.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-little-boy-gibberish-talk-2260.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "child_breath",
+   "category": "human",
+   "tags": [
+    "breath",
+    "child",
+    "deep",
+    "calm"
+   ],
+   "use": "A child taking a deep breath. Use it before something a child is about to do.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-child-deep-breath-2237.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "child_laugh",
+   "category": "human",
+   "tags": [
+    "laugh",
+    "child",
+    "happy",
+    "short"
+   ],
+   "use": "A short child's laugh. The lightest human sound in the library.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-child-laughing-happily-2263.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "child_laugh_happy",
+   "category": "human",
+   "tags": [
+    "laugh",
+    "child",
+    "delight",
+    "sustained"
+   ],
+   "use": "A longer, more delighted child's laugh. Two and a half seconds, so it can carry a cutaway.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-happy-child-laughing-2265.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_hard",
+   "category": "human",
+   "tags": [
+    "cough",
+    "hard",
+    "chest",
+    "illness"
+   ],
+   "use": "A hard chest cough. Use it once; a run of these turns a serious subject into an impression of one.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-man-coughing-hard-2228.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_loud",
+   "category": "human",
+   "tags": [
+    "cough",
+    "loud",
+    "man",
+    "illness"
+   ],
+   "use": "A loud, unguarded cough. The most foreground of the coughs — it will pull focus.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-man-coughing-loud-2222.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_man",
+   "category": "human",
+   "tags": [
+    "cough",
+    "man",
+    "illness",
+    "throat"
+   ],
+   "use": "A plain single cough. Health, air-quality and occupational-illness subjects — the everyday one.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-man-coughing-2224.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_sick",
+   "category": "human",
+   "tags": [
+    "cough",
+    "sick",
+    "weak",
+    "illness"
+   ],
+   "use": "A weaker cough from someone genuinely unwell. Quieter and more honest than cough_loud for a medical piece.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-sick-male-cough-2225.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_very_sick",
+   "category": "human",
+   "tags": [
+    "cough",
+    "severe",
+    "illness",
+    "fit"
+   ],
+   "use": "A three-second coughing fit. Strong material — reserve it for a film about respiratory illness.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-very-sick-man-coughing-2219.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_woman",
+   "category": "human",
+   "tags": [
+    "cough",
+    "woman",
+    "illness",
+    "chest"
+   ],
+   "use": "A woman's cough. The library needs it for the same reason it needs cough_man: half of everyone.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-sick-woman-coughing-2218.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "cough_young_man",
+   "category": "human",
+   "tags": [
+    "cough",
+    "young",
+    "man",
+    "throat"
+   ],
+   "use": "A younger voice coughing. Use it where cough_man would read as older than the person on screen.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-young-man-coughing-2227.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "eating_man",
+   "category": "human",
+   "tags": [
+    "eating",
+    "hungry",
+    "food",
+    "mouth"
+   ],
+   "use": "Hurried eating. Close and unglamorous — which is usually the point when a film shows a meal.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-hungry-man-eating-2252.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "exclaim_pain",
+   "category": "human",
+   "tags": [
+    "pain",
+    "exclamation",
+    "woman",
+    "hurt"
+   ],
+   "use": "A short exclamation of pain. Injury and accident sequences — brief, and not graphic.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-ah-woman-exclamation-of-pain-2205.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "gasp_female",
+   "category": "human",
+   "tags": [
+    "gasp",
+    "astonished",
+    "surprise",
+    "woman"
+   ],
+   "use": "A sharp gasp of astonishment. For a reveal seen by someone, not by the audience.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-female-astonished-gasp-964.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kiss_big",
+   "category": "human",
+   "tags": [
+    "kiss",
+    "affection",
+    "loud",
+    "warm"
+   ],
+   "use": "A big, unmistakable kiss. Comic or affectionate, never subtle.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-big-loving-kiss-2191.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kiss_double",
+   "category": "human",
+   "tags": [
+    "kiss",
+    "double",
+    "greeting",
+    "cheek"
+   ],
+   "use": "Two quick kisses — the cheek-kiss greeting rather than a romantic one.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-flirtatious-double-kiss-2196.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kiss_long",
+   "category": "human",
+   "tags": [
+    "kiss",
+    "long",
+    "affection",
+    "close"
+   ],
+   "use": "A longer kiss. Romance, reunion, farewell.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-long-kiss-2190.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kiss_loving",
+   "category": "human",
+   "tags": [
+    "kiss",
+    "loving",
+    "tender",
+    "close"
+   ],
+   "use": "Softer than kiss_long, and closer to the microphone.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-long-loving-kiss-2195.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "kiss_small",
+   "category": "human",
+   "tags": [
+    "kiss",
+    "small",
+    "peck",
+    "quick"
+   ],
+   "use": "A quick peck. The one to use on a greeting.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-little-cute-kiss-2192.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "lips_smacking",
+   "category": "human",
+   "tags": [
+    "sleep",
+    "lips",
+    "mouth",
+    "detail"
+   ],
+   "use": "Lips smacking in sleep. A small, uncomfortably intimate detail — use it deliberately.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-sleeping-mouth-smacking-lips-2480.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "scream_pain",
+   "category": "human",
+   "tags": [
+    "scream",
+    "pain",
+    "fight",
+    "injury"
+   ],
+   "use": "A pained scream from a fight. Strong material; use it where the film has earned it.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-human-fighter-pain-scream-2768.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sleep_breath",
+   "category": "human",
+   "tags": [
+    "sleep",
+    "breathing",
+    "rest",
+    "calm"
+   ],
+   "use": "Five seconds of slow sleeping breath. Quiet enough to lay under a night shot as a bed.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-male-sleep-breathe-2236.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sneeze_baby",
+   "category": "human",
+   "tags": [
+    "sneeze",
+    "baby",
+    "infant",
+    "small"
+   ],
+   "use": "An infant sneeze. Small and immediately readable as a very young child.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-little-baby-sneeze-2214.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sneeze_man",
+   "category": "human",
+   "tags": [
+    "sneeze",
+    "man",
+    "cold",
+    "allergy"
+   ],
+   "use": "A single sneeze. Colds, allergies, pollen and dust.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-sick-man-sneeze-2213.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "snore",
+   "category": "human",
+   "tags": [
+    "snore",
+    "sleep",
+    "night",
+    "breath"
+   ],
+   "use": "A single strong snore. Sleep, fatigue and night sequences.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-man-strong-snore-2478.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "throat_clear",
+   "category": "human",
+   "tags": [
+    "throat",
+    "clear",
+    "speak",
+    "hesitate"
+   ],
+   "use": "Clearing the throat before speaking. The sound of someone about to say something difficult.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-male-clearing-the-throat-2226.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tribal_voice",
+   "category": "human",
+   "tags": [
+    "voice",
+    "chant",
+    "ritual",
+    "ancient"
+   ],
+   "use": "A chanted ritual voice. It carries a strong cultural signal — only use it where the film is about that culture and can say which.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-shaman-ancient-tribal-voice-2424.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "voice_no_no_no",
+   "category": "human",
+   "tags": [
+    "voice",
+    "refusal",
+    "comic",
+    "girl"
+   ],
+   "use": "A performed \"no, no, no\". It is a comic line reading, not a sound effect — treat it as dialogue.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-cartoon-girl-saying-no-no-no-2257.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "waking_up",
+   "category": "human",
+   "tags": [
+    "waking",
+    "morning",
+    "stretch",
+    "groan"
+   ],
+   "use": "Someone surfacing in the morning: breath, movement, a groan. Six seconds, so it can carry a whole cutaway.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-man-waking-up-in-the-morning-2469.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "yawn_cartoon",
+   "category": "human",
+   "tags": [
+    "yawn",
+    "cartoon",
+    "comic",
+    "vocal"
+   ],
+   "use": "A performed, comic yawn. Only for a piece that is already playing for laughs.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-cartoon-vocal-yawn-2268.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "yawn_deep",
+   "category": "human",
+   "tags": [
+    "yawn",
+    "deep",
+    "long",
+    "fatigue"
+   ],
+   "use": "A long, deep yawn. Exhaustion rather than boredom.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-person-yawns-deeply-2275.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "yawn_quiet",
+   "category": "human",
+   "tags": [
+    "yawn",
+    "quiet",
+    "restrained",
+    "man"
+   ],
+   "use": "A yawn someone is trying to hide. Works under narration where yawn_tired would not.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-man-yawns-quietly-2271.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "yawn_short",
+   "category": "human",
+   "tags": [
+    "yawn",
+    "tired",
+    "short",
+    "man"
+   ],
+   "use": "The shortest yawn here. For a beat about boredom or fatigue that must not overstay.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-yawn-of-adult-man-2267.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "yawn_stretch",
+   "category": "human",
+   "tags": [
+    "yawn",
+    "stretch",
+    "waking",
+    "body"
+   ],
+   "use": "Yawn and stretch together, with the body in it. Pairs with waking_up.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-male-yawning-while-streching-2277.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "yawn_tired",
+   "category": "human",
+   "tags": [
+    "yawn",
+    "tired",
+    "man",
+    "fatigue"
+   ],
+   "use": "An audible tired yawn. The default of the five.",
+   "src": {
+    "pack": "human",
+    "file": "mixkit-male-tired-yawn-2272.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_laser_thunder",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "laser",
+    "thunder",
+    "sci-fi"
+   ],
+   "use": "A synthetic strike with a thunder tail. Fits science and technology subjects where a horn braam would be too romantic.",
+   "src": {
+    "pack": "impact",
+    "file": "mixkit-cinematic-laser-gun-thunder-1287.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_trailer",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "trailer",
+    "hit",
+    "title"
+   ],
+   "use": "A trailer hit with a six-second tail. Title cards and act breaks where impact_cinematic has already been used.",
+   "src": {
+    "pack": "impact",
+    "file": "mixkit-cool-impact-movie-trailer-2909.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "impact_trailer_epic",
+   "category": "impact",
+   "tags": [
+    "impact",
+    "epic",
+    "boom",
+    "title"
+   ],
+   "use": "The biggest impact in the library: a deep boom with a wide tail. For an opening title, not a chapter heading.",
+   "src": {
+    "pack": "impact",
+    "file": "mixkit-movie-trailer-epic-impact-2908.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "echo_swell",
+   "category": "instrument",
+   "tags": [
+    "swell",
+    "echo",
+    "reverb",
+    "build"
+   ],
+   "use": "A tonal swell into echo. Between an instrument and a transition — use it where a riser would be too obvious.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-instrument-echo-swell-2673.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_body_hit",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "body",
+    "percussive",
+    "hit"
+   ],
+   "use": "A percussive hit on the guitar body. A dry accent with a wooden character.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-western-guitar-drum-single-2333.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_chords_happy",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "chords",
+    "positive",
+    "resolve"
+   ],
+   "use": "A short major figure. A resolution cue for a light piece — over in just over a second.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-happy-guitar-chords-2319.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_nylon_note",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "nylon",
+    "classical",
+    "note"
+   ],
+   "use": "A single nylon-string note. The softest guitar sound here — it will sit under speech.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-nylon-guitar-single-note-2332.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_riff",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "riff",
+    "electric",
+    "accent"
+   ],
+   "use": "A brief riff with attitude. It is a musical statement, so it will fight a score.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-cool-guitar-riff-2321.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_slide_bass",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "slide",
+    "bass",
+    "low"
+   ],
+   "use": "A slide on the bass string. Lower and shorter — a full stop rather than a journey.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-sliding-on-guitar-bass-string-2336.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_slide_noise",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "noise",
+    "fingers",
+    "texture"
+   ],
+   "use": "Finger noise on wound strings, no note. Texture for a montage about craft or practice.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-guitar-slide-noise-2337.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_slide_western",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "slide",
+    "western",
+    "twang"
+   ],
+   "use": "A twanging western slide. It carries a genre with it; only use it where that genre is the subject.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-western-guitar-slide-2334.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_sliding",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "slide",
+    "glissando",
+    "transition"
+   ],
+   "use": "Ten seconds of sliding on the strings. Usable as a transition in a film that already has guitar in it.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-sliding-on-guitar-2335.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_string_acute",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "string",
+    "single",
+    "sharp"
+   ],
+   "use": "One sharply plucked string. A punctuation mark for an acoustic film.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-acute-guitar-single-string-2325.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_string_clink",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "clink",
+    "harmonic",
+    "detail"
+   ],
+   "use": "A string clinking against a fret. The small human detail you put under a close-up of hands.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-musical-guitar-string-clink-2327.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_string_tone",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "string",
+    "tone",
+    "sustain"
+   ],
+   "use": "A plucked string left to sustain. Warmer and rounder than guitar_string_acute.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-guitar-string-tone-2326.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_stroke_down",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "strum",
+    "down",
+    "slow"
+   ],
+   "use": "A slow downward strum, allowed to ring out. Opens a scene in an acoustic film.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-guitar-stroke-down-slow-2339.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_stroke_up",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "strum",
+    "up",
+    "slow"
+   ],
+   "use": "The upward strum. Pairs with guitar_stroke_down across a cut.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-guitar-stroke-up-slow-2338.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_tone_negative",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "negative",
+    "wrong",
+    "refuse"
+   ],
+   "use": "The guitar equivalent of error_soft: a tone that says no without buzzing.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-negative-guitar-tone-2324.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_tone_quick",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "quick",
+    "tone",
+    "accent"
+   ],
+   "use": "Half a second of guitar. For a bullet or a caption landing in a film with acoustic music.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-quick-guitar-tone-2323.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "guitar_tones_melodic",
+   "category": "instrument",
+   "tags": [
+    "guitar",
+    "melodic",
+    "phrase",
+    "interlude"
+   ],
+   "use": "Seventeen seconds of melodic guitar — an interlude rather than an effect. Fade it under narration.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-melodic-guitar-tones-2341.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "trumpet_fanfare",
+   "category": "instrument",
+   "tags": [
+    "trumpet",
+    "fanfare",
+    "announce",
+    "ceremony"
+   ],
+   "use": "A brass fanfare. Announcement, ceremony, or a deliberately overblown reveal.",
+   "src": {
+    "pack": "instrument",
+    "file": "mixkit-trumpet-fanfare-2293.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "airfield_loop",
+   "category": "place",
+   "tags": [
+    "airfield",
+    "aircraft",
+    "helicopter",
+    "traffic",
+    "bed"
+   ],
+   "use": "Airports, heliports and anywhere aviation is the industry on screen. Continuous engine wash with a rotor working through it.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-air-traffic-ambience-with-helicopter-2714.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "birds_morning_loop",
+   "category": "place",
+   "tags": [
+    "birds",
+    "morning",
+    "trees",
+    "garden",
+    "bed"
+   ],
+   "use": "The tighter dawn chorus: fewer birds, closer, with air between the calls. Use where dawn_chorus_loop is too busy to sit under narration.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-morning-birds-singing-2467.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "brook_birds_loop",
+   "category": "place",
+   "tags": [
+    "brook",
+    "water",
+    "birds",
+    "meadow",
+    "bed"
+   ],
+   "use": "A small watercourse in open country, birds over it. Between stream_loop and river_flow_loop in scale.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-natural-ambience-with-flowing-water-and-birds-61.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "bus_interior_loop",
+   "category": "place",
+   "tags": [
+    "bus",
+    "interior",
+    "passengers",
+    "commute",
+    "bed"
+   ],
+   "use": "Inside a moving bus with passengers. Engine drone plus muffled voices — a commuting bed for interviews shot on the move.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-bus-interior-ambience-with-people-2707.wav"
+   },
+   "loop": {
+    "length_s": 15.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "bus_station_loop",
+   "category": "place",
+   "tags": [
+    "bus",
+    "station",
+    "transit",
+    "city",
+    "bed"
+   ],
+   "use": "Transport interiors and forecourts. Engines idling with announcements and footsteps around them.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-bus-station-ambience-2708.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "bus_station_wide_loop",
+   "category": "place",
+   "tags": [
+    "bus",
+    "terminal",
+    "transit",
+    "concourse",
+    "bed"
+   ],
+   "use": "The wider terminal: more room, less engine. Pairs with station_hall_loop where the transport is road rather than rail.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-bus-station-environment-2711.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "city_day_loop",
+   "category": "place",
+   "tags": [
+    "city",
+    "street",
+    "urban",
+    "traffic",
+    "bed"
+   ],
+   "use": "Street-level city daytime: traffic, footsteps and voices at distance. Closer and busier than city_distant_loop — for a shot that is in the street rather than above it.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-urban-ambience-during-the-day-2505.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "crickets_field_loop",
+   "category": "place",
+   "tags": [
+    "crickets",
+    "insects",
+    "field",
+    "dusk",
+    "bed"
+   ],
+   "use": "Open country at dusk. Drier and more even than night_forest_loop, with no trees in it — the loop point is invisible.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-crickets-and-insects-in-the-wild-ambience-39.wav"
+   },
+   "loop": {
+    "length_s": 22.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "dawn_chorus_loop",
+   "category": "place",
+   "tags": [
+    "birds",
+    "dawn",
+    "morning",
+    "spring",
+    "bed"
+   ],
+   "use": "Spring morning exteriors and the opening of a rural film. A full dawn chorus at distance — many birds, no single foreground call, which is why a thirty-second window disappears into itself.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-morning-birds-2472.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "farmyard_morning_loop",
+   "category": "place",
+   "tags": [
+    "farmyard",
+    "animals",
+    "chickens",
+    "morning",
+    "bed"
+   ],
+   "use": "Farm exteriors. A yard waking up: hens, distant cattle, a cockerel somewhere off-mic. The bed for agriculture, food-system and rural-history films.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-farm-animals-in-the-morning-7.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "frogs_wetland_loop",
+   "category": "place",
+   "tags": [
+    "frogs",
+    "wetland",
+    "marsh",
+    "forest",
+    "bed"
+   ],
+   "use": "Wetland, marsh and pond exteriors. Croaking frogs over a still forest floor; the calls are dense enough that no single one gives the wrap away.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-forest-ambience-with-croaking-frogs-1241.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "garden_morning_loop",
+   "category": "place",
+   "tags": [
+    "garden",
+    "morning",
+    "suburban",
+    "birds",
+    "bed"
+   ],
+   "use": "Domestic exteriors — a back garden, a terrace, a suburban street at breakfast. Birds with a faint town wash behind them, which is what places it as inhabited rather than wild.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-morning-sound-in-a-garden-2464.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "goat_herd_close_loop",
+   "category": "place",
+   "tags": [
+    "goats",
+    "herd",
+    "pen",
+    "livestock",
+    "bed"
+   ],
+   "use": "The same herd close up, in a pen rather than a field. More individual voices — keep it under speech.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-goat-herd-moving-1758.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "goat_herd_loop",
+   "category": "place",
+   "tags": [
+    "goats",
+    "herd",
+    "pasture",
+    "livestock",
+    "bed"
+   ],
+   "use": "Pastoral farming: a goat herd on the move, bells and bleats spread across the field. Long window because the calls are sparse.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-goat-herd-move-out-1757.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jungle_rain_birds_loop",
+   "category": "place",
+   "tags": [
+    "jungle",
+    "rain",
+    "birds",
+    "tropical",
+    "bed"
+   ],
+   "use": "Tropical exteriors under rain. Mono at source, so it sits centred in the mix — an advantage under a stereo music bed rather than a defect.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-jungle-rain-and-birds-2392.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jungle_river_loop",
+   "category": "place",
+   "tags": [
+    "jungle",
+    "river",
+    "water",
+    "tropical",
+    "bed"
+   ],
+   "use": "Tropical waterway: fast water with jungle life around it. The busiest of the water beds — keep it under narration, not beside it.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-river-surroundings-in-the-jungle-2451.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "meadow_birds_loop",
+   "category": "place",
+   "tags": [
+    "meadow",
+    "birds",
+    "grass",
+    "open",
+    "bed"
+   ],
+   "use": "Grassland with birds and nothing man-made. The companion to meadow_day_loop when the shot wants birds more than wind.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-meadow-birds-isolated-28.wav"
+   },
+   "loop": {
+    "length_s": 28.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "night_forest_loop",
+   "category": "place",
+   "tags": [
+    "insects",
+    "night",
+    "forest",
+    "woodland",
+    "bed"
+   ],
+   "use": "Night exteriors in woodland. Denser and more wooded than night_crickets_loop: insects plus the faint movement of trees.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-night-forest-with-insects-2414.wav"
+   },
+   "loop": {
+    "length_s": 28.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "owl_forest_loop",
+   "category": "place",
+   "tags": [
+    "owl",
+    "forest",
+    "night",
+    "woodland",
+    "bed"
+   ],
+   "use": "Night woodland with an owl in it. The calls are the point, so this reads as a scene rather than a neutral bed — for a plain night bed use night_crickets_loop.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-owl-in-a-forest-2466.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "pigsty_herd_loop",
+   "category": "place",
+   "tags": [
+    "pigsty",
+    "pigs",
+    "livestock",
+    "barn",
+    "bed"
+   ],
+   "use": "Intensive livestock interiors. A herd close and constant — the sound of a modern piggery, which is a specific and unmistakable place.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-pig-herd-grunt-and-cry-1765.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "pigsty_loop",
+   "category": "place",
+   "tags": [
+    "pigsty",
+    "pigs",
+    "barn",
+    "farm",
+    "bed"
+   ],
+   "use": "The calmer sty: fewer animals, more room. Use under narration where pigsty_herd_loop would fight it.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-pig-sty-ambience-1753.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "playground_loop",
+   "category": "place",
+   "tags": [
+    "playground",
+    "children",
+    "school",
+    "park",
+    "bed"
+   ],
+   "use": "Schools, parks and family scenes. Children at play at middle distance; individual shouts are audible, so keep it low under narration.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-playground-with-kids-playing-2266.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "river_birds_loop",
+   "category": "place",
+   "tags": [
+    "river",
+    "birds",
+    "water",
+    "forest",
+    "bed"
+   ],
+   "use": "Riverbank exteriors. Running water with birdsong over it — the two elements documentaries pair for \"somewhere green and alive\" without naming a country.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-birds-chirping-near-the-river-2473.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "river_flow_loop",
+   "category": "place",
+   "tags": [
+    "river",
+    "water",
+    "flow",
+    "countryside",
+    "bed"
+   ],
+   "use": "The plain river bed: moving water with a quiet bank behind it. Use under maps, chronologies and reflective passages where stream_loop is too small a body of water.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-river-water-flow-and-surroundings-2452.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "train_station_loop",
+   "category": "place",
+   "tags": [
+    "train",
+    "station",
+    "platform",
+    "transit",
+    "bed"
+   ],
+   "use": "Railway platforms. Brighter and more open than station_hall_loop, with rolling stock rather than reverberant footsteps.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-train-station-ambience-2677.wav"
+   },
+   "loop": {
+    "length_s": 14.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "water_flowing_loop",
+   "category": "place",
+   "tags": [
+    "water",
+    "flowing",
+    "brook",
+    "channel",
+    "bed"
+   ],
+   "use": "Neutral moving-water texture with nothing else in it. The one to reach for when the picture is water and the film is about something else.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-water-flowing-ambience-loop-3126.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "woodland_birds_loop",
+   "category": "place",
+   "tags": [
+    "woodland",
+    "birds",
+    "forest",
+    "canopy",
+    "bed"
+   ],
+   "use": "Deciduous woodland in daylight, birds in the canopy. Close in use to forest_day_loop; this one has no insects, so it works in a cooler season.",
+   "src": {
+    "pack": "place",
+    "file": "mixkit-forest-birds-chirp-ambiance-69.wav"
+   },
+   "loop": {
+    "length_s": 28.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "air_woosh",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "air",
+    "cut",
+    "scene-change"
+   ],
+   "use": "A wide air rush for a full scene change. Longer and softer than whoosh_soft — land the cut about two thirds of the way through.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-air-woosh-1489.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "arrow_whoosh",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "arrow",
+    "fast",
+    "pass"
+   ],
+   "use": "A tight pass-by with a point to it. Good on a wipe that travels across the frame rather than through it.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-arrow-whoosh-1491.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "intro_transition",
+   "category": "transition",
+   "tags": [
+    "intro",
+    "opening",
+    "title",
+    "build"
+   ],
+   "use": "An opening build into a title card. Designed to start a film rather than to join two scenes.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-intro-transition-1146.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "orchestra_transition",
+   "category": "transition",
+   "tags": [
+    "orchestra",
+    "epic",
+    "swell",
+    "title"
+   ],
+   "use": "An orchestral swell used as a transition. It is scored material — do not run it under a music bed.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-epic-orchestra-transition-2290.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "rocket_whoosh",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "rocket",
+    "launch",
+    "fast"
+   ],
+   "use": "A launch: acceleration away from the frame. Big enough to carry a title, so keep it for one.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-fast-rocket-whoosh-1714.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sweep_small",
+   "category": "transition",
+   "tags": [
+    "sweep",
+    "small",
+    "quick",
+    "ui"
+   ],
+   "use": "Sub-second sweep for a small element moving on screen. The one to use when swish_fast is still too big.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-fast-small-sweep-transition-166.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "swoosh_heartbeat",
+   "category": "transition",
+   "tags": [
+    "swoosh",
+    "heartbeat",
+    "trailer",
+    "tension"
+   ],
+   "use": "Trailer-grade: a swoosh over a heartbeat pulse. For the single most dramatic transition in a film, if it has one.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-cinematic-transition-swoosh-heartbeat-trailer-488.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tech_slide",
+   "category": "transition",
+   "tags": [
+    "slide",
+    "technology",
+    "interface",
+    "panel"
+   ],
+   "use": "A synthetic slide for a dashboard or a UI panel changing state. Drier and shorter than slide_transition.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-technology-transition-slide-3120.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tunnel_woosh",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "tunnel",
+    "reverb",
+    "deep"
+   ],
+   "use": "Long reverberant sweep for a change of act. Leave it room — nearly seven seconds, and cutting it short throws away the arrival.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-cinematic-tunnel-reverb-woosh-1486.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "vacuum_swoosh",
+   "category": "transition",
+   "tags": [
+    "swoosh",
+    "vacuum",
+    "pull",
+    "cut"
+   ],
+   "use": "A swoosh with suction on the tail. Reads as leaving somewhere rather than arriving.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-vacuum-swoosh-transition-1465.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "whoosh_fast_cinematic",
+   "category": "transition",
+   "tags": [
+    "whoosh",
+    "fast",
+    "cut",
+    "cinematic"
+   ],
+   "use": "The quick cinematic cut-masker: one and a third seconds, all movement, no tail. For a run of short scenes where whoosh_deep would smear.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-cinematic-whoosh-fast-transition-1492.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "windy_swoosh",
+   "category": "transition",
+   "tags": [
+    "swoosh",
+    "wind",
+    "airy",
+    "cut"
+   ],
+   "use": "An airy swoosh with weather in it. Fits a cut between exteriors where a synthetic whoosh would sound indoors.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-transition-windy-swoosh-1474.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "zoom_in_out",
+   "category": "transition",
+   "tags": [
+    "zoom",
+    "in",
+    "out",
+    "motion-graphics"
+   ],
+   "use": "Push in and pull back in one gesture. For a map or a diagram that zooms to a detail and returns.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-in-and-out-zoom-sound-2622.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "zoom_vacuum",
+   "category": "transition",
+   "tags": [
+    "zoom",
+    "suck",
+    "pull",
+    "motion-graphics"
+   ],
+   "use": "A pull-in rather than a sweep: something being drawn towards the camera. Time the end of it to the frame the new element lands on.",
+   "src": {
+    "pack": "transition",
+    "file": "mixkit-air-zoom-vacuum-2608.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "alarm_retro_loop",
+   "category": "ui",
+   "tags": [
+    "alarm",
+    "emergency",
+    "retro",
+    "warning",
+    "bed"
+   ],
+   "use": "A repeating emergency alarm as a bed. Loop it under a crisis sequence; a single cycle is too short to read as an alarm.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-retro-game-emergency-alarm-1000.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "announce_tones",
+   "category": "ui",
+   "tags": [
+    "announcement",
+    "tones",
+    "public",
+    "attention"
+   ],
+   "use": "The two-tone public-address chime. Use before an announcement, a warning card or a chapter that changes register.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-clear-announce-tones-2861.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "game_over_trombone",
+   "category": "ui",
+   "tags": [
+    "failure",
+    "trombone",
+    "comic",
+    "defeat"
+   ],
+   "use": "The comic failure sting. It is a joke — use it in a film that has already made one.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-sad-game-over-trombone-471.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "interface_back",
+   "category": "ui",
+   "tags": [
+    "back",
+    "navigate",
+    "interface",
+    "undo"
+   ],
+   "use": "Going back a step in an interface. Pairs with page_change, which goes forward.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-software-interface-back-2575.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "loading_scifi",
+   "category": "ui",
+   "tags": [
+    "loading",
+    "system",
+    "boot",
+    "sci-fi"
+   ],
+   "use": "A system coming up. For a boot sequence, a model starting or a process beginning on screen.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-sci-fi-loading-operative-system-2529.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "notify_flute",
+   "category": "ui",
+   "tags": [
+    "notification",
+    "flute",
+    "uplifting",
+    "positive"
+   ],
+   "use": "A short rising flute figure for a positive state change. Reads warmer than success_chime and takes longer.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-uplifting-flute-notification-2317.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "notify_flute_long",
+   "category": "ui",
+   "tags": [
+    "notification",
+    "flute",
+    "melody",
+    "arrival"
+   ],
+   "use": "Seven seconds of melodic flute — a notification that is really a small cue. Fade it rather than cutting it.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-melodical-flute-music-notification-2310.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "notify_guitar",
+   "category": "ui",
+   "tags": [
+    "notification",
+    "guitar",
+    "pluck",
+    "message"
+   ],
+   "use": "A plucked-string notification. The organic alternative to notify_soft when the film has acoustic music in it.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-guitar-notification-alert-2320.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "notify_harp",
+   "category": "ui",
+   "tags": [
+    "notification",
+    "harp",
+    "mystery",
+    "arrival"
+   ],
+   "use": "A harp figure for something arriving on screen with a little mystery to it. Warmer and slower than notify_soft.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-arabian-mystery-harp-notification-2489.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "notify_retro",
+   "category": "ui",
+   "tags": [
+    "notification",
+    "retro",
+    "game",
+    "chiptune"
+   ],
+   "use": "An eight-bit notification. For a film about games, software history or anything that earns the reference.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-retro-game-notification-212.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pop_hard",
+   "category": "ui",
+   "tags": [
+    "pop",
+    "click",
+    "hard",
+    "appear"
+   ],
+   "use": "A hard pop for an element that lands with weight. Louder and drier than pop_in.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-hard-pop-click-2364.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "pop_long",
+   "category": "ui",
+   "tags": [
+    "pop",
+    "bubble",
+    "soft",
+    "appear"
+   ],
+   "use": "A rounder, slower pop. For a bubble, a pin or a soft callout appearing.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-long-pop-2358.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "select_modern",
+   "category": "ui",
+   "tags": [
+    "select",
+    "click",
+    "interface",
+    "modern"
+   ],
+   "use": "Half a second of modern interface select. The bright sibling of click_soft, for screen recordings where the click must be seen as well as heard.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-modern-technology-select-3124.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tile_reveal",
+   "category": "ui",
+   "tags": [
+    "reveal",
+    "tile",
+    "flip",
+    "card"
+   ],
+   "use": "A tile or card flipping to show what is under it. For a quiz, a comparison or a fact being uncovered.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-tile-game-reveal-960.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "timer_alert",
+   "category": "ui",
+   "tags": [
+    "timer",
+    "alert",
+    "stopwatch",
+    "deadline"
+   ],
+   "use": "A kitchen-timer alert: time is up. For a countdown resolving or a deadline card.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-cooking-stopwatch-alert-1792.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "zoom_out_ui",
+   "category": "ui",
+   "tags": [
+    "zoom",
+    "out",
+    "interface",
+    "pull-back"
+   ],
+   "use": "Pulling back from a detail to the whole. The counterpart to zoom_vacuum in a motion-graphics sequence.",
+   "src": {
+    "pack": "ui",
+    "file": "mixkit-ui-zoom-out-2619.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bus_departure",
+   "category": "vehicle",
+   "tags": [
+    "bus",
+    "departure",
+    "engine",
+    "transit"
+   ],
+   "use": "A bus pulling away from a stand. Nine seconds — enough to cover a whole departure shot.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-bus-departure-zone-2710.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "bus_passing",
+   "category": "vehicle",
+   "tags": [
+    "bus",
+    "passing",
+    "street",
+    "city"
+   ],
+   "use": "A bus passing the camera in a street. The doppler is the point; place it on the frame the vehicle crosses.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-bus-passing-by-in-a-city-2706.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "helicopter_close",
+   "category": "vehicle",
+   "tags": [
+    "helicopter",
+    "rotor",
+    "close",
+    "engine"
+   ],
+   "use": "A rotor close up. Two seconds and very loud — a cutaway, not a bed.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-helicopter-engine-working-close-2699.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "helicopter_distant_loop",
+   "category": "vehicle",
+   "tags": [
+    "helicopter",
+    "distant",
+    "rotor",
+    "sky",
+    "bed"
+   ],
+   "use": "A helicopter working at distance, even enough to loop. Aerial surveys, emergency services, conflict reporting.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-helicopter-flying-far-away-2715.wav"
+   },
+   "loop": {
+    "length_s": 20.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "helicopter_synthetic",
+   "category": "vehicle",
+   "tags": [
+    "helicopter",
+    "synthetic",
+    "rotor",
+    "designed"
+   ],
+   "use": "A designed rather than recorded rotor. Use it where a real helicopter would sound too specific.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-synthetic-helicopter-flying-2717.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motocross_engine_loop",
+   "category": "vehicle",
+   "tags": [
+    "motocross",
+    "engine",
+    "dirt",
+    "racing",
+    "bed"
+   ],
+   "use": "Motocross engine, even enough to loop under a sequence.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-motocross-motorcycle-engine-2727.wav"
+   },
+   "loop": {
+    "length_s": 12.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "motorcycle_gears_long",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "gears",
+    "acceleration",
+    "ride"
+   ],
+   "use": "Fifteen seconds of riding through the gears. A whole ride, not an accent.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-motorcycle-engine-doing-gearshift-2725.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "motorcycle_gearshift",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "gears",
+    "shift",
+    "acceleration"
+   ],
+   "use": "One gear change under acceleration. Short enough to cut to picture.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-motorcycle-changing-gears-2730.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_idle",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "idle",
+    "engine",
+    "street"
+   ],
+   "use": "A motorcycle idling. The neutral one — no performance in it.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-motorcycle-engine-working-2721.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_racing",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "racing",
+    "engine",
+    "speed"
+   ],
+   "use": "A racing engine held near the limit. Motorsport.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-racing-motorcycle-engine-2722.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "motorcycle_speeding",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "acceleration",
+    "speed",
+    "racing"
+   ],
+   "use": "Acceleration away from the camera. Pairs with motorcycle_racing across a cut.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-racing-motorcycle-speeding-up-2724.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "propellers",
+   "category": "vehicle",
+   "tags": [
+    "propeller",
+    "aircraft",
+    "engine",
+    "flight"
+   ],
+   "use": "Propellers turning. Light aircraft, boats and drones.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-propellers-working-2698.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "sportbike_engine",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "sportbike",
+    "engine",
+    "rev"
+   ],
+   "use": "Fourteen seconds of a sports bike being revved. Louder and cleaner than motocross_engine_loop.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-sports-bike-engine-2728.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "sportbike_idle",
+   "category": "vehicle",
+   "tags": [
+    "motorcycle",
+    "sportbike",
+    "idle",
+    "engine"
+   ],
+   "use": "The same bike ticking over. For a shot of a stationary machine.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-sports-bike-working-motor-2729.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "tank_engine",
+   "category": "vehicle",
+   "tags": [
+    "tank",
+    "diesel",
+    "military",
+    "engine"
+   ],
+   "use": "A heavy tracked diesel. Military and heavy-industry subjects.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-tank-engine-working-2753.wav"
+   },
+   "whole": {
+    "bed": true
+   }
+  },
+  {
+   "id": "tram_passing",
+   "category": "vehicle",
+   "tags": [
+    "tram",
+    "rail",
+    "passing",
+    "city"
+   ],
+   "use": "A tram passing slowly. Rail on street — the sound that places a shot in a European city without a caption.",
+   "src": {
+    "pack": "vehicle",
+    "file": "mixkit-slow-tram-passing-3019.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "breeze_trees_loop",
+   "category": "weather",
+   "tags": [
+    "breeze",
+    "trees",
+    "leaves",
+    "foliage",
+    "bed"
+   ],
+   "use": "Light air moving through foliage. The gentlest movement bed in the library; use it where silence would read as a dropout.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-breeze-through-the-trees-2427.wav"
+   },
+   "loop": {
+    "length_s": 8.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "forest_storm_loop",
+   "category": "weather",
+   "tags": [
+    "forest",
+    "storm",
+    "rain",
+    "trees",
+    "bed"
+   ],
+   "use": "Rain through a canopy: the drops land on leaves rather than on ground or glass, which is the detail that places the shot in woodland.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunderstorm-in-the-forest-2396.wav"
+   },
+   "loop": {
+    "length_s": 26.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "heavy_rain_thunder_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "heavy",
+    "thunder",
+    "downpour",
+    "bed"
+   ],
+   "use": "Hard rainfall, thunder kept in the background. The wettest bed here that still leaves room for narration.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-heavy-rain-and-thunder-in-background-2406.wav"
+   },
+   "loop": {
+    "length_s": 14.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "heavy_storm_rain_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "storm",
+    "heavy",
+    "downpour",
+    "bed"
+   ],
+   "use": "Dense rainfall with no thunder at all — pair it with thunder_distant or thunder_strike where you want the rolls placed by hand.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-heavy-storm-rain-loop-2400.wav"
+   },
+   "loop": {
+    "length_s": 12.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jungle_rain_loop",
+   "category": "weather",
+   "tags": [
+    "jungle",
+    "rain",
+    "birds",
+    "tropical",
+    "bed"
+   ],
+   "use": "Warm rain with birds still calling through it. Softer than jungle_storm_loop — rain as weather, not as event.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-rain-in-the-jungle-and-birds-2431.wav"
+   },
+   "loop": {
+    "length_s": 26.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "jungle_storm_loop",
+   "category": "weather",
+   "tags": [
+    "jungle",
+    "storm",
+    "rain",
+    "tropical",
+    "bed"
+   ],
+   "use": "Tropical downpour with the forest still audible under it. The wet-season bed for anything shot in the tropics.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-calm-thunderstorm-in-the-jungle-2415.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "rain_drops_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "drops",
+    "heavy",
+    "surface",
+    "bed"
+   ],
+   "use": "Big individual drops on a hard surface. Short window, so check it under a long shot; it is the most rhythmic of the rain beds.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-heavy-rain-drops-2399.wav"
+   },
+   "loop": {
+    "length_s": 9.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "rain_heavy_short_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "heavy",
+    "downpour",
+    "bed"
+   ],
+   "use": "A five-second downpour loop for a brief cutaway where a thirty-second bed is more file than the shot needs.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-heavy-rain-2403.wav"
+   },
+   "loop": {
+    "length_s": 5.0,
+    "crossfade_s": 1.0
+   }
+  },
+  {
+   "id": "rain_light_soft_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "light",
+    "drizzle",
+    "soft",
+    "bed"
+   ],
+   "use": "Drizzle. Quieter than rain_light_loop and with no traffic or garden behind it: the neutral wet bed for an interior cutaway.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-light-rain-loop-2393.wav"
+   },
+   "loop": {
+    "length_s": 12.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "rain_thunder_loop",
+   "category": "weather",
+   "tags": [
+    "rain",
+    "thunder",
+    "storm",
+    "downpour",
+    "bed"
+   ],
+   "use": "General storm bed: rain plus rolling thunder, no location markers. The safest of the thunderstorms.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-rain-and-thunder-storm-2390.wav"
+   },
+   "loop": {
+    "length_s": 12.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "storm_background_loop",
+   "category": "weather",
+   "tags": [
+    "storm",
+    "background",
+    "rain",
+    "distant",
+    "bed"
+   ],
+   "use": "Weather happening somewhere else — heard through a wall or from far off. Very low in level by design.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunderstorm-background-sound-2398.wav"
+   },
+   "loop": {
+    "length_s": 6.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "storm_clear_rain_loop",
+   "category": "weather",
+   "tags": [
+    "storm",
+    "rain",
+    "thunder",
+    "downpour",
+    "bed"
+   ],
+   "use": "Clean heavy rainfall with thunder behind it — less low-end than thunderstorm_rain_loop, so it sits under speech more easily.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunderstorm-and-clear-rain-2397.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "storm_dark_loop",
+   "category": "weather",
+   "tags": [
+    "storm",
+    "dark",
+    "foreboding",
+    "atmosphere",
+    "bed"
+   ],
+   "use": "Heavy weather with menace in it: low wind and pressure rather than rainfall. For the turn in a story, where storm_bed_loop would only report the weather.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-evil-storm-atmosphere-2404.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "storm_rain_steady_loop",
+   "category": "weather",
+   "tags": [
+    "storm",
+    "rain",
+    "steady",
+    "thunder",
+    "bed"
+   ],
+   "use": "Steady storm rainfall, thunder well back. Use where rain_thunder_loop draws too much attention to itself.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunderstorm-and-rain-2391.wav"
+   },
+   "loop": {
+    "length_s": 18.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "thunder_rumble_loop",
+   "category": "weather",
+   "tags": [
+    "thunder",
+    "rumble",
+    "storm",
+    "distant",
+    "bed"
+   ],
+   "use": "Continuous distant thunder under light rain. The bed for the minutes before a storm arrives.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunder-rumble-during-a-storm-2395.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "thunder_strike",
+   "category": "weather",
+   "tags": [
+    "thunder",
+    "strike",
+    "crack",
+    "close"
+   ],
+   "use": "A close strike, crack and roll together. The hard sibling of thunder_distant — one per storm, on the cut you want to punctuate.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunder-strike-in-storm-2405.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "thunderstorm_rain_loop",
+   "category": "weather",
+   "tags": [
+    "thunderstorm",
+    "rain",
+    "thunder",
+    "storm",
+    "bed"
+   ],
+   "use": "The full storm: steady rain with thunder rolling through it. Unlike storm_bed_loop the thunder is baked in, so use it where the storm is the subject and not the backdrop.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-thunderstorm-and-rain-loop-2402.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wind_blowing_loop",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "gust",
+    "exposed",
+    "bed"
+   ],
+   "use": "Exposed exteriors: a steady blow with slow gust swells. Less violent than wind_open_loop, so it survives under speech.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-wind-blowing-ambience-2658.wav"
+   },
+   "loop": {
+    "length_s": 30.0,
+    "crossfade_s": 2.0
+   }
+  },
+  {
+   "id": "wind_gust_pass",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "gust",
+    "pass",
+    "buffet"
+   ],
+   "use": "A single gust passing the microphone. Drop it over a wind bed on a cutaway to something exposed.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-vibrating-wind-passing-by-2705.wav"
+   },
+   "whole": {}
+  },
+  {
+   "id": "wind_storm_loop",
+   "category": "weather",
+   "tags": [
+    "wind",
+    "storm",
+    "gale",
+    "howling",
+    "bed"
+   ],
+   "use": "Gale-force wind with a howl in it. Short window and deliberately dramatic — for a single shot, not a whole act.",
+   "src": {
+    "pack": "weather",
+    "file": "mixkit-strong-wild-wind-in-a-storm-2407.wav"
+   },
+   "loop": {
+    "length_s": 11.0,
+    "crossfade_s": 2.0
+   }
+  }
+ ]
+}

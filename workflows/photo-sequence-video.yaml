@@ -70,6 +70,7 @@ nodes:
       where Blender stages the shots.
   - key: keyframes
     type: generate_keyframes
+    values: {model: hidream-o1}
     note: >
       No frames value is set, because the runner does not read one: stage_generate_keyframes takes
       its length from the builtin motion plan, which holds 8 frames. Setting the widget would look

@@ -6,7 +6,7 @@ import { useCurrentFrame } from "remotion";
 
 import { useSceneEnv } from "../context";
 import { enter, motionFrames, progress } from "../motion";
-import { Lines, SceneFrame, citationLine, useFittedText, useSceneGeometry } from "./common";
+import { citationLine, Lines, minTextPx, SceneFrame, useFittedText, useSceneGeometry } from "./common";
 
 export interface SeriesPoint {
   label: string;
@@ -114,6 +114,38 @@ export function stepPath(points: readonly { x: number; y: number }[], endX?: num
   return parts.join(" ");
 }
 
+export interface ReadingLabel {
+  x: number;
+  y: number;
+  anchor: "start" | "middle" | "end";
+}
+
+/**
+ * Where a line or step chart writes its own readings.
+ *
+ * Nothing in this file draws a y tick — the two axis lines are drawn bare, and the comment on the
+ * line branch's domain says so outright. The bar family compensates by writing the value on every
+ * bar; the line family wrote nothing, so `data-story-video`'s only real chart delivered a
+ * staircase at three levels the viewer had to guess. Measured on the film shipped 2026-09-10 the
+ * levels were 11 %, 15 % and 21 % and not one of those numbers appeared anywhere on the card.
+ *
+ * A step's reading belongs over the middle of the interval it holds for, which is where the step
+ * label already sits. A line's reading belongs over its point, pulled inside the plot at the two
+ * ends so the first and last numbers are not half outside the frame.
+ */
+export function readingLabels(
+  points: readonly { x: number; y: number }[],
+  opts: { span: number; stepped: boolean; left: number; right: number; lift: number },
+): ReadingLabel[] {
+  return points.map((point, i) => {
+    if (opts.stepped) {
+      return { x: point.x + opts.span / 2, y: point.y - opts.lift, anchor: "middle" };
+    }
+    const anchor = i === 0 ? "start" : i === points.length - 1 ? "end" : "middle";
+    return { x: Math.min(opts.right, Math.max(opts.left, point.x)), y: point.y - opts.lift, anchor };
+  });
+}
+
 /**
  * Animated data chart drawn as plain SVG. D3 supplies the geometry that is genuinely hard —
  * arc paths, stack offsets, histogram thresholds — and React owns every element, so the frame
@@ -143,7 +175,25 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
 
   const chartWidth = safe.width;
   const stepped = scene.chart === "step";
-  const chartHeight = Math.round(safe.height * (portrait ? 0.56 : 0.58));
+  // The space the chart is actually left, not a fixed fraction of the safe area. 0.56 in portrait
+  // measured out as a card whose content stopped at 56 % of the frame with **43.6 %** of it blank
+  // below the last mark — the plot, the one thing a data card exists to show, taking 39 % of the
+  // picture while the title above it took 3 % (measured on `data-story-video`, 2026-09-10). The
+  // title and the credit line know their own heights, so the chart takes what is left of the safe
+  // area minus the two gaps below, and is still floored so a long title cannot squeeze it flat.
+  //
+  // A correction to what this comment said next, because the wrong version of it would have sent
+  // the next reader chasing a flex bug that is not there: the "36.9 % of the frame still blank
+  // below the last mark" I measured afterwards is the **caption band**. `useSceneGeometry` caps a
+  // portrait card's safe area at `CAPTION_BAND_TOP` (64 % of the height) because `compose_video`
+  // burns the captions into the lower third, and the delivered film does fill it — measured on
+  // `bnd_run000000001.captioned.mp4`, ink to row 1501 of 1920. Against the safe area, which is
+  // the box this layout actually owns, the chart block reaches ~87 %.
+  const chartMargins = Math.round((16 + 6 + 8) * scale) + Math.round(28 * scale) * credits.length;
+  const chartHeight = Math.max(
+    Math.round(safe.height * 0.45),
+    Math.round(safe.height - title.fit.heightPx - chartMargins - Math.round(64 * scale)),
+  );
   const axisColor = theme.color.rule;
   const valueColor = textColor(theme, "body", "paper");
   const tickColor = textColor(theme, "caption", "paper");
@@ -177,8 +227,8 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
     // accent, earlier ones the muted colour — the highlight is the point of the chart.
     const grow = Math.max(1, Math.round(f.countUp * 0.5));
     const stagger = n > 1 ? Math.max(1, Math.round((f.countUp * 0.5) / (n - 1))) : 0;
-    const valueFont = Math.round((portrait ? 30 : 24) * scale);
-    const tickFont = Math.round((portrait ? 26 : 22) * scale);
+    const valueFont = Math.max(minTextPx(theme, scale), Math.round((portrait ? 30 : 24) * scale));
+    const tickFont = Math.max(minTextPx(theme, scale), Math.round((portrait ? 26 : 22) * scale));
     body = (
       <g>
         {points.map((point, i) => {
@@ -331,7 +381,13 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
     );
     labels = [];
   } else {
-    const max = niceMax(points.flatMap((p) => p.values));
+    // The measured maximum with 6 % headroom, not a "nice" one — the same rule the bar family
+    // uses, and for the same reason. This branch kept `niceMax` and paid the price the bar
+    // branch's own comment names: a series peaking at 21 rounds to a 50-tick, so the staircase
+    // reached **42 %** of the plot and the top 58 % of a portrait card was blank (measured on
+    // `data-story-video`, 2026-09-10). A nice maximum buys a reader something only when the axis
+    // is *labelled*, and nothing here draws a y tick.
+    const max = Math.max(1e-9, ...points.flatMap((p) => p.values)) * 1.06;
     // A step chart's readings are intervals, not instants: n readings need n intervals, so the
     // x scale divides by n and each value holds until the next one. Line and area interpolate
     // between instants and keep the n-1 scale that puts the last point on the right edge.
@@ -340,10 +396,21 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
     // the bar family uses — so the staircase itself is drawn in what is left above the labels.
     const labelRoom = stepped ? Math.round(34 * scale) : 0;
     const usableH = plotH - labelRoom;
+    // Readings are written above the mark, so the tallest one needs somewhere to go: the baseline
+    // stays on the axis and the top of the range comes down by the height of a label. Without
+    // this the highest number — which on a chart of a rising series is the one the card is about
+    // — is drawn off the top edge of the svg.
+    const valueFont = Math.max(minTextPx(theme, scale), Math.round((portrait ? 28 : 22) * scale));
+    const lift = Math.round(12 * scale);
+    // One series only. Two series crossing would put two numbers in the same place with nothing
+    // to say which is which, and a legend is a bigger change than this.
+    const writeReadings = scene.y.length === 1;
+    const valueRoom = writeReadings ? valueFont + lift : 0;
+    const rise = Math.max(1, usableH - valueRoom);
     const coords = (series: number) =>
       points.map((point, i) => ({
         x: pad + span * i,
-        y: pad + usableH - ((point.values[series] ?? 0) / max) * usableH,
+        y: pad + usableH - ((point.values[series] ?? 0) / max) * rise,
       }));
     const shown = Math.max(2, Math.ceil(n * t));
     // A step's labels name intervals, so they sit under the middle of the interval they name. The
@@ -359,7 +426,7 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
             y={pad + plotH - Math.round(6 * scale)}
             textAnchor="middle"
             fontFamily={FONT_STACK}
-            fontSize={Math.round((portrait ? 26 : 22) * scale)}
+            fontSize={Math.max(minTextPx(theme, scale), Math.round((portrait ? 26 : 22) * scale))}
             fill={tickColor}
           >
             {point.label}
@@ -368,9 +435,36 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
       </g>
     ) : null;
     if (stepped) labels = [];
+    const readings = writeReadings ? (
+      <g>
+        {readingLabels(coords(0), {
+          span,
+          stepped,
+          left: pad + Math.round(24 * scale),
+          right: pad + plotW - Math.round(24 * scale),
+          lift,
+        })
+          .slice(0, shown)
+          .map((mark, i) => (
+            <text
+              key={`val-${i}`}
+              x={mark.x}
+              y={mark.y}
+              textAnchor={mark.anchor}
+              fontFamily={fontStackFor(theme.type.headline.family)}
+              fontWeight={700}
+              fontSize={valueFont}
+              fill={i === n - 1 ? seriesColors[0] : valueColor}
+            >
+              {formatNumber(points[i]?.values[0] ?? 0, "auto", "").numeral}
+            </text>
+          ))}
+      </g>
+    ) : null;
     body = (
       <g>
         {stepLabels}
+        {readings}
         {scene.y.map((_, series) => {
           const pts = coords(series).slice(0, shown);
           const path = stepped
@@ -413,13 +507,13 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
         {body}
       </svg>
       {labels.length > 0 ? (
-        <div style={{ display: "flex", justifyContent: "space-between", width: chartWidth, marginTop: 6 * scale, color: tickColor, fontSize: 22 * scale }}>
+        <div style={{ display: "flex", justifyContent: "space-between", width: chartWidth, marginTop: 6 * scale, color: tickColor, fontSize: Math.max(minTextPx(theme, scale), 22 * scale) }}>
           {labels.map((label, i) => (
             <span key={i}>{label}</span>
           ))}
         </div>
       ) : null}
-      <div style={{ marginTop: 8 * scale, width: chartWidth, textAlign: align, color: tickColor, fontSize: 20 * scale }}>
+      <div style={{ marginTop: 8 * scale, width: chartWidth, textAlign: align, color: tickColor, fontSize: Math.max(minTextPx(theme, scale), 20 * scale) }}>
         {dataset ? `${dataset.label}${dataset.unit ? ` (${dataset.unit})` : ""}` : `dataset ${scene.data.dataset_id} missing`}
         {fallback && ` — ${scene.chart} drawn as bars`}
         {scene.caption ? ` · ${scene.caption.text}` : ""}

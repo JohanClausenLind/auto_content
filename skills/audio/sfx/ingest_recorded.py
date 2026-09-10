@@ -86,6 +86,7 @@ def build_one(spec: dict, lib: dict, root: Path, credits: dict, analyze: bool) -
             int(search["finalists"]),
         )
         cut = {
+            "mode": "loop",
             "window_start_s": round(start_s, 3),
             "window_length_s": float(loop["length_s"]),
             "crossfade_s": float(loop["crossfade_s"]),
@@ -96,6 +97,28 @@ def build_one(spec: dict, lib: dict, root: Path, credits: dict, analyze: bool) -
         if not analyze:
             x, _b, after = sfx.normalize(x, sr, "integrated_lufs", t["value"], t["true_peak_dbtp"])
             qc = {**sfx.tone_qc(x, sr), **sfx.loop_qc(x, sr)}
+    elif "whole" in spec:
+        # The supplier already cut this file. `recorded.cut_whole` takes it as delivered and the
+        # only decision left is which loudness family it belongs to -- see ingest_packs.py, which
+        # uses the same helper for the same reason.
+        whole = spec["whole"]
+        x, cut = recorded.cut_whole(src_path, sr, hp, whole.get("max_s"), whole.get("trim", True))
+        qc = sfx.tone_qc(x, sr)
+        if "peak_band_hz" in spec:
+            lo, hi = spec["peak_band_hz"]
+            qc["band_focus_db"] = sfx.band_focus_db(x, sr, lo, hi)
+        sel = 0.0
+        bed = bool(whole.get("bed"))
+        t = targets["bed"] if bed else targets["oneshot"]
+        if not analyze:
+            x, _b, after = sfx.normalize(
+                x,
+                sr,
+                "integrated_lufs" if bed else "max_momentary_lufs",
+                t["value"],
+                t["true_peak_dbtp"],
+            )
+            qc = {**qc, **sfx.tone_qc(x, sr)}
     else:
         one = {**defaults["oneshot"], **spec["oneshot"]}
         raw = recorded.decode(src_path, sr)
@@ -111,6 +134,7 @@ def build_one(spec: dict, lib: dict, root: Path, credits: dict, analyze: bool) -
             lo, hi = spec["peak_band_hz"]
             qc["band_focus_db"] = sfx.band_focus_db(x, sr, lo, hi)
         cut = {
+            "mode": "event",
             "event_index": ev_idx,
             "events_found": n_events,
             "gate_db": float(one["gate_db"]),
@@ -211,6 +235,8 @@ def recorded_source_info(root: Path) -> dict:
         "bundle_path": str(root),
         "env_var": "CF_SONNISS_GDC_DIR",
         "licence": recorded.BUNDLE_LICENCE,
+        "supplier": "",  # eleven of them; the supplier table in the README names each
+        "headline": "cut from the #GameAudioGDC bundle",
     }
 
 
@@ -230,11 +256,14 @@ def main() -> int:
 
     if args.list:
         for s in specs:
-            kind = (
-                f"loop {s['loop']['length_s']}s/xf{s['loop']['crossfade_s']}s"
-                if "loop" in s
-                else f"one-shot <={s['oneshot']['max_s']}s ev{s['oneshot'].get('event', -1)}"
-            )
+            if "loop" in s:
+                kind = f"loop {s['loop']['length_s']}s/xf{s['loop']['crossfade_s']}s"
+            elif "whole" in s:
+                cap = s["whole"].get("max_s")
+                level = "bed" if s["whole"].get("bed") else "one-shot"
+                kind = f"whole {level}" + (f" <={cap}s" if cap else "")
+            else:
+                kind = f"event <={s['oneshot']['max_s']}s ev{s['oneshot'].get('event', -1)}"
             print(
                 f"{s['id']:22s} {s['category']:11s} {kind:26s} "
                 f"{'replaces generated' if s.get('replaces') else 'new':18s} {s['src']['file'][:64]}"
@@ -257,6 +286,9 @@ def main() -> int:
                 f" of {src['windows_auditioned']:4d}"
             )
             loopy = f"ev={qc['event_prominence_db']:5.1f} seam={qc['seam_rms_delta_db']:+5.2f}"
+        elif src.get("mode") == "whole":
+            where = f"whole -{src['silence_trimmed_s']:5.2f}s silence"
+            loopy = ""
         else:
             where = f"event {src['event_index'] + 1} of {src['events_found']}"
             loopy = ""
@@ -278,7 +310,7 @@ def main() -> int:
     for e in built:
         entries[e["id"]] = e
 
-    manifest, missing = index.write(
+    manifest, missing, duplicated = index.write(
         OUT_ROOT,
         entries,
         lib["targets"],
@@ -296,6 +328,9 @@ def main() -> int:
     print(f"flagged: {', '.join(flagged) if flagged else 'none'}", file=sys.stderr)
     if missing:
         print(f"MISSING FILES (in manifest, not on disk): {', '.join(missing)}", file=sys.stderr)
+    if duplicated:
+        for ids in duplicated:
+            print(f"DUPLICATE BYTES (one sound, several ids): {', '.join(ids)}", file=sys.stderr)
     return 0
 
 

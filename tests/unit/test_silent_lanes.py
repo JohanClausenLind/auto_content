@@ -123,6 +123,13 @@ def test_a_lane_with_no_sound_stages_at_all_writes_a_video_only_cut(tmp_path: Pa
     )
     assert report["passed"]
     ddir = project / "deliverables" / report["deliverable_id"]
+    # The cut has not run, so nothing may be sitting at the deliverable's name yet.
+    # `exports/final.mp4` used to be where the post chain concatenated its clips as well, so a run
+    # that died before the cut left thirty seconds of silent, uncaptioned footage under the one
+    # filename every consumer reads — this audit took it for the film (`silent-video`,
+    # 2026-09-10). The post chain writes `postchain.mp4` now; with `engine: none` and no chain on
+    # disk it writes neither, which is also fine. What must not exist is `final.mp4`.
+    assert not (ddir / "exports" / "final.mp4").exists()
     from content_factory.runners.local import make_context, run_stages
 
     ctx = make_context(project_dir=project, brief={"topic": "a quiet harbour at first light"})
@@ -132,6 +139,10 @@ def test_a_lane_with_no_sound_stages_at_all_writes_a_video_only_cut(tmp_path: Pa
     assert compose["narrated"] is False and compose["audio"] == "none"
     streams = {s["codec_type"] for s in ffprobe(ddir / "exports" / "final.mp4")["streams"]}
     assert streams == {"video"}
+
+
+_BEATS_IN_REEL = json.loads(Path("fixtures/story/love_story_reel.json").read_text())["beats"]
+"""The lane draws one picture per beat, so the fixture decides the count rather than this file."""
 
 
 def test_photo_sequence_video_gets_a_picture_and_finishes(tmp_path: Path) -> None:
@@ -151,11 +162,16 @@ def test_photo_sequence_video_gets_a_picture_and_finishes(tmp_path: Path) -> Non
         )
     assert blocked.value.stage is Stage.review_frames
     deliverable = blocked.value.report["deliverable_id"]
-    # Eight, not one: `review_frames` gates the frames its lane actually wired into it. This
-    # lane's `drift -> frames_gate` wire carries the eight keyframes under `sequence/frames`,
-    # which are also the eight compose_video cuts; the anchor manifest is the fallback for the
-    # Blender/scene lanes, whose per-shot anchors are their frames.
-    assert _accept_every_frame(project, deliverable) == 8
+    # Two, not one: `review_frames` gates the frames its lane actually wired into it. This
+    # lane's `drift -> frames_gate` wire carries the keyframes under `sequence/frames`, which are
+    # also the compose_video cuts; the anchor manifest is the fallback for the Blender/scene
+    # lanes, whose per-shot anchors are their frames.
+    #
+    # Two because `love_story_reel` has two beats. The count used to be eight for every story ever
+    # given to this lane -- the frame count came from the builtin motion plan, and so did the edit
+    # instruction for each frame ("move hands to the plotted position"), so the lane drew the same
+    # eight pictures of the fixture's subject whatever it was asked for.
+    assert _accept_every_frame(project, deliverable) == len(_BEATS_IN_REEL)
 
     report = run_workflow(
         "photo-sequence-video",
@@ -177,10 +193,11 @@ def test_photo_sequence_video_gets_a_picture_and_finishes(tmp_path: Path) -> Non
 
     info = ffprobe(ddir / "exports" / "final.mp4")
     assert {s["codec_type"] for s in info["streams"]} == {"video"}
-    # Eight drawings at the flipbook rate: one second of film, and every frame one that was seen.
-    from content_factory.workflows.stages import SEQUENCE_PREVIEW_FPS
-
-    assert abs(float(info["format"]["duration"]) - 8 / SEQUENCE_PREVIEW_FPS) < 0.2
+    # One drawing per beat, each held for that beat's own planned length. It used to be cut at the
+    # flipbook rate instead — eight frames a second — so a five-beat story planned at eighteen
+    # seconds came out as a 0.6-second film.
+    planned = sum(b["planned_duration_ms"] for b in _BEATS_IN_REEL) / 1000
+    assert abs(float(info["format"]["duration"]) - planned) < 0.2
 
 
 def test_a_held_cut_is_never_interpolated_even_when_the_lane_asks_for_rife(

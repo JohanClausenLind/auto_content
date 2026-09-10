@@ -12,6 +12,7 @@ import socket
 import subprocess
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -172,6 +173,8 @@ def run_doctor() -> DoctorReport:
             "GPU skills will be unavailable; cloud or CPU fallbacks apply per execution policy.",
         )
 
+    _gpu_dropout_checks(ctx)
+
     # Services
     if settings is not None:
         db_url = os.environ.get(settings.database.url_env)
@@ -211,6 +214,25 @@ def run_doctor() -> DoctorReport:
                 if ok
                 else "Optional. Start with `comfy launch --background` when image skills are needed.",  # noqa: E501
             )
+        # The other producers. Warn, never fail: a second host is optional, and it being asleep
+        # (which has happened) is not a reason for `doctor` to go red on a machine that works.
+        if settings.remote.enabled():
+            _tool(ctx, "rsync", ["--version"], "sudo apt install rsync", required=False)
+            for host in settings.remote.hosts:
+                # BatchMode is not optional. Without it an unreachable host sits on a password
+                # prompt until the timeout, which reads as a hang rather than as an answer.
+                code, out = _run(
+                    ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=3", host.ssh, "true"],
+                    timeout=6.0,
+                )
+                ctx.add(
+                    f"remote_{host.name}",
+                    Status.ok if code == 0 else Status.warn,
+                    f"{host.ssh} {'reachable' if code == 0 else out[:60]}",
+                    None if code == 0 else f"ssh {host.ssh} — is it awake, and on the tailnet?",
+                )
+        else:
+            ctx.add("remote", Status.skip, "no remote producers configured")
         if settings.search.provider == "searxng":
             u = urlparse(settings.search.endpoint)
             ok = _port_open(u.hostname or "127.0.0.1", u.port or 8083)
@@ -243,6 +265,129 @@ def run_doctor() -> DoctorReport:
     )
 
     return DoctorReport(checks=ctx.checks)
+
+
+def _gpu_root_port() -> Path | None:
+    """The PCIe bridge the NVIDIA display GPU hangs off, or None when there is no such GPU.
+
+    Resolved rather than hardcoded: `/sys/bus/pci/devices/<bdf>` is a symlink into the real
+    device tree, so the parent of the resolved path is the port the card is plugged into.
+    """
+    devices = Path("/sys/bus/pci/devices")
+    if not devices.is_dir():
+        return None
+    for dev in sorted(devices.iterdir()):
+        try:
+            if (dev / "vendor").read_text().strip() != "0x10de":
+                continue
+            if not (dev / "class").read_text().strip().startswith("0x0300"):
+                continue  # display controller only; skip the card's HDMI audio function
+        except OSError:
+            continue
+        parent = dev.resolve().parent
+        return parent if (parent / "aer_rootport_total_err_cor").exists() else None
+    return None
+
+
+def _gpu_dropout_checks(ctx: _Ctx) -> None:
+    """Three checks against one failure: the GPU leaving the PCIe bus under load.
+
+    Measured on this host 2026-09-10 03:12, in the eighth hour of a continuous run: an
+    uncorrectable AER error (TLP UnsupReq) on the card's root port, then `Xid 79, GPU has fallen
+    off the bus` and `Xid 154 ... Node Reboot Required`. Xorg then spun inside the dead driver
+    holding the `nvidia_modeset` semaphore and the desktop never came back, so it presented as a
+    frozen machine even though everything else kept running for three more hours. See
+    "When a card falls off the bus" in docs/gpu-hosts.md.
+
+    Nothing in software can promise it will not happen again — it is a link/power event. What
+    these do is make the two standard mitigations verifiable instead of remembered, and surface
+    a link that is degrading *before* it drops the card.
+    """
+    port = _gpu_root_port()
+    if port is None:
+        ctx.add("gpu_pcie_health", Status.skip, "no NVIDIA display GPU on a PCIe root port")
+        return
+
+    # 1. The counters that saw it happen. Readable without root, and reset by a reboot.
+    def counter(name: str) -> int | None:
+        try:
+            return int((port / name).read_text().strip())
+        except (OSError, ValueError):
+            return None
+
+    cor = counter("aer_rootport_total_err_cor")
+    nonfatal = counter("aer_rootport_total_err_nonfatal")
+    fatal = counter("aer_rootport_total_err_fatal")
+    if nonfatal is None or fatal is None or cor is None:
+        ctx.add("gpu_pcie_health", Status.skip, f"{port.name} exposes no AER counters")
+    elif fatal or nonfatal:
+        ctx.add(
+            "gpu_pcie_health",
+            Status.fail,
+            f"{port.name}: {fatal} fatal, {nonfatal} non-fatal PCIe errors since boot",
+            "The link this card is on has already faulted. `journalctl -k | grep -E 'AER|Xid'`;"
+            " an Xid 79 needs a reboot, and a repeat means the slot, riser, cable or PSU.",
+        )
+    elif cor > 100:
+        ctx.add(
+            "gpu_pcie_health",
+            Status.warn,
+            f"{port.name}: {cor} correctable PCIe errors since boot",
+            "Correctable errors are retried in hardware, but a rising count is a link degrading."
+            " Reseat the card and its power cables before it becomes an uncorrectable one.",
+        )
+    else:
+        ctx.add("gpu_pcie_health", Status.ok, f"{port.name}: no PCIe errors since boot ({cor} cor)")
+
+    # 2. ASPM. L1 was enabled on both ends of this link when the card dropped, and link power
+    # management is the first suspect for a device that stops answering under load.
+    cmdline = ""
+    try:
+        cmdline = Path("/proc/cmdline").read_text()
+    except OSError:
+        pass
+    policy = ""
+    try:
+        policy = Path("/sys/module/pcie_aspm/parameters/policy").read_text().strip()
+    except OSError:
+        pass
+    active = next((p.strip("[]") for p in policy.split() if p.startswith("[")), "unknown")
+    if "pcie_aspm=off" in cmdline or active == "performance":
+        ctx.add("gpu_aspm", Status.ok, f"link power management disabled (policy {active})")
+    else:
+        ctx.add(
+            "gpu_aspm",
+            Status.warn,
+            f"PCIe ASPM policy is '{active}', so the GPU link may enter L1 under load",
+            "Add `pcie_aspm=off` to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub, run"
+            " `sudo update-grub`, reboot. Some boards keep ASPM control in firmware: set"
+            " Native ASPM / PEG ASPM to Disabled in the BIOS as well.",
+        )
+
+    # 3. Power. A 3090 at its stock ceiling draws transients well above the sustained figure, and
+    # the usual cheap mitigation for a card that drops off under load is to take the top off.
+    code, out = _run(
+        ["nvidia-smi", "--query-gpu=power.limit,power.max_limit", "--format=csv,noheader,nounits"]
+    )
+    if code != 0 or not out:
+        ctx.add("gpu_power_cap", Status.skip, "nvidia-smi did not report a power limit")
+        return
+    try:
+        limit, ceiling = (float(v) for v in out.splitlines()[0].split(",")[:2])
+    except ValueError:
+        ctx.add("gpu_power_cap", Status.skip, f"unparsed power limit: {out.splitlines()[0]}")
+        return
+    if limit < ceiling:
+        ctx.add("gpu_power_cap", Status.ok, f"power limit {limit:.0f} W of {ceiling:.0f} W")
+    else:
+        ctx.add(
+            "gpu_power_cap",
+            Status.warn,
+            f"power limit is at the stock ceiling, {ceiling:.0f} W",
+            f"`sudo nvidia-smi -pl {int(ceiling * 0.86)}` costs a few per cent of throughput and"
+            " takes the transient peaks off the rail. Make it survive a reboot with the"
+            " nvidia-power-cap unit in docs/gpu-hosts.md.",
+        )
 
 
 def report_json(report: DoctorReport) -> str:

@@ -1,7 +1,36 @@
 # STATUS
 
-Last updated: 2026-09-09. Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
+Last updated: 2026-09-10. Machine: vegaserv (Ubuntu 24.04, i9-12900K, 31 GB RAM,
 RTX 3090 24 GB, driver 595.84, Docker 29.7.2, FFmpeg 6.1.1, Python 3.12.3, Node 24.19.0).
+
+> **vegaserv was rebooted at 06:07 and its GPU is healthy again** (RTX 3090, 35 C, 34 W idle,
+> x16). It had frozen at 03:12 during an LTX-2.5 22B generation: the card fell off the PCIe bus
+> (`Xid 79`, then `Xid 154, ... Node Reboot Required`), `nvidia-modeset` logged **190,960 kernel
+> errors in seven seconds**, and Xorg wedged inside the dead driver and never returned — so the
+> screen was frozen from 03:12 while the rest of the machine kept running normally until the
+> power cycle. Nothing in this repo caused it and no software change can promise it will not
+> recur — it is a link and power event. What is new is that the two mitigations are written down
+> with exact commands and **continuously verified**: `content-factory doctor` now carries
+> `gpu_pcie_health` (the root port's AER counters, readable without root, which fail on any
+> non-fatal error since boot — one was this whole event), `gpu_aspm` and `gpu_power_cap`. Both
+> mitigations are still **unapplied** and need root: `pcie_aspm=off` and a power cap under the
+> stock 350 W. See "Making it less likely, and making it visible" in docs/gpu-hosts.md.
+>
+> **nova was asleep, not broken — resolved 07:28.** It dropped off the network at 05:23:31
+> mid-`image-set` run and stayed unreachable for nearly two hours, which looked like damage:
+> no reply on :8801, ssh timed out, ICMP 100 % lost, and `192.168.0.136 dev enp2s0 INCOMPLETE`
+> in the ARP table. Its own journal says otherwise — `Power key pressed short` at 05:21:39,
+> `The system will suspend now!` at 05:22:54, `Performing sleep operation 'suspend'` at
+> 05:23:04, and `System returned from sleep operation 'suspend'` at 07:10:19. **Someone pressed
+> the power button.** `uptime` is 10:05 on a single boot: never rebooted, never panicked, never
+> lost power. The GPU is untouched — zero Xid, zero uncorrectable AER, PCIe gen 4, and HiDream's
+> 19.3 GB still resident with the same pid listening. Suspend-to-RAM presents at layer 2 exactly
+> like a dead machine, which is the trap; `uptime` is what tells them apart. The fix is to leave
+> a GPU worker no path to sleep — commands in docs/gpu-hosts.md, `sudo` on nova needs a password
+> so they are the operator's to run. Both machines are up. Three queues were stopped by hand and their
+> partial run directories deleted; the queue files, stories and written-in-advance predictions are
+> kept in `output/overnight/` so the two unfinished experiments can be re-run with one command.
+> See "When a host goes off the network" in docs/gpu-hosts.md.
 
 ## Phase checklist
 - [x] **Phase 0 — research and spikes** (gate: all spikes pass; no license blocker) — **GREEN**
@@ -5868,3 +5897,1575 @@ now carries the unit file and the warning.
 pattern matches the searching shell's own argv — the same trap the guide already listed for `pgrep`.
 The guide now gives the fixes (`ss` for liveness, `[b]racketed` patterns, `systemctl stop` for
 services) rather than only naming the trap.
+
+## 2026-09-09 (later still) — a recording that arrived as an MP4 (session auto-content-audio-mp4)
+
+Operator: *"i want to run the audio picture story but the audio is recorded as an mp4 file and cant
+be linked even though its just audio and the video is black — could we automatically detect this
+somehow… or what does the pipeline currently expect?"*
+
+**What it expected.** Audio, and only from a file whose bytes and suffix both said so. There were
+three separate walls, and the operator could hit any of them:
+
+| door | what happened |
+| --- | --- |
+| `make audio-picture-story --input talk.mp4` | refused at staging: *"talk.mp4 is video, and this lane takes audio"* |
+| dropped on the canvas | `POST /v1/uploads` typed it `video`, so it spawned an **input.video** node the audio lane cannot be wired to — the "cant be linked" |
+| copied into `uploads/` by hand | `_source_recording` globs `AUDIO_SUFFIXES_IN` only, so the file was invisible: *"transcribe_audio has no recording"* |
+
+All three came from the same assumption, and `magic` is why it fails: an MP4 with **no video
+stream at all** still sniffs as `video/mp4` (verified here — the ftyp brand decides, and only an
+`M4A ` brand reads as `audio/x-m4a`). A phone, a voice-memo app and a meeting recorder all write
+MP4 around sound, so "the bytes say video" answers nothing about whether there is anything to look
+at. Only the picture can answer that, so the picture is now measured.
+
+**`ingest.convert.blank_picture(path)`** returns a *reason* or `None`, never a bare boolean —
+every caller has to say out loud why a file whose MIME says video is being read as a recording:
+
+* no video stream, cover art (`disposition.attached_pic`), or a single frame → `exact`, from the
+  container alone, no decoding;
+* otherwise **12 frames sampled across the file**, and the verdict is `sampled` and says so: all
+  black, or all identical (a podcast cover rendered over the audio is not a film either).
+* A file with **no audio is never blank-pictured**, however black it is: the question is whether
+  the sound can stand on its own, and silence cannot.
+
+Bounded on purpose, and it exits at the first frame with something in it:
+
+| file | measured in | verdict |
+| --- | --- | --- |
+| 30 min 1080p black, 21 MB | **1.14 s** | *its picture is black in all 12 frames sampled across 30 min 00 s* |
+| audio-only MP4 | **0.03 s** | *it has no video stream at all* (no decode at all) |
+| 20 s static cover | 0.65 s | *its picture never changes… — a cover, not a film* |
+| 20 s of real picture | **0.14 s** | a film — refused, on the first sample |
+
+A full `blackdetect` pass over that same 30-minute file measured **13.87 s**, and the same pass
+over thirty minutes of *picture* would be minutes. Twelve seeks is the right price for a check
+whose usual answer is "no, that is a film" and which runs in front of someone waiting for a run.
+
+**All three doors, one measurement.** `stage_inputs` accepts the file for an audio lane and the
+staged record reads `{"kind": "audio", "mime": "video/mp4", "picture": "its picture is black in
+all 12 frames…"}` — the kind and the MIME disagree, and the reason they disagree is in the run
+log rather than left to be rediscovered. `POST /v1/uploads` answers `kind: "audio"`,
+`node_type: "input.audio"`, `blank_picture: "<reason>"`, and the drop strip prints *"taken as a
+recording: its picture is black in…"*. `_source_recording` looks **inside** `.mp4/.mov/.m4v/.mkv/
+.webm/.avi` when the folder holds no plain recording, and `transcribe_audio` reports the reason in
+its facts.
+
+Nothing is converted anywhere on this path. The operator's file is copied into `uploads/` as it is
+and `transcribe_audio` normalises it to mono PCM exactly as it already did for an m4a off the same
+phone — so a two-hour interview does not become a 2 GB WAV to get past a type check.
+
+**The refusal still works, which is the point.** `--input holiday.mp4` on an audio lane is still
+refused by name, a film dropped on the canvas still gets an `input.video` node with
+`blank_picture: null`, and a clip sitting in `uploads/` beside no recording is passed over with the
+reason: *"holiday.mp4 is there, but carries picture: this lane wants a recording, and the picture
+would be thrown away without being asked."* A folder holding both a `.wav` and a clip never probes
+the clip at all — a test fails the run if it does.
+
+Both audio lanes' `prerequisite` and the `produce` skill now say mp4/mov-with-a-blank-picture is
+accepted **and that the picture is measured**, so nobody reads it as "mp4 is fine now".
+
+### Commands actually run (2026-09-09)
+
+| command | result |
+| --- | --- |
+| `uv run pytest -q` | **1317 passed**, 55 deselected (5:43) |
+| `just test-integration` | **49 passed**, 1323 deselected (4:27) |
+| `pnpm -r test` | **386 passed** across 54 files |
+| `just typecheck` | pyright **0 errors**; tsc clean in all 9 packages |
+| `just lint` | ruff **All checks passed**; oxlint 0 errors (pre-existing warnings only) |
+| `just fmt` | 587 files left unchanged |
+| `just schemas` | 70 schemas, 16 templates regenerated (both audio lanes' `prerequisite` changed) |
+
+New tests: `tests/unit/test_media_convert.py` (+7 — the no-video-stream MP4, black, a static cover,
+a film, a black file with no sound, an unreadable file, and one asserting the sample count is fixed
+and spans the file), `tests/unit/test_transcribe_audio.py` (+3), `tests/unit/test_supplied_material.py`
+(+1), `tests/api/test_uploads.py` (+2).
+
+**Known limits, stated.** The sampled verdict is a measurement of twelve frames, not of every
+frame: a film that is black wherever it was sampled and lit in between would be taken as a
+recording and its picture dropped. The reason string says "12 frames sampled" for exactly that
+reason. And `blank_picture` answers about the *first* video stream only, which is the same stream
+`_convert_video` maps and the only one MP4 delivery carries.
+
+## 2026-09-09 (later still) — 313 downloaded sounds into the library, and a third builder to put them there (session auto-content-sfx-packs)
+
+The operator downloaded a large batch of sound effects to `~/Downloads` and asked for them to be
+moved "to the sound folders in the correct category". A literal move would have produced nothing
+usable: `assets/sfx` is builder-owned (its own README says *do not hand-edit*), the runtime only
+ever sees `assets/sfx/manifest.json` (`cues.py` indexes by id), and a 16-bit WAV dropped into a
+category directory is neither 24-bit FLAC nor levelled to either loudness target, so the cue
+cutter would never have seen it and the next builder run would have wiped it. So the sounds went
+in through a builder instead.
+
+**`assets/sfx` is now 362 sounds in 14 categories, up from 49 in 7.** 472 MB.
+
+| | before | after |
+|---|---|---|
+| recorded (#GameAudioGDC) | 38 | 38 |
+| generated (StableAudio3-Small-SFX) | 11 | 11 |
+| **mixkit** (new) | — | **294** |
+| **local-renders** (new) | — | **19** |
+| beds / one-shots | 22 / 27 | 76 / 286 |
+| categories | drone, impact, place, room-tone, transition, ui, weather | + animal, creature, crowd, foley, human, instrument, vehicle |
+
+### What arrived, and what was actually ingested
+
+332 WAVs in `~/Downloads`. 17 were byte-identical re-downloads (`x(1).wav`), one
+(`previews_demo.wav`, 24 kHz mono) was an unrelated TTS demo and was left alone → **314 unique
+sound files**, of which 313 were ingested. 295 are Mixkit; 19 the operator rendered locally
+before ingest and confirmed as own output.
+
+The 314th was dropped, and finding it is the reason there is now a check for it: **Mixkit items
+2390 and 2401 are the same recording** — 2401 is 2390 trimmed by one second at the head. Both
+window sweeps landed on the same span, so the library would have shipped one sound under two ids,
+offering a choice it does not have. `stage_pack.py` catches byte-identical downloads by hash;
+this one was not byte-identical and was found by anchoring a fingerprint on the peak sample, which
+survives any head or tail trim. `index.write()` now returns byte-identical entries as a third
+result and all three builders print them, so the next one is caught by the builder.
+
+### Where the source audio lives
+
+Not in the repo, for the same reason the #GameAudioGDC bundle is not: the Mixkit licence permits
+an End Product that incorporates a sound, not redistribution of the sound.
+
+    /mnt/fast/sound-libraries/mixkit/<category>/…     0.8 GB, 294 files   CF_MIXKIT_SFX_DIR
+    /mnt/fast/sound-libraries/local-renders/…          13 MB,  19 files   CF_LOCAL_SFX_DIR
+
+next to the 99Sounds packs already staged there. One directory per **library** category — that is
+the "sound folders in the correct category" the operator asked for, and it is driven by the recipe
+rather than by a taxonomy inside the stager, so recategorising a sound in the recipe and re-running
+moves the file. Each root carries `SOURCES.sha256` and a `_duplicates/` holding the 17 re-downloads
+and Mixkit 2401. Nothing was deleted.
+
+### The third builder
+
+| file | role |
+|---|---|
+| `skills/audio/sfx/stage_pack.py` | sorts a download into the pack root by category; sha256-verified, idempotent, `--dry-run` explains, refuses to overwrite different bytes |
+| `skills/audio/sfx/ingest_packs.py` | whole-file or loop-window ingest of a pack, through the same levelling, QC and index writer as the other two |
+| `skills/audio/sfx/mixkit.json` | 294 entries: id, category, tags, one-line `use`, mode |
+| `skills/audio/sfx/local_renders.json` | 19 entries, described from measurement |
+
+A pack file differs from a bundle excerpt in what is left to decide. The supplier already cut,
+trimmed and named it, so second-guessing that with an event gate throws away the edit being
+licensed: the default mode is `whole` (take the file as delivered, trim silence, high-pass, level)
+and 259 of the 313 use it. The other 54 are `loop`, and they get exactly the window sweep the
+recorded half uses, because a 210-second dawn chorus still has to be searched for the window that
+wraps cleanly. `whole + bed: true` levels a long continuous texture to the bed target instead of
+the one-shot target; 15 sounds use it.
+
+`index.py` went from a two-source writer to an N-source one: the README's builder table,
+provenance sections, headline and per-category "source" column are all generated per source now,
+and per-entry provenance lives in `ingested_from` (packs) or `recorded_from` (bundle excerpts),
+read through one `origin()` helper. Suppliers with no name — the operator's own renders — no longer
+produce an empty row in the supplier table.
+
+### Two things measurement caught before they shipped
+
+- **Eight beds failed the seam check** (up to +20.4 dB RMS mismatch across the wrap) because their
+  loop length left the sweep only 1–3 windows to audition. Shortening each length gave the sweep
+  4–15 windows and all eight came back inside the 3 dB threshold; the worst seam in the library is
+  now 2.64 dB. This is the same failure mode `windows_auditioned` exists to expose.
+- **`harsh_band` fires on 49 of the 294 Mixkit sounds**, against 2 of the original 49. It is kept
+  and it is not a defect: a dawn chorus, a kiss and a cartoon monkey genuinely put most of their
+  energy in that band. It is one threshold short of the argument that removed `noise_like` from
+  the recorded builder — "listen to this before you put it under narration" is still useful, so it
+  stays as description rather than failure. `clipped` (30) says the delivered file was mastered
+  into the ceiling, which is true of stock one-shots. `distinct_event` (16) marks beds whose
+  subject *is* the event; the generated README now lists them by name rather than shipping them
+  quietly, and points at `storm_bed_loop` + `thunder_distant` as the alternative.
+
+### Licensing (terms read, not summarised)
+
+`docs/research/2026-09-09-mixkit-sfx-pack-licence.md` — the licence text is served by the site's
+own JS from `/license/modal/sfxFree/`, quoted verbatim there with the Envato User Terms cl.9
+restrictions. Free for commercial and non-commercial End Products, no attribution clause; forbids
+redistributing an Item on its own or aggregating Items "on a stock or inventory basis", which is
+what a published copy of `assets/sfx` would be.
+
+**Neither the licence nor the User Terms mentions AI training, and that is not read as
+permission.** The #GameAudioGDC agreement bans it, the halves sit in one directory and are
+deliberately interchangeable in a mix, and a per-supplier rule inside one directory is a rule that
+will be got wrong — so the stricter term governs the whole library and `assets/sfx` stays excluded
+from `condition_sound` and from every model input. Envato's Acceptable Use and Fair Use policies
+are incorporated by reference but do not render as static text; they were not read and nothing
+depends on them. `docs/licensing.md` and `THIRD_PARTY_NOTICES.md` updated.
+
+The 19 local renders are the **only part of `assets/sfx` that cannot be rebuilt from a recipe** —
+no generator, prompt or seed was recorded — so they survive as the staged source files plus the
+ingested FLACs, and their `use` lines were written from measurement (fundamental, spectral
+centroid, decay to −20 dB) rather than from a prompt.
+
+### What this changes for a film
+
+`bed_for()` scores a bed by the fraction of its subject tags the plan's `visual_subject` uses, over
+`place`, `weather` and `room-tone` — so 27 new place beds and 18 new weather beds change what films
+get. Spot-checked after the build:
+
+    a Swedish coastal wind farm under a flat overcast sky  -> wind_open_loop   (unchanged, as the test asserts)
+    a dairy farm in Skane at dawn, cattle in the yard      -> dawn_chorus_loop (new)
+    monsoon rain over a jungle river in Borneo             -> jungle_rain_birds_loop (new)
+    a night market street in a city, traffic a block away  -> city_day_loop    (new)
+    the reading room of a national library                 -> no bed           (correct: no guess)
+
+The new categories (`animal`, `creature`, `crowd`, `foley`, `human`, `instrument`, `vehicle`) are
+outside the three `bed_for` scans and outside the `ACCENTS` table, so nothing in them is placed
+automatically yet. They are library material a cue sheet or a person can name by id.
+
+### Gates (commands actually run, 2026-09-09)
+
+```
+uv run --project skills/audio/sfx python skills/audio/sfx/stage_pack.py \
+    --recipe skills/audio/sfx/mixkit.json                        295 moved, 16 duplicates, 0 problems
+    --recipe skills/audio/sfx/local_renders.json                  19 moved,  1 duplicate,  0 problems
+    (re-run)                                                       0 to move, 0 problems  [idempotent]
+uv run --project skills/audio/sfx python skills/audio/sfx/ingest_packs.py \
+    --recipe skills/audio/sfx/mixkit.json --analyze              295 selected+measured, nothing written
+    --recipe skills/audio/sfx/mixkit.json                        294 built  -> 343 sounds, 463.5 MB
+    --recipe skills/audio/sfx/local_renders.json                  19 built  -> 362 sounds, 472.2 MB
+                                                                 0 missing, 0 duplicate-byte entries
+uv run ruff check <the files touched>                            All checks passed
+uv run ruff format --check <the files touched>                   11 files already formatted
+uv run pytest tests/unit/test_sound_cues.py -q                   16 passed
+just test                                                        1315 passed, 2 failed, 55 deselected
+pnpm -r test                                                     276 passed (6 packages)
+```
+
+The two `just test` failures are **not** from this work and were left alone: another session has
+`workflows/*.yaml` and `python/content_factory/workflows/stages.py` open.
+`test_workflow_definitions::test_generated_files_match_the_definitions` fails because six workflow
+YAMLs were edited without re-running `scripts/export_workflows.py`, and
+`test_silent_lanes::test_photo_sequence_video_gets_a_picture_and_finishes` fails on a
+`generate_keyframes` drift gate. Neither test touches the sound library; regenerating the workflow
+templates would have clobbered a half-finished edit.
+
+`just test-integration` was not run: this change adds no stage executor and writes no contract a
+stage produces — the library is a read-only input — and no test under `tests/integration/`
+references `assets/sfx`, `sound_design` or a cue sheet. The cue path is covered by
+`tests/unit/test_sound_cues.py`, including `place_sfx` rendering real audio, which passes against
+the 362-sound library.
+
+Repo-wide `just fmt` and `just lint` were run once and both report one pre-existing E501 in
+`python/content_factory/workflows/stages.py:698`, which belongs to the other session's open edit.
+`ruff --fix` fixed one unrelated issue in the shared tree in the same pass.
+
+`skills/` is outside the `pyright` include list (`python`, `apps`, `tests`, `scripts`), so the new
+builders are not in the typecheck gate. Running pyright over them by hand reports two
+`os.environ.get(var, Path)` argument-type errors — one in the new `pack_root` and one in the
+existing `bundle_root` it was modelled on. Left matching the file it lives in rather than fixed on
+one of the two.
+
+
+## 2026-09-09/10 overnight — every lane run for real, and the hundred and seventeen things that came out
+
+The instruction was to run every workflow, fix whatever came up, look at the output and keep going
+until morning, across both GPU hosts. So this is not a phase: it is what a night of *actually
+running the catalogue on real backends and looking at the pictures* found. Sixteen lanes, 180
+logged runs, two cards, 117 numbered findings in `output/overnight/FINDINGS.md`, every one of them
+measured on something that was rendered rather than reasoned about. The night ended twice: at
+03:12 vegaserv's GPU fell off the PCIe bus and the work moved to nova alone — which is where most
+of the last dozen findings came from, because with only image lanes left there was time to use
+the human review gate properly and to render the scene kinds nothing had ever drawn — and at
+05:23:31 nova itself dropped off the network mid-frame, which ended generation for good.
+
+**How the work was arranged.** vegaserv's card is shared with another program that can take it at
+any moment (measured: the local HiDream server was killed three times, twice by an Ollama load and
+once mid-generation), so drawing moved to nova and vegaserv kept the TTS, the Remotion renders, the
+post chain and ffmpeg. Two serial queues, one per card, chained; every run logged; every finished
+film and picture looked at, not just its exit code.
+
+### The lanes that could not finish, and why
+
+Nine of the sixteen failed on their first real run, each for a different reason, and none of the
+reasons were visible to `just test` — the core suite cannot reach a stage executor's real backend.
+
+| Lane | Died at | Cause |
+| --- | --- | --- |
+| `single-image` | `compile_destination_packages` | no delivery candidate for `anchors/anchor.png`, so a lane that draws one picture packaged nothing |
+| `image-upscale` | `compile_destination_packages` | same, for the post chain's `sequence/<step>/frames/` |
+| `voice-over-track` | `voice_over`, then `pack` | needed one recording per beat and declared no input at all; and had **no assembly step** — five per-beat wavs and no track |
+| `picture-story` | would die at `voice_over`, stage 10 of 20 | same undeclared take set, an hour of drawings in |
+| `data-story-video` | `synthesize_narration`, then `compile_cards` | the TTS gate could not spell two Swedish proper nouns; then `copy["cards"]` on a lane whose copy has no cards |
+| `narrated-video` | `synthesize_narration` | the TTS gate scored a word-perfect read 0.74 because the ASR writes "color" for "colour" |
+| `silent-video` | `generate_video` | `VideoGenerationRequest` rejects 1080 — not a multiple of 16 — so **no 1080p story of either orientation could generate a clip** |
+| `single-clip-post` | `generate_video` | the same |
+| `scene-controlled-video` | `generate_anchor` | the local HiDream died and the anchor had no failover, with a healthy second host idle |
+| `image-to-video` | `interpolate` | GIMM-VFI's venv is missing `tensorboard`, which upstream imports at module load |
+
+### The three that measured the wrong thing
+
+**The take gate measured the aligner's dictionary, not the read.** Three separate causes, each
+found on a different lane, each a word-perfect performance scored as a mis-speech:
+
+* British spelling — "colour" against an American ASR's "color", 0.74 against a 0.80 gate.
+  `spoken_word_shape` folds the orthographic variants now, on both sides, the way it already
+  folded number rendering.
+* Foreign proper nouns — "Sources: Energimyndigheten, Svenska kraftnät." scored **0.44**. A
+  replaced word whose letters mostly agree (0.72 ratio) counts as heard: that beat is 0.889.
+* Compound splitting — a *recorded* take of "sunlight" transcribed as "some light" failed at 0.84
+  against 0.85. A replaced run whose joined letters agree is one wording tokenized two ways: 0.947.
+
+Truncation still fails (0.600) and a garbled read still fails (0.000), which is what the gate is for.
+
+**The style-drift metric ranks an unrelated picture closer than the anchor's own edit.** Measured
+on the owl set's own files: `style_delta` is a total-variation distance between 256-bin luminance
+histograms, and it scored the anchor against its edited frame **0.617** while scoring the anchor
+against a photograph of a potter's hands **0.347**. Coarsening the bins changes nothing (0.609 at
+16) and an earth-mover distance separates them the wrong way (0.154 against 0.132). It measures how
+much of the frame sits at each brightness, which is dominated by how much dark background there is.
+`UNCALIBRATED` is (0.30, **1.0**) now — the profile whose documented job is to observe rather than
+gate was gating on a number that cannot gate anything — with the measurement in its docstring.
+`locked_region_similarity` still gates at 0.30 and still discriminates: 0.48 for a faithful edit
+against 0.39 for one whose instruction contradicted itself.
+
+**The colour check only ran in one direction.** A monochrome brief that came back coloured was
+caught; a colour brief that came back grey was not, and HiDream fails to grey clay often enough
+that it matters — a cello came back as an untextured grey model, three attempts running. Of the
+pixels bright enough to carry a hue, a greyscale return has 0.2–4 % saturated against 19 %+ for
+every real picture, so `colour_present` is a blocker at 6 % and the regeneration loop handles it.
+
+### The pictures were the bug report
+
+Half of what follows was invisible in a log line and obvious in a rendered frame.
+
+* **`StoryPlan.visual_subject` never reached the image model.** Its own docstring says it is "for
+  the image and video models"; it reached the shot planner and the video prompt compiler and not
+  `generate_anchor`, whose `prompt` widget on these lanes is a *framing* instruction. An
+  `image-set` run of a deep-sea documentary came back as a **character line-up sheet of three
+  strangers in coats**, because the style said "consistent character design" and nothing said what
+  the picture was of. The prompt composes both now: what it is, then how it is framed.
+* **Two lane prompts were meta-language, and a diffusion model draws every word.** "the subject of
+  the brief, **framed as a single finished picture**" returned an ornate picture frame on a brick
+  wall with a blacksmith inside it, on two different subjects. "the reference view of the set" was
+  the other half of the line-up sheet. `audio-picture-story` asked for "the moment this part of the
+  recording describes" — a sentence about a recording the model has never heard.
+* **Two style presets named objects.** `cinematic` said "photographed on a cinema camera ...
+  practical street lighting only" and drew a cinema camera on a tripod on a snowy street, for a
+  deep-ocean brief. `photographic` said "wet surfaces with real specular reflections" and drew a
+  glossy globe ornament on a wet rooftop. `documentary` said "natural skin tones" and put a smiling
+  woman in front of a chalkboard that had been asked for on its own. All three describe the look
+  now and name nothing. A thirteenth preset, `low_key`, exists because the other twelve all ask for
+  "detail held in both the shadows and the highlights", which is the opposite of what a frame that
+  is mostly black needs.
+* **`image-set` and `photo-sequence-video` drew the fixture, not the story.** `generate_keyframes`
+  used `sample_motion_plan()` — eight frames of two hands sliding together on a 1024x576 canvas,
+  every frame instructed "Move hands to the plotted position for frame N" — whatever story it was
+  given. One frame per beat now, on the story's canvas, each drawn to that beat's scene `alt_text`.
+* **The edit instruction forbade the change it asked for**: `PRESERVE_LIST` includes "composition"
+  and "subject anatomy" on a `move_subject` frame. Each delta kind exempts what it is about now.
+  (Measured afterwards: on HiDream's edit path this changes nothing — a wing opening takes, a head
+  turn does not, and leading with the change instead of the preserve list does not help either.
+  The instruction is no longer self-contradicting, which is worth having regardless.)
+* **A recording gave every beat the same shot.** `plan_shots`' preset planner keys the camera off
+  the *scene kind*, and a transcript plan is every beat the same kind — so `audio-picture-story`
+  staged six shots whose camera, lens, framing and description were byte-identical and drew the
+  same picture six times. Where the kinds carry no variation the order does: a fixed rotation of
+  six framings, wide to close and back.
+* **The lane that stages nobody said "of one figure" anyway.** The description is what the image
+  model is given, so a recording about the sky came back as six drawings of an unnamed man on open
+  ground. `plan_shots` has a `characters` widget now and `audio-picture-story` sets it to `none`.
+* **A single anchor ignored the story's frame**, reading `default_working_resolution` whatever the
+  plan said, so a 1080x1920 story got a landscape picture.
+* **Burn-in captions were a phone calibration applied to 16:9 unchanged** — every fraction of the
+  *height*, every default from a 1080x1920 frame, so a landscape film got 32 px captions and a
+  43 px headline: 55 % of their intended size. Sizes are fractions of the shorter side now and the
+  vertical output is unchanged to the pixel. The wrap width is derived from the frame too.
+* **The caption box drew one box per colour override.** libass splits a BorderStyle-3 line at each
+  `{\1c}`, and the translucent boxes overlapped: two hard dark bars either side of whichever word
+  was lit, on every frame of every film. One un-overridden event carries the box now and the
+  highlight is painted over it on a boxless style laid out identically.
+* **QC passed a film of missing-asset placeholders.** A thirty-second narrated video in which every
+  scene read "missing asset · ast_sky02000" came back QC-passed and packaged. `scene_assets_present`
+  is the same reasoning as the existing `scene_kinds_implemented` check, one step along, and it is
+  asked only of a lane that has no pictures of its own.
+* **A pillarboxed frame passed everything.** One anchor came back as a narrow picture with 60 % of
+  its width in flat grey bars; nothing measured it, because the bars are mid grey so nothing is
+  crushed and nothing is blown. Every other frame that night measured 0.
+
+### Three lanes were delivering nothing, and passing
+
+* **`voice-over-track` had no assembly step.** `restore_speech` writes one repaired wav per beat
+  and nothing put them together, so the lane whose product is "a clean spoken track" delivered five
+  per-beat files and no track — the package carried captions and metadata and `DeliveryPackage`
+  refused it. It has a `mix_audio` node now, as its sibling `audio-restore` always did, and
+  masters to -16.0 LUFS.
+* **`photo-sequence-video` cut its pictures at the flipbook rate**, eight frames a second, so a
+  five-beat story planned at eighteen seconds came out as a **0.6-second** film. Each picture is
+  held for its beat's own planned length now (concat demuxer, no blending across the joins): the
+  same five drawings are an 18.03 s film.
+* **QC passed a film of missing-asset placeholders** — thirty seconds in which every scene read
+  "missing asset · ast_sky02000", QC-passed and packaged.
+
+### What the local image stack can and cannot do (measured, ~90 anchors)
+
+HiDream-O1-Image-Dev at 28 steps, guidance 0, ~4 MP whatever is asked for; 30 s an anchor,
+115 s a conditioned one or a reference edit.
+
+* **It will not render deep black.** Three attempts at three seeds for the Earth's limb against
+  space returned a fogged mid-grey frame; "an underwater frame that is pure black except one narrow
+  beam" returned a fish in sunlit shallows. A `low_key` preset helps a forge and not those.
+* **Negative phrasing cannot work and does not.** No negative-prompt field in the skill server or
+  upstream, and dev weights distilled to guidance 0. An A/B at the same seed with and without
+  "no lettering, no signage text, no watermark" produced two street scenes carrying the same
+  gibberish signage. (A standing negative was added, measured, and reverted; the measurement is a
+  comment where the constant was.)
+* **It cannot write.** "GOTHIK COE", "OM3O-OFI634T". No subject whose meaning is text belongs on an
+  image lane — that is what the card lanes are for.
+* **It adds a person unless nothing in the subject implies one.** "no people" kept a figure out of
+  the Pantheon, a seed vault, pointe shoes and a stack of books, and failed on a microscope and a
+  fishing boat.
+* **Some subjects return grey clay** — a cello and a sourdough loaf did, three attempts each.
+  Naming the colours fixes it; `colour_present` catches it either way.
+* **What it is good at**: one inanimate object, close, on a plain or softly blurred ground, in
+  ordinary daylight or one warm lamp. Everything scored 8 or better in that shape — a maple leaf on
+  wet slate, a honeybee on lavender (the night's best), a stack of books under a brass lamp, a
+  watch movement, pointe shoes, a museum mask, the inside of a Roman dome, a tram at blue hour, a
+  typewriter, a sourdough loaf, a cello.
+
+### What a reference edit will and will not change
+
+* A large, unambiguous view change takes: "seen in left profile" turned a mask ninety degrees;
+  "both wings up" opened an owl's wings.
+* A small pose change does not: "head turned a quarter to the left" came back as a copy of the
+  anchor on two runs, before and after the preserve-list fix, and putting the change first in the
+  instruction rather than after the preserve list made no difference (A/B, same seed).
+* The consistency itself is excellent — six views of one owl on one branch, generated across two
+  hosts, hold the same bird, the same moss and the same bokeh.
+
+So `image-set` is a consistency tool, not a posing tool, and a set is written as *views*.
+
+### Both hosts, and why the anchor needed failover
+
+`vegaserv`'s card is shared with another program on this machine, and it took it three times in one
+evening: the HiDream server was killed twice by an Ollama load and once mid-generation. Before this,
+that ended a run — `silent-video` and `scene-controlled-video` both died at `generate_anchor` with
+"server unreachable" while a healthy second host sat idle, and `generate_keyframes` lost seventeen
+minutes of finished frames because nothing was written until the whole pool came back. Both are
+fixed, and both earned it the same night: `scene-controlled-video`'s log shows two
+`anchor-host-failed:http://127.0.0.1:8801` lines and then anchors served from nova.
+
+Two `make` runs on one host still have no arbitration between them — a narration load met a card
+holding 16.66 GB of one run's post chain and 4.39 GB of another's and died on a 20 MiB allocation.
+There is a claim mechanism for an *external* tenant (`gpu yield` / `resume`) and none for this.
+Serialising per host is the operator's job today; that is what the two queues did.
+
+### The second half of the night: what looking at the pictures and the spectrograms found
+
+Ten more defects, and none of them were reachable from a test — every one came from a rendered
+frame, a spectrogram or a log line on a real run.
+
+**A photograph behind a card was bleached to a ghost.** Every scene with a `background_asset_id`
+laid a flat 0.72 veil of the card's own background colour over the whole frame, because
+`legibility` scores type against a flat colour and a photograph has none. On a title card over a
+bee on lavender: source mean HSV saturation **0.219 / value 0.570**, render **0.063 / 0.837** — 71 %
+of the colour gone, and 0.003 above the `COLOUR_SAT_MIN` (0.06) at which `qc/frame_review.py`
+calls a frame colourless. The contrast floor is only needed where the type is, and `fitText`
+already measures how far the type reaches, so the veil is now masked: full strength to the end of
+the type, rolled off to 0.14 over the next quarter of the frame. Same card after: the type's third
+unchanged at 0.063, the far third **0.056 → 0.151**, the subject 0.072 → 0.109. A scene carrying a
+`notice` keeps the flat veil (a caveat has to be legible wherever the picture is bright), and so
+does a scene that does not measure its type — forgetting to opt in must not cost a card its floor.
+
+**One dropped sentence from the TTS killed a fourteen-stage run at stage four.** Qwen3-TTS returned
+only the second half of "A pitcher cannot make a ball turn by throwing it harder. The turn comes
+from the spin." — similarity 0.76 against the 0.80 gate — and `narrated-video` died 18 s in. The
+gate is right and the take was not: it is a sampling model and the next sample said the whole
+thing. The executor now has a budget of three takes, each reseeded from the beat id so the retake
+is reproducible too, keeps the best, and only fails when every take fell short — which is the
+signal that the *script* is the problem. The budget is deliberately not in the cache key.
+
+**`interpolate` had been broken by an unpinned CuPy for as long as it existed.** `video-finish`
+spent 21 minutes upscaling and then died: GIMM-VFI's `softsplat.py` builds its forward-warp kernel
+with `cupy.cuda.compile_with_cache`, removed in CuPy 13.0, and `setup_envs.sh` asked for
+`cupy-cuda12x` with no version, so the resolver took 14.2.0. Pinning back to the last 12.x does not
+work either — that venv's torch is a CUDA 13 build shipping `libcudart.so.13`, and 12.3.0 installs
+and then cannot import. So the pin is `cupy-cuda13x==14.2.0`, matching torch, and the removed API
+comes back as a ten-line shim over `cupy.RawModule` injected on PYTHONPATH. Verified by compiling
+and launching a kernel through the shim.
+
+**A run dispatched to the second box still booted the model server on the first.**
+`_service_for_backend` matched on the backend's *type*, so every `HiDreamReferenceEditBackend`
+resolved to the local `hidream` tenant — including one whose endpoint was nova. A `single-image`
+run whose pool was `["http://100.82.150.94:8801"]` recorded `vram_before_mib=18994` on the *local*
+card, and the `silent-video` beside it died at `sound_design` with "Process 1225860 has 15.51 GiB
+memory in use". This is the cause behind the "no arbitration between two runs" note above: one of
+the two was reserving 19 GB by accident. Only the endpoint `services.local` manages is started
+now, compared on (scheme, host, port).
+
+**The de-esser had never de-essed.** `de_ess_intensity` shipped at 0.25 and FFmpeg's `deesser` does
+nothing there. Swept on three real narration beats, measuring `sibilance_ratio` (5-9 kHz over the
+300 Hz-5 kHz speech band, limit 0.12):
+
+| intensity | hot beat 0.1431 | mid beat 0.0269 | clean beat 0.0072 |
+| --- | --- | --- | --- |
+| 0.25 | −0.1 % | −0.0 % | −0.0 % |
+| 0.35 | −3.8 % | −1.7 % | −0.1 % |
+| **0.45** | **−27.5 %** (to 0.1036) | −15.6 % | −1.7 % |
+| 0.60 | −73.2 % | −63.0 % | −4.7 % |
+
+The `f` control moves the result 0.9 % across its whole range on this material, so it was left
+alone. Two changes: 0.45, and the de-esser is gated on the measurement like every model step in the
+chain — at a working intensity it takes a third of the band off material that never needed it (a
+real recording at 0.0295 lost 32.8 %). Beats that skip it record why.
+
+**The anchor prompt said the film's world twice, which is why a picture story was six copies of one
+picture.** `_anchor_prompt` appended the story's `visual_subject` *and* the shot's state sentence,
+which `state_sentence` builds around the same `visual_subject`. On `audio-picture-story`: 258 of a
+480-character prompt were one 129-character world sentence printed twice, and the per-shot camera
+clause — four words — lost to it. Six drawings came back as the same dawn vista from six almost
+identical angles. The dedup already there compared whole clauses and could not see a repeat nested
+in a longer one; it tests containment now.
+
+**`--subject` silently deleted the lane's framing instruction.** It was written into
+`generate_anchor.prompt`, which is a *framing* widget — on `audio-picture-story`, "one drawn frame,
+the subject filling it, nothing else in shot". Overwriting it threw that away and then delivered
+the same sentence a second time as `visual_subject`. It now fills that widget only on a lane that
+wrote no framing of its own.
+
+**A clip was asked for at a size the video package refuses.** `image-to-video` on a 2560×1440
+photograph and `silent-video` on a 1920×1080 story both died at `generate_video` with "parameter
+'width' above maximum 1344.0", raised inside the ComfyUI package validator after the anchors had
+been generated. The limit belongs to the graph and nothing upstream had asked it. A supplied still
+has an incidental size, so it is fitted into the cap with its aspect kept; a shot plan's size is
+deliberate, so it is refused early, naming the cap and the knob.
+
+**A hook was burned over a title card that said almost the same thing.** The overlay was dropped
+when the opening card's words matched exactly, which is not the common case: a film opening on
+"Resistance is not learned" carried "Resistance is not something bacteria learn" across the top of
+the same frame. A paraphrase is not the same words, and two different headlines stacked read worse
+than a repeat — so the rule is now the scene *kind*: no hook over a title, section intro or chapter
+card, whatever it says. The word test stays for a hook that repeats a non-headline opening.
+
+**The one lane that pins a frame rate never said so.** `picture-story` sets `plan_shots.fps: 24`
+and `plan_shots` refuses a story at another rate rather than let `compose_video` duplicate frames.
+Correct, but silent: any `--story` written for another lane (they are 30) failed at stage three
+with no hint that this was the odd lane out. The node note and the prerequisite both say 24 now.
+
+**Five video lanes have only ever run against the mock video backend.** `video.backend` defaults to
+`mock` and `.env` never set it, so `image-to-video`, `silent-video`, `scene-controlled-video`,
+`hybrid-video` and `single-clip-post` all recorded `"backend": "mock"` — a deterministic ffmpeg
+clip, not generated motion. The plumbing is proven; the model is not. ComfyUI and the LTX-2.5 22B
+distilled GGUF are both present, so this was a queue nobody had run.
+
+### One more thing the image model does, isolated to one variable
+
+**It is the noun that draws the person, not the missing negative.** An A/B at one seed: **A** "one
+blacksmith's anvil on a dark workshop floor … no people" drew a man with a hammer; **B**, the same
+sentence with *iron* for *blacksmith's*, drew the anvil alone; **C**, B with the "no people"
+deleted, also drew the anvil alone. The negative contributes nothing in either direction — guidance
+0, so there is no classifier-free guidance for it to act through — and the possessive trade name
+was the whole cause. Recorded on `StoryPlan.visual_subject` and in `--subject`'s help, which is
+where subjects get written. Sheet: `output/overnight/review/anvil-ab.png`.
+
+### Three more, from an audit of the night's own output rather than from a run
+
+**Every caption sidecar is sound.** 24 tracks across the night's deliverables, checked for
+monotonic non-overlapping cues, empty text, cues under 0.5 s or over 9 s, and a `WEBVTT` header on
+every `.vtt`: **zero problems**. 22 delivered films probed for container, rate and A/V length
+agreement: **zero problems** — every one h264 + aac (or no audio track where the lane makes none),
+every frame size even, video and audio within 0.25 s of each other. (That second audit turned out
+to be asking the wrong question: five of those films are placeholder cards end to end and were
+perfectly well-formed. See "Six of twenty-one delivered films are pictures of nothing" below —
+the correction is left here rather than tidied away, because the wrong question looked exactly
+like a clean bill of health.)
+
+**A failed run left a file at the deliverable's name.** The post chain concatenated into
+`exports/final.mp4`, the same path the delivered film uses. `silent-video` died at `sound_design`,
+three stages before the cut, and thirty seconds of silent, uncaptioned footage was sitting there
+under the one filename every consumer reads — this audit counted it among the delivered films,
+which is how it was found. The post chain writes `exports/postchain.mp4` now and is a delivery
+candidate under that name, so a lane that ends there still delivers.
+
+**`--plan` printed the lane's defaults rather than what would run.** `--set`, `--story`,
+`--subject` and `--style` were all parsed *after* the `--plan` branch returned. The override
+resolution is one pure function now (`runners.local.resolved_steps`) that the runner and `--plan`
+both call.
+
+### The one that explains most of the mock output
+
+**Six lanes declared HiDream weights as a requirement and then drew mock rectangles.** The anchor
+backend is resolved from the node's own `model` widget when the setting is not explicitly
+configured — `_anchor_backend_name`'s documented precedence, added the day three lanes were found
+drawing grey rectangles — and only four of the ten HiDream lanes had the pin. `image-set` on a
+machine with no `CF__IMAGE_SEQUENCES__BACKEND` produced **six red rectangles in three seconds** and
+then gated for human review on them, on a lane whose preflight had just verified the HiDream
+weights were on disk. `hybrid-video`, `image-to-video`, `scene-controlled-video`, `silent-video`
+and `single-clip-post` were in the same state.
+
+And the spokes had a second version of the same hole: `generate_keyframes` resolves *its own*
+node's `model` widget, and the node catalogue declared no widgets at all — correctly, for `frames`
+and `seed`, which the stage really does not read. So `photo-sequence-video`, which did pin the
+anchor, drew a real anchor and **mock spokes**, and no lane definition could have fixed it. The
+widget is declared now (the static widget audit confirms the stage reads it) and pinned on both
+sequence lanes.
+
+Between them these two account for most of tonight's `"backend": "mock"` lines, and they are the
+reason the video half of the catalogue looked like it was running when it was not.
+
+### Four that only appeared once the one before them was fixed
+
+**The CuPy shim works, and the first run to get past it found the next defect.** `video-finish`
+reached `interpolate`, GIMM-VFI compiled and launched its kernel, and OOMed asking for 1.99 GiB on
+a 1088x1920 pair — the size limit already on record. The out-of-memory fallback fired correctly and
+then died itself: it resolved `_silent_picture(ctx)` at the top of the function, and on a lane that
+*ends* at the post chain there is no picture yet, because the function is what produces it. So the
+run failed with "no picture yet" instead of delivering the film without the invented frames, which
+is the whole point of the fallback.
+
+**`characters: none` was honoured by one shot planner and ignored by the other.** The widget
+reached `plan_shots_from_story` and never `plan_shots_from_reference`, so a `picture-story` told to
+stage nobody still staged five figures — and then hit the new unclothed-staging refusal, which is
+how it was noticed. Retrieval's job is to find a captured *interaction*; with nobody to stage there
+is nothing for it to contribute, so that branch takes the preset plan.
+
+**The generation lock recorded a model that never drew anything.** `lock_generation` resolved its
+backend from *its own* node's `model` widget — which that node does not have — and fell through to
+the settings default: an `image-set` run whose anchor marker says `hidream-o1` wrote a lock saying
+`mock-reference-edit`. The lock's model rides in every spoke's `input_hash`, so this keys a whole
+frame set on a model that never touched it. The stage's docstring already records this exact defect
+for the *style* and fixes it by reading the anchor's own marker; the model is read from the same
+marker now. Confirmed on the next run: `lock_generation ... {"backend": "hidream-o1"}`.
+
+**A `--from` resume re-demanded the input the run already has.** `audio-picture-story --from finish`
+was refused with "this lane works on material you supply" — the recording is in the run's uploads
+folder, put there by the earlier stages, and the stage being resumed is nine steps past the one
+that reads it. The refusal prints its own workaround (`--force`), so it is a rough edge and not a
+wall, but it is recorded rather than smoothed over.
+
+### And one that the core suite had to be told about
+
+Pinning a real model on a lane definition is right for a film and wrong for an offline test:
+`hybrid-video`'s end-to-end test started a HiDream server the moment the lane said which model it
+uses, because deleting `CF__*` leaves the settings at defaults and a default is exactly what a
+lane's widget may override. `tests/conftest.py` now *configures* `CF__IMAGE_SEQUENCES__BACKEND=mock`
+and `CF__VIDEO__BACKEND=mock` for the whole suite, which takes the higher precedence; a test that
+wants something else still wins, because its own `monkeypatch.setenv` runs after the fixture. That
+is a stronger guarantee than the one `just test` had before — it was relying on a default that a
+lane is allowed to overrule.
+
+### Then the audio chain, twice
+
+**The de-esser had never de-essed** — the intensity table above.
+
+**A master that hit its loudness target and overshot the peak ceiling failed the run instead of
+being trimmed.** `mix_audio` produced -14.2 LUFS, dead on target, with a true peak of **-0.8
+dBTP** against a -1.0 ceiling, and refused the run at stage nine of twenty. The gate is right:
+over the ceiling is never acceptable. The chain was wrong. `loudnorm` in `linear=true` mode
+applies one measured gain and does not limit — its `TP` argument only informs the gain it picks,
+and its true-peak figure is a prediction that can come in low. The master measures itself now and,
+if it is over, applies a second linear gain of exactly the overshoot plus 0.05 dB: the true peak
+moves by the same number of decibels and the programme by the same number, a fifth of a decibel
+here and well inside the 1 LU tolerance. Linear, because the alternative is to compress, and this
+chain deliberately does not.
+
+### And two prompt words worth their own note
+
+**`--subject` and `visual_subject` must name no person, trade or human action** — the anvil A/B
+above.
+
+**A "frame" in subject position is a thing you hang.** Once the world sentence stopped printing
+twice and the lane's own framing widget came back, `audio-picture-story` produced six genuinely
+different views of one object instead of six copies of one vista — and drew three of the six
+**inside a literal picture frame on a wall**, because the restored widget begins "one drawn
+frame". `single-image`'s "one subject filling the frame" produced no picture frames in **85**
+runs, because there the word is the object of *filling*. The two lanes that had it in subject
+position say "filling the picture" now.
+
+### Non-English narration, which had never been run
+
+Qwen3-TTS speaks ten languages and the forced aligner was pinned to `base.en`, an English-only
+Whisper checkpoint, with no `language=` passed at all. `base.en` does not refuse German — it
+transcribes it as English-sounding nonsense — so a word-perfect German take would have scored near
+zero against its own script and failed as a mis-speech, and after the retake budget it would have
+burned three takes doing it. The aligner is told the language now (this is forced alignment
+against a script somebody wrote, so guessing it from three seconds of audio only adds a way to be
+wrong), and an English-only checkpoint left at its default is swapped for its multilingual sibling
+when the narration is not English; a configured checkpoint is still obeyed. A four-card German
+explainer then ran end to end on the first attempt: 14 stages, 82 s, all green.
+
+### One more, from the German cut, that had been in every film all evening
+
+**Caption cues ended on dangling articles.** German made it visible — "Oben auf einem Berg ist die
+Luft dünner. **Der**", an article alone on screen for the last third of a second — and an audit of
+the night's own output then found **37** cues across the delivered films doing it in English:
+"Any sort that works by comparing / two things has **a**", "It rains here two hundred days **a**".
+`balanced_groups` split on the character budget alone. It moves a trailing closed-class word onto
+the next cue now — at most two, never the cue's last word, because a one-word cue is worse than a
+hanging article — from an explicit per-language list covering the languages the catalogue narrates
+in. Guessing part of speech is a different problem; a fixed set of function words is the part it
+is safe to be sure about. Timings are unaffected: each cue still starts on its own first word.
+
+### Where the lanes stand
+
+Counted from `output/overnight/logs/`, which is the only record that survives the session — the
+final numbers are in the results block below. At this point in the night it stood at 160 logged
+runs and 10 of the 16 lanes with a logged exit 0; `audio-picture-story` joined them shortly
+after, and the five that never did are the video lanes that had only just met the real video
+model when the card went. Runs that passed in a terminal earlier in the night left no log, and
+the tally deliberately does not count them.
+
+### And then, at 03:12, the card fell off the bus
+
+Not a software defect, and it ends the local half of the night. During `picture-story`'s LTX-2.5
+22B generation the kernel logged an uncorrectable PCIe AER error, then:
+
+```
+NVRM: Xid (PCI:0000:01:00): 79, GPU has fallen off the bus.
+NVRM: Xid (PCI:0000:01:00): 154, GPU recovery action changed from 0x0 (None) to 0x2
+                                 (Node Reboot Required)
+```
+
+`nvidia-smi` now answers "Unable to determine the device handle for GPU0 ... No devices were
+found", and the device cannot be reset from software while the desktop compositor and the other
+tenant's server hold it. **vegaserv needs a reboot before its card can be used again.** nova was
+unaffected and kept working; the local queues were stopped by hand.
+
+What is worth keeping from it is how it looked from inside. `picture-story` died at
+`generate_video` with `ComfyTransientError: All connection attempts failed` — ComfyUI had gone
+down with the card — and `video-finish` died at `upscale_video` with SeedVR2's
+`SafetensorError: device cpu:0 is invalid`, because with no GPU to see the upscaler placed its
+VAE on the CPU and its own device-string handling is broken for that case. Two unrelated-looking
+bugs, neither saying "the GPU is gone", and a queue that would have spent every remaining job
+finding out. `_ensure_backend_ready` — the one moment a run is about to put weights on the local
+card — now refuses with a `BlockedError` naming Xid 79, the driver's own recovery action,
+`journalctl -k | grep Xid`, and the two ways to keep working without the card. The check is
+narrow on purpose: a host with no `nvidia-smi` at all is a normal offline machine, so it asks
+whether the driver is present and has *lost* the device, not whether a GPU exists.
+
+### The last batch, and a sharper version of the person rule
+
+Ten subjects on nova after the card died, all written to the formula and none naming a person, a
+trade or a human action. Eight came back clean — amber on slate (8.5), an amethyst geode (8.5),
+fan coral (8), a brass cogwheel (8), a dried chilli (8), cushion moss (7.5), peppercorns (7), a
+quill and ink (6). **Two drew a person anyway**: an abacus came back held, and a typewriter came
+back with hands at the keys. Both are objects whose ordinary existence is *being worked*; the
+eight clean ones are objects you look at. Checked afterwards against every instrument subject the
+night drew — the wider sample — **four of six** came back with a person nobody asked for: an
+abacus held, hands at a typewriter's keys, a woman at a microscope, a man at a fishing boat. The
+two that did not are the useful part: `n-typewriter` ("one typewriter on a desk") drew the machine
+alone while `n-typebar` ("one row of steel typebars **inside** a black typewriter, close") drew a
+hand reaching in. Same object; the close-up-from-inside framing is what invited the hand. So it is
+a strong tendency rather than a law — name the thing at rest, and do not frame it from where a
+user would stand. Recorded on `StoryPlan.visual_subject`, which is where subjects get written;
+sheet at `output/overnight/review/instruments-draw-users.png`.
+
+**And the general form of the person rule.** The best frame of the last batch (amber on slate,
+8.5) put a brass oil lamp, a mug, a cloth and a knife into a shot whose subject said "on a sheet
+of grey slate, one warm lamp from the left" — the *lamp* was a lighting instruction and the model
+made it an object. The subjects that named light without naming a fixture — "soft window light",
+"hard afternoon light and a sharp shadow", "one cool light from above" — put no fixture in frame
+and kept their plain grounds. So the trade noun, the instrument in use and the lamp are three
+cases of one rule: **name only the things you want in the picture**, and describe light as a
+quality rather than as a lamp. All of it is on `StoryPlan.visual_subject`, which is the field an
+operator actually writes.
+
+### The shape of the change
+
+89 files, +4,588 −570 outside the generated contracts and the sound-library work that was
+already in the tree, of which **23 are test files** (+1,357 lines) and two are new
+(`packages/video-ui/test/backdropScrim.test.ts`, `skills/video/postchain/compat/`). The bulk of it is `workflows/stages.py` (+1,056), which is where the lane
+executors live; then `runners/local.py` (+210) for the override resolution and the resume's
+memory, `ingest/convert.py`, `audio/captions.py` (+144) for the cue rules, and 21 test files.
+Nothing was committed — this session does not commit — so `scripts/schemas.sh --check` reports
+the regenerated contracts as drift until the tree is.
+
+### Overnight results (commands actually run)
+
+```
+uv run ruff format --check .                              592 files already formatted
+uv run ruff check .                                       All checks passed
+uv run pyright                                            0 errors, 0 warnings
+pnpm run lint                        (oxlint)             0 errors; 46 pre-existing warnings,
+                                                          all jsx-a11y/react advisories in the
+                                                          web packages, none in tonight's files
+pnpm -r --if-present run typecheck                        Done (video-ui, apps/web, apps/renderer)
+uv run pytest -q                                          1340 passed, 55 deselected  (5m17s)
+pnpm -r test                                              283 passed (6 packages: editor-core 8,
+                                                          pipeline-canvas 13, web-ui 80,
+                                                          video-ui 56, web 120, renderer 6)
+uv run content-factory workflows validate                 {"checked": 16, "problems": 0}
+scripts/schemas.sh                                        70 schemas, 254 defs, 60 node types,
+                                                          16 templates regenerated
+```
+
+Lane runs, counted from `output/overnight/logs/` — the only record that survives a session:
+
+```
+180 logged runs across the night
+ 11 of 16 lanes with a logged exit 0
+      audio-picture-story 1   audio-restore 1     data-story-video 2   hybrid-video 1
+      image-set 2             image-upscale 1     narrated-video 16    photo-sequence-video 1
+      scene-controlled-video 1  single-image 99   voice-over-track 1
+  5 without one: image-to-video, picture-story, silent-video, single-clip-post, video-finish
+```
+
+**Six of twenty-one delivered films are pictures of nothing, and my own audit missed it.**
+`b01-narrated-sky` — counted all night as a delivered film — is five "PLACEHOLDER · IMAGE /
+missing asset" cards end to end, with narration over them and a 1.1 MB mp4 in its delivery
+package. So are `b02`, `b03`, `b05` and `b06`. They passed every gate at 23:00 because
+`scene_assets_present` did not exist yet; re-running them now fails exactly there, which is that
+check earning its keep retroactively. The cause is a story/lane mismatch: those stories are made
+of `ImageScene`s and `narrated-video` draws none, so unless the operator supplies the stills
+(`s01-narrated-bee-bg` did, and is clean) the film renders labelled holes. The container audit
+earlier tonight said "22 delivered films, 0 problems" and it was asking the wrong question —
+codec, rate and A/V sync were all fine. **A film can be perfectly well-formed and be a picture of
+nothing.** `make` now refuses that combination in the first second, with the three ways out
+named, instead of leaving it to QC after the render.
+
+**The model substitutes the nearest familiar object for an unfamiliar one, and it does not fail
+visibly.** Twelve more stills written to every rule the night had produced. Two held completely:
+**no people in any of the twelve**, and **no invented light fixtures** (light named as a quality
+throughout). Five are 8 or better — a nautilus cut in half (9), an ammonite on sandstone (8.5),
+a steel ball race (8.5), a crackled celadon bowl (8.5), a glass prism (8). Four are one failure
+in different clothes: "a glassy **conchoidal fracture**" came back as a seashell, a painted
+pottery **sherd** as a whole pot in a museum vitrine, a fern **fiddlehead** as a sea urchin, and
+a folded **damascus steel** billet as a pale grey block with a wave printed on it. Every one is a
+word for a structure the model does not hold, and every one came back as the nearest thing it
+does hold — rendered beautifully, correct light, plausible ground. **A substitution is
+indistinguishable from a success to every deterministic check there is**, which is the sharpest
+version of the point below.
+
+**Structure beats palette — and the set rule holds a third time.** The malachite subject
+rewritten from "banded bright green and dark green" (which produced tartan) to "a pattern of
+concentric rings and swirls in light and dark green, like the rings of a tree seen end-on" came
+back as believable malachite: banded, polished, the right greens and depth. The structure
+description did the work the palette description could not. The *set* is one polished sphere
+from one angle six times — the six requested viewpoints did nothing — which is the state-not-
+camera rule confirmed on a third subject. 6/10 as a picture, 2/10 as a set.
+
+**A prediction recorded before the result, and half of it was wrong.** Three image-sets were
+queued at 03:56, before the vault and the seed pod produced the state-not-camera rule, and all
+three are written as viewpoints. The prediction: they should come back as near-copies except the
+loaf's "seen **cut in half**, the open crumb toward the camera", the one instruction in the three
+sets that asks the subject to do something. The viewpoints failed as predicted — the same loaf
+from the same angle five times — and **so did the cut**. So the rule as first written is too
+generous. What the kilim actually did (fold, stack, roll) are rearrangements of a deformable
+object: a repaint of the same material in a new shape. Cutting a loaf open asks for an interior
+surface the anchor never showed, and the edit cannot invent one. The rule that survives both
+sets is narrower: **an edit can rearrange what is already in the anchor; it cannot show a face of
+the subject the anchor never showed.** A cut-open loaf, a view from behind and a room from the
+far corner all fail for the same reason.
+
+**And the iceberg saved the rule from being too blunt.** All three viewpoint sets came back
+mostly as one view repeated — the loaf five times from one angle, the turbine six times differing
+only in scale and a few degrees, the iceberg five times at eye level. But the iceberg's *"seen
+from high above, looking down at the berg and its shadow in the water"* genuinely took: an
+elevated view, concentric ripples, the berg small below. One large viewpoint change out of
+fourteen viewpoint instructions. That is not a contradiction — the overhead view of a berg on
+flat water is a reprojection of surfaces the anchor **already shows**, while "end-on down the
+axis", "from behind", "cut in half" and "the far corner of this room" all ask for a face it never
+showed. Final form, which also explains the older observation that a large unambiguous view
+change takes while a small pose change does not:
+
+> **An edit can rearrange or re-view what the anchor already contains. It cannot invent a surface
+> the anchor never showed.**
+
+Writing a set is then one question per instruction: *is everything this frame needs visible in
+the hub?* If yes it will probably take, however large the change; if no, no phrasing helps and
+the frame needs its own anchor.
+
+**And a failure mode I had not seen: the model drew the photo editor.** Frame 3 of that set —
+"seen very close, only the crust filling the picture" — came back as a **screenshot of an
+image-editing application**, toolbar and sliders and gibberish labels, with the loaf in its
+canvas. "Very close" reads as *crop*, crop is an editing operation, and the model drew the
+operation instead of the result. Same shape as "one drawn frame" producing a literal picture
+frame: a word naming the **medium or the act of making** gets drawn as an object. Say what the
+finished picture shows, never what should be done to it.
+
+**What no automatic check would have caught.** Every check in `qc/frame_review.py` was run over
+five frames already scored by eye — the night's best (a honeybee, 9/10), a good one (amber, 8.5),
+a washed-out one (a loom, 4), one that added people (a tram street, 6) and six consistent views
+of the wrong object (malachite, 2). **Five checks each, zero flagged, on all of them.** The
+checks are not broken — their own comment says a finding should mean "look at this", not "this is
+wrong" — and what they catch did not happen in this sample. The one automatic gate that caught a
+real content failure all night is `colour_present`, which blocked a greyscale barrow three seeds
+running. The mannequins, the picture frames, the plaid malachite, the unrequested people and the
+invented lamps were all caught by looking. That is the argument for the human `review_frames`
+gate as a measurement rather than a principle, and the bar the phase-7 multimodal critic has to
+clear. And it is not that the checks are the wrong ones: fifteen stills scored by eye first, from
+9/10 to 3/10, separate by **1.4 %** on luminance contrast, **1.3 %** on dynamic range, 11.6 % on
+edge energy *in the wrong direction*, and 26.4 % on saturation with total overlap — the 8/10 salt
+flat is the least saturated frame in the set and the 4/10 anvil has the highest contrast. A
+picture of the wrong object is still a detailed, well-exposed picture. **No threshold over the
+pixels will find these failures.** `docs/quality-control.md` now says so where the design decision lives: the layer-4
+question is not "is this frame well formed" — the deterministic layers answer that, and answered
+it correctly all night — but **"is this a picture of the thing that was asked for?"**, which
+needs the subject sentence and the frame side by side. Two properties any candidate must have:
+it has to be able to fail a technically perfect frame, and its verdict has to bind to the digest
+of the exact image it looked at, the way an operator's does. The `--as vlm` reviewer slot in
+`content-factory frames review` is where it would plug in.
+
+`output/overnight/README.md` says what is in that directory and how to read it — 85 findings,
+89 review sheets, 249 run logs, 127 story fixtures, 199 run directories, and the two caveats
+anyone opening it needs first (the placeholder films, and the 03:12 timestamp after which
+nothing local ran).
+
+`output/overnight/BEST.md` scores what the night produced — what would ship at 8.5 or better,
+what is interesting and under the bar, and the three that are not shippable and were worth having
+anyway. `output/overnight/FINDINGS.md` has the measurement behind every score.
+
+Genres, since the brief asked for range: the card films that rendered cover sky physics, a
+comparison-sort lower bound, sourdough fermentation, ultramarine and its price, curveball
+aerodynamics, antibiotic resistance, primes, a minor chord, a honeybee's foraging trip, a wet
+tram street, concrete, neurons, Swedish wind generation — and, in German, why water boils below
+100 °C on a mountain. Four more were written and queued and never got a card: a double-entry
+bookkeeping explainer, a Bronze Age barrow, a six-card noir in portrait over a photographed wet
+street, and a lyrical piece on the Uyuni salt flat. Their stories are in
+`output/overnight/stories/` and they need only the reboot and one queue.
+
+Those five lanes were queued behind the fixes and running when the card fell off the bus at 03:12.
+`picture-story` had reached `generate_video` on the real LTX backend — the first time any lane
+did — and `video-finish` had reached `interpolate` with the CuPy shim working and the GIMM-VFI
+OOM fallback firing correctly. Both need the reboot to finish.
+
+Audits over the night's own output, which found two of the defects above:
+
+```
+caption sidecars       24 tracks: monotonic, non-overlapping, no empty cues, none under 0.5 s
+                       or over 9 s, a WEBVTT sidecar beside every SRT   -> 0 problems
+delivered films        22 films probed: container, rate, A/V length agreement, even frame
+                       sizes, h264 + aac                                -> 0 problems
+hanging caption cues    37 cues ended on a binding word before finding 59; 0 in new renders
+delivery packages      129 packages, 419 files: existence, byte count and sha256 against the
+                       manifest -> 5 stale runs found and repacked, then 0 of 419
+passing deliverables   129 report passed; every one carries more than metadata -> 0 problems
+
+what the night made      26 delivered films          51.8 MB
+                         -- of the 21 with a timeline plan, 6 are placeholder films (finding 76)
+                        118 generated stills        399.9 MB
+                         57 sequence frames         155.8 MB
+                         13 contact sheets           26.8 MB
+                         28 caption tracks
+                         27 mastered audio stems      72.1 MB
+                        129 delivery packages
+                                            4.92 GB in output/overnight
+loudness               five card films: -14.10 to -14.64 LUFS, true peak -0.81 to -0.88 dBTP
+                       ...which is 0.12-0.20 dB OVER the ceiling in the delivered container,
+                       which is finding 60. After it: master -1.3 dBTP, delivered -1.15 dBTP
+
+just test-integration                                     49 passed, 1346 deselected  (4m25s)
+                                                          (postgres + temporal up 6 h, healthy)
+```
+
+`just test-integration` was run because this work touches stage executors and the contracts they
+write: `generate_anchor`'s prompt composition, `lock_generation`'s recorded model, `interpolate`'s
+export name and its out-of-memory fallback, `compile_controls`' new refusal, `mix_audio`'s master,
+`restore_speech`'s de-esser gate, and `SpeechRestorationSpec`/`MasterChainSpec` themselves.
+
+`scripts/schemas.sh --check` exits 1 for the expected reason: the regenerated contracts are not
+committed, because nothing in this session commits. `scripts/schemas.sh` itself is idempotent —
+running it twice produces no further change — so the check goes green as soon as the tree is
+committed.
+
+### After the card died: what the human gate turned out not to do
+
+With only nova left, the work moved to image sets — and using the review gate properly for the
+first time found the thing it was supposed to make possible.
+
+**A frame a person rejected could never be redrawn.** `image-set`'s note promises "rejecting one
+drawing costs one drawing, not the film". Nothing implemented it: `review_frames` recorded the
+verdict, `generate_keyframes` never read it, and the frame's `input_hash` marker was still a
+cache hit — so a rerun produced the identical picture and the gate blocked on it again, for ever.
+`generate_keyframes` now moves a rejected frame's picture and marker into `sequence/rejected/` as
+`NNNN.reviewed.*` before it starts, so the next run redraws exactly that frame, the turned-down
+picture can still be looked at, and the stage's facts list `redrawn_after_rejection`.
+
+**And the thing the automatic gate cannot catch.** The set that found it was six views of a
+malachite specimen that is not malachite: "banded bright green and dark green" came back as a
+tartan surface pattern on a faceted blob, six times, faithfully consistent
+(`worst_locked_similarity 0.6746`, drift QC passed). Drift QC measures **consistency, not
+correctness** — a wrong anchor propagates to a perfect set — which is exactly the job
+`review_frames` exists for, and it did it. The content lesson is the counter-case to "name the
+colours or the model may not use any": naming a *palette* produces a decal, so a material the
+model does not know has to be described by its structure ("concentric rings, like the rings of a
+tree seen end-on") rather than by its colours. Sheet:
+`output/overnight/review/specimen-wrong-subject.png`.
+
+**An audit of every delivery package, and a rough edge in `--until`.** 129 packages, 419 files,
+each checked for existence, byte count and sha256 against its manifest. Five runs were stale —
+all b-series card films, where a slice had re-rendered the film and stopped before
+`compile_destination_packages`, leaving a manifest whose digests all disagreed with the bytes. In
+a system whose discipline is content-addressing, that is the one record that must not be wrong
+quietly. Repacked (`--from pack`, 0.0 s each); the audit is now 0 of 419. Deliberately not fixed
+with a QC check: `qc_deliverable` runs *before* `pack`, so on any ordinary re-run it would find
+the previous pass's manifest disagreeing and cry wolf every time. The honest fix is for a slice
+that stops before `pack` to say so, which belongs to `--until`'s contract rather than to QC.
+
+**A QC check whose wording invited a wrong fix.** `midtone_range` reports "N% of pixels are
+midtones (a photograph runs 60-80%)" and enforces only a floor of 0.30. That sentence invites the
+matching ceiling, and the ceiling would be wrong: measured on nine frames scored by eye first,
+the best (a honeybee on lavender, 9/10) is **0.960** midtones, the worst (six consistent views of
+the wrong object, 2/10) is **0.935**, and the lowest reading in the set — **0.679** — belongs to
+a 4/10 frame with an unwanted person in it. Midtone fraction separates a picture from a frame
+crushed to two tones and nothing else. The detail now says so, and the constant carries the
+measurements so the ceiling stays un-added.
+
+**`data-story-video`'s headline capability had never been rendered.** The lane ran twice tonight
+on the demo fixture, which carries title, big_number, bullet_sequence and source_card — **no
+chart at all**. Exported `sample_new_kinds_plan()` to a story and ran the lane with the mock
+narrator (CPU-only, which is what is left), and the chart, comparison and flow-diagram scenes
+were rendered for the first time. Two defects in the chart:
+
+* **The step and line charts stopped at 42 % of their plot.** The bar branch's own comment reads
+  "fills the plot (with headroom for its label) instead of stopping at 42 % under a 50-tick" and
+  uses `max(values) * 1.06`; the line/step branch still used `niceMax`, so a series peaking at 21
+  rounded to a 50-tick and the staircase used 42 % of the height. Same defect, same number, fixed
+  in one branch and not the other. A nice maximum earns its place only when the axis is
+  *labelled*, and nothing in this scene draws a y tick.
+* **A portrait chart card left 43.6 % of the frame blank** — content rows 198-1083 of 1920
+  against a safe area of 230-1574 — because the chart height was a fixed `safe.height * 0.56`
+  whatever the title and credit line took. Computed from the space actually left now, with a
+  floor, which took it to **36.9 %** and let the plot use its full range. Not to zero: the block
+  is laid out from the top of the safe area rather than centred in it and the `<svg>` renders
+  shorter than the height it is given. Both measured, neither chased; the comment says so where
+  the number is, rather than leaving a fraction that looks arbitrary.
+
+The run also failed QC on `scene_assets_present`, correctly: the fixture names a still this run
+has no file for, and the card rendered as a labelled placeholder rather than a silent hole.
+
+**And the second half of the "write a set as views" rule.** Six views of a brick barrel vault —
+"looking up the length", "from one end", "from a low corner", "looking back the other way" — came
+back as six essentially identical frames, while the kilim set written the same way on the same
+night produced five genuinely different ones. The difference is what the instruction asks the
+edit to do: turning a compact object toward the camera is a change to the *subject*; "from the
+far corner of this room" is a different photograph of a different place, and an edit of one
+anchor cannot make it. A lotus seed pod confirmed it an hour later — "from directly above",
+"from below", "in left profile" and "very close" all came back as the same three-quarter
+standing view, six times — and the kilim, which *did* vary, varied in a particular way: its
+frames are the rug folded, stacked and rolled, not the rug seen from six places. So the rule is
+neither "views, not poses" nor "objects, not rooms" but the thing both were reaching for: **an
+edit changes the subject's state; it does not move the camera.** Write a set as things the
+subject does — open, fold, turn over, split — and a set that genuinely needs viewpoints needs
+that many anchors. (The subject also said "no doors and no furniture" and
+every frame has a prominent door: the negative is inert, and *door* was the only concrete noun
+in the sentence for the model to hold on to.)
+
+**The rejected-frame redraw, verified on a real set — and then a second defect underneath it.**
+A kilim rug in six views came back good (8/10, and 9/10 for consistency) with one weak frame —
+the "very close" view drew a small stack on a plain grey ground instead of the weave. Rejecting
+that frame and re-running printed `frames-rejected redrawing=[3]`, moved the picture and its
+marker into `sequence/rejected/`, and redrew that frame alone. **And the redraw came back as the
+drawing that had just been rejected**: same instruction, same first attempt, so the backend
+derived the same seed (`lock.seed + attempt - 1`) and produced the identical picture — proven by
+digest, the two rejected copies share a sha256. It is the same lesson the TTS retake learned five
+hours earlier and it had not been carried across. A rejection now moves the frame's seed, by
+eight per rejection because the three drift retries inside one run already walk it by 0, 1, 2 and
+a smaller step would land on an attempt already drawn; the count comes from the files in
+`sequence/rejected/`, so it survives a crash and needs no extra state.
+Sheet: `output/overnight/review/kilim-set.png`.
+
+**A `--from` resume silently reconfigured the run it was resuming.** Overrides lived on the
+command line and nowhere else. Found by the redraw fix above working: the resumed `image-set`
+lost `--set generate_keyframes.drift_profile=uncalibrated`, met the mock-calibrated **0.92**
+default that the code's own comment says no real diffusion frame reaches, and was BLOCKED after
+three attempts at a measured **0.8491** — which the profile it was started with passes with room
+to spare. The run report records every node's resolved configuration now, and `--from` merges it
+as a layer between the lane's defaults and this invocation's overrides: a resume reproduces the
+original run unless told otherwise, and can still be told otherwise.
+
+**And `--from` no longer argues about material the run already has.** A resume nine stages past
+the one that reads the recording was refused with "this lane works on material you supply" and
+pointed at `--force` — which also waves through absent weights and unrunnable stages. Material
+already in the run's uploads folder satisfies the requirement now; an empty run is still refused,
+with a hint that names the folder as well as the flag.
+
+### The last hour: three more, and one of them was mine
+
+**Editing a lane definition while a queue is running took down fifteen runs of four lanes.** I
+wrote the settled hub-and-spoke rule into `image-set.yaml`'s `story` note at 05:14; the note came
+to 485 characters against `WorkflowNode.note`'s 400, and every queued run died within one second
+with that validation error — including twelve `single-image` stills, a lane that never reads that
+file. `load_definitions()` reads every `workflows/*.yaml` and raises on the first bad one, and
+`load_definition(id)` was built on top of it, so one unreadable file was a blast radius of sixteen.
+It is not one any more: `load_definition` falls back to reading and fully validating the single
+file it was asked for, warns with the catalogue's own message so the problem still reaches the run
+log, and leaves the whole-catalogue check where wholeness actually matters — `workflows validate`,
+the web exporter, and `test_generated_files_match_the_definitions`.
+
+**The one real chart of the night had no y axis and no numbers on it.** `data-story-video`'s step
+chart delivers a staircase; the file's own comment says "nothing here draws a y tick"; and unlike
+the bar family, which writes the value on every bar, the line family wrote nothing. The three
+numbers the card is about — 11 %, 17 %, 21 % — appeared nowhere on it, and every automatic check
+passed. `readingLabels` (pure, tested) now writes a reading over each mark, and the branch keeps a
+label's height of headroom at the top so the highest number is not drawn off the edge of the svg.
+Re-rendered and looked at: `output/overnight/review/chart-readings-after.png`.
+
+**And the criticism I had recorded against that same card was wrong.** I had it at 7.5 for
+"leaves 36.9 % of the frame blank below the last mark", and had written that measurement into the
+component as a comment for the next reader to act on. That 36.9 % is the caption band:
+`useSceneGeometry` caps a portrait card's safe area at 64 % of the height because `compose_video`
+burns captions into the lower third, and the delivered film fills it — ink to row 1501 of 1920 on
+the captioned export. Against the box the layout owns, the chart block reaches about 87 %. I had
+measured an uncaptioned export against the whole frame, called a deliberate reservation dead
+space, and missed the real fault (no numbers) while criticising an invented one. Both the comment
+and the score are corrected.
+
+**Left unresolved, deliberately and on the record.** Two experiments were written, queued and
+never ran, because nova went offline between them:
+
+* the **Y2 state-written sets** (`geodeset`, `letterset`, `candleset`), which were to resolve the
+  per-frame prediction in finding 84 as sharpened by 86 — in particular whether a geode "tipped
+  onto its side" fails along with "split into two halves" (finding 86 says yes, finding 84 said
+  no), and whether a candle "lit, the flame steady" fails, which asks whether the rule is about
+  unseen *surfaces of the subject* or about anything not already in the frame;
+* the **Z2 positive control** (`chainset`, `tileset`, `clothset`), three sets written so that
+  every beat only rearranges surfaces the anchor already shows, against a recorded prediction of
+  **15 of 18 distinct frames** where the viewpoint sets managed 1 of 14.
+
+Every prediction was written down before any frame came back and is kept verbatim in
+`output/overnight/PREDICTIONS-unresolved.md`; the queue files are `output/overnight/qY2.txt`,
+`qX2.txt` and `qZ2.txt` and the stories are committed, so each is one `qrun.sh` from an answer
+once a card is back. The partial `y-geodeset` and `z-chainset` directories were deleted rather
+than left to be mistaken for results later.
+
+### And with no cards left, the renderer: five more, four of them fixed
+
+Both GPUs gone by 05:24, so the only thing left that can still *make* something is Remotion, which
+is CPU. Two `RenderBundle`s were authored by hand against the contract and rendered at 1080x1920 —
+one carrying **one scene of every kind the night had never looked at**, on a deliberately
+non-scientific subject (Victorian penny dreadfuls, so the type meets ordinary prose and long book
+titles), and one a **practical how-to** (sharpening a kitchen knife), a third register after
+measurement and history. Then the how-to again at **1920x1080**, the first landscape card film of
+the night, which is where most of what follows came from.
+
+**Seven kinds draw properly and four are honest placeholders — and the placeholders are the guard
+working.** `ranking`, `data_table`, `relationship_diagram` and a `map` with no region asset render
+as grey PLACEHOLDER cards. That is designed: `python/content_factory/scenes/kinds.py` holds the
+list, a test asserts it against the TypeScript switch, the script writer may not choose an
+undrawable kind, and `qc_deliverable` fails a deliverable whose plan names one. I got the
+placeholders only because I authored a bundle by hand and went round the writer. Same picture as
+the `b0x` placeholder films, with the guard present.
+
+**A video card's text could be set at 14px on a 1080-wide frame.** The theme declares
+`legibility.minFontPx1080 = 24`, `legibilityReport` enforces it with a `font_too_small` finding
+and has a test — and it runs on `ArtboardSpec` only. On the video path nothing checked a fitted
+size at all, and `useFittedText` passed `minSize: t.min * scale * 0.5`, half the role's own
+declared minimum, uncommented. Measured on the real portrait geometry: body text of 135 characters
+sets at 30px, 407 at 28px, **815 at 14px**, `truncated: false` throughout, because the fitter
+shrank instead of cutting. `fitFloorPx` is now the theme's floor and long text is cut with an
+ellipsis instead — the louder failure, and loud is the point, since `legibilityReport` itself
+calls truncation a blocker and a small font merely major. Verified against real content, not only
+in a test: re-rendering the how-to deck after the change produced the **byte-identical file**.
+
+**Ten more sizes were hardcoded under that floor, in six components** — the landscape timeline's
+event text, four in the chart (tick labels, the label row, the dataset and credit line, and both
+families' value labels), the screenshot caption, the map caption, and the `DataNotice` caveat, at
+20 to 23px. Each is now `Math.max(minTextPx(theme, scale), <the old literal>)`. Found only by
+rendering in landscape: the portrait branch of the timeline uses 32px and looks fine, so the
+fault was invisible in every frame the night had produced until then. Six came from the first
+grep, three more from rendering the data story in landscape — including one written **an hour
+earlier in this session**, in the fix that exists because a chart had no readable numbers on it —
+and the tenth from a proper sweep afterwards. A grep is not an audit unless it matches how the
+code is actually written; `fontSize` bound to a `const` first is invisible to `fontSize: 22`.
+
+**The landscape timeline described one arrangement with three different references** — a box
+`0.7 x safe.height` tall, a spine at `0.42 x safe.height` (60 % of the way down that box), and
+above-labels pushed by a fixed `spineY - 0.28 x safe.height` that has nothing to do with a label's
+height. Every mark landed in the top 28 % of the safe area. The box now takes what the safe area
+has left under the title, the spine sits at its middle, and both label bands anchor to the spine.
+
+**One chart fix and one correction**, both above in the previous section: the step chart writes
+its own readings now, and the "36.9 % blank" I had recorded against that card was the caption
+band, which the delivered film fills.
+
+**Commands actually run**, on the tree as it stands (no commits — the standing rule is that
+commits happen when asked):
+
+```
+just fmt          -> 0
+just lint         -> 0        (ruff format --check, ruff check, oxlint)
+just typecheck    -> 0        (pyright, tsc)
+just test         -> 0        1341 passed, 55 deselected (python) + 362 passed (js/ts, 8 packages)
+just render-smoke -> 0        Remotion clip + ffprobe assertions
+just schemas      -> 70 schemas, 254 defs, 60 node types, 16 templates
+just schemas-check-> 1        **expected**: it gates on `git status`, and the four regenerated
+                              files (node_catalog, workflow_templates, MasterChainSpec,
+                              SpeechRestorationSpec) are correct but uncommitted. The check that
+                              they actually match their source is
+                              `test_generated_files_match_the_definitions`, which passes.
+just test-integration        NOT RUN. Nothing this hour touched a stage executor or a contract a
+                              stage writes; the per-scene legibility report that would (finding
+                              91's open half) is deliberately left undone for that reason.
+```
+
+**A watcher is running until 06:50** (`output/overnight/logs/waitnova.log`): it polls
+`http://100.82.150.94:8801/` every 45 seconds and, if nova comes back, runs the Y2 sets and then
+the Z2 positive control without further intervention. If that log ends in "deadline reached,
+nova never came back", neither experiment ran and both predictions are still open.
+
+### 2026-09-10 06:07 — the overnight freeze, and what was done about it
+
+**What happened.** At 03:12:22 the RTX 3090 left the PCIe bus: `AER: Uncorrectable (Non-Fatal),
+TLP UnsupReq` on `pcieport 0000:00:01.0`, then `Xid 79` and `Xid 154 ... Node Reboot Required`.
+The GPU dying is the first event but not the visible one. In the same second `nvidia-modeset`
+logged **190,960 lines of `Failed to query display engine channel state` in seven seconds**
+(journald dropped ~171,000 messages behind it), and **Xorg went to state R and spun forever
+inside the dead driver holding the `nvidia_modeset` semaphore** — the kernel names it:
+`task nvidia-modeset/:943 blocked on a semaphore likely last held by task Xorg:1897`, and the
+same for Discord, both still blocked at 614 s when hung-task reporting gave up. So the screen
+and keyboard were dead from 03:12 while everything else ran normally for three more hours; the
+journal ends mid-line at 06:06:08, a hard power cycle. Back up at 06:07 with a healthy card.
+
+**Ruled out with numbers:** memory peaked at 31 % (20-23 % after), zero OOM kills, disks 72 % and
+41 %, no thermal event, no lockup, no panic. Only occurrence of `AER: Uncorrectable` or
+`fallen off the bus` across the five retained boots, two of which are 43 days and six weeks.
+
+**A correction to my own first pass.** I wrote that two large models were on the card at once and
+pointed at the endpoint pool. Wrong, and worth naming because the wrong version invented a
+software bug. ComfyUI reports `Total VRAM 24117 MB` and saw `18708.18 MB usable` immediately
+before loading LTX-2.5, steady across all eight of its loads that night — about 5.4 GB held by
+the desktop and **no second model server**. `exclusive_gpu` did its job. The other two CUDA
+failures are wreckage on the clock: AER 03:12:22, SeedVR2 03:12:24 (`exit 3`), the local HiDream
+server 03:12:48 (`caching_allocator_warmup` → `CUDA unknown error`). There is no concurrency bug
+here, which moves the whole fix to the host side.
+
+**What the fix is — after reading the published cases, not before.** Five accounts of Xid 79
+(Level1Techs 3090, Arch "Solved", the 5090 sustained-load thread, the ASPM-in-UEFI thread, a 3090
+training thread) each fixed it by a *different* route, and each remedy that worked in one failed
+in another: clock locking, `NVreg_EnableGpuFirmware=0 + pcie_aspm=off`, case airflow, disabling
+L0s, and one still unresolved. There is no single fix, and my first recommendation was the weaker
+one: I led with `pcie_aspm=off`, but the only thread that pinned Xid 79 on ASPM pinned it on
+**L0s**, which this host does not have — `LnkCtl: ASPM L1 Enabled`, substates off, and that
+reporter called L1 fine.
+
+Reordered by what the evidence supports *here*. **GSP firmware** is the stronger candidate: it is
+live (`GSP Firmware Version: 595.84`), one case fixed it outright, and this machine already runs
+the proprietary module because of an earlier GSP-related freeze. **Clock locking** is next — the
+only remedy that worked in the closest-matching case, a 3090 on Linux under load. **Thermals
+cannot be ranked at all**, and that is the real gap: the 5090 case was airflow, the 3090's weak
+point is the GDDR6X on the back of the board, and this driver reports `Memory Current Temp: N/A`
+with no `lm-sensors` installed. "No thermal event" in the post-mortem means no ACPI trip and no
+driver slowdown; **the memory junction was never sampled**. docs/gpu-hosts.md has the whole
+comparison with sources, and an order to apply things in — one at a time, so the telemetry can
+tell them apart.
+
+None of it is something this repo can apply, so what the repo does instead is (a) stop the
+machine's configuration being a matter of memory and (b) make sure the next occurrence is
+diagnosable rather than researched.
+
+**`content-factory gpu watch`** — the log that should have existed on the night. One
+`nvidia-smi` call per interval into `.services/gpu-telemetry.csv`, with every column chosen to
+separate one of the competing explanations above: temperature and power, the driver's own
+throttle reasons, clocks and pstate, the negotiated PCIe gen, and the root port's AER counters.
+Parsing is pure and total — a short line or a missing sysfs file gives a row with blanks, never
+an exception — and it prints once to stderr the first time a non-fatal PCIe error appears. Eight
+tests, no GPU required; systemd user unit in docs/gpu-hosts.md. It has already earned itself:
+the sampler caught the link stepping 2 → 3 as the card moved P5 → P3, which is what confirms the
+`5GT/s (downgraded)` in `lspci` is idle link parking rather than a degraded link.
+
+**Three checks in `content-factory doctor`**, none needing root:
+
+| check | reads | complains |
+| --- | --- | --- |
+| `gpu_pcie_health` | `aer_rootport_total_err_{cor,nonfatal,fatal}` on the card's root port, resolved from the device tree | **fail** on any fatal/non-fatal error since boot (one non-fatal was this entire event); **warn** past 100 correctable |
+| `gpu_aspm` | `/proc/cmdline`, `/sys/module/pcie_aspm/parameters/policy` | until `pcie_aspm=off` or the `performance` policy is in force |
+| `gpu_power_cap` | `nvidia-smi --query-gpu=power.limit,power.max_limit` | while the limit sits at the stock ceiling |
+
+`gpu_pcie_health` is the one that earns its place: those counters reset on reboot, need no root,
+and nothing else in the stack reads them, so a link that has begun retrying surfaces in a routine
+`just doctor` days before it drops the card. **No software change can promise this will not
+recur** — it is below anything the stack touches. What is true now is that the two things that
+make it less likely are verified rather than remembered, and the next sign of it is a failing
+check rather than a frozen desktop.
+
+Current state on this host: `gpu_pcie_health ok` (0 errors since boot), `gpu_aspm warn`,
+`gpu_power_cap warn` — nothing applied yet. `/tmp/gpu-hardening.sh` does steps 3-5 (clock lock,
+power cap + unit, both kernel parameters) under one `sudo`, keeps a dated backup of
+`/etc/default/grub`, and prints how to undo each part. Steps 1 and 2 — start the telemetry
+sampler, install `lm-sensors` and the `gddr6` module for the memory junction — come first and
+are in the doc.
+
+Commands run:
+
+```
+uv run pytest tests/unit/test_doctor.py -q            -> 3 passed
+uv run pytest tests/unit/test_gpu_telemetry.py -q     -> 8 passed
+uv run content-factory gpu watch --interval 1 --limit 3   -> 3 rows, header written, link
+                                                             stepping 2 -> 3 with the pstate
+uv run ruff check python/content_factory/doctor.py    -> clean
+uv run pyright python/content_factory/doctor.py       -> clean
+uv run content-factory doctor                          -> gpu_pcie_health ok, gpu_aspm warn,
+                                                          gpu_power_cap warn
+just fmt / just lint / just typecheck                  -> 0 / 0 / 0
+just test                                              -> 0   1351 passed, 55 deselected
+                                                              (python) + 399 passed (js/ts, 9 packages)
+```
+
+## 2026-09-10 — the rest of the #GameAudioGDC bundle: 38 excerpts becomes 346 (session auto-content-sfx-packs)
+
+Follow-on from the Mixkit ingest. The operator asked for the sounds in
+`~/Music/sonniss_gdc_2026` to be moved into the sound folders too.
+
+**The bundle directory itself was not touched, and must not be.** `recorded.json` addresses every
+source as `<supplier — library>/<file>`, so sorting the bundle into category folders would break
+all 346 recipe entries at once and throw away the attribution the directory names carry — the
+pack name *is* the provenance, and `credits()` reads the tracklist beside it. What the operator
+actually wanted is the sounds usable in the library's category folders, and that is a builder
+run, not a `mv`. The bundle stays exactly as extracted; `skills/audio/sfx/README.md` now says so
+in the one place someone would go looking.
+
+**`assets/sfx` is now 670 sounds in 18 categories, up from 362 in 14.** 982 MB.
+
+| | before | after |
+|---|---|---|
+| recorded (#GameAudioGDC) | 38 | **346** |
+| mixkit | 294 | 294 |
+| local-renders | 19 | 19 |
+| generated (StableAudio3-Small-SFX) | 11 | 11 |
+| beds / one-shots | 76 / 286 | 148 / 522 |
+| categories | + animal, creature, crowd, foley, human, instrument, vehicle | + magic, scifi, voice, weapon |
+
+### The bundle was not what the first pass assumed
+
+The 38 original excerpts were cut with the window sweep and the event gate, and the impression
+that stuck was "a 680 s food-court recording". Measured over all 347 files, that is the
+exception: **199 are under eight seconds**, the median pack is three sampler files totalling
+under a minute, and 3.6 hours of audio is spread across 122 packs. Sonniss ships samplers, not
+whole libraries.
+
+So most of the bundle needed the mode the Mixkit ingest already had, and `ingest_recorded.py`
+gained it: `whole` — take the file as delivered, trim, high-pass, level. The implementation is
+`recorded.cut_whole`, extracted from `ingest_packs.py` so there is one of it rather than two.
+Of the 346 recorded entries, **236 are `whole`, 90 sweep a loop window, 20 gate an event**.
+
+Two options tune `whole`, both earned by a specific failure:
+
+- `bed: true` (already in the pack builder) levels a long continuous texture to the bed target.
+- `trim: false` is new. `trim_oneshot` took 8.79 s of silence off `trailer_alarm_whole` and left
+  21.21 s — a musical render whose silence is part of its bar count no longer repeats on a bar
+  line. Silence is dead weight in front of a one-shot and load-bearing in front of a bar.
+
+**The refactor is proven, not asserted: all 38 original excerpts rebuild byte-identically** (38/38
+sha256 match against the manifest written before the change).
+
+### Categories came from the supplier, not from me
+
+Three quarters of the bundle is named to the **Universal Category System** — `ANMLDog_`,
+`AMBTran_`, `WEAPSwrd_`, `CREAMnstr_`, `VOXMale_`. That turned 308 category judgements into one
+documented translation (`ANML`→animal, `AMB`→place, `CREA`→creature, `MAG`→magic,
+`DSGN`/`ROBT`→scifi, `VEH`/`TRN`/`AERO`→vehicle, `VOX` split between `voice` and `human` by
+whether there are words in it). The quarter with supplier-specific naming was classified by hand.
+The four new categories are what the bundle actually holds that the library had no home for:
+`magic` (12), `scifi` (10), `voice` (19 — speech, kept apart from `human`, which stays non-verbal)
+and `weapon` (8).
+
+### What the measurements caught
+
+Far cleaner than the Mixkit pass — 1 seam failure in 90 beds, against 8 in 55:
+
+- **`trailer_alarm_whole`**: seam +17.9 dB, event prominence 33.5 dB. One hit per bar leaves no
+  even window anywhere in the file, so no sweep can fix it. Now `whole` + `trim: false`, keeping
+  the supplier's exact 30.00 s so it can be repeated on a bar line in the edit instead.
+- **`wood_hits_dark_loop`**: event prominence **63.7 dB** — sparse heavy hits in three minutes of
+  room. Same failure as the ticking clock the original recipe dropped, and the same answer: it is
+  not a bed. Now a 45 s `whole` take at bed level, renamed `wood_hits_dark` because it no longer
+  loops.
+- `cards_pick_up` measured -53.5 LUFS and needed **+37 dB** to reach the one-shot target. It came
+  out clean, and `loudness.gain_applied_db` records what was done to it.
+
+Final numbers across the whole library: worst bed seam **2.67 dB** (threshold 3.0), 19 beds above
+the 10 dB event-prominence line and named in the generated README, 82 `harsh_band` and 39
+`clipped` — both descriptive of stock material rather than defects. No `seam_level_jump`, no
+`truncated`, no `near_silent` anywhere in the 670.
+
+**No duplicates.** `index.write`'s byte-identical check reported none, and a level-invariant scan
+(peak-anchored envelope correlation over all 670 built FLACs, threshold 0.9999) found no
+same-recording pairs — including the cases worth suspecting, where the same supplier pack now
+contributes two entries (`pub_walla_loop`/`pub_walla_busy_loop`,
+`room_tone_hum_loop`/`fridge_hum_rhythmic_loop`). They are genuinely different takes.
+
+### One file deliberately not ingested
+
+`Camp fire, ... _B-format, Ambix.wav` is 4-channel ambisonic with an **unknown** channel layout.
+`-ac 2` would fold the omni W against the X/Y/Z gradients rather than decode it, and this pipeline
+has no ambisonic decoder — so it would ship a plausible-sounding file that is not what the
+recording says it is. The other four multichannel sources are quad, 5.1 and 7.1.2, layouts ffmpeg
+has a real downmix matrix for, and those are in (`glacial_lake_loop`, `club_cheer_applause`,
+`dinner_party_loop`, `city_soft_loop`). The exclusion and its reason are in `recorded.json`.
+
+### What this changes for a film
+
+`bed_for()` now chooses from 71 `place` and 34 `weather` beds. Spot-checked after the build:
+
+    a Swedish coastal wind farm under a flat overcast sky  -> wind_open_loop        (unchanged, as the test asserts)
+    the platform of a German railway station in winter     -> train_platform_loop   (new)
+    a factory hall where ships are repaired                -> factory_hall_loop     (new)
+    a glacial lake in the Norwegian highlands              -> glacial_lake_loop     (new)
+    a bar in Barcelona late in the evening                 -> bar_interior_loop     (new)
+    the reading room of a national library                 -> no bed                (correct: no guess)
+
+The bundle also closed a gap worth naming: the library's crowd walla was British and Spanish, and
+now includes Nigerian and South African recordings. A film set somewhere should be able to sound
+like it.
+
+### Gates (commands actually run, 2026-09-10)
+
+```
+uv run --project skills/audio/sfx python skills/audio/sfx/ingest_recorded.py --list          346 sounds planned
+    ... --only <the 308 new ids> --analyze          308 selected+measured, nothing written
+    ... (full rebuild)                              346 built -> 670 sounds, 982.5 MB
+                                                    0 missing, 0 duplicate-byte entries
+sha256 of the 38 original excerpts, before vs after the cut_whole refactor    38/38 identical
+level-invariant same-recording scan over all 670 built FLACs                  0 pairs
+uv run ruff check <the files touched>               All checks passed
+uv run ruff format --check <the files touched>      11 files already formatted
+uv run pytest tests/unit/test_sound_cues.py -q      16 passed
+uv run pytest -q                                    1351 passed, 55 deselected
+pnpm -r test                                        362 passed (8 packages)
+```
+
+The two `just test` failures recorded in the 2026-09-09 entry are gone: the other session
+regenerated the workflow templates and fixed the keyframe-drift gate while this ran.
+
+`just test-integration` was not run, for the same reason as yesterday: no stage executor and no
+contract a stage writes is touched here — the library is a read-only input — and nothing under
+`tests/integration/` references `assets/sfx`, `sound_design` or a cue sheet. `place_sfx` renders
+real audio inside `tests/unit/test_sound_cues.py`, which passes against the 670-sound library.
+
+`skills/` is still outside the `pyright` include list, so the builders are not in the typecheck
+gate; the two pre-existing `os.environ.get(var, Path)` argument-type reports in `recorded.py` are
+unchanged.
+
+### 2026-09-10 07:28 — nova: not a fault, a power button
+
+The operator said nova's tailscale was up. It was, and the machine answered ssh, which turned a
+two-hour guess into a two-minute read of its own journal:
+
+```
+05:21:39  systemd-logind: Power key pressed short.        (logged twice)
+05:22:54  systemd-logind: The system will suspend now!
+05:22:55  Starting nvidia-suspend.service - NVIDIA system suspend actions...
+05:23:04  nvidia-suspend.service: Finished. Consumed 8.4s CPU, 18.1G memory peak
+05:23:04  systemd-sleep: Performing sleep operation 'suspend'...
+05:23:21  Filesystems sync: 16.926 seconds
+07:10:19  systemd-sleep: System returned from sleep operation 'suspend'.
+```
+
+`uptime` is **10:05 on a single boot** since 21:23 the previous evening: never rebooted, never
+panicked, never lost power. The GPU is untouched — zero NVIDIA Xid, zero uncorrectable AER (the
+one `Xid` grep hit is the Realtek NIC's `XID 541` chip revision, the same false positive
+vegaserv produces), 57 C, 118 W, PCIe **gen 4**, HiDream's 19,311 MiB still resident and the same
+pid still listening on :8801. The 18.1 GB peak in `nvidia-suspend.service` is the driver copying
+that VRAM into system RAM before S3; add the 16.9 s filesystem sync and you have the gap between
+the last frame served (05:22:25) and the last tailnet contact (05:23:31). The 75 s between the
+button press and the suspend is the inhibitor window — which is why nova's last image was
+generated while the machine was already on its way down.
+
+**Two corrections to what this file said an hour ago.** "Powered off or hard-hung with its NIC
+down" was wrong: I listed three ways for a host to go silent at layer 2 and missed suspend, which
+presents identically — no ARP, no ping, tailnet offline with a timestamp — and is the only one of
+the four that is not damage. And the pattern floated alongside it, "both machines died
+mid-generation after five to six hours of sustained GPU load", **does not exist**: it was one
+real hardware failure and one power button. Having just diagnosed a genuine Xid 79 two hours
+earlier is exactly what made the innocent explanation the last one considered.
+
+**What actually needs fixing.** nova is a headless GPU worker with a stock
+`/etc/systemd/logind.conf`, so a short power-key press suspends it, and `sleep.target` /
+`suspend.target` are unmasked. Idle suspend is *not* armed and never was
+(`sleep-inactive-ac-timeout` = 0 = never), so the button is the only path in. Suspending
+mid-generation destroys the run whatever else survives.
+
+`sudo` on nova needs a password, so the fix is staged rather than applied: **`/tmp/nova-no-sleep.sh`
+is copied onto nova and syntax-checked there**. It masks `sleep.target`, `suspend.target`,
+`hibernate.target` and `hybrid-sleep.target` (immediate, no logind restart), writes a
+`HandlePowerKey=ignore` drop-in, prints before/after state and the undo commands. Run it with
+`sudo bash /tmp/nova-no-sleep.sh` on nova.
+
+Also worth having from this: `uptime` is the first thing to type after regaining access to a host
+that went silent. A machine that suspended has one boot spanning the outage; one that crashed or
+lost power does not. That is now in docs/gpu-hosts.md, "When a host goes off the network", along
+with the reason the ARP test proves less than it looks like it proves.
+
+
+### 2026-09-10 07:51-08:40 — eight new films on both cards, and six findings from watching them
+
+**What was made.** Eight narrated films on vegaserv, all mastered inside a 0.7 LU band:
+`f01-sharpen` (39 s, how-to), `f02-penny` (46 s, cultural history), `f03-bellrock` (44 s,
+engineering history), `f06-tern` (36 s, natural history), `f07-kanna` (37 s, craft), `f08-curve`
+(41 s, sport physics), plus **`f04-vitrail` in French** (33 s) and **`f05-salinas` in Spanish**
+(42 s) — −14.0 to −14.7 LUFS, −1.1 to −1.2 dBTP throughout. All eight copied into `videos/`.
+The landscape `timeline` card is in a real film for the first time, carrying this morning's
+spine-anchoring and 24 px floor fixes. Meanwhile nova ran the six image sets that were cut off at
+05:23 by the suspend.
+
+**Six things came out of watching them, and three are corrections to my own claims.**
+
+* **nova's model server was wedged, not working** (finding 102). I had reported the GPU healthy
+  after the resume; true, and not the same thing. The first real request sat nine minutes on an
+  open socket with the GPU at 0 %. `ss` showed a second connection left over from the generation
+  in flight when the machine suspended — a single-worker server queues behind a request that
+  will never finish. A restart fixed it in 10 s. **`/healthz` answers from Flask and never
+  touches CUDA**: after a suspend, restart the model servers rather than trusting the port. It
+  now logs to a file; it had been writing to a socket that no longer existed.
+* **A film shipped with `Source: src_authored000001` under a quotation** (finding 101), and all
+  seven QC checks passed it. There was a check for a dangling *asset* and none for a dangling
+  *source* — the more serious of the two. `scene_sources_present` now mirrors it across both
+  spellings; `mkstory.py` no longer defaults to a fabricated id.
+* **The narration language is global config and nothing compares it to the script** (103). A
+  French script under the default locale was read by an English voice and scored by an English
+  ASR at 0.29. The take-gate message now names the locale when a score collapses under English.
+* **"One grey rough-skinned geode the size of a fist" was drawn as a fist** (104), voiding the
+  experiment it carried. Every noun in a subject line is a candidate subject, whatever its
+  grammatical role — the strongest form yet of a rule met three weaker times.
+* **Two hub-and-spoke rules proposed and both refuted within the hour** (105, 106). The letter
+  set refuted finding 86's surface rule and suggested a material-state rule; the candle set
+  refuted that one too, in both directions. Eighteen frames, four successes. The surviving
+  candidate — *quantities cannot be edited* — is recorded **as a candidate**, because the last
+  two were not. The Z2 control set decides it and is running.
+* **Fifth sighting of the drift blind spot.** Drift QC passed a set of six frames of a stone
+  fist, a set with the subject absent from four frames, and a set where five frames ignore their
+  instruction. It measures agreement with the anchor's look, and an empty table in the right room
+  agrees beautifully. Nothing in the automatic path looks for the subject.
+
+**Commands run:**
+
+```
+uv run pytest tests/unit/test_scene_source_refs.py -q     -> 4 passed
+uv run pytest tests/unit/test_narration_backend.py -q     -> 15 passed
+just fmt / just lint                                       -> 0 / 0
+just test-integration                                      -> 1 failed under render load, then
+                                                              **3 passed / exit 0** on a quiet
+                                                              box (finding 107): the failure was
+                                                              a Temporal heartbeat deadline at a
+                                                              gate that runs before
+                                                              qc_deliverable exists
+just typecheck                                             -> 1 error, then 0 (the locale hint
+                                                              read `check.similarity` without
+                                                              guarding the unchecked-pass case
+                                                              where it is None)
+just test                                                  -> 0   1355 passed, 55 deselected
+8 films rendered                                           -> 8 exit 0 (2 after a locale fix)
+6 image sets on nova                                       -> 4 to the human gate so far, exit 4
+```
+
+### 2026-09-10 16:15 — the day's work committed on `workflow-audit-audio-picture-story`
+
+Everything above landed in one commit: 107 modified files, 13 new (`gpu_telemetry.py`, the sfx
+pack builders, the Mixkit licence research note, and six new test modules). The gates were re-run
+first, because files were still being touched at 15:38 — three hours after the last recorded run —
+and two gates had gone red in the meantime:
+
+```
+just fmt          -> 3 files reformatted (test_anchor_conditioning, test_prompt_compile,
+                     test_release_gpu_when_idle), ruff check --fix: All checks passed
+just lint         -> 0 errors (pre-existing NodeGraphEditor warnings only)
+just typecheck    -> 8 errors, then 0. All eight were one wrong annotation:
+                     `_packaged()` in tests/unit/test_gallery_publish.py returns a StageContext
+                     and was declared `-> Path`, so pyright rejected every call that passed it
+                     to stage_compile_destination_packages and every `.ddir()` on it.
+just schemas      -> 70 schemas, 60 node types, 16 templates regenerated
+just test         -> 0   1369 passed, 1 skipped, 55 deselected (5:47) + pnpm: 8 packages green
+just test-integration -> 1 failed, 48 passed (4:24); the failure re-run alone: 3 passed (1:58)
+```
+
+The integration failure is **finding 107 again**, unchanged and not a new defect:
+`test_stopping_a_producing_run_cancels_the_node_in_flight` reached `FAILED: activity Heartbeat
+timeout` under load (average 3.0, another session rendering on the same box) and passes on its
+own. Second sighting, which is worth saying out loud — a stop test that races a heartbeat deadline
+will keep costing a re-run until the deadline is raised or the gate stops depending on wall-clock
+progress.
+
+`just schemas-check` reports "drift" for the four generated files right up until the commit: it
+gates with `git status --porcelain`, so regenerated-but-uncommitted is indistinguishable from
+stale to it. It goes green with the commit, which is the state CI checks.
