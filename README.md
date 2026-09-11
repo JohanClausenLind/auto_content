@@ -3,7 +3,7 @@
 Self-hosted, local-first, single-operator content production and distribution platform.
 Private project — no billing, no SaaS surfaces. See `STATUS.md` for the current phase.
 
-## What works now (phases 0–9 core + 10/11 foundations, verified on this machine)
+## What works now (phases 0–8 and 11–12 GREEN; 9, 10, 13 gated on the operator — verified on this machine)
 
 - Typed contracts: Pydantic → JSON Schema 2020-12 → TypeScript + Ajv, with drift check.
 - EditorCore: typed edit operations applied and undone to identical revision hashes.
@@ -41,11 +41,37 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
 - Web app: create flow with an honest deliverable matrix, run view with a React Flow pipeline
   canvas, approvals with step-up, Action Center, operations, themes, PWA + Web Push.
 - MCP server (`content-factory mcp`) as the only external-agent surface.
+- Workflow catalogue: 16 lanes in `workflows/*.yaml`, one file per lane, one command to run one.
+  Definitions are validated against the contract *and* the generated node catalogue, so a typo'd
+  widget key fails loudly instead of falling back to a stage default.
+- Node-graph Workspace: an editable ComfyUI-style canvas (`packages/node-graph`, `@xyflow/react`)
+  with typed slots, widgets, groups, undo/redo, a node library and search.
+- Local AI stack, laid out ComfyUI-style under `external/` + `models/`: image (HiDream-O1),
+  video (LTX-2.5 image-to-video, Krea2), text (local copywriter via qwen38-ridge), each behind
+  a resource lease with OOM quarantine and measured VRAM eviction.
+- Audio chain end to end: Qwen3-TTS narration (15 Kokoro + 17 Breeze voices available),
+  speech restoration between take and mix, MiniMax-Music3 for non-verbal score, and a
+  Stable Audio 3 Small-SFX library (mostly real recordings).
+- Blender scene-control layer (ADR 0012), phases 0-8: deterministic control images from a
+  posed rig, driven by a queryable reference library of real human interaction and CMU mocap.
+- Run observability: run history, per-stage durations and ETA, and frame review
+  (a recorded verdict on a generated frame becomes a question or a refusal, not a silent edit).
 
-## Not implemented yet
+## Not done yet
 
-Phases 3–13: narration/audio, research/claims, production pipeline,
-editor/QC/Revision Box UI, distribution, analytics, personas, engagement. Nothing publishes anywhere.
+Three gates remain, and each needs the operator rather than more code
+(`STATUS.md` → "Resume instruction"):
+
+- **Nothing has ever been published.** Phase 9 is green through the idempotent publisher,
+  exactly-once intents and the kill switch, all proven against mocks and chaos tests. The live
+  gate is still shut: put a designated TEST account's `BLUESKY_HANDLE` / `BLUESKY_APP_PASSWORD`
+  in `.env`, then `uv run pytest -m live tests/live -q`.
+- **Tier 2/3 platform adapters are package-only.** Constraints are researched
+  (`docs/research/tier2-tier3-platform-constraints.md`); each needs its own developer app and a
+  live draft test. Article/newsletter destinations (WordPress, Ghost, Listmonk) are green offline
+  as drafts only.
+- **External security review outstanding** (phase 13). `docs/requirements-traceability.md` maps
+  capability → code → proof for a reviewer.
 
 ## Prerequisites
 
