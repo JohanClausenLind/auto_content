@@ -300,10 +300,15 @@ export interface RunDetail extends RunSummary {
 // runs made with `content-factory make`, which write no database row and whose outputs — every
 // film, drawing and narration on this machine — were unreachable from the app before this.
 
-export type RunOutcome = "complete" | "review" | "blocked" | "stopped" | "failed";
+/** What a run is, or the state it ended in. `running` comes from the run registry rather than
+ *  the report: a report only carries `passed` at the very end, so mid-flight a healthy run is
+ *  indistinguishable from one whose last stage gave up — and read as `failed`. */
+export type RunOutcome = "running" | "complete" | "review" | "blocked" | "stopped" | "failed";
 
 /** What kind of thing a file is, which decides whether it gets a player, a grid or a link. */
 export type OutputKind = "image" | "video" | "audio" | "text" | "data";
+
+export type Attribution = "recorded" | "inferred";
 
 export interface RunOutput {
   /** Relative to the run directory. Both the id and what you pass to `fileUrl`. */
@@ -313,11 +318,52 @@ export interface RunOutput {
   role: string;
   bytes: number;
   content_type: string;
+  /** The lane's key for the step that made it — `anchor`, `spokes` — or null when neither the
+   *  run's own record nor the path table could place it. */
+  node: string | null;
+  stage: string | null;
+  /** `recorded` when the run observed which step wrote this, `inferred` when the path said so. */
+  attribution: Attribution | null;
+}
+
+/**
+ * One step of a local run: what it did, and what it produced.
+ *
+ * Named `RunStep`, not `RunNode`, because `RunNode` is already the durable pipeline's DAG node
+ * (imported from `pipeline-canvas` above) and the two are not the same thing: that one is a
+ * database row in a Temporal run, this one is a step in a `run.json` on disk. The two run worlds
+ * have no join, and giving them one name is how somebody would come to believe they do.
+ */
+export interface RunStep {
+  /** The lane's own key, which is what `GraphNode.key` carries — this is the join. */
+  node: string;
+  stage: string;
+  ok: boolean;
+  /** Frozen by a pin; its files are the ones the run that made them left. */
+  pinned: boolean;
+  /** Stopped for a person, not because it broke. */
+  blocked: boolean;
+  /** Whether this run has a record at this node at all. False for the nodes before a `--from`
+   *  resume point: not a failure, a step that did not happen this time. */
+  ran: boolean;
+  seconds: number;
+  error: string | null;
+  /** What the stage said about its own work — attempts, backend, drift numbers. */
+  facts: Record<string, unknown>;
+  /** Paths, relative to the run directory. */
+  outputs: string[];
+  outputs_total: number;
+  attribution: Attribution;
 }
 
 export interface HistoryRun {
   /** The run's directory under `output/`, with "/" written "~" — e.g. `overnight~ps1c-pinecone`. */
   run_id: string;
+  /** What the run was rendering, in the operator's own words, or null.
+   *
+   *  On the cheap list as well as the detail, because without it the history is 241 directory
+   *  names: `a20-imageset-owl` says which lane ran and nothing about what came out of it. */
+  subject: string | null;
   workflow: string | null;
   outcome: RunOutcome;
   /** Epoch seconds: when the run last wrote anything. */
@@ -337,10 +383,16 @@ export interface HistoryRun {
 
 export interface HistoryRunDetail extends HistoryRun {
   outputs: RunOutput[];
+  /** The lane's steps in order, each with the files it produced. */
+  nodes: RunStep[];
   /** The finished film, when the run made one. */
   film: string | null;
   /** One image to represent the run — never a control map. */
   poster: string | null;
+  /** Files no step claimed. Reported rather than hidden: on a run that predates per-node
+   *  recording it is the difference between "this node made nothing" and "nobody wrote down
+   *  which node made this". Markers are not counted. */
+  unattributed: number;
 }
 
 // --- The frame-review gate ---
@@ -361,7 +413,11 @@ export type FrameVerdict = "accept" | "reject" | "unreviewed";
 export interface ReviewFrame {
   frame_id: string;
   verdict: FrameVerdict;
+  /** What is wrong with the picture. The record, and what the guidance proposals are built from. */
   reason: string;
+  /** What it should show instead, stated positively. This is the part appended to the prompt when
+   *  the frame is redrawn — see FrameRecord.redirect. */
+  redirect: string;
   /** Relative to the run directory — fetched through the same files route as any other output. */
   image: string | null;
   png_sha256: string;
@@ -397,6 +453,57 @@ export interface RunReviewPage {
   /** A verdict unblocks the gate; it does not restart the stages after it. This is what does. */
   resume_command: string;
   reviews: RunReview[];
+  /** The vision model's stored opinion per deliverable, when one has been asked for. Served with
+   *  the gate so the panel knows whether one exists before offering to spend the GPU. */
+  ai_reviews: Record<string, AiSetReview>;
+}
+
+// --- The vision model's second opinion ---
+//
+// An opinion and never a verdict. It answers what the measurements cannot — whether the subject
+// is the same subject — and the operator is still the only reviewer that can accept or reject a
+// frame. `shows` is first in the UI for the same reason it is first in the prompt: it is how a
+// reader tells whether the model looked at the picture or at the brief.
+
+export type OpinionSeverity = "fine" | "minor" | "wrong";
+
+export interface FrameOpinion {
+  frame_id: string;
+  /** What the model says is in the picture. The check on the reviewer, read against the image. */
+  shows: string;
+  matches_intent: boolean;
+  issues: string[];
+  severity: OpinionSeverity;
+}
+
+export interface SetOpinion {
+  /** Whether the frames read as one subject, one place and one idiom. */
+  same_world: boolean;
+  /** What actually differs across the set, named concretely. */
+  what_changes: string[];
+  /** The frames that left the others behind. Empty when there is no odd one out. */
+  drifting_frames: string[];
+  summary: string;
+}
+
+export interface AiSetReview {
+  deliverable_id: string;
+  reviewed_at: string;
+  model_alias: string;
+  model_id: string;
+  /** The story and per-frame context the model was given, verbatim. A judgement is worth what
+   *  the judge was told, and this is the only way to tell a wrong picture from a missing brief. */
+  intent: string;
+  frames: FrameOpinion[];
+  set: SetOpinion;
+  digests: Record<string, string>;
+  elapsed_s: number;
+  input_tokens: number;
+  output_tokens: number;
+  /** Whether it is about the pictures now on disk. False means the frames were redrawn since. */
+  current: boolean;
+  /** The frames the model would not pass, offered as what to look at first — never applied. */
+  flagged: string[];
 }
 
 export interface VerdictBody {
@@ -405,7 +512,10 @@ export interface VerdictBody {
   reject?: string[];
   /** Accept every frame not named as rejected — a person's yes to one contact sheet. */
   accept_rest?: boolean;
+  /** Why the rejected frames are wrong. */
   reason?: string;
+  /** What they should show instead, positively — the part that reaches the model on the redraw. */
+  redirect?: string;
   note?: string;
   reviewer?: ReviewerKind;
 }

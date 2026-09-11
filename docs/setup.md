@@ -53,13 +53,16 @@ in flat, purpose-named directories. All of them are git-ignored:
 | --- | --- |
 | `external/` | upstream code checkouts (LTX-2, MMAudio, ACE-Step-1.5, whisperX, breeze-tts, hidream-o1-code, …), each with its own `.venv` where needed |
 | `models/` | the weight index, sorted by category like ComfyUI's `models/`: `video_generation/`, `image_generation/`, `video_editing/`, `characters/`, `restoration/`, `frame_interpolation/`, `sound_effects/`, `music/`, `speech/`, `speech_restoration/`, `text/` — every entry is a symlink into the store, `/mnt/fast/models/<short-name>` on this machine |
+| `datasets/` | the **data** index, sorted by category the same way: `human_interaction/`, `staging/`, `audio/`, `training/` — every entry a symlink into the host's data. Built by `just datasets link` from `content_factory.libraries`; `docs/datasets.md` says what each library gives, what it cannot, and what reads it |
 | `output/` | generated media: image-sequence workdirs (`image_sequences.output_root`), `output/eval/` evaluation runs |
 | `.venvs/` | tool venvs: `download` (the `hf` CLI the download scripts use) and `scenedetect` |
 | `sandbox/` | throwaway prototypes (two untouched `create-video` Remotion scaffolds) |
 | `scripts/host/` | host provisioning: `setup-model-storage.sh` (created `/mnt/fast`) and the model-move logs |
 
 Populate with `./scripts/download_ai_video_stack.sh` then `./scripts/download_video_stack_extras.sh`;
-verify with `uv run content-factory video-stack`. `AI_VIDEO_ROOT` (a directory holding `external/`)
+verify with `uv run content-factory video-stack`. For the data half, `just datasets link` then
+`just datasets check` — which reports what is absent (not an error: every lane runs without any of
+it) and what nothing reads. `AI_VIDEO_ROOT` (a directory holding `external/`)
 and `AI_VIDEO_MODELS` override the defaults. History: the checkouts lived in `~/ai-video-stack/repos`
 and the index in `~/models` until 2026-09-05.
 
@@ -75,6 +78,13 @@ lane still runs.
 just reference                                   # build the index (about 20 s, 15789 clips)
 just reference-search "she rests her head on his shoulder"
 ```
+
+Two things to know before building on it, both established by measurement on 2026-09-12 and
+written up in `docs/datasets.md`. **Only 441 of the 15789 clips carry usable pixels** — this is a
+pose library, good for staging and not for cutting footage. And **only 58 clips are retargeted**,
+so a beat can match well and still stage nothing: `find_reference` now reports `stageable_beats`
+and a `reason` separately from `selected`, because before that both outcomes looked identical to
+an absent library.
 
 The search answers in clip ids and also reports `absent`: words it understood and has nothing for.
 That list is a gap in the material, not a failure of the search. `INVENTORY.json` and `README.md`
@@ -267,6 +277,64 @@ uv sync --project skills/video/manim          # + optional: sudo apt install tex
 | Playwright | `scripts/capture-screenshot.mjs`, producing the PNG that `ScreenshotScene` renders |
 | Vega, Vega-Lite, Vega-Embed | not yet imported — kept for declarative statistical charts a hand-built scene would be tedious for (compile to a static SVG, never `vega-embed`) |
 | MapLibre GL | not yet imported — see above |
+
+## The two ways this box goes down, and how to avoid both
+
+Both were hit on 2026-09-12. They look identical from the chair — the machine stops — and they
+have nothing in common underneath, so they are worth telling apart.
+
+### 1. The terminal dies, everything else keeps running (system RAM)
+
+`journalctl -k` shows `oom-kill`, and the scope it names is the **terminal's**, not the model's.
+systemd kills per scope, so what dies is the shell you were watching from while the process that
+actually ate the memory survives.
+
+The binding constraint on this box is **31 GB of system RAM, not the 3090's 24 GB of VRAM**. A
+loaded ComfyUI offloads ~8 GB to system RAM *on top of* VRAM, musubi-tuner with
+`--blocks_to_swap 24` does the same, and `uv run pytest` forks a worker per core on a 12900K. Any
+two of those fit. Three do not, and swap is only 3.7 GB.
+
+- Read `free -g` and use the **available** column, not `free`. Swap showing 3/3 with 25 GB
+  available is stale pages and is fine.
+- Never run the test suites while a model is resident.
+- Run renders in the foreground, one at a time.
+
+### 2. The whole machine hard-locks (GPU driver)
+
+No `oom-kill`. No hung-task trace. `journalctl --list-boots` shows the boot simply **ending** —
+the kernel died without getting to log anything, which is a driver fault rather than memory
+pressure. Seen on 2026-09-12 at 23:42:19, four seconds after ComfyUI's CUDA init returned:
+
+```
+RuntimeError: CUDA unknown error - this may be due to an incorrectly set up environment,
+e.g. changing env variable CUDA_VISIBLE_DEVICES after program start.
+Setting the available devices to be zero.
+```
+
+The cause was a tenant handover that did not wait. `LocalServices.stop()` waits for the old
+tenant to stop answering HTTP — which happens the moment it closes its socket, while the process
+is still tearing down 21 GB of CUDA allocations — and then slept a fixed three seconds under a
+comment reading "driver releases VRAM after exit". ComfyUI was started two seconds later, into a
+card the driver had not given back.
+
+**Fixed** (`services/local.py::_wait_for_vram`): the handover now polls `nvidia-smi` until free
+VRAM actually comes back past `local_services.vram_free_target_mib` (18 GB), or stops climbing for
+`vram_settle_s` — the second condition so a card another process legitimately part-owns does not
+stall every switch. Exceeding `vram_release_timeout_s` is not an error; a slow release is still a
+release.
+
+If you are driving the GPU by hand rather than through `LocalServices`, wait for the number
+yourself:
+
+```bash
+uv run content-factory services stop --tenant hidream
+until [ "$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits)" -gt 18000 ]; do sleep 2; done
+```
+
+**Switching models inside one tenant needs the same care and gets none of it automatically.**
+FLUX.2 and Ideogram 4 are both ComfyUI, so `ensure()` sees a healthy server and does not reload:
+the first model keeps ~18 GB cached in-process and the second OOMs the card. Stop the tenant
+between them.
 
 ## More than one GPU host, and sharing a card
 See **[docs/gpu-hosts.md](gpu-hosts.md)**: adding a second machine that generates frames alongside

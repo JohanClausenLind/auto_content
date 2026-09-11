@@ -22,6 +22,16 @@ export interface GraphNode {
   readonly id: string;
   /** A type in the catalogue. Unknown types still render, flagged as a problem. */
   readonly type: string;
+  /**
+   * The lane's own name for this step — `anchor`, `spokes`, `frames_gate` — when the node came
+   * from a workflow in `workflows/*.yaml`. Empty for a hand-built node.
+   *
+   * It is how a graph joins to a run. `run.json` records what each step produced under exactly
+   * this name, and `id` is generated per graph, so without it "what did this node make?" could
+   * only be answered by matching on stage type — ambiguous in every lane that runs one stage
+   * twice, which are the lanes where the question matters most.
+   */
+  readonly key: string;
   /** Operator-renamed title, or null to use the definition's. */
   readonly title: string | null;
   readonly x: number;
@@ -454,6 +464,8 @@ export function newId(prefix: string): string {
 
 export interface NewNodeOptions {
   readonly id?: string;
+  /** The lane's name for this step, when the node comes from one. */
+  readonly key?: string;
   readonly x: number;
   readonly y: number;
   readonly note?: string;
@@ -469,6 +481,7 @@ export function makeNode(catalog: NodeCatalog, type: string, options: NewNodeOpt
   return {
     id: options.id ?? newId("node"),
     type,
+    key: options.key ?? "",
     title: options.title ?? null,
     x: options.x,
     y: options.y,
@@ -761,7 +774,7 @@ export class GraphParseError extends Error {
   }
 }
 
-const NODE_KEYS = ["id", "type", "title", "x", "y", "width", "collapsed", "note", "values", "mode"];
+const NODE_KEYS = ["id", "type", "key", "title", "x", "y", "width", "collapsed", "note", "values", "mode"];
 const LINK_KEYS = ["id", "from_node", "from_slot", "to_node", "to_slot"];
 const GROUP_KEYS = ["id", "name", "template", "collapsed", "members", "x", "y"];
 const GRAPH_KEYS = ["schema_version", "graph_id", "name", "nodes", "links", "groups"];
@@ -845,6 +858,10 @@ export function parseGraph(value: unknown): WorkspaceGraph {
     return {
       id: str(node.id, `${where}.id`, ID64),
       type: str(node.type, `${where}.type`, ID64),
+      // Absent on every graph saved before the field existed, and those graphs stay valid: an
+      // empty key means "this node is not from a lane", which is the honest reading of a
+      // document that never had one.
+      key: node.key === undefined ? "" : str(node.key, `${where}.key`, { max: 64 }),
       title: node.title === null ? null : str(node.title, `${where}.title`, { max: 200 }),
       x: num(node.x, `${where}.x`),
       y: num(node.y, `${where}.y`),
@@ -952,6 +969,7 @@ export function serializeGraph(graph: WorkspaceGraph): string {
     nodes: graph.nodes.map((n) => ({
       id: n.id,
       type: n.type,
+      key: n.key,
       title: n.title,
       x: n.x,
       y: n.y,

@@ -20,6 +20,26 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 CLIPS = Path("/mnt/fast/models/blender-assets/clips")
 
+# What each rig looks like once drawn, keyed by asset so it is the SAME description in every shot.
+#
+# Not decoration, and not optional: `compile_controls` refuses a staged plan without it, because
+# the Blender compiler renders depth and normals of the bare MakeHuman mesh and the image model
+# draws exactly that — an untextured grey mannequin, measured over ten anchors. It is also what
+# `shots.prompt_compile.subject_clause` calls "the only thing keeping the model from re-dressing
+# the same character every frame": the mesh carries a body and nothing else, so continuity of
+# clothing across six shots lives here or nowhere.
+#
+# Written as descriptions rather than negations, for the reason `sequences.styles` records: these
+# weights run at guidance 0, where a "no ..." clause is a hint and a description is an instruction.
+APPEARANCE: dict[str, str] = {
+    "man_01": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey"
+    " crew-neck, dark trousers, brown leather boots",
+    "woman_01": "a woman in her thirties, shoulder-length auburn hair, a rust-red belted coat,"
+    " dark jeans, tan ankle boots",
+    "woman_02": "a woman in her sixties, short silver hair, a deep green quilted jacket, navy"
+    " trousers, grey walking shoes",
+}
+
 # Six shots that tell a small story of two people, chosen from the affection half of the library.
 # `azimuth_deg` is where the camera sits relative to the pair's own facing, so a run gets real
 # camera variety instead of six front-on shots. `body_fraction` is the target height of the taller
@@ -176,6 +196,7 @@ def build() -> dict:
             {
                 "id": cid,
                 "asset": asset,
+                "appearance": APPEARANCE[asset],
                 "transform": {"position": [0.0, 0.0, 0.0], "yaw_deg": 0.0, "scale": 1.0},
                 "pose": {
                     "kind": "segments",

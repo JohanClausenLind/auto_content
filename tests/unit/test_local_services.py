@@ -35,6 +35,10 @@ class FakeWorld:
         """What Ollama says is resident. "Free the GPU" has to be a no-op when it is already
         free, or every stage that calls it reaches into a service nobody asked it to touch."""
         self.requests: list[httpx.Request] = []
+        self.env: list[dict[str, str]] = []
+        """The environment each spawn was given. A tenant's *weights* are decided here and
+        nowhere else — CF_HIDREAM_MODEL_TYPE, and now CF_HIDREAM_LORA — so a wiring bug in this
+        dict is a server quietly serving a different model than the run believes it asked for."""
 
     def transport(self) -> httpx.MockTransport:
         def handler(request: httpx.Request) -> httpx.Response:
@@ -60,6 +64,7 @@ class FakeWorld:
 
     def fake_popen(self, cmd, **kw):
         self.popen.append(list(cmd))
+        self.env.append(dict(kw.get("env") or {}))
         tenant = "comfyui" if any(str(c).endswith("main.py") for c in cmd) else "hidream"
         self.up[tenant] = "ready" if tenant == "comfyui" else "loading"
         self.pids[tenant] = 4242 if tenant == "hidream" else 5150
@@ -94,6 +99,10 @@ def world(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> FakeWorld:
     w = FakeWorld()
     monkeypatch.setattr(svc, "SUBPROCESS_POPEN", w.fake_popen)
     monkeypatch.setattr(svc, "SUBPROCESS_RUN", w.fake_run)
+    # Off unless a test asks for it: whether this machine has a *user* systemd instance is a fact
+    # about the machine, and letting the probe run would make every assertion about the spawned
+    # command depend on where the suite happens to be executing.
+    monkeypatch.setattr(svc, "SYSTEMD_RUN_AVAILABLE", lambda: False)
 
     real_kill = svc.os.killpg
 
@@ -137,6 +146,37 @@ def test_ensure_starts_hidream_and_waits_for_the_model_to_load(world: FakeWorld,
     # already healthy: nothing else is started
     s.ensure("hidream")
     assert len(world.popen) == 1
+
+
+def test_no_lora_is_configured_by_default(world: FakeWorld, tmp_path: Path):
+    """Merging an adapter changes every picture the server makes; nobody gets that by upgrading."""
+    _services(world, tmp_path).ensure("hidream")
+    assert "CF_HIDREAM_LORA" not in world.env[0]
+
+
+def test_a_configured_lora_reaches_the_server_at_spawn(world: FakeWorld, tmp_path: Path):
+    """An adapter is part of what the server IS, so it is set once at spawn and never per request.
+
+    Every frame of a sequence has to come off the same weights or the GenerationLock freezes a
+    model that changed underneath it — and with a pool of hosts, "same endpoint" is not "same
+    model", which is why /healthz reports the adapter back.
+    """
+    adapter = tmp_path / "romsketch_ho1_v1b.safetensors"
+    adapter.write_bytes(b"")
+    services = _services(world, tmp_path, hidream_lora=str(adapter), hidream_lora_multiplier=0.8)
+    services.ensure("hidream")
+    assert world.env[0]["CF_HIDREAM_LORA"] == str(adapter)
+    assert world.env[0]["CF_HIDREAM_LORA_MULTIPLIER"] == "0.8"
+
+
+def test_a_relative_lora_path_resolves_against_the_repo_not_the_cwd(
+    world: FakeWorld, tmp_path: Path
+):
+    """`datasets/training/romsketch/...` is how an operator would write it, and the server is
+    spawned detached with its own cwd."""
+    rel = "datasets/training/romsketch/output/romsketch_ho1_v1b.safetensors"
+    _services(world, tmp_path, hidream_lora=rel).ensure("hidream")
+    assert world.env[0]["CF_HIDREAM_LORA"] == str(tmp_path / rel)
 
 
 def test_comfyui_start_stops_hidream_first_and_links_models(world: FakeWorld, tmp_path: Path):
@@ -467,3 +507,105 @@ def test_a_gpu_that_fell_off_the_bus_is_named_rather_than_retried(monkeypatch) -
 
     monkeypatch.setattr(subprocess, "run", missing)
     assert st.gpu_is_gone() == ""  # an offline machine is not a broken one
+
+
+def test_stop_waits_for_the_driver_to_give_the_card_back(
+    world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The three-second sleep this replaces hard-locked the machine on 2026-09-12.
+
+    `stop` returns once the tenant stops answering HTTP, which is the moment it closes its socket
+    -- tens of GB of CUDA allocations still being torn down behind it. ComfyUI was started into
+    that window, its CUDA init came back "unknown error ... Setting the available devices to be
+    zero", and the box went down four seconds later with nothing in the journal.
+    """
+    from content_factory.services import local as local_mod
+
+    readings = iter([1_000, 2_000, 9_000, 19_500])
+    monkeypatch.setattr(local_mod, "FREE_VRAM_MIB", lambda: next(readings, 19_500))
+    services = _services(world, tmp_path)
+    before = world.clock
+    services._wait_for_vram()
+    # It polled while the number was still climbing rather than sleeping a fixed guess, and
+    # returned as soon as the card was actually back.
+    assert world.clock > before
+
+
+def test_a_card_someone_else_partly_owns_does_not_stall_every_handover(
+    world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Free VRAM that stops climbing short of the target is another owner, not a slow release.
+
+    Without the settle rule this waits out the whole timeout on every handover, which would turn
+    a rare hang into a guaranteed two-minute tax.
+    """
+    from content_factory.services import local as local_mod
+
+    monkeypatch.setattr(local_mod, "FREE_VRAM_MIB", lambda: 12_000)  # never reaches 18 GB
+    services = _services(world, tmp_path)
+    before = world.clock
+    services._wait_for_vram()
+    waited = world.clock - before
+    assert 0 < waited < services.cfg.vram_release_timeout_s
+
+
+def test_a_machine_with_no_driver_does_not_wait(
+    world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A CPU-only box has nothing to arbitrate and must not pay for the check."""
+    from content_factory.services import local as local_mod
+
+    monkeypatch.setattr(local_mod, "FREE_VRAM_MIB", lambda: None)
+    services = _services(world, tmp_path)
+    before = world.clock
+    services._wait_for_vram()
+    assert world.clock == before
+
+
+def test_a_gpu_server_is_started_in_its_own_scope_not_the_shell_that_launched_it(
+    world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """What died on 2026-09-13 was the operator's terminal, not the server that overran.
+
+    ComfyUI loading Ideogram 4 reached 26.5 GB of RSS on a 31 GB box, and the cgroup the kernel
+    named in the oom-kill was the wezterm scope the shell was in -- because a server started from
+    a shell inherits that shell's scope and systemd kills per scope. In a scope of its own, the
+    ceiling stops it getting that big and an overrun kills the allocator.
+    """
+    from content_factory.services import local as local_mod
+
+    monkeypatch.setattr(local_mod, "SYSTEMD_RUN_AVAILABLE", lambda: True)
+    services = _services(world, tmp_path)
+    services.ensure("hidream")
+    spawned = world.popen[0]
+    assert spawned[0] == "systemd-run"
+    assert "--scope" in spawned and "--user" in spawned
+    assert "MemoryMax=22G" in spawned
+    # Swap is 3.7 GB on this box and filling it is how the desktop stops responding before the
+    # kill lands, so the tenant is denied it outright.
+    assert "MemorySwapMax=0" in spawned
+    # The real command still follows, unaltered.
+    assert spawned[-1].endswith("skills/image/hidream/server.py")
+
+
+def test_a_box_without_user_systemd_still_starts_the_server(
+    world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The ceiling is a safety net, not a dependency: a container has no user manager to ask."""
+    from content_factory.services import local as local_mod
+
+    monkeypatch.setattr(local_mod, "SYSTEMD_RUN_AVAILABLE", lambda: False)
+    services = _services(world, tmp_path)
+    services.ensure("hidream")
+    assert world.popen[0][:3] == ["uv", "run", "--project"]
+
+
+def test_the_ceiling_can_be_turned_off(
+    world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from content_factory.services import local as local_mod
+
+    monkeypatch.setattr(local_mod, "SYSTEMD_RUN_AVAILABLE", lambda: True)
+    services = _services(world, tmp_path, confine_tenants=False)
+    services.ensure("hidream")
+    assert world.popen[0][0] != "systemd-run"

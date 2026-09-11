@@ -1,5 +1,7 @@
 export { NodeGraphEditor, NODE_DRAG_MIME } from "./NodeGraphEditor";
-export type { NodeGraphEditorProps, NodeStatusMap } from "./NodeGraphEditor";
+export type { NodeGraphEditorProps, NodeOutputsMap, NodeStatusMap } from "./NodeGraphEditor";
+export { NodeOutputStrip, summarize as summarizeOutputs } from "./NodeOutputs";
+export type { NodeOutputItem, NodeOutputs } from "./NodeOutputs";
 export { GraphNodeView } from "./GraphNodeView";
 export { GroupNodeView, GroupFrameView, GROUP_NODE_WIDTH } from "./GroupNodeView";
 export type { GroupFlowNode, GroupNodeData } from "./GroupNodeView";
@@ -73,6 +75,7 @@ export {
   MIN_NODE_WIDTH,
   NODE_SLOT_HEIGHT,
   NODE_TITLE_HEIGHT,
+  NODE_OUTPUT_STRIP_HEIGHT,
   NODE_WIDGET_HEIGHT,
   widgetDefaults,
 } from "./nodeDefs";

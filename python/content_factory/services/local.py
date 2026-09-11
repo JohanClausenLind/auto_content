@@ -40,6 +40,54 @@ TENANTS: tuple[Tenant, ...] = ("hidream", "comfyui")
 _GGUF_ALIASES = {"diffusion_models": "unet", "text_encoders": "clip"}
 
 SUBPROCESS_RUN: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run
+
+
+def _query_free_vram_mib() -> int | None:
+    """Free VRAM in MiB, or ``None`` where there is no ``nvidia-smi`` to ask."""
+    try:
+        out = subprocess.check_output(
+            # Found on PATH, as every other GPU check in this repo does it: pinning /usr/bin
+            # would break the driver's alternatives symlink.
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],  # noqa: S607
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    try:
+        return int(out.strip().splitlines()[0])
+    except (IndexError, ValueError):
+        return None
+
+
+FREE_VRAM_MIB: Callable[[], int | None] = _query_free_vram_mib
+"""Seam: the tests decide how full the card is without owning one."""
+
+
+def _systemd_run_available() -> bool:
+    """Is there a *user* systemd instance that can hold a transient scope for us?
+
+    `--user` is the part that has to be checked rather than assumed: `systemd-run` on PATH says
+    nothing about whether this session has a user manager to talk to, and a container or a plain
+    SSH session without lingering has the binary and no manager.
+    """
+    try:
+        return (
+            SUBPROCESS_RUN(
+                ["systemd-run", "--user", "--scope", "--quiet", "--collect", "true"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=15,
+            ).returncode
+            == 0
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+SYSTEMD_RUN_AVAILABLE: Callable[[], bool] = _systemd_run_available
+"""Seam: the tests decide whether the box has a user systemd instance."""
 SUBPROCESS_POPEN: Callable[..., subprocess.Popen] = subprocess.Popen
 
 
@@ -267,6 +315,92 @@ class LocalServices:
         self._wait_ready(tenant)
         return endpoint
 
+    def _wait_for_vram(self) -> None:
+        """Block until the driver has actually given the card back.
+
+        This used to be ``sleep(min(3.0, poll_interval_s))`` under a comment saying "driver
+        releases VRAM after exit", and the gap between those two things **hard-locked this machine
+        on 2026-09-12**. `stop` above waits for the tenant to stop answering HTTP, which happens
+        the moment the server closes its socket -- while the process is still tearing down 21 GB
+        of CUDA allocations. ComfyUI was started 2 s later, its `torch._C._cuda_init()` came back
+        `CUDA unknown error ... Setting the available devices to be zero`, and the box went down
+        four seconds after that with no oom-kill and no hung-task trace in the journal: the kernel
+        died without getting to log, which is a driver fault rather than memory pressure.
+
+        Three seconds is a guess. What the card has actually released is a number, so ask for it.
+        A machine with no ``nvidia-smi`` has nothing to wait for and returns at once.
+        """
+        free = FREE_VRAM_MIB()
+        if free is None:
+            return  # no driver to ask: a CPU-only box, and nothing to arbitrate
+        deadline = self._monotonic() + self.cfg.vram_release_timeout_s
+        settled_at: float | None = None
+        previous = free
+        while True:
+            current = FREE_VRAM_MIB()
+            if current is None:
+                return
+            if current >= self.cfg.vram_free_target_mib:
+                return
+            # Not at the target, but no longer climbing: something else legitimately owns the
+            # rest of the card (another user, a desktop compositor), so waiting for a number it
+            # will never reach would stall the run instead of protecting it.
+            if current <= previous:
+                settled_at = settled_at if settled_at is not None else self._monotonic()
+                if self._monotonic() - settled_at >= self.cfg.vram_settle_s:
+                    return
+            else:
+                settled_at = None
+            previous = max(previous, current)
+            if self._monotonic() > deadline:
+                return  # a slow release is not grounds for failing the run; the next load reports
+            self._sleep(self.cfg.poll_interval_s)
+
+    def _confined(self, command: list[str]) -> list[str]:
+        """Wrap a tenant in its own systemd scope with a memory ceiling, where systemd can.
+
+        This exists because of *what died* on 2026-09-13. ComfyUI loading Ideogram 4 reached
+        26.5 GB of anonymous RSS on a 31 GB box and the kernel's OOM killer fired -- and the
+        cgroup it named was the **terminal's**:
+
+            task_memcg=/user.slice/.../app-...wezterm...scope, task=python, pid=42289
+            Out of memory: Killed process 42289 (python) anon-rss:26536096kB
+            ...wezterm...scope: Failed with result 'oom-kill'
+
+        systemd kills per scope. A server started from a shell inherits that shell's scope, so an
+        overrun in the model server takes the operator's terminal down with it while the shell
+        that launched it had nothing to do with the allocation. Three sessions were lost that way
+        before anyone read the cgroup path in the message.
+
+        Putting the tenant in a transient scope of its own changes both halves: the ceiling stops
+        it reaching a size that threatens the machine, and when it does overrun, the thing that
+        dies is the thing that allocated.
+
+        Best-effort by design. A box without a user systemd instance (a container, a plain SSH
+        session with no lingering) runs the command unwrapped rather than refusing to start -- the
+        ceiling is a safety net, not a dependency.
+        """
+        if not self.cfg.confine_tenants:
+            return command
+        ceiling = self.cfg.tenant_memory_max_gib
+        if ceiling <= 0 or not SYSTEMD_RUN_AVAILABLE():
+            return command
+        return [
+            "systemd-run",
+            "--user",
+            "--scope",
+            "--quiet",
+            "--collect",
+            f"--unit=cf-{self.__class__.__name__.lower()}-{os.getpid()}-{len(command)}",
+            "-p",
+            f"MemoryMax={ceiling}G",
+            # Swap is 3.7 GB here and filling it is how the desktop stops responding before the
+            # kill lands. Denying the tenant swap entirely keeps the failure fast and local.
+            "-p",
+            "MemorySwapMax=0",
+            *command,
+        ]
+
     def start_command(self, tenant: Tenant) -> list[str]:
         if tenant == "hidream":
             skill = self.repo_root / self.cfg.hidream_skill_dir
@@ -298,6 +432,15 @@ class LocalServices:
             # throughput. Losing time beats losing the run.
             env.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
             env["CF_HIDREAM_PORT"] = str(urlparse(self.endpoints["hidream"]).port or 8801)
+            # An adapter is part of what the server IS, so it is set at spawn and never per
+            # request: every frame of a sequence has to come off the same weights or the lock
+            # freezes a model that changed underneath it.
+            if self.cfg.hidream_lora:
+                lora = Path(self.cfg.hidream_lora).expanduser()
+                if not lora.is_absolute():
+                    lora = self.repo_root / lora
+                env["CF_HIDREAM_LORA"] = str(lora)
+                env["CF_HIDREAM_LORA_MULTIPLIER"] = str(self.cfg.hidream_lora_multiplier)
             cwd = self.repo_root
         else:
             if self.cfg.link_models:
@@ -308,7 +451,7 @@ class LocalServices:
             cwd = self.comfy_workspace()
         with log.open("ab") as fh:
             proc = SUBPROCESS_POPEN(
-                self.start_command(tenant),
+                self._confined(self.start_command(tenant)),
                 stdout=fh,
                 stderr=subprocess.STDOUT,
                 env=env,
@@ -346,7 +489,7 @@ class LocalServices:
         state = self.state_dir / f"{tenant}.json"
         if state.exists():
             state.unlink()
-        self._sleep(min(3.0, self.cfg.poll_interval_s))  # driver releases VRAM after exit
+        self._wait_for_vram()
 
     def link_models(self) -> LinkResult:
         return link_required_models(

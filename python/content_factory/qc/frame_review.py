@@ -19,6 +19,7 @@ two figures where two were staged. That is what the contact sheet and a reviewer
 
 from __future__ import annotations
 
+import functools
 import io
 import statistics
 from collections.abc import Sequence
@@ -49,6 +50,40 @@ EDGE_INK_MAX = 0.55
 """Fraction of the 2 %-wide frame border that is subject rather than background."""
 BACKGROUND_CHURN_MAX = 42.0
 """Mean absolute difference between consecutive frames outside the moving region."""
+
+DEAD_FLAT_MAX = 0.60
+"""For a frame that asked to look photographed: the fraction of 16-px tiles carrying no texture
+at all, above which it is a render rather than a photograph.
+
+This is the measurement behind "why doesn't it look real". A sensor puts a noise floor on every
+pixel, including a blurred sky; a path tracer and a diffusion model asked for a clean picture put
+one nowhere. Measured 2026-09-12 over the generated sets on this host, high-pass residual
+(image minus a 1-px Gaussian), per-tile standard deviation, tiles under 0.6 counted as dead:
+
+    demo-pebble   anchor, `single-image` lane        95.4 %   median tile detail 0.12
+    w-iceberg     keyframe                           91.4 %                      0.09
+    ps2b-amber    anchor                             86.7 %                      0.11
+    ps2b-amber    after SeedVR2                      75.6 %                      0.46
+    ---------------------------------------------------------------------------------
+    demo-pebble   keyframe 0, the speckle failure     0.7 %                     35.14
+
+Every one of those is above the threshold except the broken one, which is below the floor below.
+The number is deliberately not tuned finer than that: no photograph was measured on this host to
+calibrate against, so this says "nothing in this frame has texture", which is unambiguous, rather
+than pretending to a boundary it cannot draw.
+
+It fires only when the style asked to look photographed. A watercolour has large flat areas
+because that is what watercolour is."""
+DEAD_FLAT_MIN = 0.02
+"""The other end, and a different failure: a frame where *nothing* is flat is not detailed, it is
+noise. `demo-pebble` returned two keyframes of four with the ground replaced by 1-px dither — 0.7 %
+dead-flat against the anchor's 95.4 %, median tile detail 35 against 0.12 — while the other two
+came back clean. Intermittent, per frame, and invisible to every check that existed."""
+_TEXTURE_TILE = 16
+_TEXTURE_FLAT_STD = 0.6
+"""A tile whose high-pass residual varies by less than this carries no texture. Slightly above
+the rounding floor of 8-bit data, so a genuinely smooth gradient reads as flat and 8-bit banding
+does not read as detail."""
 
 _ANALYSIS_SIZE = (640, 360)
 
@@ -90,6 +125,249 @@ def tonal_findings(png: bytes) -> list[FrameFinding]:
             threshold=CLIP_BLACK_MAX,
         ),
     ]
+
+
+@functools.lru_cache(maxsize=8)
+def _tile_detail(png: bytes):
+    """Per-16px-tile high-pass standard deviation, at the frame's NATIVE size.
+
+    Native, and that is the whole point: every other check here works on a 640x360 downscale, and
+    a downscale is a low-pass filter — it destroys exactly the signal this measures. Measuring
+    texture on `_load`'s output would report the resampler's noise, not the picture's.
+
+    Cached because two checks read it and a 4 MP frame costs a full Gaussian blur plus a reshape
+    to produce: `dead_flat_fraction` asks how MUCH of the frame is flat, `blank_panel_fraction`
+    asks WHERE, and computing the same array twice per review is pure waste. Keyed on the PNG
+    bytes, so it can never serve one frame's tiles for another.
+    """
+    import numpy as np
+    from PIL import ImageFilter
+
+    img = Image.open(io.BytesIO(png)).convert("L")
+    native = np.asarray(img, dtype=np.float32)
+    blurred = np.asarray(img.filter(ImageFilter.GaussianBlur(1.0)), dtype=np.float32)
+    residual = native - blurred
+    tile = _TEXTURE_TILE
+    rows, cols = residual.shape[0] // tile, residual.shape[1] // tile
+    if rows == 0 or cols == 0:  # a frame smaller than one tile has nothing to say
+        return None
+    tiles = residual[: rows * tile, : cols * tile].reshape(rows, tile, cols, tile).swapaxes(1, 2)
+    return tiles.std(axis=(2, 3))
+
+
+def dead_flat_fraction(png: bytes) -> tuple[float, float]:
+    """``(fraction of tiles with no texture, median tile detail)`` at the frame's NATIVE size."""
+    import numpy as np
+
+    detail = _tile_detail(png)
+    if detail is None:
+        return 0.0, 0.0
+    return float((detail < _TEXTURE_FLAT_STD).mean()), float(np.median(detail))
+
+
+BLANK_PANEL_MAX = 0.30
+"""How much of a frame may be one contiguous featureless band before it is a broken render.
+
+A failure mode neither the refusal test nor the dead-flat fraction can see, found 2026-09-12 in
+`setC/skeleton/0000`: HiDream drew two people against a brick wall across the left 37 % of the
+canvas and left the remaining 63 % a single flat grey field. It is not a refusal — there is a real
+picture in it, median tile detail 0.06 sits *above* `REFUSAL_DETAIL_MAX`, and there is no
+lettering for the banner test. And its 75.7 % dead-flat fraction is unremarkable next to the
+74-82 % that legitimately flat HiDream frames measure, so no global threshold separates them. What
+separates them is *where* the flat tiles are: scattered through a hazy sky, or packed into one
+edge-anchored block with a hard border down the middle of the frame.
+
+Calibrated on this host's own output, edge-anchored bands that are >=97 % dead tiles:
+
+    the half-rendered frame                     0.65
+    ------------------------------------------------
+    HiDream set C, 81.6 % dead-flat overall     0.21   <- the nearest clean frame
+    HiDream set B, 79.0 % dead-flat             0.03
+    every other generated frame measured (40)   0.00
+
+0.30 sits in that gap with room on both sides. Advisory rather than blocking for the same reason
+the refusal test is: the mock backend draws solid colours by design."""
+BLANK_PANEL_PURITY = 0.97
+"""Fraction of a band's tiles that must be dead before the band counts as carrying no picture."""
+
+
+def blank_panel_fraction(png: bytes) -> float:
+    """Largest edge-anchored band of the frame that carries no picture at all, 0-1.
+
+    Edge-anchored, and that is the whole point: a truncated render leaves its blank region against
+    a border, while a legitimately flat frame (an overcast sky, a wall in shade) spreads its flat
+    tiles through the picture and has something drawn against every edge. Scanning bands from all
+    four sides catches a render that stopped early in either axis without needing to know which.
+    """
+    detail = _tile_detail(png)
+    if detail is None:
+        return 0.0
+    dead = detail < _TEXTURE_FLAT_STD
+    rows, cols = dead.shape
+    best = 0.0
+    for k in range(1, cols + 1):
+        for band in (dead[:, :k], dead[:, cols - k :]):
+            if band.mean() >= BLANK_PANEL_PURITY:
+                best = max(best, k / cols)
+    for k in range(1, rows + 1):
+        for band in (dead[:k, :], dead[rows - k :, :]):
+            if band.mean() >= BLANK_PANEL_PURITY:
+                best = max(best, k / rows)
+    return float(best)
+
+
+REFUSAL_DETAIL_MAX = 0.05
+"""Median 16-px tile detail below which a frame carries no picture at all.
+
+Ideogram 4's safety filter is compiled into the weights — ComfyUI cannot disable it and does not
+implement it; the model *draws* its refusal, a flat grey field with "Image blocked by safety
+filter" lettered across it. Measured 2026-09-12 over eleven generations, a blocked frame's median
+tile detail is **0.00** against 0.4-2.3 for a rendered one, so the separation is not a judgement
+call.
+
+It fires on innocuous prompts — a brass orrery, a pine cone on slate — and it is **seed-determined
+rather than content-determined**: the same pine cone prompt blocked on seeds 42 and 12345 and
+rendered on seed 7, and the two blocked seeds blocked again at 48 steps as well as at 12. That is
+what makes it survivable: a blocked frame is a retry with a different seed, which is exactly what
+the sequence engine's regeneration loop already does for a drift failure."""
+
+
+BANNER_ROW_RATIO = 5.0
+"""How much sharper than the median row a band must be to read as lettering across the frame.
+
+Measured 2026-09-12 over eight frames, peak row energy in the middle third against the frame's
+median row:
+
+    refusal painted over a photo      16.35
+    refusal, garbled lettering         5.71
+    refusal over the amber macro      44.04
+    ------------------------------------------
+    a lit train at the frame centre    3.93   <- the nearest clean frame
+    a night street                     3.68
+    clean Ideogram / FLUX.2 / LoRA     1.7-1.9
+
+5.0 sits in that gap. The margin below it is thin — a lit train head-on is 3.93 — so this is an
+**advisory**, not a blocker: it is the signal for a backend to spend another seed, not grounds for
+throwing a frame away without a person seeing it."""
+BANNER_BAND = (0.35, 0.65)
+"""Where the refusal caption sits: the middle third, vertically centred. Restricting the search
+there is what keeps a genuinely detailed horizon or a shop sign from reading as a banner."""
+
+
+def has_refusal_banner(png: bytes) -> bool:
+    """Is there a line of lettering painted across the middle of this frame?
+
+    The second refusal mode, and the dangerous one. Ideogram 4 does not only return a flat grey
+    card — it also renders a **plausible photograph with the refusal lettered over it**, sometimes
+    garbled ("Inage clocked by cioie filter", measured 2026-09-12). That frame has normal texture
+    everywhere, so :func:`is_refusal_frame` alone passes it, and it would go into a finished film
+    carrying a watermark that says the model refused.
+
+    Detected structurally rather than by reading it: lettering is a burst of horizontal edge energy
+    confined to a few rows in the vertical centre, several times the median row. No OCR, no
+    language assumption, and it catches the garbled spellings the flat-text approach would miss.
+    """
+    import numpy as np
+    from PIL import ImageFilter
+
+    image = Image.open(io.BytesIO(png)).convert("L")
+    native = np.asarray(image, dtype=np.float32)
+    blurred = np.asarray(image.filter(ImageFilter.GaussianBlur(1.0)), dtype=np.float32)
+    row_energy = np.abs(native - blurred).mean(axis=1)
+    median = float(np.median(row_energy))
+    if median <= 0.01:  # a flat card has no rows to compare; is_refusal_frame owns that case
+        return False
+    height = native.shape[0]
+    band = row_energy[int(height * BANNER_BAND[0]) : int(height * BANNER_BAND[1])]
+    return bool(band.max() >= BANNER_ROW_RATIO * median)
+
+
+def is_refusal_frame(png: bytes) -> bool:
+    """Did the model return a refusal instead of a picture, in either of its two forms?
+
+    Cheap enough to run on every frame of every backend: one grey rectangle looks the same to this
+    measurement whatever produced it, and a caller that never sees one pays a Gaussian blur.
+    """
+    _, median_detail = dead_flat_fraction(png)
+    if median_detail < REFUSAL_DETAIL_MAX:
+        return True
+    return has_refusal_banner(png)
+
+
+def texture_findings(png: bytes, *, expect_photographic: bool) -> list[FrameFinding]:
+    """Does this frame carry the evidence that a camera made it?
+
+    Two failures, opposite ends of one measurement. A frame with no texture anywhere reads as a 3D
+    render however well composed it is; a frame with texture *everywhere* has had its surfaces
+    replaced by noise. Both were sitting in the output of this host and neither was detectable by
+    any check that existed, which is why the flat one went five days being described as "the model
+    is just like that".
+    """
+    flat, median_detail = dead_flat_fraction(png)
+    findings = [
+        # Checked first and unconditionally: a refusal card is not a frame with a texture problem,
+        # it is the absence of a frame, and reporting it as "87 % dead-flat" buries the one fact
+        # the operator needs.
+        FrameFinding(
+            check="model_returned_a_refusal",
+            passed=median_detail >= REFUSAL_DETAIL_MAX,
+            # Advisory, not a blocker, for the same reason the banner test is: "no texture at all"
+            # cannot tell a refusal card from a legitimately flat frame. The mock backend draws
+            # solid colours by design and every one of its frames trips this, which is a false
+            # positive a blocker would turn into a broken lane. A backend that knows it is talking
+            # to Ideogram calls `is_refusal_frame` directly and spends another seed; the review
+            # gate only needs to put it in front of whoever is looking.
+            severity="advisory",
+            detail=(
+                f"median tile detail {median_detail:.2f}: the frame carries no picture. Ideogram 4"
+                " draws a grey refusal card when its built-in filter fires, which is"
+                " seed-determined — regenerate with a different seed"
+            ),
+            measured=round(median_detail, 4),
+            threshold=REFUSAL_DETAIL_MAX,
+        ),
+        FrameFinding(
+            check="texture_noise_floor",
+            passed=flat >= DEAD_FLAT_MIN,
+            severity="advisory",
+            detail=(
+                f"only {flat:.1%} of tiles are flat (median tile detail {median_detail:.1f});"
+                " under 2% means the surfaces have been replaced by noise"
+            ),
+            measured=round(flat, 4),
+            threshold=DEAD_FLAT_MIN,
+        ),
+    ]
+    blank = blank_panel_fraction(png)
+    findings.append(
+        FrameFinding(
+            check="frame_rendered_whole",
+            passed=blank <= BLANK_PANEL_MAX,
+            severity="advisory",
+            detail=(
+                f"{blank:.0%} of the frame is one featureless band against an edge: the render"
+                " stopped early and left the rest blank. Not a refusal — there is a picture in"
+                " the part that drew — so it needs a fresh seed, not a different prompt"
+            ),
+            measured=round(blank, 4),
+            threshold=BLANK_PANEL_MAX,
+        )
+    )
+    if expect_photographic:
+        findings.append(
+            FrameFinding(
+                check="texture_dead_flat",
+                passed=flat <= DEAD_FLAT_MAX,
+                severity="advisory",
+                detail=(
+                    f"{flat:.1%} of 16-px tiles carry no texture at all (median tile detail"
+                    f" {median_detail:.2f}); a photographed frame has a noise floor everywhere"
+                ),
+                measured=round(flat, 4),
+                threshold=DEAD_FLAT_MAX,
+            )
+        )
+    return findings
 
 
 COLOUR_SAT_MIN = 0.06
@@ -430,7 +708,10 @@ def consistency_findings(pngs: Sequence[tuple[str, bytes]]) -> dict[str, FrameFi
 
 
 def review_findings(
-    pngs: Sequence[tuple[str, bytes]], *, expect_monochrome: bool = False
+    pngs: Sequence[tuple[str, bytes]],
+    *,
+    expect_monochrome: bool = False,
+    expect_photographic: bool = False,
 ) -> dict[str, list[FrameFinding]]:
     """Every finding for every frame, in frame order."""
     out: dict[str, list[FrameFinding]] = {}
@@ -439,6 +720,7 @@ def review_findings(
     for frame_id, png in pngs:
         findings = tonal_findings(png)
         findings += colour_findings(png, expect_monochrome=expect_monochrome)
+        findings += texture_findings(png, expect_photographic=expect_photographic)
         findings += border_findings(png)
         findings += edge_findings(png)
         if previous is not None:

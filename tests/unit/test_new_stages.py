@@ -43,13 +43,23 @@ def ctx(tmp_path: Path) -> StageContext:
     )
 
 
-def test_select_music_is_deterministic_and_verified(ctx: StageContext) -> None:
-    out1 = stage_select_music(ctx)
-    out2 = stage_select_music(ctx)
-    assert out1.outputs_hash == out2.outputs_hash
-    selection = json.loads((ctx.ddir() / "audio" / "music-selection.json").read_text())
-    assert selection["track_id"] == "calm_bed_a"
-    assert selection["attribution"]
+def test_select_music_is_deterministic_and_verified(ctx: StageContext, monkeypatch) -> None:
+    # Pin the fixture library rather than the configured one. The default is `assets/music`, which
+    # is 113 MB of git-ignored generated FLACs and is host-specific — a core suite that asserted a
+    # track id from it would pass here and fail on any checkout without the media.
+    monkeypatch.setenv("CF__MEDIA_LIBRARY__MUSIC_DIR", str(REPO / "fixtures" / "music"))
+    from content_factory.config import get_settings
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    try:
+        out1 = stage_select_music(ctx)
+        out2 = stage_select_music(ctx)
+        assert out1.outputs_hash == out2.outputs_hash
+        selection = json.loads((ctx.ddir() / "audio" / "music-selection.json").read_text())
+        assert selection["track_id"] == "calm_bed_a"
+        assert selection["attribution"]
+    finally:
+        get_settings.cache_clear()  # type: ignore[attr-defined]
 
 
 def test_select_music_survives_missing_library(ctx: StageContext, monkeypatch) -> None:

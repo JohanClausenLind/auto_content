@@ -18,6 +18,7 @@ import {
   type NodeDefinition,
   type SlotSpec,
 } from "./nodeDefs";
+import { NodeOutputStrip, type NodeOutputs } from "./NodeOutputs";
 import { useAutoGrowTextarea, WidgetRow } from "./widgets";
 
 export interface GraphNodeData extends Record<string, unknown> {
@@ -30,6 +31,11 @@ export interface GraphNodeData extends Record<string, unknown> {
     readonly progress?: number;
     readonly detail?: string;
   };
+  /** What this node produced in the run being looked at, if any. See `NodeOutputs.tsx`. */
+  readonly outputs?: NodeOutputs;
+  /** Open the full review for this node's output. The canvas draws four thumbnails; every frame
+   *  at size, with the voice lines playing, is the host application's panel. */
+  readonly onOpenOutputs?: () => void;
 }
 
 export type GraphFlowNode = Node<GraphNodeData, "cfNode">;
@@ -176,7 +182,7 @@ function ResizeGrip({ node }: { node: GraphNode; }) {
 
 export const GraphNodeView = memo(function GraphNodeView({ data, selected }: NodeProps<GraphFlowNode>) {
   const { editor, readOnly } = useEditorContext();
-  const { node, def, problems, status } = data;
+  const { node, def, problems, status, outputs, onOpenOutputs } = data;
   const shownWidgets = def ? visibleWidgets(def, node.values) : [];
   const noteRef = useAutoGrowTextarea(node.note, 22);
   const isNote = def?.kind === "note";
@@ -303,6 +309,14 @@ export const GraphNodeView = memo(function GraphNodeView({ data, selected }: Nod
             <p className="ng-node__unknown" role="note">
               Unknown node type <code>{node.type}</code>
             </p>
+          )}
+
+          {outputs && (
+            <NodeOutputStrip
+              outputs={outputs}
+              nodeTitle={node.title ?? def?.title ?? node.type}
+              {...(onOpenOutputs ? { onOpen: onOpenOutputs } : {})}
+            />
           )}
 
           <div className="ng-node__note nodrag" data-empty={node.note === "" || undefined}>

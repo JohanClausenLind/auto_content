@@ -54,11 +54,27 @@ export interface NodeStatusMap {
   readonly [nodeId: string]: GraphNodeData["status"];
 }
 
+/**
+ * What each node produced, keyed by node id, when the canvas is showing a run.
+ *
+ * Keyed by the canvas's own node id rather than by the lane's key, because the host application
+ * owns that join: `GraphNode.key` carries the lane's name for a step and the host matches it
+ * against the run report. The editor is given the answer, not the question — which is also what
+ * makes a hand-built graph with no lane keys work, with nothing attached.
+ */
+export interface NodeOutputsMap {
+  readonly [nodeId: string]: GraphNodeData["outputs"];
+}
+
 export interface NodeGraphEditorProps {
   readonly editor: GraphEditor;
   readonly readOnly?: boolean;
   /** Live run states keyed by node id, when the canvas mirrors an actual run. */
   readonly statuses?: NodeStatusMap;
+  /** What each node produced, when the canvas is showing a run's outputs. */
+  readonly outputs?: NodeOutputsMap;
+  /** The operator asked to review one node's output. Opens the host's panel for it. */
+  onOpenOutputs?(nodeId: string): void;
   readonly "aria-label"?: string;
   /** Fired when the user picks a node in the canvas (for a properties panel). */
   onInspect?(nodeId: string | null): void;
@@ -104,8 +120,10 @@ function Canvas({
   editor,
   readOnly = false,
   statuses,
+  outputs,
   "aria-label": ariaLabel,
   onInspect,
+  onOpenOutputs,
   onDropFiles,
 }: NodeGraphEditorProps) {
   const { screenToFlowPosition, getZoom, zoomIn, zoomOut, fitView } = useReactFlow();
@@ -200,7 +218,8 @@ function Canvas({
         .map((node) => {
           const def = editor.catalog.get(node.type) ?? null;
           const status = statuses?.[node.id];
-          const size = estimateNodeSize(node, def);
+          const produced = outputs?.[node.id];
+          const size = estimateNodeSize(node, def, { hasOutputs: (produced?.total ?? 0) > 0 });
           return {
             id: node.id,
             type: "cfNode" as const,
@@ -214,13 +233,26 @@ function Canvas({
               def,
               problems: editor.problemsByNode.get(node.id) ?? [],
               ...(status ? { status } : {}),
+              ...(produced ? { outputs: produced } : {}),
+              ...(produced && onOpenOutputs
+                ? { onOpenOutputs: () => onOpenOutputs(node.id) }
+                : {}),
             },
           } satisfies GraphFlowNode;
         });
       // Frames first so they paint behind everything they contain.
       return [...frames, ...groupNodes, ...plain];
     });
-  }, [editor.graph, editor.selection, editor.problemsByNode, editor.catalog, statuses, readOnly]);
+  }, [
+    editor.graph,
+    editor.selection,
+    editor.problemsByNode,
+    editor.catalog,
+    statuses,
+    outputs,
+    onOpenOutputs,
+    readOnly,
+  ]);
 
   const edges: Edge[] = useMemo(() => {
     const out: Edge[] = [];

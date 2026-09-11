@@ -789,3 +789,261 @@ def test_the_panel_cannot_hand_an_agent_the_blanket_yes_the_cli_refuses(tmp_path
         )
     assert refused.value.kind == "agent_blanket"
     assert not (deliverable / "reviews" / "frames" / "verdict.json").exists()
+
+
+# --- texture: the check that answers "why doesn't it look real" --------------------------------
+
+
+def _texture_png(img: Image.Image) -> bytes:
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _smooth_gradient(size: tuple[int, int] = (256, 256)) -> Image.Image:
+    """A clean synthetic gradient: what a render looks like to this measurement. No noise floor,
+    no micro-texture, every tile flat."""
+    w, h = size
+    img = Image.new("L", size)
+    img.putdata([int(255 * (x / w)) for _ in range(h) for x in range(w)])
+    return img.convert("RGB")
+
+
+def _grainy(size: tuple[int, int] = (256, 256), amplitude: int = 12) -> Image.Image:
+    """The same gradient with a deterministic noise floor on every pixel, which is what a sensor
+    puts there and what none of this host's generated frames have."""
+    import random
+
+    rng = random.Random(7)
+    w, h = size
+    img = Image.new("L", size)
+    img.putdata(
+        [
+            max(0, min(255, int(255 * (x / w)) + rng.randint(-amplitude, amplitude)))
+            for _ in range(h)
+            for x in range(w)
+        ]
+    )
+    return img.convert("RGB")
+
+
+def test_dead_flat_separates_a_render_from_a_photograph() -> None:
+    from content_factory.qc.frame_review import dead_flat_fraction
+
+    flat_render, render_detail = dead_flat_fraction(_texture_png(_smooth_gradient()))
+    flat_grain, grain_detail = dead_flat_fraction(_texture_png(_grainy()))
+    # The separation is not marginal, which is the point: this is not a subtle aesthetic judgement,
+    # it is the presence or absence of a noise floor.
+    assert flat_render > 0.9 and render_detail < 0.5
+    assert flat_grain < 0.05 and grain_detail > 2.0
+
+
+def test_dead_flat_check_only_fires_for_a_style_that_asked_to_look_photographed() -> None:
+    """A watercolour has large flat areas because that is what watercolour is."""
+    from content_factory.qc.frame_review import texture_findings
+
+    render = _texture_png(_smooth_gradient())
+    checks = {f.check for f in texture_findings(render, expect_photographic=False)}
+    # The refusal and truncation checks run for every style — a grey card is not a watercolour,
+    # and neither is half a canvas — so what the photographic flag gates is only
+    # `texture_dead_flat`.
+    assert checks == {"texture_noise_floor", "model_returned_a_refusal", "frame_rendered_whole"}
+    photographic = {f.check: f.passed for f in texture_findings(render, expect_photographic=True)}
+    assert photographic["texture_dead_flat"] is False
+
+
+def test_texture_noise_floor_catches_the_opposite_failure() -> None:
+    """A frame where *nothing* is flat has had its surfaces replaced by noise, not detailed.
+
+    Two of demo-pebble's four keyframes came back this way — ground replaced by 1-px dither, 0.7 %
+    dead-flat against the anchor's 95.4 % — while the other two were clean. No check saw it.
+    """
+    from content_factory.qc.frame_review import texture_findings
+
+    findings = {
+        f.check: f.passed
+        for f in texture_findings(_texture_png(_grainy(amplitude=90)), expect_photographic=True)
+    }
+    assert findings["texture_noise_floor"] is False
+
+
+def test_texture_is_measured_at_native_size_not_on_the_analysis_downscale() -> None:
+    """Every other check works on a 640x360 downscale. A downscale is a low-pass filter, so
+    measuring texture on one reports the resampler rather than the picture."""
+    from content_factory.qc.frame_review import _ANALYSIS_SIZE, dead_flat_fraction
+
+    big = _grainy(size=(_ANALYSIS_SIZE[0] * 2, _ANALYSIS_SIZE[1] * 2))
+    _, detail_native = dead_flat_fraction(_texture_png(big))
+    _, detail_downscaled = dead_flat_fraction(
+        _texture_png(big.resize(_ANALYSIS_SIZE, Image.Resampling.LANCZOS))
+    )
+    # Resampling averages the noise away. On this synthetic the tiles are still not *flat* either
+    # way, so the dead-flat fraction cannot show it — the median tile detail can, and it more than
+    # halves (6.2 -> 2.6). On a real frame, whose texture is finer than this, the same filtering is
+    # what would push tiles over the flat threshold and report a render as a photograph.
+    assert detail_native > 2 * detail_downscaled
+
+
+# --- refusal cards: the model returning "no" as pixels -----------------------------------------
+
+
+def _banner_png(text_rows: int = 40, noisy: bool = True) -> bytes:
+    """A frame with a bright horizontal band across its vertical centre, like lettering."""
+    import random
+
+    rng = random.Random(11)
+    w = h = 256
+    img = Image.new("L", (w, h))
+    px = []
+    for y in range(h):
+        in_band = (h // 2 - text_rows // 2) <= y < (h // 2 + text_rows // 2)
+        for x in range(w):
+            base = 90 + (rng.randint(-6, 6) if noisy else 0)
+            # Alternating strokes inside the band: high-frequency energy in a few rows only.
+            px.append(240 if (in_band and (x // 4) % 2 == 0) else base)
+    img.putdata(px)
+    return _texture_png(img.convert("RGB"))
+
+
+def test_a_flat_grey_card_is_a_refusal() -> None:
+    """Ideogram 4's first refusal mode: no picture at all, median tile detail 0.00.
+
+    The negative case here is a *grainy* frame rather than the smooth gradient used elsewhere in
+    this file, and that is the honest limit of the check: a mathematically perfect gradient has no
+    texture either, so nothing separates it from a grey card. Real output does not look like that —
+    the smoothest generated frame measured on this host still carries 0.09 median tile detail
+    against a refusal card's 0.00 — but the synthetic case would be a false positive and pretending
+    otherwise in a test would hide it.
+    """
+    from content_factory.qc.frame_review import is_refusal_frame
+
+    assert is_refusal_frame(_texture_png(_grainy())) is False
+    flat = Image.new("RGB", (256, 256), (110, 110, 108))
+    assert is_refusal_frame(_texture_png(flat)) is True
+
+
+def test_a_refusal_lettered_over_a_real_photograph_is_also_a_refusal() -> None:
+    """The dangerous mode, and the one a dead-flat check alone passes.
+
+    Measured 2026-09-12: Ideogram 4 returns a plausible photograph with the refusal lettered across
+    it, sometimes garbled ("Imargia afforraberise paricitanaiton" over a perfectly good pine cone).
+    Texture everywhere, so nothing but the banner distinguishes it — and it would otherwise reach a
+    finished film carrying a watermark saying the model refused.
+    """
+    from content_factory.qc.frame_review import has_refusal_banner, is_refusal_frame
+
+    banner = _banner_png()
+    assert has_refusal_banner(banner) is True
+    assert is_refusal_frame(banner) is True
+
+
+def test_an_ordinary_grainy_photograph_is_not_a_refusal() -> None:
+    """The margin here is thin — a lit train head-on measured 3.93x the median row against the
+    5.0 threshold — which is why the finding is advisory rather than a blocker."""
+    from content_factory.qc.frame_review import has_refusal_banner
+
+    assert has_refusal_banner(_texture_png(_grainy())) is False
+
+
+def test_a_flat_card_is_not_double_reported_as_a_banner() -> None:
+    """It has no rows to compare against, so the banner test declines it and the detail test owns
+    it. Two checks, one verdict each."""
+    from content_factory.qc.frame_review import has_refusal_banner
+
+    assert has_refusal_banner(_texture_png(Image.new("RGB", (256, 256), (110, 110, 108)))) is False
+
+
+def _half_rendered(size: tuple[int, int] = (512, 256), drawn: float = 0.45) -> Image.Image:
+    """A picture across the left `drawn` of the canvas and one near-constant field over the rest.
+
+    The shape of `setC/skeleton/0000`: people and a brick wall in the left part, a single flat
+    value over the rest, and a hard vertical border between them. The blank side is given a sparse
+    two-level dither rather than one exact value, because a real truncated render is not
+    mathematically constant -- the measured frame's flat side carried a median tile detail of 0.06,
+    which is what keeps it *above* the refusal floor and out of reach of every existing check.
+    """
+    import random
+
+    rng = random.Random(11)
+    w, h = size
+    split = int(w * drawn)
+    pixels: list[int] = []
+    for y in range(h):
+        pixels.extend(max(0, min(255, 128 + rng.randint(-60, 60))) for _ in range(split))
+        pixels.extend(140 + (2 if (x * 7 + y * 13) % 13 == 0 else 0) for x in range(w - split))
+    img = Image.new("L", size)
+    img.putdata(pixels)
+    return img.convert("RGB")
+
+
+def _flat_but_whole(size: tuple[int, int] = (256, 256)) -> Image.Image:
+    """Mostly flat, but with micro-detail scattered over the WHOLE canvas: an overcast frame.
+
+    The false positive worth preventing. This is 40 % dead-flat tiles, and none of its edges has a
+    large pure band against it, which is the distinction the truncation check turns on.
+    """
+    import random
+
+    rng = random.Random(3)
+    w, h = size
+    pixels: list[int] = []
+    for y in range(h):
+        for x in range(w):
+            value = int(255 * (x / w))
+            if (x // 8 + y // 8) % 5 == 0:
+                value += rng.randint(-4, 4)
+            pixels.append(max(0, min(255, value)))
+    img = Image.new("L", size)
+    img.putdata(pixels)
+    return img.convert("RGB")
+
+
+def test_a_half_rendered_frame_is_caught_where_the_refusal_and_flatness_tests_cannot_see_it() -> (
+    None
+):
+    """HiDream returned this on 2026-09-12 and every existing check passed it.
+
+    It is not a refusal (there is a real picture in the part that drew, and its median tile detail
+    sits above the refusal floor), it has no lettering for the banner test, and its dead-flat
+    fraction is unremarkable beside a legitimately flat frame. What gives it away is that the flat
+    tiles are one block against an edge rather than spread through the picture.
+    """
+    from content_factory.qc.frame_review import (
+        BLANK_PANEL_MAX,
+        blank_panel_fraction,
+        is_refusal_frame,
+        texture_findings,
+    )
+
+    broken = _texture_png(_half_rendered())
+    assert not is_refusal_frame(broken), "the drawn part is a real picture, not a refusal card"
+    assert blank_panel_fraction(broken) > BLANK_PANEL_MAX
+    findings = {f.check: f.passed for f in texture_findings(broken, expect_photographic=True)}
+    assert findings["frame_rendered_whole"] is False
+    # And the check that was supposed to catch flatness does not fire, which is the whole point.
+    assert findings["model_returned_a_refusal"] is True
+
+
+def test_a_flat_frame_whose_flatness_is_spread_out_is_not_called_truncated() -> None:
+    """The false positive that would matter: an overcast frame is flat and drew whole.
+
+    Measured on real output, the flattest clean frame on this host (81.6 % dead-flat) scored 0.21
+    against the broken one's 0.65, and that gap is what the threshold sits in.
+    """
+    from content_factory.qc.frame_review import (
+        BLANK_PANEL_MAX,
+        blank_panel_fraction,
+        dead_flat_fraction,
+    )
+
+    flat = _texture_png(_flat_but_whole())
+    assert dead_flat_fraction(flat)[0] > 0.3, "the fixture has to actually be flat to prove this"
+    assert blank_panel_fraction(flat) <= BLANK_PANEL_MAX
+
+
+def test_truncation_is_caught_in_either_axis() -> None:
+    """A render that stopped early across and one that stopped early down are one failure."""
+    from content_factory.qc.frame_review import BLANK_PANEL_MAX, blank_panel_fraction
+
+    sideways = _half_rendered().transpose(Image.Transpose.ROTATE_90)
+    assert blank_panel_fraction(_texture_png(sideways)) > BLANK_PANEL_MAX

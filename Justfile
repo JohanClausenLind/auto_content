@@ -30,6 +30,10 @@ stop-run *args:
 doctor:
     set -a; [ -f .env ] && . ./.env; set +a; uv run content-factory doctor
 
+# The host's data: what is declared, what is present, and what nothing reads (docs/datasets.md)
+datasets *args="check":
+    uv run content-factory datasets {{args}}
+
 # Build the upstream envs the post chain calls into (Cutie, ProPainter, GIMM-VFI); RIFE/SeedVR2 have theirs
 setup-postchain *tools:
     skills/video/postchain/setup_envs.sh {{tools}}
@@ -66,6 +70,10 @@ remote-list *args:
 # Bring finished deliverables home from the other producers (--dry-run first)
 harvest *args:
     set -a; [ -f .env ] && . ./.env; set +a; uv run content-factory remote harvest {{args}}
+
+# Does a lane hold one world across a motion? (stage once, then one lane at a time)
+consistency command="score" *args="":
+    set -a; [ -f .env ] && . ./.env; set +a; uv run python scripts/consistency_probe.py {{command}} {{args}}
 
 # Regenerate cross-language contracts (Pydantic -> JSON Schema -> TS -> Ajv)
 schemas:

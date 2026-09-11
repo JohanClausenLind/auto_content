@@ -1849,11 +1849,11 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "y": 0.0,
         "values": {
           "model": "hidream-o1",
-          "prompt": "the subject alone, centred, plain background, the reference view of the set",
+          "prompt": "the subject alone, centred, the reference view of the set",
           "seed": 424242,
-          "style": "consistent character and material design, even flat lighting, no dramatic shadow, plain neutral background, same rendering idiom in every image\n"
+          "style": "photographic_set"
         },
-        "note": "The one image the rest of the set is measured against. The seed is pinned because the lock freezes it and every later image reuses it; which number does not matter, that it holds between runs does. No model value: _reference_backend() reads the image_sequences.backend setting and never this node, so a model here would name a weight it does not pick.\n"
+        "note": "The one image the rest of the set is measured against. The seed is pinned because the lock freezes it and every later image reuses it; which number does not matter, that it holds between runs does. No model value: _reference_backend() reads the image_sequences.backend setting, never this node. The style is a named preset now; see sequences.styles for why.\n"
       },
       {
         "key": "lock",
@@ -3116,7 +3116,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "values": {
           "model": "hidream-o1",
           "prompt": "the two of them, staged exactly as the control passes show",
-          "style": "hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper texture, consistent character design, no 3D render look, no photographic lighting\n"
+          "style": "ink_wash"
         }
       },
       {
@@ -3600,7 +3600,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "values": {
           "model": "hidream-o1",
           "prompt": "the scene exactly as the control passes stage it, held in one consistent look",
-          "style": "cinematic practical-camera photography, natural light, shallow depth of field, filmic grading, physically plausible surfaces, no video-game gloss, no illustration\n"
+          "style": "cinematic"
         },
         "note": "One anchor per shot keyframe, conditioned on the passes rather than on a described camera."
       },
@@ -4576,7 +4576,7 @@ export const WORKFLOW_TEMPLATE_DATA = [
         "values": {
           "model": "hidream-o1",
           "prompt": "one subject filling the frame, nothing else in shot",
-          "style": "one clear subject, deliberate composition, even readable lighting, no collage, no panels, no text overlay\n"
+          "style": "photographic"
         },
         "note": "model is the only thing that used to fork this lane into two workflows. krea2-turbo draws the same graph; megapixels is left at its default because hidream-o1 ignores it.\n"
       },

@@ -605,6 +605,51 @@ def _refusal_lines(exc: VerdictRefusedError, *, base: Path, frames: int) -> list
     return [exc.reason]
 
 
+@frames_app.command("film")
+def frames_film(
+    src: str = typer.Argument(..., help="PNG file, or a directory of PNGs"),
+    dest: str = typer.Option("", help="Output file or directory (default: alongside, .film.png)"),
+    grain: float = typer.Option(0.012, help="Luma grain, fraction of full scale"),
+    halation: float = typer.Option(0.10, help="Bloom bled around clipped highlights"),
+    vignette: float = typer.Option(0.06, help="Corner falloff"),
+    seed: int = typer.Option(0, help="Grain seed; varied per frame across a directory"),
+) -> None:
+    """Put a photographic response back into generated frames, and say what it changed.
+
+    Prints the dead-flat tile fraction before and after, because that is the number this exists to
+    move and "looks better" is not a measurement. It is a finisher, not a fix: grain on a faceted
+    render is a grainy faceted render, and the before-number tells you which one you have.
+    """
+    from content_factory.imaging import FilmResponse, apply_film_response
+    from content_factory.qc.frame_review import dead_flat_fraction
+
+    source = Path(src)
+    files = sorted(source.glob("*.png")) if source.is_dir() else [source]
+    if not files:
+        typer.echo(f"no PNGs at {source}", err=True)
+        raise typer.Exit(2)
+    out_dir = Path(dest) if dest else None
+    if out_dir is not None and len(files) > 1:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    for index, path in enumerate(files):
+        png = path.read_bytes()
+        before, _ = dead_flat_fraction(png)
+        # Each frame gets its own field, or the noise reads as a static overlay on the sequence.
+        finished = apply_film_response(
+            png,
+            FilmResponse(grain=grain, halation=halation, vignette=vignette, seed=seed + index),
+        )
+        after, _ = dead_flat_fraction(finished)
+        if out_dir is None:
+            target = path.with_suffix(".film.png")
+        elif len(files) > 1:
+            target = out_dir / path.name
+        else:
+            target = out_dir
+        target.write_bytes(finished)
+        typer.echo(f"{path.name}: dead-flat {before:.1%} -> {after:.1%}  {target}")
+
+
 @frames_app.command("review")
 def frames_review(
     project_dir: str = typer.Argument(..., help="The run's project directory"),
@@ -615,6 +660,13 @@ def frames_review(
     accept: str = typer.Option("", help="Comma-separated frame ids to accept"),
     reject: str = typer.Option("", help="Comma-separated frame ids to reject"),
     reason: str = typer.Option("", help="Why those frames were rejected"),
+    redirect: str = typer.Option(
+        "",
+        help="What the picture should show INSTEAD, stated positively — this is the part that"
+        " reaches the model on the redraw. 'a solid lump of resin with no opening', not 'not a"
+        " hollow vessel': the weights run at guidance 0, where a negation is a hint and a"
+        " description is an instruction.",
+    ),
     note: str = typer.Option("", help="What the reviewer saw, kept with the verdict"),
     reviewer: str = typer.Option("operator", "--as", help="operator, agent or vlm"),
 ) -> None:
@@ -645,8 +697,16 @@ def frames_review(
     if not batch_path.exists():
         typer.echo(f"no batch at {batch_path}; run the review_frames stage first", err=True)
         raise typer.Exit(code=1)
-    batch = FrameReviewBatch.model_validate_json(batch_path.read_text())
     from content_factory.qc.verdict import VerdictRefusedError, decide
+    from content_factory.services.frame_reviews import current_batch
+
+    # The MERGED state, the same one `record_verdict` and the review panel decide on: the question
+    # with any answer already recorded laid over it. Deciding on `batch.json` alone would reset
+    # every frame a previous verdict had accepted, because `decide` can only preserve a decision
+    # it can see — so answering a redraw would silently un-accept the frames that were not redrawn.
+    batch = current_batch(base.parent.parent) or FrameReviewBatch.model_validate_json(
+        batch_path.read_text()
+    )
 
     try:
         decided = decide(
@@ -656,6 +716,7 @@ def frames_review(
             reject=reject.split(","),
             accept_rest=accept_all,
             reason=reason,
+            redirect=redirect,
             note=note,
         )
     except VerdictRefusedError as exc:
@@ -677,6 +738,87 @@ def frames_review(
             }
         )
     )
+
+
+@frames_app.command("ai-review")
+def frames_ai_review(
+    project_dir: str = typer.Argument(..., help="The run's project directory"),
+    deliverable: str = typer.Option("dlv_short0000001"),
+    force: bool = typer.Option(
+        False, "--force", help="Ask again even when a current review is already stored"
+    ),
+    ignore_gpu: bool = typer.Option(
+        False, "--ignore-gpu", help="Ask even while a run is executing. It will probably OOM."
+    ),
+) -> None:
+    """Ask the local vision model to describe these frames and say whether they are one set.
+
+    An **opinion, not a verdict**. It cannot accept or reject anything: it writes
+    `reviews/frames/ai-review.json` beside the batch, and `frames review` is still the only thing
+    that records a decision. That is deliberate — a model that mistakes what it is looking at does
+    so fluently, and `shows` is printed first so the mistake is visible.
+
+    It answers the question the measurements cannot: whether the subject is the same subject.
+    Measured on `w-iceberg`, where `drift_qc` could only say the set had no consistent core and
+    named no frame, this named `frame:0003` and said why — a higher camera angle, a smaller
+    iceberg, and a water pattern of regular circles the others do not have.
+    """
+    import pathlib
+
+    from content_factory.qc.vlm_review import (
+        VlmReviewUnavailableError,
+        current_review,
+        review_batch,
+    )
+
+    run_dir = pathlib.Path(project_dir)
+    deliverable_dir = run_dir / "deliverables" / deliverable
+    stored, still_current = current_review(run_dir, deliverable_dir)
+    if stored is not None and still_current and not force:
+        # Forty seconds of GPU and an answer that already exists. `--force` is the way to pay it
+        # again; a stale review (the frames were redrawn) is re-asked without being told to.
+        typer.echo(
+            json.dumps(
+                {
+                    "cached": True,
+                    "reviewed_at": stored.reviewed_at.isoformat(),
+                    "same_world": stored.set.same_world,
+                    "flagged": list(stored.flagged),
+                    "summary": stored.set.summary,
+                }
+            )
+        )
+        return
+    try:
+        review = review_batch(run_dir, deliverable_dir, check_gpu=not ignore_gpu)
+    except VlmReviewUnavailableError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"the vision reviewer did not answer: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    # Printed rather than dumped as JSON: this is read by a person about to look at the pictures,
+    # and `shows` is the line that tells them whether the reviewer looked at all.
+    typer.echo(f"{review.model_alias} · {len(review.frames)} frames · {review.elapsed_s:.0f}s")
+    for frame in review.frames:
+        mark = {"fine": "ok  ", "minor": "?   ", "wrong": "BAD "}.get(frame.severity, "    ")
+        typer.echo(f"{mark}{frame.frame_id}: {frame.shows}")
+        for issue in frame.issues:
+            typer.echo(f"      - {issue}")
+    typer.echo("")
+    typer.echo(f"one set: {'yes' if review.set.same_world else 'NO'}")
+    for change in review.set.what_changes:
+        typer.echo(f"  changes: {change}")
+    if review.set.drifting_frames:
+        typer.echo(f"  drifting: {', '.join(review.set.drifting_frames)}")
+    typer.echo(f"  {review.set.summary}")
+    if review.flagged:
+        typer.echo("")
+        typer.echo(
+            "The model would not pass: " + ", ".join(review.flagged) + ". Look at those first;"
+            " it decides nothing, `frames review` does."
+        )
 
 
 prompting_app = typer.Typer(
@@ -839,11 +981,12 @@ def demo(quality: str = typer.Option("smoke", help="smoke (one scene) | demo (fu
     raise typer.Exit(code=0 if report["passed"] else 1)
 
 
-from content_factory.cli import reference_cmd, workflows_cmd  # noqa: E402
+from content_factory.cli import libraries_cmd, reference_cmd, workflows_cmd  # noqa: E402
 
 app.add_typer(workflows_cmd.app, name="workflows")
 app.add_typer(workflows_cmd.pins_app, name="pins")
 app.add_typer(reference_cmd.app, name="reference")
+app.add_typer(libraries_cmd.app, name="datasets")
 # `make` is the one command an agent needs: one call runs a whole production.
 app.command("make")(workflows_cmd.make)
 

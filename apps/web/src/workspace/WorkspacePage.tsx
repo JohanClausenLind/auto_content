@@ -14,6 +14,13 @@
  * Graphs persist to the server and to this browser (see storage.ts); Check is real validation,
  * and Run compiles the graph onto the production pipeline — a stage with no executor is refused
  * with its reason rather than quietly dropped.
+ *
+ * **A run can be laid over the canvas.** Picking one from the history attaches what each step
+ * produced to the node that produced it — thumbnails on the node, the way ComfyUI does it — and
+ * closing the run's pane leaves the graph there with the drawings still on it. That is what makes
+ * the canvas a place to review from rather than only a place to build in: the node that drew a
+ * bad picture, the knobs that drew it and the picture itself are one thing on screen, and
+ * clicking the node's own count opens every frame, voice line and film that step made.
  */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,15 +36,18 @@ import {
   type WorkspaceGraph,
 } from "@content-factory/node-graph";
 import { api, isApiError } from "../api/client";
-import { historyQuery, queryKeys, runsQuery } from "../api/queries";
-import type { GraphRunStarted, RunSummary } from "../api/types";
+import { historyQuery, historyRunQuery, queryKeys, runReviewQuery, runsQuery } from "../api/queries";
+import type { GraphRunStarted, HistoryRun, RunSummary } from "../api/types";
 import { insertBlockOps, type WorkflowBlock } from "./blocks";
 import { workspaceCatalog } from "./catalog";
 import { DropSuggestions, useFileDrops } from "./DroppedFile";
 import { loadWorkspace, newUntitledGraph, saveActive, saveGraphs } from "./storage";
 import { ModelsPanel } from "./ModelsPanel";
 import { HistoryPanel } from "./HistoryPanel";
+import { NodeOutputPane } from "./NodeOutputPane";
+import { awaitingByNode, runOnCanvas } from "./nodeOutputs";
 import { RunPane } from "./RunPane";
+import { formatExact, runLabel } from "./runFormat";
 import { TemplatesPanel } from "./TemplatesPanel";
 import type { WorkflowTemplate } from "./templates";
 
@@ -134,6 +144,17 @@ export function WorkspacePage() {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   /** The run open over the canvas. Null is the canvas, which is what the workspace is for. */
   const [openRun, setOpenRun] = useState<string | null>(null);
+  /**
+   * The run whose output is drawn on the nodes. Separate from `openRun` on purpose.
+   *
+   * Picking a run sets both, and closing the run's pane clears only the first — so the operator
+   * lands on the canvas with that run's drawings on the nodes that made them, which is the view
+   * the whole feature exists for. A pane over the canvas cannot be the answer to "show me the
+   * output on the node page", because it is in front of the node page.
+   */
+  const [shownRun, setShownRun] = useState<string | null>(null);
+  /** The node whose full output is open: every frame at size, the voice lines playing. */
+  const [openNode, setOpenNode] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
   const [runState, setRunState] = useState<
     | null
@@ -239,6 +260,43 @@ export function WorkspacePage() {
   // the screen they work on is a gate that parks 25 runs overnight.
   const { data: history } = useQuery(historyQuery);
   const awaitingReview = (history ?? []).reduce((sum, run) => sum + run.awaiting_review, 0);
+
+  // The run laid over the canvas, and its gate. Both are the same cached queries the run pane
+  // and the history list read, so opening a run and showing it on the canvas is one fetch.
+  const shown = useQuery({ ...historyRunQuery(shownRun ?? ""), enabled: shownRun !== null });
+  const shownReview = useQuery({ ...runReviewQuery(shownRun ?? ""), enabled: shownRun !== null });
+  const unreviewed = (shownReview.data?.reviews ?? []).reduce((sum, r) => sum + r.unreviewed, 0);
+  const onCanvas = useMemo(
+    () =>
+      runOnCanvas(editor.graph.nodes, shown.data, {
+        awaitingByNode: awaitingByNode(shown.data, unreviewed),
+      }),
+    [editor.graph.nodes, shown.data, unreviewed],
+  );
+  const openNodeStep = openNode ? onCanvas.stepByNodeId[openNode] : undefined;
+
+  /**
+   * Show a run on the canvas and open it.
+   *
+   * One click does both because they are one intention — "let me look at this run" — and the
+   * pane is closed with its own ✕, which is what leaves the canvas showing it.
+   */
+  const selectRun = (runId: string) => {
+    setOpenRun(runId);
+    setShownRun(runId);
+    setOpenNode(null);
+  };
+
+  /** Step through the history without going back to the list. Newest first, as the list is. */
+  const stepRun = (delta: number) => {
+    const rows: readonly HistoryRun[] = history ?? [];
+    const at = rows.findIndex((r) => r.run_id === shownRun);
+    // Not in the list at all — it is older than the hundred rows the history serves, or the list
+    // has not arrived. Stepping from nowhere would jump to the newest run, which is not "next".
+    if (at < 0) return;
+    const next = rows[at + delta];
+    if (next) selectRun(next.run_id);
+  };
 
   useEffect(() => saveActive(activeId), [activeId]);
 
@@ -451,7 +509,9 @@ export function WorkspacePage() {
           >
             {dockTab === "nodes" && <NodeLibraryPanel catalog={workspaceCatalog} onAdd={addFromLibrary} />}
             {dockTab === "models" && <ModelsPanel />}
-            {dockTab === "history" && <HistoryPanel selected={openRun} onSelect={setOpenRun} />}
+            {dockTab === "history" && (
+              <HistoryPanel selected={shownRun ?? openRun} onSelect={selectRun} />
+            )}
           </aside>
         )}
 
@@ -460,12 +520,93 @@ export function WorkspacePage() {
               its pending edits while a run is being looked at, and closing the run puts the graph
               back exactly as it was. */}
           {openRun && <RunPane runId={openRun} onClose={() => setOpenRun(null)} />}
+          {/* The node's own output, over the canvas but under nothing else: it is opened from a
+              node and closed back to the same node, so it must not push the graph around. */}
+          {openNode && openNodeStep && shownRun && (
+            <NodeOutputPane
+              runId={shownRun}
+              nodeTitle={
+                editor.graph.nodes.find((n) => n.id === openNode)?.title ??
+                workspaceCatalog.get(editor.graph.nodes.find((n) => n.id === openNode)?.type ?? "")
+                  ?.title ??
+                openNodeStep.node
+              }
+              step={openNodeStep}
+              files={onCanvas.filesByNodeId[openNode] ?? []}
+              onClose={() => setOpenNode(null)}
+            />
+          )}
           <NodeGraphEditor
             editor={editor}
             aria-label={`Graph: ${activeGraph.name}`}
+            outputs={onCanvas.byNodeId}
+            onOpenOutputs={setOpenNode}
             onDropFiles={dropState.onDropFiles}
           />
           <DropSuggestions state={dropState} editor={editor} />
+          {shownRun && (
+            /* What the canvas is currently showing, with the way out of it and the way to the
+               next one. It is a strip at the top rather than a note in a panel because the graph
+               underneath now has somebody else's drawings on it, and a canvas that is quietly
+               showing last night's run is a canvas nobody can trust. */
+            <section className="cf-onnodes" aria-label="Run shown on the canvas">
+              <span className="cf-onnodes__label">On the nodes</span>
+              <span className="cf-onnodes__name">
+                {shown.data?.subject ?? runLabel({ run_id: shownRun })}
+              </span>
+              <span className="cf-onnodes__meta">
+                {shown.data ? (
+                  <>
+                    {runLabel(shown.data)} · {shown.data.workflow ?? "unknown lane"} ·{" "}
+                    <time dateTime={new Date(shown.data.finished_at * 1000).toISOString()}>
+                      {formatExact(shown.data.finished_at)}
+                    </time>
+                  </>
+                ) : (
+                  "reading the run…"
+                )}
+              </span>
+              {onCanvas.unmatchedSteps.length > 0 && (
+                /* The graph on screen is not the lane that ran. Said plainly, with the steps
+                   named, because the alternative is a canvas that looks like the run produced
+                   nothing at six of its nodes. */
+                <span className="cf-onnodes__warn">
+                  {onCanvas.unmatchedSteps.length} step
+                  {onCanvas.unmatchedSteps.length === 1 ? "" : "s"} of this run are not on this
+                  canvas: {onCanvas.unmatchedSteps.join(", ")}
+                </span>
+              )}
+              {onCanvas.unattributed > 0 && (
+                <span className="cf-onnodes__warn">
+                  {onCanvas.unattributed} file{onCanvas.unattributed === 1 ? "" : "s"} this run did
+                  not record a step for
+                </span>
+              )}
+              <span className="cf-onnodes__nav">
+                <button type="button" aria-label="Newer run" onClick={() => stepRun(-1)}>
+                  ↑
+                </button>
+                <button type="button" aria-label="Older run" onClick={() => stepRun(1)}>
+                  ↓
+                </button>
+                {!openRun && (
+                  <button type="button" onClick={() => setOpenRun(shownRun)}>
+                    Open
+                  </button>
+                )}
+                <button
+                  type="button"
+                  aria-label="Clear the run from the canvas"
+                  onClick={() => {
+                    setShownRun(null);
+                    setOpenNode(null);
+                  }}
+                >
+                  ✕
+                </button>
+              </span>
+            </section>
+          )}
           <div className="cf-runbar" role="toolbar" aria-label="Run controls">
             <button
               type="button"

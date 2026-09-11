@@ -152,6 +152,11 @@ export const NODE_WIDGET_HEIGHT = 20;
  * A size estimate for a node before (or without) DOM measurement — the canvas shows nodes with
  * it until ResizeObserver reports truth, and thumbnails never measure at all.
  */
+export const NODE_OUTPUT_STRIP_HEIGHT = 96;
+/** The output strip: a row of thumbnails and the row of counts under it. Counted in the estimate
+ *  so a node showing what it produced does not paint over the one below it until ResizeObserver
+ *  catches up — which at 20% zoom, where a whole lane is on screen, reads as a broken layout. */
+
 export function estimateNodeSize(
   node: {
     readonly width: number | null;
@@ -159,6 +164,7 @@ export function estimateNodeSize(
     readonly values?: Readonly<Record<string, WidgetValue>>;
   },
   def: NodeDefinition | null,
+  options: { readonly hasOutputs?: boolean } = {},
 ): { width: number; height: number } {
   const width = node.width ?? def?.width ?? DEFAULT_NODE_WIDTH;
   if (node.collapsed || !def) return { width, height: NODE_TITLE_HEIGHT + 2 };
@@ -173,6 +179,7 @@ export function estimateNodeSize(
       height += NODE_WIDGET_HEIGHT + 6 + Math.ceil((widget.options?.length ?? 0) / 3) * 24;
     } else height += NODE_WIDGET_HEIGHT + 4;
   }
+  if (options.hasOutputs) height += NODE_OUTPUT_STRIP_HEIGHT;
   return { width, height };
 }
 

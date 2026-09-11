@@ -72,6 +72,14 @@ else
   warn "skipped browser download (CF_SKIP_BROWSER=1)"
 fi
 
+say "Datasets"
+# The symlink index over the host's data, the same idea as models/<category>/<Name>. Absent data
+# is not an error: the tree is built from whatever is actually here and every lane runs without
+# any of it. See docs/datasets.md.
+uv run content-factory datasets link 2>/dev/null | sed 's/^/  /' || warn "dataset index not built"
+uv run content-factory datasets check 2>/dev/null | sed 's/^/  /' || true
+
+
 say "7/7 Optional: ComfyUI sidecar"
 if command -v comfy >/dev/null; then
   ok "comfy-cli $(comfy --version 2>/dev/null | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"]["version"])' 2>/dev/null || echo present). Not installed automatically (multi-GB). When needed: comfy --workspace=./.comfy install --nvidia"

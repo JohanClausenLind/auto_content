@@ -45,6 +45,9 @@ class ReviewFrame:
     frame_id: str
     verdict: str
     reason: str
+    """What is wrong with the picture: the record, and what the guidance proposals read."""
+    redirect: str
+    """What it should show instead, positively. The part appended to the prompt on a redraw."""
     image: str | None
     """Relative to the run directory, so it is fetched by the same route as every other output.
     ``None`` when the batch names a frame whose file is not where the run left it."""
@@ -143,6 +146,7 @@ def _as_frame(run_dir: Path, deliverable_dir: Path, record: FrameRecord) -> Revi
         frame_id=record.frame_id,
         verdict=record.verdict,
         reason=record.reason,
+        redirect=record.redirect,
         image=image.relative_to(run_dir).as_posix() if image is not None else None,
         png_sha256=record.png_sha256,
         # Hashed, not assumed. The verdict binds to the digest, so a panel showing a file that no
@@ -226,6 +230,7 @@ def record_verdict(
     reject: list[str],
     accept_rest: bool = False,
     reason: str = "",
+    redirect: str = "",
     note: str = "",
 ) -> RunReview:
     """Write the verdict for one deliverable, or raise before anything reaches disk.
@@ -247,6 +252,7 @@ def record_verdict(
         reject=reject,
         accept_rest=accept_rest,
         reason=reason,
+        redirect=redirect,
         note=note,
     )
     target = verdict_path(deliverable_dir)

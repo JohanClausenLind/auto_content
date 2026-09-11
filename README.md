@@ -45,7 +45,9 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
   Definitions are validated against the contract *and* the generated node catalogue, so a typo'd
   widget key fails loudly instead of falling back to a stage default.
 - Node-graph Workspace: an editable ComfyUI-style canvas (`packages/node-graph`, `@xyflow/react`)
-  with typed slots, widgets, groups, undo/redo, a node library and search.
+  with typed slots, widgets, groups, undo/redo, a node library and search. A run can be laid over
+  it: each step's output hangs off the node that produced it, and a node's own count opens every
+  frame, voice line and film that step made, with the stage's facts beside them.
 - Local AI stack, laid out ComfyUI-style under `external/` + `models/`: image (HiDream-O1),
   video (LTX-2.5 image-to-video, Krea2), text (local copywriter via qwen38-ridge), each behind
   a resource lease with OOM quarantine and measured VRAM eviction.
@@ -54,8 +56,15 @@ Private project — no billing, no SaaS surfaces. See `STATUS.md` for the curren
   Stable Audio 3 Small-SFX library (mostly real recordings).
 - Blender scene-control layer (ADR 0012), phases 0-8: deterministic control images from a
   posed rig, driven by a queryable reference library of real human interaction and CMU mocap.
-- Run observability: run history, per-stage durations and ETA, and frame review
-  (a recorded verdict on a generated frame becomes a question or a refusal, not a silent edit).
+- Run observability: run history (searchable, grouped by day, each run named by what it was
+  rendering), per-stage durations and ETA, per-node output attribution recorded by the run itself,
+  and frame review (a recorded verdict on a generated frame becomes a question or a refusal, not a
+  silent edit).
+- A vision model as the frame gate's third reviewer: it is shown the story, each frame's intent and
+  the whole set in one call, and answers what the measurements cannot — whether these are the same
+  subject in the same world, and which frame left the others behind. Its output is an opinion stored
+  beside the batch and bound to the images' digests; it pre-marks the operator's selection and can
+  never record a verdict.
 
 ## Not done yet
 

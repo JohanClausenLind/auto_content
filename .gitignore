@@ -35,8 +35,10 @@ htmlcov/
 # Local AI stack, laid out ComfyUI-style — host-specific, never committed:
 #   external/  upstream model-code checkouts (+ their .venv)    .venvs/   hf + scenedetect tool venvs
 #   models/    category-sorted symlink index into /mnt/fast/models
+#   datasets/  category-sorted symlink index into the host's data (content_factory.datasets)
 #   output/    generated media, sequence workdirs, eval runs    sandbox/  throwaway prototypes
 #   videos/    finished films copied out of output/ for watching (see videos/README.md)
+/datasets/
 /external/
 /.venvs/
 /models/

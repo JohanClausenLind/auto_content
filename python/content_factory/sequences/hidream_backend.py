@@ -7,7 +7,10 @@ lock's seed varied per attempt so a drift-failed frame genuinely regenerates.
 Conditioning goes to the model the way the upstream pipeline supports it: extra reference images
 (identity references first, then the Blender rough render and the OpenPose skeleton) and
 ``layout_bboxes`` placing each identity reference. The legacy 2D control raster is sent as one more
-reference when ``send_control_as_reference`` is on; it is always part of the cache key."""
+reference when ``send_control_as_reference`` is on -- it is OFF by default, because the raster
+`run_sequence` compiles is a pure ``#FF0000`` rectangle on black and the model draws what it is
+shown (see ``ImageSequenceSettings.control_as_reference`` for the measurement). It is part of the
+cache key either way."""
 
 from __future__ import annotations
 
@@ -35,7 +38,7 @@ class HiDreamReferenceEditBackend(ReferenceEditBackend):
         endpoint: str = DEFAULT_ENDPOINT,
         timeout_s: float = 900.0,
         transport: httpx.BaseTransport | None = None,
-        send_control_as_reference: bool = True,
+        send_control_as_reference: bool = False,
     ) -> None:
         self._http = httpx.Client(base_url=endpoint, timeout=timeout_s, transport=transport)
         self.endpoint = endpoint

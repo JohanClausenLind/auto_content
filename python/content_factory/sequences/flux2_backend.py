@@ -62,6 +62,7 @@ class Flux2ReferenceBackend(ReferenceEditBackend):
         steps: int | None = None,
         guidance: float | None = None,
         reference_roles: Sequence[str] = (),
+        send_control_as_reference: bool = False,
     ) -> None:
         self.endpoint = endpoint
         self.workdir = Path(workdir)
@@ -70,6 +71,10 @@ class Flux2ReferenceBackend(ReferenceEditBackend):
         self.steps = steps
         self.guidance = guidance
         self.reference_roles = tuple(reference_roles)
+        self.send_control_as_reference = send_control_as_reference
+        """Off, for the reason ``ImageSequenceSettings.control_as_reference`` records: the raster
+        ``run_sequence`` compiles is a saturated red rectangle on black, and a reference is subject
+        material to this pipeline."""
 
     # --- ReferenceEditBackend ---------------------------------------------------------------
 
@@ -116,7 +121,7 @@ class Flux2ReferenceBackend(ReferenceEditBackend):
         returning the same picture.
         """
         refs = (anchor_png, *conditioning.reference_pngs)
-        if conditioning.control_png:
+        if self.send_control_as_reference and conditioning.control_png:
             refs = (*refs, conditioning.control_png)
         return self._run(instruction, refs=refs, lock=lock, seed=lock.seed + attempt - 1)
 

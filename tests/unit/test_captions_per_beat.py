@@ -105,12 +105,14 @@ def test_ass_track_highlights_each_word_once_and_carries_the_hook() -> None:
     assert all("&H00FFC34C&" not in d for d in caps), "the boxed layer carries no override at all"
     # the highlight colour appears exactly once per overlay, on the word being spoken, in order
     assert all(d.count("&H00FFC34C&") == 1 for d in highlights)
-    assert [d.split("\\1c&H00FFC34C&}")[1].split("{")[0] for d in highlights] == [
-        "Wind",
-        "beat",
-        "nuclear",
-    ]
+    # The lit word is whatever follows the override block that carries the colour. Read by
+    # splitting on the closing brace rather than on an exact tag string: the block also carries the
+    # `\t` scale that makes the word rise (`compose.caption_pop`, added 2026-09-12), so a literal
+    # "\1c<colour>}" no longer appears and matching on it asserted the animation away.
+    lit = [d.split("&H00FFC34C&", 1)[1].split("}", 1)[1].split("{", 1)[0] for d in highlights]
+    assert lit == ["Wind", "beat", "nuclear"]
     # every word is present in both layers, so the two are laid out identically and stay in register
+    # `endswith`, so the leading `\fad` on a cue's first and last word does not break it.
     assert all(d.endswith("Wind beat nuclear") for d in caps)
     # events tile the cue without gaps: each starts where the previous ends
     starts = [d.split(",")[1] for d in caps]

@@ -101,8 +101,64 @@ CARDS = PromptTemplate(
     ),
 )
 
+SET_REVIEW = PromptTemplate(
+    template_id="review.set",
+    version="1.0.0",
+    purpose="A vision model's opinion on a set of generated frames: what each shows, and whether"
+    " they belong to one set.",
+    text=(
+        "You are looking at {count} generated picture(s) that are meant to belong to one set.\n"
+        "They are attached in order, and each is labelled above with its frame id and what it"
+        " was asked to show.\n\n"
+        "THE STORY THEY ARE FOR\n{story}\n\n"
+        "THE FRAMES\n{frames}\n\n"
+        "For EVERY frame, in the order given:\n"
+        "1. `shows` — describe what is actually in that picture. Describe the picture in front of"
+        " you, not what the brief above asked for. This is read first and checked against the"
+        " image by a person, so a description that repeats the brief instead of the picture makes"
+        " the whole review worthless.\n"
+        "2. `matches_intent` — whether what you described is what that frame was asked for.\n"
+        "3. `issues` — what is wrong *in the picture*: a subject that is not the one asked for,"
+        " a body that could not be in that position, the wrong number of figures, text or"
+        " watermarks, a limb or object that merges into another.\n"
+        "4. `severity` — `fine`, `minor` for something a viewer might not notice, `wrong` for a"
+        " picture that cannot be used.\n\n"
+        "Then judge the set TOGETHER, which is the main question:\n"
+        "- `same_world` — do these read as one subject, one place and one drawing idiom? Compare"
+        " every frame with every other, not each with its neighbour: a set can change a little at"
+        " each step and end somewhere else entirely with each consecutive pair looking fine.\n"
+        "- `what_changes` — name what actually differs between frames, concretely: which side a"
+        " handle is on, where the light comes from, how many objects there are, whether the"
+        " material changed. A consistency complaint that cannot say what moved cannot be acted"
+        " on.\n"
+        "- `drifting_frames` — the frame ids, spelled exactly as given above, of the frames that"
+        " left the others behind. Put the ids HERE and not only in the summary: this is the field"
+        " a reviewer's screen reads to mark which pictures to look at. Leave it empty only when"
+        " there is genuinely no odd one out — including when every frame disagrees with every"
+        " other, which is a different fault, and naming all of them as outliers says nothing.\n"
+        "- `summary` — what a person about to review these should look at first.\n\n"
+        "Do not decide anything. You are not accepting or rejecting these pictures; a person is,"
+        " with your description beside the image. Say what you see, and where you are unsure, say"
+        " that instead of choosing."
+    ),
+)
+"""The whole point is `shows` and `what_changes`.
+
+`shows` is the check on the reviewer, and it is asked for first for that reason: this machine's
+signature failure was drawing jars of honey for "honey-coloured", and a reviewer that describes
+the honey jars is instantly useful while one that describes the intended subject has been caught.
+`what_changes` is the check on the *set*, and it has to be concrete, because a redraw and
+`prompting.propose` both read the reason rather than the verdict — "inconsistent" is not a note
+anything can act on.
+
+The closing sentence is not decoration. A vision model asked to judge pictures will happily
+produce verdicts, and the gate this feeds is built on nothing being cut from a frame no person has
+looked at.
+"""
+
+
 REGISTRY: dict[str, PromptTemplate] = {
-    template.template_id: template for template in (CAPTION, CARDS)
+    template.template_id: template for template in (CAPTION, CARDS, SET_REVIEW)
 }
 """Every template by id. The scriptwriter's prompt is not here yet and that is deliberate: it is
 assembled from claim cards, dataset columns and a word budget, so it is a *builder* rather than a

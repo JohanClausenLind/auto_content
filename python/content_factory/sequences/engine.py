@@ -250,6 +250,7 @@ def _frame_marker_hash(
     instruction: str,
     *,
     conditioning_sha: str | None = None,
+    control_sent: bool | None = None,
 ) -> str:
     key: dict = {
         "lock": lock.model_dump(mode="json"),
@@ -258,6 +259,12 @@ def _frame_marker_hash(
     }
     if conditioning_sha is not None:  # absent -> identical to the pre-conditioning hash
         key["conditioning"] = conditioning_sha
+    if control_sent is not None:
+        # Whether the raster reaches the model is an input to the picture, not a detail of how it
+        # got there: the same control sha with the flag off produces a different frame, and a cache
+        # that cannot see the flag serves the red-boxed one for ever. Absent -> the old hash, so
+        # nothing already on disk is invalidated by the parameter merely existing.
+        key["control_sent"] = control_sent
     return sha256_hex(canonical_dumps(key).encode())
 
 
@@ -339,6 +346,9 @@ def build_sequence(
         lock = lock.model_copy(update={"reference_asset_sha256": anchor_sha})
 
     controls = list(compile_control_assets(plan, ControlKind.layout_boxes))
+    # Does the raster actually reach the model? Only the backend knows, and a mock has no opinion,
+    # so `False` is the honest default for one that does not carry the flag.
+    control_sent = bool(getattr((backends or [backend])[0], "send_control_as_reference", False))
     frame_instructions = frame_instructions or {}
     frames: list[dict] = []
     regenerated: list[int] = []
@@ -370,6 +380,7 @@ def build_sequence(
             compiled.asset.png_sha256,
             instruction,
             conditioning_sha=conditioning.sha256() if conditioning is not None else None,
+            control_sent=control_sent,
         )
         order.append(idx)
         if marker_path.exists():

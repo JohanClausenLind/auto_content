@@ -11,7 +11,7 @@ import { z } from "zod";
 
 // Local font, pinned by the lockfile (@fontsource/inter, SIL OFL 1.1). Loaded before any text is
 // measured; `loadFont` blocks the render until the face is available.
-const fontFamily = "Inter";
+const fontFamily = "Inter";  // the pinned face this smoke test loads explicitly; see FONT_STACK for the house stack
 // Loaded at module scope inside the browser bundle; skipped in plain Node (unit tests).
 const fontReady: Promise<void> =
   typeof FontFace === "undefined"

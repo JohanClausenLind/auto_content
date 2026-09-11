@@ -14,6 +14,7 @@ import asyncio
 import hashlib
 import json
 import os
+import time
 from dataclasses import dataclass
 from dataclasses import field as dc_field
 from datetime import timedelta
@@ -309,9 +310,20 @@ async def execute_node(inp: ExecuteNodeInput) -> NodeResult:
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("a") as fh:
         fh.write(f"{inp.node_id}\t{inp.input_hash[:12]}\n")
+    # The injected delay heartbeats through itself, for the same reason the executor below does.
+    # It used to be a bare `await asyncio.sleep(delay)` taken BEFORE the first heartbeat, and
+    # `test_stopping_a_producing_run_cancels_the_node_in_flight` sets it to 8 s against a 6 s
+    # HEARTBEAT_TIMEOUT_S — so every activity in that run missed its first heartbeat and the whole
+    # run failed with "activity Heartbeat timeout" before it ever reached the state the test is
+    # about. It passed anyway whenever a retry happened to land inside the window (the failing
+    # logs show `attempt: 2`), which is why it read as flaky under load rather than as wrong: the
+    # delay exists to make a node slow enough to catch mid-flight, and a slow node is exactly what
+    # heartbeating is for.
     delay = float(os.environ.get("CF_TEST_STAGE_DELAY_S", "0") or 0)
-    if delay:
-        await asyncio.sleep(delay)
+    deadline = time.monotonic() + delay
+    while delay and time.monotonic() < deadline:
+        activity.heartbeat(inp.node_id)
+        await asyncio.sleep(min(0.5, deadline - time.monotonic()))
     task = asyncio.create_task(asyncio.to_thread(executor, ctx))
     while not task.done():
         activity.heartbeat(inp.node_id)

@@ -65,9 +65,7 @@ nodes:
       # deliverable has to stay out of one.
       prompt: "one subject filling the frame, nothing else in shot"
       model: hidream-o1
-      style: >
-        one clear subject, deliberate composition, even readable lighting, no collage, no panels,
-        no text overlay
+      style: photographic
     note: >
       model is the only thing that used to fork this lane into two workflows. krea2-turbo draws the
       same graph; megapixels is left at its default because hidream-o1 ignores it.

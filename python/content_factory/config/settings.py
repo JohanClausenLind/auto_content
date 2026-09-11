@@ -177,7 +177,21 @@ class MediaLibrarySettings(StrictModel):
     """Local libraries of reusable assets (music beds today). Directories are read-only inputs;
     each library carries a manifest whose entries are validated contracts."""
 
-    music_dir: str = "fixtures/music"
+    music_dir: str = "assets/music"
+    """The generated bed library: 22 beds in six categories (documentary, explainer, human, nature,
+    tension, texture), indexed for the stage by ``scripts/build_music_index.py``.
+
+    It used to be ``fixtures/music``, which holds one four-second synthesised sine chord, and the
+    consequence is visible in every run on disk: all 29 that ever selected music selected
+    ``calm_bed_a``, because it was the only track there was — while this library sat beside it
+    unread. Nothing was wrong with ``stage_select_music``; the library simply had no ``tracks.json``
+    in the shape the stage validates, so it was never pointed at.
+
+    Absent is not an error, exactly as for ``ReferenceSettings.root`` and ``sfx_dir``: the media
+    here is host-specific and git-ignored, and a machine without it still runs every lane —
+    ``stage_select_music`` writes "music library has no manifest" and selects nothing. Tests that
+    need a specific track pin ``CF__MEDIA_LIBRARY__MUSIC_DIR`` at ``fixtures/music`` rather than
+    relying on the default, which is why that fixture is still there."""
     # The curated sound library: 670 loudness-measured, provenance-tracked sounds under
     # assets/sfx, indexed by assets/sfx/manifest.json. Read-only, like the music library.
     sfx_dir: str = "assets/sfx"
@@ -517,10 +531,37 @@ class ImageSequenceSettings(StrictModel):
     # earns its place twice over - it is a smooth grey figure with no saturated colour in it, so
     # the model reads it as structure rather than drawing it the way it will draw the skeleton's
     # bright dots, and adding it is what moves this off the single-reference editing recipe.
+    control_as_reference: bool = False
+    """Whether the sequence engine's 2D control raster is sent to the model as a reference image.
+
+    It is OFF, and the measurement is the reason. ``run_sequence`` compiles one control kind --
+    ``layout_boxes`` -- and that raster is two colours: pure black over 85 % of the frame and a
+    pure ``#FF0000`` rectangle over the other 15 %. Both reference backends appended it to the
+    reference list, so every keyframe of every sequence run was conditioned on a saturated red
+    box, and the pipeline "treats *every* reference as subject material" (the note above this one
+    says so about the clay render, and it is just as true here).
+
+    Measured on `w-iceberg` 2026-09-10, anchor against its own six keyframes:
+
+        anchor  (no control sent)   mean R 148.3   R-G  +3.9
+        frames 0-5 (control sent)   mean R 127-140 R-G  +7.2 .. +11.0
+
+    Every frame that received the box went warm and lost a tenth of its exposure -- the flat
+    magenta-grey veil over that whole set, which the anchor does not have. On `demo-pebble` two of
+    four frames additionally came back with the ground replaced by 1-px dither (dead-flat tile
+    fraction 0.7 % against the anchor's 95.4 %).
+
+    It is also a scheduler switch, the same trap ``_conditioning_for_frame`` documents for a
+    skeleton of nobody: appending the raster changes ``len(ref_images)``, and upstream branches the
+    whole dev recipe on ``== 1``. The positional information the raster was carrying is not lost by
+    turning it off -- ``ControlConditioning.layout_boxes`` sends the same boxes numerically as
+    ``layout_bboxes``, which is the field upstream actually reads.
+    """
     anchor_references: tuple[str, ...] = ("pose_skeleton", "depth")
-    anchor_style_prompt: str = (
-        "premium practical-film photography, natural light, physically convincing materials"
-    )
+    anchor_style_prompt: str = "photographic"
+    """A preset NAME, not a prompt written out. `resolve_style` takes either, but only a name has a
+    `style_name_for` round trip, and that is what keys the per-style drift thresholds — a
+    written-out default silently opted every lane that did not set its own style out of them."""
     anchor_lighting_prompt: str = "soft directional key light"
     anchor_background_prompt: str = "as staged in the scene"
     # Where sequence runs write their workdirs; the review API serves files from here only.
@@ -637,16 +678,24 @@ class ComposeSettings(StrictModel):
     # The caption face is the same family as the cards' body text: Inter Bold, from the pinned
     # TTFs under assets/fonts/inter (SIL OFL 1.1). libass reads that directory directly, so no
     # system font install is needed and the render is the same on every machine.
-    caption_font: str = "Inter"
+    caption_font: str = "HelveticaNeue Condensed"
+    """The house face, resolved through fontconfig rather than shipped.
+
+    Helvetica Neue is licensed, so it is **not** vendored into ``caption_fonts_dir`` the way Inter
+    and Sora are — ``docs/licensing.md`` bars redistributing licensed media and a repo is
+    redistribution. It is installed for the operator under ``~/.local/share/fonts/HelveticaNeue``
+    and libass finds it through fontconfig, with the pinned directory still supplying the open
+    faces. A machine without it falls back, which is why the fallback is a real face and not a
+    crash."""
     caption_fonts_dir: str = "assets/fonts"
-    # Word-by-word highlight: the word being spoken takes the accent colour (restrained: colour
-    # only, no scale or bounce). Falls back to plain cues when the word timings are missing.
+    # Word-by-word highlight: the word being spoken takes the accent colour and grows by
+    # `caption_pop`. Falls back to plain cues when the word timings are missing.
     caption_highlight: bool = True
     caption_highlight_color: str = Field(default="#8BBDEB", pattern=r"^#[0-9a-fA-F]{6}$")
-    # StoryPlan.hook_text is burned as a headline over the opening seconds (Sora Bold, top third).
+    # StoryPlan.hook_text is burned as a headline over the opening seconds (top third).
     hook_overlay: bool = True
     hook_seconds: float = Field(default=2.8, ge=0.5, le=10.0)
-    hook_font: str = "Sora"
+    hook_font: str = "HelveticaNeue Condensed"
     hook_size_frac: float = Field(default=0.0711, ge=0.02, le=0.12)
     hook_top_frac: float = Field(default=0.14, ge=0.03, le=0.5)
     # Text sizes are fractions of the frame's SHORTER SIDE, so one number is one physical size in
@@ -663,7 +712,22 @@ class ComposeSettings(StrictModel):
     # third of the frame wide, stacked four deep.
     caption_max_chars_per_line: int = Field(default=0, ge=0, le=48)
     # Semi-transparent box behind white text reads on cream cards and on dark footage alike.
-    caption_box_alpha: float = Field(default=0.55, ge=0.0, le=1.0)
+    caption_box_alpha: float = Field(default=0.0, ge=0.0, le=1.0)
+    """Opacity of the slab behind the captions. **0 is no slab**, which is the default now.
+
+    It was 0.55: legible anywhere, and the reason burned-in captions read as a subtitle track laid
+    over the picture rather than part of it. The type is carried by an outline and a soft shadow
+    instead. Raise it for a film graded so flat that an outline disappears into it — that case is
+    real, which is why the parameter is still here."""
+    caption_pop: float = Field(default=0.10, ge=0.0, le=0.5)
+    """How far the word being spoken grows, as a fraction, before settling back over ~190 ms.
+
+    The house rule recorded 2026-09-10 for the Remotion scenes is "flat colours, no
+    gradients/glow/bounce", and the caption highlight followed it. The operator asked for movement
+    on 2026-09-12. It is a scale on the word itself, not on the line: the block never moves, so
+    nothing reflows and the eye keeps its place. 0 restores colour-only."""
+    caption_fade_ms: int = Field(default=90, ge=0, le=1000)
+    """Fade in on a cue's first word and out on its last. 0 restores the hard cut."""
 
 
 class NarrationSettings(StrictModel):
@@ -870,6 +934,44 @@ class LocalServicesSettings(StrictModel):
     release_when_idle: bool = True
     startup_timeout_s: int = Field(default=1200, ge=30)
     poll_interval_s: float = Field(default=2.0, ge=0.2, le=30.0)
+    confine_tenants: bool = True
+    """Start each GPU server inside its own systemd scope with a memory ceiling.
+
+    Not a tuning knob -- it decides *what dies* when a model server overruns. systemd kills per
+    cgroup, and a server started from a shell inherits that shell's scope, so on 2026-09-13
+    ComfyUI reaching 26.5 GB of RSS while loading Ideogram 4 had the kernel name the **terminal's**
+    scope in the oom-kill and take the operator's session down with it. In its own scope the
+    ceiling stops it getting that big, and an overrun kills the allocator instead of the shell.
+
+    Best-effort: a box with no user systemd instance runs the server unwrapped."""
+    tenant_memory_max_gib: int = Field(default=22, ge=0)
+    """System-RAM ceiling for one GPU server, in GiB. Zero disables the limit.
+
+    22 of this box's 31 leaves the desktop, the browser and a `uv run pytest` room to coexist with
+    a loaded model. It is deliberately *below* what Ideogram 4 wanted when the card was partly
+    occupied (26.5 GB): that configuration cannot run here safely, and failing it fast with the
+    server's own name on it beats discovering it as a dead terminal."""
+    vram_free_target_mib: int = Field(default=18_000, ge=0)
+    """How much of the card must be free again before the next tenant is allowed to load.
+
+    `stop()` waits for the old tenant to stop answering HTTP, which happens the moment it closes
+    its socket -- while the process is still tearing down tens of GB of CUDA allocations. Starting
+    the next tenant into that window **hard-locked this machine on 2026-09-12**: ComfyUI's CUDA
+    init returned "CUDA unknown error ... Setting the available devices to be zero" and the box
+    went down four seconds later, with no oom-kill and no hung-task trace in the journal.
+
+    18 GB of the 3090's 24 leaves room for a desktop and a browser to keep their own contexts
+    while still refusing to load a second 18 GB transformer into a card that has not been given
+    back."""
+    vram_settle_s: float = Field(default=6.0, ge=0.0, le=120.0)
+    """How long free VRAM must stop climbing before "this is all we are getting" is accepted.
+
+    Without it, a card that legitimately has another owner -- a second user, a compositor holding
+    a few hundred MB -- would wait out the whole timeout on every single handover."""
+    vram_release_timeout_s: float = Field(default=120.0, ge=1.0)
+    """Upper bound on the wait. Exceeding it is not an error: a slow release is still a release,
+    and failing the run here would trade a rare hang for a common false alarm. The next load
+    reports what it found."""
     hidream_skill_dir: str = "skills/image/hidream"
     # Which inference recipe the HiDream server uses: full is 50 steps at guidance 5, dev is 28
     # steps at guidance 0 with the distilled timestep schedule. These are recipes, not weights —
@@ -879,6 +981,30 @@ class LocalServicesSettings(StrictModel):
     # to "full" — every image was pushed through nearly twice the steps it needed at a guidance the
     # model was distilled not to require. `hidream doctor` now checks the two against each other.
     hidream_model_type: Literal["full", "dev"] = "dev"
+    hidream_lora: str = ""
+    """A musubi-tuner HiDream-O1 adapter to merge into the server's weights at startup, or "".
+
+    Empty is the base model, and that is the default because merging an adapter changes every
+    picture the server makes and nobody should get that by upgrading. The one on this host is
+    ``datasets/training/romsketch/output/romsketch_ho1_v1b.safetensors``: 82 image+caption pairs of
+    two-person affection, twelve epochs, rank 32. It existed for five days with nowhere to plug in,
+    because this skill could not load an adapter at all.
+
+    It is a **style** adapter, not a realism one, which the captions only half say — rendered on
+    2026-09-12 it draws pen-and-ink and watercolour sketch on paper with a drawn border. Its
+    trigger is ``romsketch style.`` at the head of the prompt, and without it the adapter still
+    pulls hard toward that idiom. Do not reach for it to make people look photographed; reach for
+    it to draw them.
+
+    **It was trained against the `full` weights** (`--dit .../hidream-o1-comfy/... --model_type
+    full`), and ``hidream_model_type`` above is ``dev``. The module tree is identical, so every key
+    would match and the merge would succeed silently onto weights the adapter was never fit
+    against; the server compares ``ss_base_model_version`` and refuses instead. Using it means
+    setting ``hidream_model_type`` and ``hidream_model_path`` to the full weights too.
+    """
+    hidream_lora_multiplier: float = 1.0
+    """Adapter strength, musubi's own convention: ``W += multiplier * (alpha / rank) * up @ down``.
+    Its ``hidream_o1_generate_image.py`` calls the same number ``--lora_multiplier``."""
     # comfy-cli is only asked where the workspace is (`comfy which`); ComfyUI itself is launched
     # from that workspace's own .venv (comfy-cli's `launch` runs main.py under its tool Python,
     # which lacks ComfyUI's newer deps — verified 2026-09-06: `No module named comfy_aimdo`).

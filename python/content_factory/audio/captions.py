@@ -272,15 +272,17 @@ def to_ass(
     *,
     width: int,
     height: int,
-    font: str = "Inter",
+    font: str = "HelveticaNeue Condensed",
     size_frac: float = 0.0533,
     bottom_frac: float = 0.22,
     max_chars_per_line: int = 0,
     highlight: str | None = "#8BBDEB",
-    box_alpha: float = 0.55,
+    box_alpha: float = 0.0,
+    pop: float = 0.10,
+    fade_ms: int = 90,
     hook: str | None = None,
     hook_seconds: float = 2.8,
-    hook_font: str = "Sora",
+    hook_font: str = "HelveticaNeue Condensed",
     hook_size_frac: float = 0.0711,
     hook_top_frac: float = 0.14,
 ) -> str:
@@ -296,6 +298,21 @@ def to_ass(
     to be, measured on a rendered landscape film. The shorter side is 1080 either way, so one
     fraction now means one physical size in both orientations, and the vertical output is
     unchanged to the pixel (0.0533 x 1080 rounds to the same 58 px that 0.03 x 1920 did).
+
+    **No box by default.** ``box_alpha`` was 0.55, which put a translucent dark slab behind every
+    caption — legible anywhere, and the reason the burn-in read as a subtitle track bolted onto the
+    picture rather than part of it. It is 0.0 now: the type is carried by an outline and a soft
+    drop shadow instead, which stays readable over a bright sky or a white wall without covering
+    any of it. The parameter is kept rather than deleted, because a film graded so flat that an
+    outline disappears into it is a real case and the box is the answer to it.
+
+    ``pop`` and ``fade_ms`` are the animation. The house rule recorded on 2026-09-10 for the
+    Remotion scenes is "flat colours, no gradients/glow/bounce", and the highlight here followed
+    it — colour only. The operator asked for movement on 2026-09-12, so the active word now rises
+    to ``1 + pop`` of its size over 90 ms and settles back, and each cue fades in and out over
+    ``fade_ms``. Set ``pop=0`` and ``fade_ms=0`` to get exactly the old behaviour back. It is a
+    *scale on the word already being read*, not a bounce on the line: the block never moves, so
+    nothing below it reflows and the eye keeps its place.
 
     ``max_chars_per_line`` of 0 derives the wrap from the frame: the same share of the usable
     width the vertical calibration used (22 characters of 58 px type inside a 1080 px frame is
@@ -314,6 +331,18 @@ def to_ass(
     hook_margin = round(hook_top_frac * height)
     max_chars_per_line = wrap_chars_for(width, height, size_frac, max_chars_per_line)
     white = "&H00FFFFFF"
+    # A box when asked for, an outline when not. `edge` is the OutlineColour field, which libass
+    # reads as the box fill under BorderStyle 3 and as the glyph outline under 1.
+    outline_px = max(2, round(cap_size * 0.085))
+    shadow_depth = max(1, round(cap_size * 0.045))
+    if box_alpha > 0:
+        border_style, border_width = 3, max(3, round(cap_size * 0.07))
+        edge = f"&H{alpha:02X}000000"
+        shadow_colour = f"&H{alpha:02X}000000"
+    else:
+        border_style, border_width = 1, outline_px
+        edge = "&H20000000"  # near-opaque black: the outline is thin, so it needs the weight
+        shadow_colour = "&H70000000"  # softer, and offset by shadow_depth
     lines = [
         "[Script Info]",
         "ScriptType: v4.00+",
@@ -326,21 +355,26 @@ def to_ass(
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, "
         "BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, "
         "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+        # BorderStyle 3 is the box; 1 is outline-and-shadow. With `box_alpha` at 0 the type has to
+        # carry itself, so the outline is what makes it legible over a bright sky and the shadow
+        # is what lifts it off a busy one. Both scale with the type.
+        #
         # The box padding (the Outline field, under BorderStyle 3) has to stay under half the
         # leading, or a two-line cue's boxes overlap and the overlap composites darker: a
         # horizontal dark band straight through the middle of the block. libass advances a line by
         # about 1.2x the size, so the gap between glyph boxes is ~0.2x and the padding gets half.
-        f"Style: Cap,{font},{cap_size},{white},{white},&H{alpha:02X}000000,&H{alpha:02X}000000,"
-        f"-1,0,0,0,100,100,0,0,3,{max(3, round(cap_size * 0.07))},0,2,"
+        f"Style: Cap,{font},{cap_size},{white},{white},{edge},{shadow_colour},"
+        f"-1,0,0,0,100,100,0,0,{border_style},{border_width},{shadow_depth},2,"
         f"{margin_h},{margin_h},{margin_v},1",
         # The highlight layer: the same font, size, margins and alignment as Cap, so a word lands
-        # exactly on its twin below -- but BorderStyle 1 with no outline and no shadow, so it
-        # draws glyphs and no box at all. See the loop below for why the colour cannot go on Cap.
-        f"Style: CapHL,{font},{cap_size},{white},{white},&H00000000,&H00000000,"
-        f"-1,0,0,0,100,100,0,0,1,0,0,2,"
+        # exactly on its twin below -- and the same outline, or the white edge of the twin would
+        # halo around the coloured word. See the loop below for why the colour cannot go on Cap.
+        f"Style: CapHL,{font},{cap_size},{white},{white},{edge},{shadow_colour},"
+        f"-1,0,0,0,100,100,0,0,1,{outline_px},{shadow_depth},2,"
         f"{margin_h},{margin_h},{margin_v},1",
-        f"Style: Hook,{hook_font},{hook_size},{white},{white},&H60000000,&H60000000,"
-        f"-1,0,0,0,100,100,0,0,1,{max(2, round(hook_size * 0.08))},0,8,"
+        f"Style: Hook,{hook_font},{hook_size},{white},{white},&H20000000,&H70000000,"
+        f"-1,0,0,0,100,100,0,0,1,{max(2, round(hook_size * 0.08))},"
+        f"{max(1, round(hook_size * 0.04))},8,"
         f"{margin_h},{margin_h},{hook_margin},1",
         "",
         "[Events]",
@@ -392,15 +426,39 @@ def to_ass(
             # draw the BorderStyle-3 box **per span**, and adjacent spans overlap by the box
             # padding -- so a translucent box composited over itself came out as two hard dark
             # bars either side of whichever word was highlighted, on every frame of every film.
-            lines.append(f"Dialogue: 0,{_ass_ts(start)},{_ass_ts(end)},Cap,,0,0,0,,{plain}")
+            # The fade goes on the first and last word of the cue only. Fading every word would
+            # blink the whole block on every syllable, because each word is its own Dialogue line
+            # covering the same text.
+            fade = ""
+            if fade_ms > 0 and (i == 0 or i == len(group) - 1):
+                fade_in = fade_ms if i == 0 else 0
+                fade_out = fade_ms if i == len(group) - 1 else 0
+                fade = f"{{\\fad({fade_in},{fade_out})}}"
+            lines.append(f"Dialogue: 0,{_ass_ts(start)},{_ass_ts(end)},Cap,,0,0,0,,{fade}{plain}")
             if hl:
                 # The current word alone, in the highlight colour, on a boxless style laid out
                 # identically -- so it lands exactly on its white twin underneath. Every other
                 # word is transparent and still occupies its space, which is what keeps the two
                 # layers in register.
+                # The active word rises to (1 + pop) and settles back over ~190 ms. Scale only,
+                # on the word itself: the line's layout is unchanged, so nothing reflows and the
+                # block does not move under the reader's eye.
+                grow = ""
+                settle = ""
+                if pop > 0:
+                    up = round(100 * (1 + pop))
+                    grow = f"\\fscx100\\fscy100\\t(0,90,\\fscx{up}\\fscy{up})"
+                    settle = "\\t(90,190,\\fscx100\\fscy100)"
                 painted = _laid_out(
-                    lambda j, word, _i=i: (
-                        "{\\alpha&H00&\\1c" + hl + "&}" + word + "{\\alpha&HFF&}"
+                    lambda j, word, _i=i, _g=grow, _s=settle: (
+                        "{\\alpha&H00&\\1c"
+                        + hl
+                        + "&"
+                        + _g
+                        + _s
+                        + "}"
+                        + word
+                        + "{\\alpha&HFF&\\fscx100\\fscy100}"
                         if j == _i
                         else word
                     )

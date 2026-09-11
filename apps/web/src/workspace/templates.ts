@@ -123,6 +123,8 @@ export function requirementStatus(
 
 interface Placed {
   readonly type: string;
+  /** The lane's own key for this step, carried so a run can be shown on the node that made it. */
+  readonly key?: string;
   readonly x: number;
   readonly y: number;
   readonly values?: Record<string, string | number | boolean>;
@@ -149,6 +151,9 @@ function graphOf(
   const made: Record<string, GraphNode> = {};
   for (const [key, placed] of Object.entries(nodes)) {
     made[key] = makeNode(workspaceCatalog, placed.type, {
+      // The lane's key, not the generated id: `run.json` records outputs under it, so carrying
+      // it here is what lets the canvas show a run's drawings on the node that drew them.
+      key,
       x: placed.x,
       y: placed.y,
       ...(placed.values ? { values: placed.values } : {}),

@@ -245,6 +245,20 @@ export const api = {
     // sentence about them.
     recordVerdict: (runId: string, body: VerdictBody) =>
       request<RunReviewPage>("POST", `/run-history/${encodeURIComponent(runId)}/review`, body).then((r) => r.data),
+    /**
+     * Ask the local vision model to look at a gate's pictures. Forty-odd seconds of GPU, and it
+     * decides nothing: the opinion comes back on the same review page the gate arrives on.
+     *
+     * 409 means it cannot be asked for right now (a run holds the card, no frames on disk) and
+     * 502 that it was asked and did not answer — the caller shows the two differently, because
+     * one is fixed by waiting and the other by fixing the model stack.
+     */
+    aiReview: (runId: string, deliverable?: string) =>
+      request<RunReviewPage>(
+        "POST",
+        `/run-history/${encodeURIComponent(runId)}/ai-review`,
+        deliverable ? { deliverable } : {},
+      ).then((r) => r.data),
   },
   sequences: {
     list: () => request<SequenceSummary[]>("GET", "/sequences").then((r) => r.data),

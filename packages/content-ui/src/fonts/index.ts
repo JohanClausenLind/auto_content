@@ -12,9 +12,22 @@ export type FontWeight = InterWeight | SoraWeight;
 
 export const INTER_FAMILY = "Inter";
 export const SORA_FAMILY = "Sora";
-/** Fallbacks exist only for non-Remotion previews; renders wait for the faces before drawing. */
-export const FONT_STACK = `${INTER_FAMILY}, "Helvetica Neue", Arial, sans-serif`;
-export const DISPLAY_FONT_STACK = `${SORA_FAMILY}, ${INTER_FAMILY}, "Helvetica Neue", Arial, sans-serif`;
+/**
+ * The house face first, the pinned faces behind it.
+ *
+ * `HelveticaNeue Condensed` is the operator's chosen face (2026-09-12) and is installed on the
+ * host, not vendored: it is licensed, and `docs/licensing.md` bars redistributing licensed media —
+ * a repo is redistribution. So it is named here and resolved by the system, exactly as the burn-in
+ * captions resolve it through fontconfig.
+ *
+ * Inter and Sora stay pinned and stay in the stack, and that is the guarantee rather than the
+ * fallback: a machine without Helvetica renders in Inter instead of rendering in nothing, and
+ * `loadFont` still waits on the pinned faces before drawing. A stack whose first entry is absent
+ * costs nothing at render time.
+ */
+const HOUSE_FAMILY = `"HelveticaNeue Condensed"`;
+export const FONT_STACK = `${HOUSE_FAMILY}, ${INTER_FAMILY}, "Helvetica Neue", Arial, sans-serif`;
+export const DISPLAY_FONT_STACK = `${HOUSE_FAMILY}, ${SORA_FAMILY}, ${INTER_FAMILY}, "Helvetica Neue", Arial, sans-serif`;
 
 /** CSS font stack for a pinned family. */
 export function fontStackFor(family: FontFamily): string {

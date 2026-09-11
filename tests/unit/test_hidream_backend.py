@@ -47,13 +47,13 @@ def test_edit_sends_anchor_and_varies_seed_per_attempt() -> None:
     out = backend.edit(b"anchor-bytes", b"control", "move the hands closer", LOCK, attempt=1)
     backend.edit(b"anchor-bytes", b"control", "move the hands closer", LOCK, attempt=2)
     assert out == PNG
-    assert [base64.b64decode(r) for r in calls[0]["ref_images_b64"]] == [
-        b"anchor-bytes",
-        b"control",
-    ]
+    # The 2D control raster is NOT a reference by default: the one `run_sequence` compiles is a
+    # pure #FF0000 rectangle on black, and this pipeline treats every reference as subject
+    # material. See ImageSequenceSettings.control_as_reference for the measurement.
+    assert [base64.b64decode(r) for r in calls[0]["ref_images_b64"]] == [b"anchor-bytes"]
     assert (
-        calls[0]["scheduler"] is None and calls[0]["steps"] == 28
-    )  # two refs: no editing scheduler
+        calls[0]["scheduler"] == "flow_match" and calls[0]["steps"] == 28
+    )  # one ref: the editing scheduler applies
     assert calls[0]["guidance_scale"] == 5.0 and "layout_bboxes" not in calls[0]
     assert (calls[0]["seed"], calls[1]["seed"]) == (32, 33)  # regen attempts truly re-roll
 
@@ -104,12 +104,18 @@ def test_edit_conditioned_sends_anchor_then_refs_then_control_with_boxes() -> No
     )
     backend.edit_conditioned(b"anchor", cond, "hold the pose", LOCK, attempt=2)
     refs = [base64.b64decode(r) for r in calls[0]["ref_images_b64"]]
-    assert refs == [b"anchor", b"identity", b"rough", b"skeleton", b"control"]
+    assert refs == [b"anchor", b"identity", b"rough", b"skeleton"]  # no control raster
     assert calls[0]["layout_bboxes"] == [[0.4, 0.3, 0.2, 0.6]]
     assert calls[0]["seed"] == 33 and calls[0]["scheduler"] is None
 
 
-def test_control_reference_can_be_turned_off() -> None:
+def test_control_reference_can_be_turned_back_on() -> None:
+    """Opting in is still possible, and it is still a scheduler switch.
+
+    Sending the raster is what makes this a two-reference request, and upstream branches the whole
+    dev recipe on ``len(ref_images) == 1`` — so the flag does not only add a picture, it moves the
+    frame onto a different sampler. That is half of why it is off by default.
+    """
     calls: list[dict] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -117,11 +123,11 @@ def test_control_reference_can_be_turned_off() -> None:
         return httpx.Response(200, json={"png_b64": base64.b64encode(PNG).decode()})
 
     backend = HiDreamReferenceEditBackend(
-        transport=httpx.MockTransport(handler), send_control_as_reference=False
+        transport=httpx.MockTransport(handler), send_control_as_reference=True
     )
     backend.edit(b"anchor", b"control", "x", LOCK, attempt=1)
-    assert [base64.b64decode(r) for r in calls[0]["ref_images_b64"]] == [b"anchor"]
-    assert calls[0]["scheduler"] == "flow_match"  # single reference: editing scheduler applies
+    assert [base64.b64decode(r) for r in calls[0]["ref_images_b64"]] == [b"anchor", b"control"]
+    assert calls[0]["scheduler"] is None  # two references: no editing scheduler
 
 
 def test_generate_uses_refs_and_boxes_without_an_anchor() -> None:

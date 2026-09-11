@@ -29,7 +29,7 @@ from typing import Literal
 from pydantic import ValidationError
 
 from content_factory.qc.reviewer import missing_decisions
-from content_factory.schemas.review import FrameReviewBatch, ReviewerKind
+from content_factory.schemas.review import FrameRecord, FrameReviewBatch, ReviewerKind
 
 RefusalKind = Literal[
     "unknown_frames",
@@ -73,6 +73,7 @@ def decide(
     reject: Iterable[str] = (),
     accept_rest: bool = False,
     reason: str = "",
+    redirect: str = "",
     note: str = "",
     now: dt.datetime | None = None,
 ) -> FrameReviewBatch:
@@ -124,25 +125,33 @@ def decide(
     # `accept_rest` accepts what was not rejected; otherwise a frame is accepted only when it was
     # named. Both paths leave `rejected` deciding, so a frame in both lists cannot slip through as
     # accepted — that combination is refused above.
-    def _verdict(frame_id: str) -> str:
-        if frame_id in rejected:
-            return "reject"
-        if accept_rest or frame_id in accepted:
-            return "accept"
-        return "unreviewed"
+    #
+    # A frame this verdict does not mention **keeps the decision it already carries**. That matters
+    # now that a rejected anchor really is redrawn: `record_verdict` decides on the *merged* batch,
+    # so an untouched frame arrives here already carrying an accept from a prior verdict about a
+    # byte-identical picture. Resetting it to unreviewed would make one rejected drawing cost a
+    # re-review of the whole set, which is the opposite of what `image-set` promises — "rejecting
+    # one drawing costs one drawing, not the film". A frame that has never been decided is still
+    # `unreviewed` and still has to be named.
+    def _decided(frame: FrameRecord) -> tuple[str, str, str]:
+        if frame.frame_id in rejected:
+            return "reject", reason, redirect
+        if accept_rest or frame.frame_id in accepted:
+            return "accept", "", ""
+        return frame.verdict, frame.reason, frame.redirect
+
+    frames_out = []
+    for f in batch.frames:
+        verdict, why, instead = _decided(f)
+        frames_out.append(
+            {**f.model_dump(mode="json"), "verdict": verdict, "reason": why, "redirect": instead}
+        )
 
     updates: dict[str, object] = {
         "reviewer": reviewer,
         "reviewed_at": (now or dt.datetime.now(dt.UTC)).isoformat(),
         "notes": note or batch.notes,
-        "frames": [
-            {
-                **f.model_dump(mode="json"),
-                "verdict": _verdict(f.frame_id),
-                "reason": reason if f.frame_id in rejected else "",
-            }
-            for f in batch.frames
-        ],
+        "frames": frames_out,
     }
     try:
         # Validated, not copied: `model_copy(update=...)` does not re-validate, and that is how a
@@ -178,6 +187,7 @@ def merge_verdict(batch: FrameReviewBatch, prior: FrameReviewBatch) -> FrameRevi
                     update={
                         "verdict": by_id[record.frame_id].verdict,
                         "reason": by_id[record.frame_id].reason,
+                        "redirect": by_id[record.frame_id].redirect,
                     }
                 )
                 if record.frame_id in by_id

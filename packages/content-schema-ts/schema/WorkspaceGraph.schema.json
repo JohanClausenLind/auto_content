@@ -116,6 +116,12 @@
           "title": "Id",
           "type": "string"
         },
+        "key": {
+          "default": "",
+          "maxLength": 64,
+          "title": "Key",
+          "type": "string"
+        },
         "mode": {
           "default": "always",
           "enum": [
@@ -196,6 +202,7 @@
       "required": [
         "collapsed",
         "id",
+        "key",
         "mode",
         "note",
         "title",

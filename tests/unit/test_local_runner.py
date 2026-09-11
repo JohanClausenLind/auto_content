@@ -22,6 +22,7 @@ from content_factory.runners.local import (
     workflow_steps,
 )
 from content_factory.schemas.dag import Stage
+from content_factory.sequences.styles import resolve_style
 from content_factory.workflows.catalog import load_definitions
 from content_factory.workflows.stages import STAGE_EXECUTORS
 
@@ -56,9 +57,19 @@ def test_run_stages_writes_a_report_and_stops_at_the_first_failure(
     ]
     assert all(s["ok"] and s["outputs_hash"] for s in report["stages"])
     on_disk = json.loads((ctx.ddir() / "run.json").read_text())
-    # Both these stages are bookkeeping that costs no measurable time, so no timing bracket is
-    # printed at all — see `_clock`. The lines a slow lane gets are covered in test_run_eta.py.
-    assert on_disk["passed"] is True and logs[0] == "==> plan_shots"
+    assert on_disk["passed"] is True
+    # The stage line, by name, and nothing about what follows it.
+    #
+    # This asserted `logs[0] == "==> plan_shots"` exactly, which is a claim about the forecast:
+    # `services.durations` globs `output/` for finished reports, so whether a header prints above
+    # the first stage and whether a timing bracket prints beside it both depend on what else this
+    # machine has ever run. That equality held only while `output/` happened to carry timings for
+    # both of these stages, and broke twice on 2026-09-12 — once when the runs were deleted, and
+    # again when a new run timed one stage but not the other. What the forecast prints is
+    # `test_run_eta.py`'s subject and it controls its own history; what this test is about is the
+    # report, the ordering, and stopping at the first failure.
+    stage_lines = [line for line in logs if line.startswith("==> ")]
+    assert stage_lines[0].startswith("==> plan_shots")
 
     # compose_video needs compile_timeline output: it fails, the report keeps the failure
     with pytest.raises(LocalRunError) as info:
@@ -113,7 +124,11 @@ def test_picture_story_orders_picture_before_sound_and_carries_its_parameters() 
     values = {stage.value: v for _key, stage, v in template.stage_order() if v}
     assert values["compile_controls"]["compiler"] == "blender"
     assert values["generate_anchor"]["model"] == "hidream-o1"
-    assert "watercolour" in str(values["generate_anchor"]["style"])
+    # A preset NAME, not the prompt written out: `resolve_style` takes either, but only a name
+    # round-trips through `style_name_for`, and that is what keys the per-style drift thresholds.
+    # The lane carried the ink_wash text verbatim and therefore had no name and no override.
+    assert values["generate_anchor"]["style"] == "ink_wash"
+    assert "watercolour" in resolve_style(str(values["generate_anchor"]["style"]))
 
 
 def test_run_workflow_passes_the_chosen_film_to_the_stages_that_need_it(tmp_path: Path) -> None:

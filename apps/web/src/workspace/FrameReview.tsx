@@ -15,13 +15,26 @@
  * Two things it does not pretend. A verdict unblocks the gate and makes nothing, so the command
  * that continues the run is shown next to the result; and a frame whose file no longer matches
  * what the gate measured is labelled, because approving it would approve a picture nobody saw.
+ *
+ * The vision model's opinion (`AiReview`) sits under the pictures, not over them. It is the third
+ * reviewer and the only one that can answer "is this the same subject" without a person, and it
+ * is still only an opinion: its "mark these" fills in the selection below and records nothing.
+ * The operator's button is the only thing that writes a verdict.
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { api, isApiError } from "../api/client";
 import { queryKeys } from "../api/queries";
-import type { FrameVerdict, ReviewFrame, ReviewFinding, RunReview, VerdictRefusal } from "../api/types";
+import type {
+  AiSetReview,
+  FrameVerdict,
+  ReviewFrame,
+  ReviewFinding,
+  RunReview,
+  VerdictRefusal,
+} from "../api/types";
+import { AiReview } from "./AiReview";
 
 type Mark = "accept" | "reject";
 
@@ -65,11 +78,16 @@ function FrameCard({
   runId,
   frame,
   mark,
+  opinion,
   onMark,
 }: {
   runId: string;
   frame: ReviewFrame;
   mark: Mark | undefined;
+  /** What the vision model said about this one, when it has been asked. On the card rather than
+   *  only in the list below, because "it says this is a different object" belongs beside the
+   *  picture it is about. */
+  opinion?: { shows: string; severity: string; matches_intent: boolean } | undefined;
   onMark(mark: Mark | undefined): void;
 }) {
   const src = frame.image ? api.history.fileUrl(runId, frame.image) : null;
@@ -96,6 +114,11 @@ function FrameCard({
         <p className="cf-review__stale">A measurement failed on its own; this frame is rejected whatever is decided.</p>
       )}
       <Findings findings={frame.findings} />
+      {opinion && (
+        <p className="cf-review__opinion" data-severity={opinion.severity}>
+          <span className="cf-review__opinionlabel">AI sees</span> {opinion.shows}
+        </p>
+      )}
       {frame.reason && <p className="cf-review__reason">Rejected: {frame.reason}</p>}
       <div className="cf-review__marks" role="group" aria-label={`Verdict for ${frame.frame_id}`}>
         <button
@@ -131,10 +154,12 @@ export function FrameReview({
   runId,
   review,
   resumeCommand,
+  aiReview,
 }: {
   runId: string;
   review: RunReview;
   resumeCommand: string;
+  aiReview?: AiSetReview | undefined;
 }) {
   const client = useQueryClient();
   // Seeded from what is on disk, so a second visit shows the decisions already recorded rather
@@ -149,6 +174,7 @@ export function FrameReview({
   }, [review.frames]);
   const [marks, setMarks] = useState<Record<string, Mark>>(seeded);
   const [reason, setReason] = useState(review.frames.find((f) => f.reason)?.reason ?? "");
+  const [redirect, setRedirect] = useState(review.frames.find((f) => f.redirect)?.redirect ?? "");
   const [note, setNote] = useState("");
 
   const record = useMutation({
@@ -174,6 +200,25 @@ export function FrameReview({
       return next;
     });
 
+  /**
+   * Take the model's flagged frames into the operator's own selection.
+   *
+   * Only frames this batch actually has, and only ones the operator has not already decided
+   * about: a model's opinion must not silently overwrite a judgement a person already made on
+   * the same picture. The reason stays empty — the reason is what the redraw is told, and it has
+   * to be in the reviewer's own words.
+   */
+  const markFlagged = (frameIds: readonly string[]) => {
+    const known = new Set(review.frames.map((f) => f.frame_id));
+    setMarks((current) => {
+      const next = { ...current };
+      for (const frameId of frameIds) {
+        if (known.has(frameId) && next[frameId] === undefined) next[frameId] = "reject";
+      }
+      return next;
+    });
+  };
+
   return (
     <section className="cf-review" aria-label="Frame review">
       <header className="cf-review__head">
@@ -186,7 +231,8 @@ export function FrameReview({
         </h3>
         <p className="cf-review__lead">
           Nothing is cut from a frame nobody has looked at. Accept the batch, or reject the ones that
-          are wrong and say why — the reason is what the redraw is given.
+          are wrong and say why. The reason is the record; &ldquo;what they should show
+          instead&rdquo; is what the redraw is given.
         </p>
         <p className="cf-review__meta">
           {review.frames.length} frames · {review.flagged} with a flagged measurement
@@ -209,10 +255,18 @@ export function FrameReview({
             runId={runId}
             frame={frame}
             mark={marks[frame.frame_id]}
+            opinion={aiReview?.frames.find((f) => f.frame_id === frame.frame_id)}
             onMark={(mark) => setMark(frame.frame_id, mark)}
           />
         ))}
       </ul>
+
+      <AiReview
+        runId={runId}
+        deliverable={review.deliverable}
+        review={aiReview}
+        onMarkFlagged={markFlagged}
+      />
 
       <div className="cf-review__decide">
         <label className="cf-review__field">
@@ -226,6 +280,21 @@ export function FrameReview({
           />
         </label>
         <label className="cf-review__field">
+          <span>What they should show instead (optional, and it reaches the model)</span>
+          <textarea
+            value={redirect}
+            rows={2}
+            maxLength={400}
+            onChange={(e) => setRedirect(e.target.value)}
+            placeholder="e.g. one solid lump of resin with the insect sealed inside it"
+          />
+          <small className="cf-review__hint">
+            Describe the picture you want, not the fault. These weights run at guidance 0, where
+            &ldquo;not a hollow vessel&rdquo; is a hint the model may ignore and &ldquo;a solid
+            lump&rdquo; is an instruction. Leave it empty and the redraw only moves the seed.
+          </small>
+        </label>
+        <label className="cf-review__field">
           <span>Note kept with the verdict (optional)</span>
           <textarea value={note} rows={2} maxLength={2000} onChange={(e) => setNote(e.target.value)} />
         </label>
@@ -234,7 +303,15 @@ export function FrameReview({
             type="button"
             className="cf-review__submit"
             disabled={record.isPending || needsReason || (accepted.length === 0 && rejected.length === 0)}
-            onClick={() => record.mutate({ accept: accepted, reject: rejected, reason: reason.trim(), note: note.trim() })}
+            onClick={() =>
+              record.mutate({
+                accept: accepted,
+                reject: rejected,
+                reason: reason.trim(),
+                redirect: redirect.trim(),
+                note: note.trim(),
+              })
+            }
           >
             {record.isPending ? "Recording…" : `Record verdict (${accepted.length} accepted, ${rejected.length} rejected)`}
           </button>
@@ -243,7 +320,13 @@ export function FrameReview({
             className="cf-review__acceptall"
             disabled={record.isPending || needsReason}
             onClick={() =>
-              record.mutate({ accept_rest: true, reject: rejected, reason: reason.trim(), note: note.trim() })
+              record.mutate({
+                accept_rest: true,
+                reject: rejected,
+                reason: reason.trim(),
+                redirect: redirect.trim(),
+                note: note.trim(),
+              })
             }
           >
             {rejected.length > 0 ? "Accept the rest" : `Accept all ${review.frames.length}`}
@@ -251,8 +334,9 @@ export function FrameReview({
         </div>
         {needsReason && (
           <p className="cf-review__hint">
-            A rejection needs a reason: it is what the redraw is told, and what the prompt-guidance
-            proposals are built from.
+            A rejection needs a reason: it is the record of what was wrong, and what the
+            prompt-guidance proposals are built from. Saying what it should show instead is
+            optional, and it is the part the redraw is actually given.
           </p>
         )}
         {refusal && (

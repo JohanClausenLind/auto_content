@@ -86,9 +86,7 @@ nodes:
     values:
       model: hidream-o1
       prompt: "the two of them, staged exactly as the control passes show"
-      style: >
-        hand-drawn ink and watercolour illustration, confident brush line, flat washes, paper
-        texture, consistent character design, no 3D render look, no photographic lighting
+      style: ink_wash
   - key: frames_gate
     type: review_frames
     note: Rejecting one drawing costs one drawing, not the film.

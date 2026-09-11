@@ -84,9 +84,15 @@ with room to spare, and it is clamped to the model's own declared window so a sm
 asked for more than it has."""
 
 
-def _with_system_instruction(
-    messages: list[dict[str, str]], instruction: str | None
-) -> list[dict[str, str]]:
+Message = dict[str, Any]
+"""One chat message. ``content`` is a string for every text call, and for a vision call it is
+litellm's list of content parts (``{"type": "text"}`` / ``{"type": "image_url"}``), which the
+``ollama_chat`` provider turns into Ollama's own ``images`` array. Typed loosely for exactly that
+reason: the alternative was a second, near-identical entry point for the one role that sends
+pictures, and the gateway's whole job is to be the single place a model call goes through."""
+
+
+def _with_system_instruction(messages: list[Message], instruction: str | None) -> list[Message]:
     """Prepend the shared system instruction, unless the caller supplied its own or opted out.
 
     **In the gateway, not at each call site**, because a call site can forget and this one did:
@@ -106,7 +112,11 @@ def _with_system_instruction(
         return messages
     if messages and messages[0].get("role") == "system":
         own = messages[0].get("content", "")
-        return [{"role": "system", "content": f"{text}\n\n{own}"}, *messages[1:]]
+        # A system message is always plain text, even on a vision call: the images ride on the
+        # user turn, and prepending to a list of content parts would produce a message shape
+        # neither provider accepts.
+        merged = f"{text}\n\n{own}" if isinstance(own, str) else text
+        return [{"role": "system", "content": merged}, *messages[1:]]
     return [{"role": "system", "content": text}, *messages]
 
 
@@ -199,7 +209,7 @@ class ModelGateway:
         skill: SkillManifest,
         policy: ExecutionPolicy,
         response_model: type[T],
-        messages: list[dict[str, str]],
+        messages: list[Message],
         *,
         budget_scopes: list[tuple[Scope, str]],
         estimated_tokens: int = 2000,

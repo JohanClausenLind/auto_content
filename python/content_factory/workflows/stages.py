@@ -1481,6 +1481,21 @@ def stage_route_shots(ctx: StageContext) -> StageOutput:
     )
 
 
+def _first_stageable(matches) -> str | None:
+    """The first match that is a retargeted mocap clip on disk, or None.
+
+    The one predicate that decides whether retrieval changes a film or only describes one. It lives
+    here and in ``shots.planner.plan_shots_from_reference``; they must agree, and a test says so.
+    """
+    from content_factory.shots.planner import CLIPS_DIR
+
+    for match in matches:
+        clip = getattr(match, "clip_id", "") or ""
+        if clip and (CLIPS_DIR / f"{clip}.json").is_file():
+            return clip
+    return None
+
+
 def stage_find_reference(ctx: StageContext) -> StageOutput:
     """Ask the reference library, in the story's own words, for the real interaction to stage from.
 
@@ -1547,11 +1562,29 @@ def stage_find_reference(ctx: StageContext) -> StageOutput:
                 "beat_id": beat.beat_id,
                 "order": beat.order,
                 "match_set": json.loads(result.model_dump_json()),
+                # Decided here rather than left for plan_shots to discover, so the selection file
+                # answers "will this stage?" on its own. Same predicate plan_shots_from_reference
+                # applies, and a test pins that they agree.
+                "stageable": _first_stageable(result.matches) is not None,
+                "stageable_clip": _first_stageable(result.matches),
             }
         )
 
     selection["beats"] = beats
     selection["absent_terms"] = sorted(absent_terms)
+    # How many beats found a clip that can actually drive a rig, which is a different number from
+    # `selected` and the one that decides whether `plan_shots` stages anything.
+    #
+    # The distinction was invisible and it cost days. Three runs on this host recorded
+    # `selected: 0` and nothing else, and that one number covers three unrelated situations: the
+    # library is not installed; the library is fine but the story has no people in it (all three
+    # of those runs were a Rayleigh-scattering explainer — "Sunlight is white. It carries every
+    # colour at once."); or the search matched well and every match was an SBU sequence, which is
+    # a skeleton to look at and not something a character can be posed from. Only 58 of the 15789
+    # indexed clips are retargeted, so the third case is common and reads exactly like the first.
+    stageable = sum(1 for b in beats if b.get("stageable"))
+    selection["stageable_beats"] = stageable
+    selection["reason"] = _selection_reason(len(beats), selected, stageable)
     _write(
         ctx.ddir() / "reference" / "selection.json",
         json.dumps(selection, indent=1, sort_keys=True),
@@ -1561,11 +1594,31 @@ def stage_find_reference(ctx: StageContext) -> StageOutput:
         {
             "beats": len(beats),
             "selected": selected,
+            "stageable": stageable,
+            "reason": selection["reason"],
             # Terms the library understood and has nothing for. This is the operator's shooting
             # list, and it belongs in the run facts rather than only in a file.
             "absent_terms": sorted(absent_terms)[:8],
         },
     )
+
+
+def _selection_reason(beats: int, selected: int, stageable: int) -> str:
+    """One sentence a person can act on, for why this run will or will not stage from reference."""
+    if not beats:
+        return "the story has no beats with text"
+    if not selected:
+        return (
+            "nothing matched any beat — the library holds two-person interaction, so a story with"
+            " no people in it correctly returns nothing"
+        )
+    if not stageable:
+        return (
+            f"{selected} of {beats} beats matched, but none of the matches is a retargeted clip;"
+            " matches from SBU, TVHI and MotionHub are reference to look at, not rigs to stage"
+            " from. plan_shots will use the preset plan"
+        )
+    return f"{stageable} of {beats} beats can be staged from a captured take"
 
 
 def stage_compile_controls(ctx: StageContext) -> StageOutput:
@@ -1911,7 +1964,10 @@ def _reference_backend(ctx: StageContext | None = None) -> ReferenceEditBackend:
         # unchanged — but a pool that deliberately names only *other* machines, because this card
         # is doing something else, used to have its anchor drawn here anyway, starting a local
         # server the operator had just configured out of the run.
-        return HiDreamReferenceEditBackend(endpoint=cfg.hidream_pool()[0])
+        return HiDreamReferenceEditBackend(
+            endpoint=cfg.hidream_pool()[0],
+            send_control_as_reference=cfg.control_as_reference,
+        )
     if backend == "flux2":
         from content_factory.sequences.flux2_backend import Flux2ReferenceBackend
 
@@ -1923,6 +1979,7 @@ def _reference_backend(ctx: StageContext | None = None) -> ReferenceEditBackend:
             endpoint=cfg.flux2_pool()[0],
             turbo=cfg.flux2_turbo,
             reference_roles=cfg.anchor_references,
+            send_control_as_reference=cfg.control_as_reference,
         )
     return MockReferenceEditBackend()
 
@@ -1939,7 +1996,12 @@ def _reference_backends(ctx: StageContext | None = None) -> list[ReferenceEditBa
     if backend == "hidream":
         from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
-        return [HiDreamReferenceEditBackend(endpoint=e) for e in cfg.hidream_pool()]
+        return [
+            HiDreamReferenceEditBackend(
+                endpoint=e, send_control_as_reference=cfg.control_as_reference
+            )
+            for e in cfg.hidream_pool()
+        ]
     if backend == "flux2":
         from content_factory.sequences.flux2_backend import Flux2ReferenceBackend
 
@@ -1954,6 +2016,7 @@ def _reference_backends(ctx: StageContext | None = None) -> list[ReferenceEditBa
                 endpoint=endpoint,
                 turbo=cfg.flux2_turbo,
                 reference_roles=cfg.anchor_references,
+                send_control_as_reference=cfg.control_as_reference,
             )
             for i, endpoint in enumerate(endpoints)
         ]
@@ -2297,6 +2360,23 @@ MONOCHROME_WORDS = ("monochrome", "no colour", "no color", "greyscale", "graysca
 is a half-applied instruction, which is what reads as *weird* — the one blocker-severity finding
 ``qc.frame_review`` raises."""
 
+PHOTOGRAPHIC_STYLES = ("photographic", "photographic_set", "cinematic", "low_key", "documentary")
+"""The presets that asked to look photographed, by name.
+
+Keyed on the preset NAME rather than on words in the prompt, which is the difference between this
+and MONOCHROME_WORDS above. "photograph" appears inside several illustration presets as the thing
+they are *not* ("no photographic lighting"), so a substring test would arm the dead-flat texture
+check on exactly the styles it must never fire for — a watercolour has large flat areas because
+that is what watercolour is. A style written out in full has no name, gets no match, and is
+treated as not photographic: the quiet default, for a string nobody has classified."""
+
+
+def _expects_photographic(style_prompt: str) -> bool:
+    """Whether the dead-flat texture check applies to frames made under this style."""
+    from content_factory.sequences.styles import style_name_for
+
+    return style_name_for(style_prompt or "") in PHOTOGRAPHIC_STYLES
+
 
 def _blocker_findings(png: bytes, *, expect_monochrome: bool):
     """The deterministic frame checks, reduced to the ones that mean "do not ship this".
@@ -2325,6 +2405,7 @@ def _generate_checked(
     dest: Path,
     label: str,
     warmed: set[str],
+    seed_offset: int = 0,
 ) -> tuple[bytes, int, int, dict]:
     """Generate an anchor until the blocker checks pass.
 
@@ -2339,6 +2420,11 @@ def _generate_checked(
     keyframes: a new seed per attempt, derived rather than random, so the second attempt is the
     same second attempt on every machine and on every rerun. ``lock.seed`` is attempt 1, which
     keeps a frame that passes first time byte-identical to what it was before.
+
+    ``seed_offset`` moves that whole ladder, and is how a frame a *person* rejected comes back
+    different rather than identical — :func:`_anchor_rejection_offsets` sets it from how many times
+    the frame has been turned down. It is 0 for a frame nobody has rejected, so the ordinary path
+    is unchanged byte for byte.
 
     When the attempts run out this raises :class:`BlockedError` rather than writing the last one:
     a fourth attempt is more GPU time for the same answer, and the answer is that a person has to
@@ -2370,7 +2456,7 @@ def _generate_checked(
     for attempt in range(1, cfg.max_regen_attempts_per_frame + 1):
         png = None
         last_error: Exception | None = None
-        seed = lock.seed + attempt - 1
+        seed = lock.seed + seed_offset + attempt - 1
         # Bound before the host loop so the telemetry below always has values; the real readings
         # are taken inside it, once, immediately before the generation that produced the frame.
         before: int | None = None
@@ -2512,6 +2598,183 @@ def _anchor_from_upload(ctx: StageContext) -> StageOutput:
     )
 
 
+def _anchor_frame_paths(anchors_dir: Path, frame_id: str) -> tuple[Path, Path, str] | None:
+    """``frame_id`` -> (png, marker, a filename-safe key), or None if it is not an anchor's.
+
+    ``review_frames`` builds anchor ids as ``<shot_id>:<frame index>`` from the manifest, and the
+    single-anchor branch records ``shot_id: None`` — so that lane's frames really are called
+    ``None:0000`` on disk today. Both spellings are accepted here rather than only the tidy one,
+    because a verdict already written against the old id has to keep working.
+    """
+    shot, _, tail = frame_id.rpartition(":")
+    if not tail.isdigit():
+        return None
+    idx = int(tail)
+    if shot in ("", "anchor", "None"):
+        return anchors_dir / "anchor.png", anchors_dir / "anchor.done.json", f"anchor_{idx:04d}"
+    png = anchors_dir / shot / f"{idx:04d}.png"
+    return png, png.with_suffix(".done.json"), f"{shot}_{idx:04d}"
+
+
+def _clear_rejected_anchors(ctx: StageContext) -> list[str]:
+    """Drop the cache markers of anchors a person rejected, so the next run redraws them.
+
+    The keyframe lanes have had this since 2026-09-10 (:func:`_clear_rejected_frames`). The anchor
+    lanes did not, and the consequence was the same one, measured on `amber-refix` 2026-09-12:
+    three of six frames rejected with reasons, the resume reported ``cache_hits: 6`` on
+    generate_anchor, and the gate blocked again on the identical pictures. An operator who rejected
+    a frame was stuck for ever unless the prompt changed and moved the input hash — which means the
+    honest verdict the gate exists to collect was the one thing it could not act on.
+
+    Only the marker is removed. The picture moves to ``anchors/rejected/``, so what was turned down
+    can still be looked at, and the frame is named in the stage's facts, because a redraw nobody
+    can see in the record is a redraw nobody can audit.
+    """
+    from content_factory.services.frame_reviews import current_batch
+
+    # The MERGED state, not `batch.json` alone. `batch.json` is what the gate wrote when it last
+    # ran; `verdict.json` beside it is what the operator answered afterwards, and the answer is the
+    # whole point. Reading only the first works the first time and then silently stops: measured
+    # here 2026-09-12, a second rejection reported `cache_hits: 6` because at the moment this runs
+    # the gate's file still described the *previous* round, in which those frames were unreviewed.
+    batch = current_batch(ctx.ddir())
+    if batch is None:
+        return []
+    anchors_dir = ctx.ddir() / "anchors"
+    reject_dir = anchors_dir / "rejected"
+    cleared: list[str] = []
+    for record in batch.rejected:
+        resolved = _anchor_frame_paths(anchors_dir, record.frame_id)
+        if resolved is None:
+            continue
+        png, marker, key = resolved
+        if not marker.exists() and not png.exists():
+            continue
+        reject_dir.mkdir(parents=True, exist_ok=True)
+        # Numbered, so a second rejection does not overwrite the first and the offset below has
+        # something to count.
+        turn = 1 + len(list(reject_dir.glob(f"{key}.reviewed*.png")))
+        if png.exists():
+            png.replace(reject_dir / f"{key}.reviewed{turn}.png")
+        if marker.exists():
+            marker.replace(reject_dir / f"{key}.reviewed{turn}.done.json")
+        cleared.append(record.frame_id)
+    if cleared:
+        _log_execution(ctx, "anchors-rejected", {"redrawing": sorted(cleared)})
+    return sorted(cleared)
+
+
+def _anchor_redirects(ctx: StageContext) -> dict[str, str]:
+    """``frame_id -> what the reviewer said it should show instead``, for frames they rejected.
+
+    This is the half a seed offset cannot do. Moving the seed makes a redraw *different*; it does
+    not make it different in the direction that was asked for, and measured on `amber-refix`
+    2026-09-12 that is exactly what happened — of three frames rejected for having an open rim,
+    two came back solid and the third came back a corked bottle, which is further from amber than
+    what it replaced.
+
+    The reviewer's ``reason`` is a complaint and cannot be sent to an image model as one: these
+    weights run at guidance 0, where `sequences.styles` has already measured that a negation is a
+    hint the model may or may not take. So the contract carries a separate ``redirect``, stated
+    positively, and that is what goes into the prompt. A rejection with no redirect still redraws —
+    it just redraws on a new seed alone, which is the behaviour this replaces.
+    """
+    from content_factory.services.frame_reviews import current_batch
+
+    batch = current_batch(ctx.ddir())
+    if batch is None:
+        return {}
+    return {
+        f.frame_id: f.redirect.strip()
+        for f in batch.frames
+        if f.verdict == "reject" and f.redirect.strip()
+    }
+
+
+def _with_redirects(prompt: str, redirects: Sequence[str]) -> str:
+    """``prompt`` with the reviewer's corrections appended, as descriptions of the picture.
+
+    Appended, not prepended: `_anchor_prompt` documents that the style leads and that anything
+    after it is weaker, and a correction is about the subject rather than the medium. Each one is
+    already phrased positively — that is what the contract asks the reviewer for — so they join the
+    sentence list as they are rather than being wrapped in "avoid" or "not", which at guidance 0
+    is a hint rather than an instruction.
+    """
+    extra = [r.strip().rstrip(".") for r in redirects if r.strip()]
+    if not extra:
+        return prompt
+    return prompt.rstrip().rstrip(".") + ". " + ". ".join(extra) + "."
+
+
+def _applied_redirects(anchors_dir: Path, key: str, marker: Path, pending: str) -> tuple[str, ...]:
+    """The corrections this draw is made with.
+
+    A frame whose marker survived was not rejected, so it keeps exactly the set it was drawn with
+    and its input hash is unchanged — otherwise every untouched frame would regenerate the moment
+    any frame in the set was corrected.
+    """
+    if marker.exists():
+        try:
+            return tuple(json.loads(marker.read_text()).get("redirects", ()))
+        except (OSError, ValueError):
+            return ()
+    return _redirects_for_frame(anchors_dir, key, pending)
+
+
+def _redirects_for_frame(anchors_dir: Path, key: str, pending: str) -> tuple[str, ...]:
+    """Every redirect that applies to the next draw of one frame, oldest first.
+
+    Sticky, and derived from files rather than recomputed from the verdict each time — which is
+    what keeps the prompt stable across a resume. A redirect read straight from the verdict would
+    vanish the moment the frame was redrawn (the new digest makes it `unreviewed` again), the
+    prompt would revert, the input hash would revert with it, and the frame would regenerate
+    *without* the correction it had just been given. Same failure shape as reading `batch.json`
+    instead of the merged state, one layer down.
+
+    So each draw records the set it was made with, that marker moves aside when the frame is
+    rejected, and the next draw reads the most recent one and appends whatever is newly pending.
+    Corrections accumulate: "a solid lump with no opening" and then "deeper orange" both hold.
+    """
+    applied: tuple[str, ...] = ()
+    reject_dir = anchors_dir / "rejected"
+    if reject_dir.is_dir():
+        rounds = sorted(
+            reject_dir.glob(f"{key}.reviewed*.done.json"),
+            key=lambda q: len(q.name),  # reviewed2 sorts after reviewed10 lexically; length first
+        )
+        rounds.sort()
+        if rounds:
+            try:
+                applied = tuple(json.loads(rounds[-1].read_text()).get("redirects", ()))
+            except (OSError, ValueError):
+                applied = ()
+    if pending and pending not in applied:
+        applied = (*applied, pending)
+    return applied
+
+
+def _anchor_rejection_offsets(anchors_dir: Path) -> dict[str, int]:
+    """How far to move each anchor's seed, from how many times it has been turned down.
+
+    Same arithmetic as :func:`_rejection_seed_offsets`, and for the same measured reason: a redraw
+    has to come back *different*, and the backend derives its seed from the attempt number
+    (``lock.seed + attempt - 1``), so redrawing without moving the base reproduces the picture that
+    was just rejected. The multiplier is 8 because the three blocker retries inside one run already
+    walk the seed by 0, 1, 2 — an offset of one would land the redraw on the second attempt of the
+    run that was rejected.
+
+    Counted off the files in ``anchors/rejected/``, so it survives a crash and needs no extra state.
+    """
+    reject_dir = anchors_dir / "rejected"
+    if not reject_dir.is_dir():
+        return {}
+    offsets: dict[str, int] = {}
+    for png in reject_dir.glob("*.reviewed*.png"):
+        key = png.name.split(".", 1)[0]
+        offsets[key] = offsets.get(key, 0) + 1
+    return {key: n * 8 for key, n in offsets.items()}
+
+
 def stage_generate_anchor(ctx: StageContext) -> StageOutput:
     """Anchor images. With control bundles present: one anchor per shot per ``anchor_frames``
     index, conditioned on the Blender passes (identity refs + layout boxes + rough RGB + skeleton).
@@ -2520,6 +2783,14 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
         return _anchor_from_upload(ctx)
     backend = _reference_backend(ctx)
     warmed: set[str] = set()
+    # A verdict is only worth collecting if the run can act on it. Clearing first means a rejected
+    # anchor misses its cache below; the offsets then make sure what comes back is a different
+    # picture rather than the one that was turned down.
+    redrawing = _clear_rejected_anchors(ctx)
+    seed_offsets = _anchor_rejection_offsets(ctx.ddir() / "anchors")
+    # Read before the loop, because clearing above is what makes these frames eligible to redraw
+    # and the verdict they came from is the only place the correction exists.
+    pending_redirects = _anchor_redirects(ctx)
     references = tuple(
         r.strip()
         for r in _param(
@@ -2544,19 +2815,28 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                 cond, slots = _conditioning_for_frame(
                     bundle, bundle_path.parent, idx, shot, references
                 )
-                seed = lock.seed
+                key = f"{bundle.shot_id}_{idx:04d}"
+                seed_offset = seed_offsets.get(key, 0)
+                seed = lock.seed + seed_offset
+                png_path = anchors_dir / bundle.shot_id / f"{idx:04d}.png"
+                marker = png_path.with_suffix(".done.json")
+                redirects = _applied_redirects(
+                    anchors_dir,
+                    key,
+                    marker,
+                    pending_redirects.get(f"{bundle.shot_id}:{idx:04d}", ""),
+                )
+                frame_prompt = _with_redirects(prompt, redirects)
                 input_hash = _hash_obj(
                     {
                         "lock": lock.model_dump(mode="json"),
-                        "prompt": prompt,
+                        "prompt": frame_prompt,
                         "conditioning": cond.sha256(),
                         "references": list(references),
                         "seed": seed,
                         "backend": backend.name,
                     }
                 )
-                png_path = anchors_dir / bundle.shot_id / f"{idx:04d}.png"
-                marker = png_path.with_suffix(".done.json")
                 anchor_cached = _cached_output(marker, png_path, input_hash, "png_sha256")
                 if anchor_cached is not None:
                     record = {**anchor_cached, "cache_hit": True}
@@ -2564,12 +2844,13 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                     png, attempts, used_seed, telemetry = _generate_checked(
                         ctx,
                         backend,
-                        prompt,
+                        frame_prompt,
                         cond,
                         lock,
                         dest=png_path,
                         label=f"{bundle.shot_id}:{idx}",
                         warmed=warmed,
+                        seed_offset=seed_offset,
                     )
                     _write_atomic(png_path, png)
                     record = {
@@ -2584,7 +2865,11 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                         # The exact words the model was given. It is already inside input_hash, so
                         # this adds nothing to caching — it is here so a frame can be read back
                         # against what was asked for without re-deriving the compiler's tables.
-                        "prompt": prompt,
+                        "prompt": frame_prompt,
+                        # The reviewer corrections folded into that prompt, in the order they were
+                        # given. Recorded rather than recomputed so the next draw can carry them:
+                        # see `_redirects_for_frame`.
+                        "redirects": list(redirects),
                         "png_sha256": sha256_hex(png),
                         "backend": backend.name,
                         "references": len(cond.reference_pngs),
@@ -2633,23 +2918,36 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
         lock = _anchor_lock(width=width, height=height, backend=backend, ctx=ctx)
         prompt = _anchor_prompt(ctx, None, lock)
         cond = ControlConditioning()
+        seed_offset = seed_offsets.get("anchor_0000", 0)
+        png_path = anchors_dir / "anchor.png"
+        marker = anchors_dir / "anchor.done.json"
+        redirects = _applied_redirects(
+            anchors_dir, "anchor_0000", marker, pending_redirects.get("anchor:0000", "")
+        )
+        frame_prompt = _with_redirects(prompt, redirects)
         input_hash = _hash_obj(
             {
                 "lock": lock.model_dump(mode="json"),
-                "prompt": prompt,
+                "prompt": frame_prompt,
                 "conditioning": cond.sha256(),
-                "seed": lock.seed,
+                "seed": lock.seed + seed_offset,
                 "backend": backend.name,
             }
         )
-        png_path = anchors_dir / "anchor.png"
-        marker = anchors_dir / "anchor.done.json"
         anchor_cached = _cached_output(marker, png_path, input_hash, "png_sha256")
         if anchor_cached is not None:
             record = {**anchor_cached, "cache_hit": True}
         else:
             png, attempts, used_seed, telemetry = _generate_checked(
-                ctx, backend, prompt, cond, lock, dest=png_path, label="anchor", warmed=warmed
+                ctx,
+                backend,
+                frame_prompt,
+                cond,
+                lock,
+                dest=png_path,
+                label="anchor",
+                warmed=warmed,
+                seed_offset=seed_offset,
             )
             _write_atomic(png_path, png)
             record = {
@@ -2659,7 +2957,8 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                 "attempts": attempts,
                 "seed": used_seed,
                 "telemetry": telemetry,
-                "prompt": prompt,
+                "prompt": frame_prompt,
+                "redirects": list(redirects),
                 "png_sha256": sha256_hex(png),
                 "backend": backend.name,
                 "references": 0,
@@ -2693,6 +2992,9 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
             # Above the number of anchors means the checks sent frames back. Worth seeing in the
             # run log: it is GPU time spent on frames that arrived unusable.
             "attempts": sum(int(r.get("attempts", 1)) for r in records),
+            # Which frames a person turned down and this run redrew. A redraw nobody can see in
+            # the record is a redraw nobody can audit.
+            "redrawn_after_rejection": redrawing,
         },
     )
 
@@ -2885,12 +3187,15 @@ def _clear_rejected_frames(ctx: StageContext, workdir: Path) -> list[int]:
     listed in the stage's facts, because a redraw nobody can see in the record is a redraw nobody
     can audit.
     """
-    from content_factory.schemas.review import FrameReviewBatch
+    from content_factory.services.frame_reviews import current_batch
 
-    path = ctx.ddir() / "reviews" / "frames" / "batch.json"
-    if not path.exists():
+    # Merged, for the reason `_clear_rejected_anchors` records: `batch.json` is the gate's last
+    # word and `verdict.json` is the operator's, and only the second one carries a rejection made
+    # since the gate last ran. This path had the same latent flaw and had never been exercised
+    # twice in a row.
+    batch = current_batch(ctx.ddir())
+    if batch is None:
         return []
-    batch = FrameReviewBatch.model_validate_json(path.read_text())
     frames_dir = workdir / "frames"
     reject_dir = workdir / "rejected"
     cleared: list[int] = []
@@ -3100,15 +3405,29 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
         entries = json.loads(manifest_path.read_text())["shots"]
         for entry in entries:
             for frame in entry["frames"]:
-                frame_id = f"{entry.get('shot_id', 'anchor')}:{frame['frame_index']:04d}"
+                # `or`, not a dict default: the single-anchor branch writes `shot_id: None`
+                # rather than omitting the key, so `.get(..., "anchor")` returned None and that
+                # lane's frames were called "None:0000" in every review request and verdict.
+                # `_anchor_frame_paths` still accepts the old spelling, so a verdict already on
+                # disk keeps working.
+                shot_id = entry.get("shot_id") or "anchor"
+                frame_id = f"{shot_id}:{frame['frame_index']:04d}"
                 pngs.append((frame_id, (ctx.ddir() / frame["path"]).read_bytes()))
     if not pngs:
         msg = f"review_frames: {source} lists no frames"
         raise RuntimeError(msg)
 
-    style = _param(ctx, "style", get_settings().image_sequences.anchor_style_prompt).lower()
-    monochrome = any(word in style for word in ("monochrome", "no colour", "no color"))
-    findings = review_findings(pngs, expect_monochrome=monochrome)
+    raw_style = _param(ctx, "style", get_settings().image_sequences.anchor_style_prompt)
+    # Resolved once: a preset name has to become its prompt before either predicate can read it,
+    # and `resolve_style` refuses a short unknown token rather than sending it to a model, so the
+    # empty case is guarded rather than passed through.
+    style = resolve_style(raw_style) if raw_style.strip() else ""
+    monochrome = any(word in style.lower() for word in ("monochrome", "no colour", "no color"))
+    findings = review_findings(
+        pngs,
+        expect_monochrome=monochrome,
+        expect_photographic=_expects_photographic(style),
+    )
     sheet_rel = Path("reviews") / "frames" / "contact-sheet.png"
     sheet_png = contact_sheet(pngs, ctx.ddir() / sheet_rel, findings=findings)
     # Every frame against every other, not just its neighbour: a set can drift a little at each
@@ -4548,6 +4867,8 @@ def stage_compile_captions(ctx: StageContext) -> StageOutput:
         max_chars_per_line=wrap_chars,
         highlight=(brand.accent or cfg.caption_highlight_color) if cfg.caption_highlight else None,
         box_alpha=cfg.caption_box_alpha,
+        pop=cfg.caption_pop,
+        fade_ms=cfg.caption_fade_ms,
         hook=_hook_overlay(plan) if cfg.hook_overlay else None,
         hook_seconds=cfg.hook_seconds,
         hook_font=cfg.hook_font,
@@ -4965,10 +5286,21 @@ def _burn_captions(video: Path, srt: Path, out: Path, *, width: int, height: int
     margin_v = max(0, round(cfg.caption_bottom_frac * 288))
     margin_h = max(0, round(0.07 * 384))
     box_alpha = round((1.0 - cfg.caption_box_alpha) * 255)  # ASS alpha: 00 opaque .. FF clear
+    # The same look as the ASS track above, so the two caption paths are not two house styles:
+    # a box only when `caption_box_alpha` asks for one, an outline and a soft shadow otherwise.
+    if cfg.caption_box_alpha > 0:
+        border = (
+            f"OutlineColour=&H{box_alpha:02X}000000,BackColour=&H{box_alpha:02X}000000,"
+            f"BorderStyle=3,Outline=1,Shadow=0"
+        )
+    else:
+        border = (
+            f"OutlineColour=&H20000000,BackColour=&H70000000,BorderStyle=1,"
+            f"Outline={max(1, round(font_size * 0.085))},Shadow={max(1, round(font_size * 0.045))}"
+        )
     style = (
         f"FontName={cfg.caption_font},FontSize={font_size},Bold=1,PrimaryColour=&H00FFFFFF,"
-        f"OutlineColour=&H{box_alpha:02X}000000,BackColour=&H{box_alpha:02X}000000,"
-        f"BorderStyle=3,Outline=1,Shadow=0,Alignment=2,MarginV={margin_v},"
+        f"{border},Alignment=2,MarginV={margin_v},"
         f"MarginL={margin_h},MarginR={margin_h},WrapStyle=2"
     )
     srt_arg = str(wrapped).replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")

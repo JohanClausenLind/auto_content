@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import type { Meta, Session, Workspace } from "../../src/api/types";
 import { productHandlers } from "./campaigns";
-import { HISTORY_DETAIL, HISTORY_RUNS, REVIEW_PAGE } from "./runs";
+import { AI_REVIEW, HISTORY_DETAIL, HISTORY_RUNS, REVIEW_PAGE } from "./runs";
 
 export const WORKSPACES: Workspace[] = [
   { id: "ws_1", slug: "acme", name: "Acme Studio", role: "owner" },
@@ -286,6 +286,22 @@ export const graphRunPosts: string[] = [];
 /** Verdicts the review panel recorded, in order. Reset per test via setup.ts. */
 export const verdictPosts: { runId: string; body: Record<string, unknown> }[] = [];
 
+/** AI reviews the panel asked for, in order. Reset per test via setup.ts. */
+export const aiReviewPosts: { runId: string; body: Record<string, unknown> }[] = [];
+
+/**
+ * How the next `POST .../ai-review` answers.
+ *
+ * `"ok"` returns the stored opinion; `409` is "cannot be asked for" (a run holds the card) and
+ * `502` "was asked and did not answer" — the two the UI has to show differently, because one is
+ * fixed by waiting and the other by fixing the model stack.
+ */
+export const aiReviewMode = { next: "ok" as "ok" | 409 | 502 };
+
+/** Reviews the fixture server has stored, by run id — so a refetch answers with them, the way
+ *  the real route does once `reviews/frames/ai-review.json` is on disk. */
+export const aiReviewStore = new Map<string, Record<string, unknown>>();
+
 export const unauthenticated = () => http.get("*/v1/session", () => HttpResponse.json({ detail: "Not signed in" }, { status: 401 }));
 export const authenticated = (session: Session = makeSession()) => http.get("*/v1/session", () => HttpResponse.json(session));
 
@@ -295,18 +311,31 @@ export const baseHandlers = [
   http.get("*/v1/action-items", () => HttpResponse.json([])),
   http.get("*/v1/runs", () => HttpResponse.json([])),
   http.get("*/v1/run-history", () => HttpResponse.json(HISTORY_RUNS)),
-  http.get("*/v1/run-history/:runId", ({ params }) =>
-    params.runId === HISTORY_DETAIL.run_id
-      ? HttpResponse.json(HISTORY_DETAIL)
-      : HttpResponse.json({ ...HISTORY_DETAIL, run_id: String(params.runId), outputs: [], outputs_total: 0, film: null, poster: null }),
-  ),
-  http.get("*/v1/run-history/:runId/review", ({ params }) =>
-    HttpResponse.json(
+  // A run's detail carries that run's own row — its subject, lane and outcome — so a test that
+  // switches runs sees a different run rather than the same one under a new id.
+  http.get("*/v1/run-history/:runId", ({ params }) => {
+    const row = HISTORY_RUNS.find((r) => r.run_id === String(params.runId));
+    if (String(params.runId) === HISTORY_DETAIL.run_id) return HttpResponse.json(HISTORY_DETAIL);
+    return HttpResponse.json({
+      ...HISTORY_DETAIL,
+      ...row,
+      run_id: String(params.runId),
+      outputs: [],
+      outputs_total: 0,
+      nodes: [],
+      unattributed: 0,
+      film: null,
+      poster: null,
+    });
+  }),
+  http.get("*/v1/run-history/:runId/review", ({ params }) => {
+    const stored = aiReviewStore.get(String(params.runId));
+    const page =
       params.runId === REVIEW_PAGE.run_id
         ? REVIEW_PAGE
-        : { ...REVIEW_PAGE, run_id: String(params.runId), reviews: [] },
-    ),
-  ),
+        : { ...REVIEW_PAGE, run_id: String(params.runId), reviews: [] };
+    return HttpResponse.json(stored ? { ...page, ai_reviews: stored } : page);
+  }),
   // The verdict the panel sends is what the CLI would have written, so the fixture answers with
   // the batch as decided: accepted frames accepted, the rest untouched.
   http.post("*/v1/run-history/:runId/review", async ({ params, request }) => {
@@ -337,6 +366,25 @@ export const baseHandlers = [
         },
       ],
     });
+  }),
+  http.post("*/v1/run-history/:runId/ai-review", async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    aiReviewPosts.push({ runId: String(params.runId), body });
+    if (aiReviewMode.next === 409) {
+      return HttpResponse.json(
+        { detail: "the GPU is busy with image-set. Review when the run finishes." },
+        { status: 409 },
+      );
+    }
+    if (aiReviewMode.next === 502) {
+      return HttpResponse.json(
+        { detail: "connection refused to 127.0.0.1:11434" },
+        { status: 502 },
+      );
+    }
+    const reviews = { [REVIEW_PAGE.reviews[0]!.deliverable]: AI_REVIEW };
+    aiReviewStore.set(String(params.runId), reviews);
+    return HttpResponse.json({ ...REVIEW_PAGE, ai_reviews: reviews });
   }),
   http.get("*/v1/comfy/models", () => HttpResponse.json(COMFY_INVENTORY)),
   http.get("*/v1/models/catalog", () =>

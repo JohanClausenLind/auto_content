@@ -1357,3 +1357,89 @@
   margin: 4px 6px;
   background: var(--ng-menu-border);
 }
+
+/* --- what a node produced ---------------------------------------------------------------------
+ *
+ * The strip sits under the widgets and above the note: after the controls that made the thing and
+ * before the free text about it, which is the order the node reads in. Sized for a 260px node at
+ * the zoom a whole lane is looked at — four 54px thumbnails and one row of counts. Anything more
+ * detailed belongs in the review panel, not on the canvas.
+ */
+.ng-outputs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 8px 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--ng-node-border);
+}
+/* A node the open run did not execute: its files are whatever an earlier run left there. Dimmed
+   rather than hidden or badged as an error — it is not a failure, it is a step that did not
+   happen this time, and a resumed run is most of the lane. */
+.ng-outputs[data-carried] {
+  opacity: 0.62;
+}
+.ng-outputs__strip {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.ng-outputs__thumb {
+  width: 54px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--ng-widget-bg);
+  border: 1px solid var(--ng-node-border);
+}
+.ng-outputs__more {
+  font-size: 10px;
+  color: var(--ng-muted);
+  padding: 0 2px;
+}
+.ng-outputs__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.ng-outputs__open {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font: inherit;
+  font-size: 10px;
+  color: var(--ng-widget-text);
+  background: var(--ng-widget-bg);
+  border: 1px solid var(--ng-node-border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.ng-outputs__open:hover:not(:disabled) {
+  border-color: var(--ng-accent);
+  color: var(--ng-fg);
+}
+.ng-outputs__open:disabled {
+  cursor: default;
+}
+/* The attribution is a guess from the file's path, not something the run recorded. One character,
+   with the whole sentence in the button's title: a reader deciding which step to blame for a
+   fault has to know when the answer is inferred. */
+.ng-outputs__guess {
+  color: var(--ng-muted);
+  margin-left: 4px;
+}
+.ng-outputs__badge {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  background: var(--ng-accent);
+  color: #fff;
+}

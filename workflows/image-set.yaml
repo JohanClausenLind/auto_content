@@ -73,15 +73,13 @@ nodes:
     values:
       model: hidream-o1
       seed: 424242
-      prompt: "the subject alone, centred, plain background, the reference view of the set"
-      style: >
-        consistent character and material design, even flat lighting, no dramatic shadow, plain
-        neutral background, same rendering idiom in every image
+      prompt: "the subject alone, centred, the reference view of the set"
+      style: photographic_set
     note: >
       The one image the rest of the set is measured against. The seed is pinned because the lock
       freezes it and every later image reuses it; which number does not matter, that it holds
       between runs does. No model value: _reference_backend() reads the image_sequences.backend
-      setting and never this node, so a model here would name a weight it does not pick.
+      setting, never this node. The style is a named preset now; see sequences.styles for why.
   - key: lock
     type: lock_generation
     note: Model, seed, sampler and the style, camera and lighting prompts, frozen around the anchor.

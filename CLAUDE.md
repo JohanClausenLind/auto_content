@@ -12,9 +12,12 @@ detail behind a specific claim; it is 630 KB and grows every session.
   truth. Never edit `generated/` or `schema/` by hand: run `just schemas`.
 - `packages/editor-core` — typed reversible edit operations (TS, shared browser/server).
 - `apps/renderer` — Remotion compositions and the render scripts.
-- `external/`, `models/`, `output/`, `.venvs/`, `sandbox/` — the git-ignored local AI stack, laid
-  out ComfyUI-style (upstream checkouts, category-sorted weight index, generated media, tool venvs,
-  scratch). See docs/setup.md "Local AI stack".
+- `external/`, `models/`, `datasets/`, `output/`, `.venvs/`, `sandbox/` — the git-ignored local AI
+  stack, laid out ComfyUI-style (upstream checkouts, category-sorted weight index, category-sorted
+  *data* index, generated media, tool venvs, scratch). See docs/setup.md "Local AI stack".
+  `datasets/` is built by `just datasets link` from `content_factory.libraries`; `docs/datasets.md`
+  says what each library gives, what it cannot, and what reads it. Note the name collision:
+  `content_factory.datasets` compiles an uploaded CSV into a typed table and is unrelated.
 - `docs/adr/` — twelve ADRs; do not add more without a real decision. `docs/research/` — dated
   official-doc research with URLs.
 

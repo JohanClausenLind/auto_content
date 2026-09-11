@@ -25,6 +25,18 @@ WidgetValue = str | int | float | bool
 class WorkspaceNode(SchemaModel):
     id: str = Field(min_length=1, max_length=64)
     type: str = Field(min_length=1, max_length=64)
+    key: str = Field(default="", max_length=64)
+    """The lane's own name for this step — ``anchor``, ``spokes``, ``frames_gate`` — when this
+    node came from a lane in ``workflows/*.yaml``. Empty for a hand-built node.
+
+    It exists to join a graph to a run. ``run.json`` records what each step did and what it
+    produced keyed by exactly this name (see :mod:`content_factory.services.run_nodes`), and the
+    canvas's own ids are generated per graph, so without it "show me what this node made" could
+    only be answered by matching on stage type — which is ambiguous in every lane that runs one
+    stage twice, and those are the lanes where the answer matters most.
+
+    Not an identity: two graphs built from the same lane share these keys, and that is the point.
+    ``id`` stays the thing links refer to."""
     title: str | None = Field(default=None, max_length=200)
     x: float
     y: float

@@ -1147,7 +1147,10 @@
 .cf-hist__row {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-areas: "name state" "lane meta" "badge badge";
+  /* The subject gets its own full-width row between the name and the lane. It is the line that
+     turns `a20-imageset-owl` into a run somebody recognises, and it needs the width to say a
+     sentence rather than four truncated words. */
+  grid-template-areas: "name state" "subject subject" "lane meta" "badge badge";
   gap: 1px var(--cf-space-2);
   width: 100%;
   padding: var(--cf-space-2);
@@ -1191,6 +1194,22 @@
 }
 .cf-hist__rowstate[data-tone="wait"] {
   color: var(--cf-warn);
+}
+/* A run in progress. Its own colour and a pulse, because the one thing it must not share is the
+   red a failure gets — which is what it read as until the run registry was consulted. */
+.cf-hist__rowstate[data-tone="busy"] {
+  color: var(--cf-accent);
+  animation: cf-hist-pulse 1.6s ease-in-out infinite;
+}
+@keyframes cf-hist-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-hist__rowstate[data-tone="busy"] {
+    animation: none;
+  }
 }
 .cf-hist__rowbadge {
   grid-area: badge;
@@ -1559,4 +1578,470 @@
   background: var(--cf-bg);
   font-size: 0.74rem;
   overflow-wrap: anywhere;
+}
+
+/* --- the history, read by day and by what was in it -------------------------------------------
+ *
+ * 241 rows of directory names is a list nobody can find anything in. A row now says what the run
+ * was rendering, the rows are grouped under the day they were made, and the search box matches
+ * the subject — because "the iceberg one from last night" is how a run is actually remembered.
+ */
+.cf-hist__rowsubject {
+  grid-area: subject;
+  color: var(--cf-fg);
+  font-size: 0.74rem;
+  line-height: 1.25;
+  opacity: 0.82;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cf-hist__day {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: var(--cf-space-2) 0 var(--cf-space-1);
+  padding: 2px var(--cf-space-2);
+  background: var(--cf-panel);
+  color: var(--cf-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cf-hist__search {
+  flex: none;
+  padding: 0 var(--cf-space-2) var(--cf-space-2);
+}
+.cf-hist__searchinput {
+  width: 100%;
+  padding: var(--cf-space-1) var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.78rem;
+}
+.cf-hist__detailsubject {
+  margin: 0 0 2px;
+  font-size: 0.86rem;
+  color: var(--cf-fg);
+}
+
+/* --- which run is on the nodes ----------------------------------------------------------------
+ *
+ * Always on screen, because the graph underneath is showing some other run's drawings and a
+ * canvas that is quietly displaying last night's output is a canvas nobody can trust: what is on
+ * it, when it was made, and the way out.
+ *
+ * Top-LEFT and under the run controls in the stack. The canvas's top centre is already contested
+ * — `.cf-runbar` (Run / Check graph / N active) sits there at z-index 15 and `.cf-check` lands on
+ * top of it at 20 — so a third centred strip would cover the buttons. This is persistent state
+ * rather than a transient result, so it takes the empty corner and yields to the controls.
+ */
+.cf-onnodes {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 14;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cf-space-1) var(--cf-space-2);
+  max-width: min(26rem, calc(100% - 1.5rem));
+  padding: var(--cf-space-1) var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+  box-shadow: var(--cf-shadow-md);
+  font-size: 0.76rem;
+}
+.cf-onnodes__label {
+  color: var(--cf-muted);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cf-onnodes__name {
+  flex-basis: 100%;
+  font-weight: 600;
+  /* Two lines of the subject, then clipped. It is a sentence — "one small iceberg of blue-white
+     ice floating in dark green water" — and one ellipsised line of it says "one small iceberg of
+     blue-wh…", which is not the run anybody recognises. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cf-onnodes__meta {
+  color: var(--cf-muted);
+}
+.cf-onnodes__warn {
+  flex-basis: 100%;
+  color: var(--cf-warn, #d0a020);
+  font-size: 0.72rem;
+}
+.cf-onnodes__nav {
+  display: flex;
+  gap: var(--cf-space-1);
+  margin-left: auto;
+  flex: none;
+}
+.cf-onnodes__nav button {
+  padding: 0 var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-sm, 3px);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.cf-onnodes__nav button:hover {
+  background: var(--cf-hover);
+}
+
+/* --- one node's output ------------------------------------------------------------------------ */
+.cf-nodeout {
+  position: absolute;
+  inset: 0;
+  z-index: 28;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  padding: var(--cf-space-3) var(--cf-space-4) var(--cf-space-4);
+  overflow-y: auto;
+  background: var(--cf-panel);
+}
+.cf-nodeout__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cf-space-2);
+}
+.cf-nodeout__title {
+  margin: 0;
+  font-size: 1rem;
+}
+.cf-nodeout__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cf-space-2);
+  margin: 2px 0 0;
+  color: var(--cf-muted);
+  font-size: 0.76rem;
+}
+.cf-nodeout__tag {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--cf-accent-soft);
+  color: var(--cf-fg);
+  font-size: 0.7rem;
+}
+.cf-nodeout__tag[data-tone="bad"] {
+  background: color-mix(in srgb, var(--cf-danger, #c02323) 30%, transparent);
+}
+.cf-nodeout__close {
+  flex: none;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font: inherit;
+  padding: 0 var(--cf-space-2);
+  cursor: pointer;
+}
+.cf-nodeout__error {
+  margin: 0;
+  padding: var(--cf-space-2);
+  border-radius: var(--cf-radius-md);
+  background: color-mix(in srgb, var(--cf-danger, #c02323) 18%, transparent);
+  font-family: var(--cf-mono, monospace);
+  font-size: 0.74rem;
+  white-space: pre-wrap;
+}
+.cf-nodeout__hint,
+.cf-nodeout__empty {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.78rem;
+}
+.cf-nodeout__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cf-space-1) var(--cf-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cf-nodeout__facts li {
+  display: flex;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--cf-border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+.cf-nodeout__factkey {
+  color: var(--cf-muted);
+}
+.cf-nodeout__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-3);
+}
+.cf-nodeout__grouptitle {
+  margin: 0 0 var(--cf-space-1);
+  font-size: 0.8rem;
+  color: var(--cf-muted);
+}
+.cf-nodeout__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--cf-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cf-nodeout__grid img {
+  width: 100%;
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+}
+.cf-nodeout__caption,
+.cf-nodeout__size {
+  display: block;
+  color: var(--cf-muted);
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
+}
+.cf-nodeout__video video {
+  max-width: min(100%, 40rem);
+  border-radius: var(--cf-radius-md);
+}
+.cf-nodeout__video figcaption {
+  color: var(--cf-muted);
+  font-size: 0.74rem;
+}
+.cf-nodeout__audio,
+.cf-nodeout__files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cf-nodeout__audio audio {
+  width: min(100%, 28rem);
+}
+.cf-nodeout__filename {
+  display: block;
+  font-size: 0.74rem;
+  overflow-wrap: anywhere;
+}
+.cf-nodeout__files li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cf-space-2);
+  font-size: 0.76rem;
+}
+.cf-nodeout__debugtoggle {
+  align-self: flex-start;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  color: var(--cf-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  padding: var(--cf-space-1) var(--cf-space-2);
+  cursor: pointer;
+}
+
+/* --- what the vision model saw ---------------------------------------------------------------- */
+.cf-airev {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  margin-top: var(--cf-space-3);
+  padding: var(--cf-space-3);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+}
+.cf-airev__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cf-space-2);
+}
+.cf-airev__title {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.cf-airev__ask {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-accent-soft);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: var(--cf-space-1) var(--cf-space-3);
+  cursor: pointer;
+}
+.cf-airev__ask:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.cf-airev__lead,
+.cf-airev__pending,
+.cf-airev__markhint {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.76rem;
+}
+.cf-airev__problem,
+.cf-airev__stale {
+  margin: 0;
+  padding: var(--cf-space-2);
+  border-radius: var(--cf-radius-md);
+  font-size: 0.78rem;
+}
+.cf-airev__problem {
+  background: color-mix(in srgb, var(--cf-danger, #c02323) 18%, transparent);
+}
+.cf-airev__stale {
+  background: color-mix(in srgb, var(--cf-warn, #d0a020) 20%, transparent);
+}
+.cf-airev__set {
+  padding: var(--cf-space-2);
+  border-left: 3px solid var(--cf-danger, #c02323);
+  background: var(--cf-panel);
+}
+.cf-airev__set[data-same] {
+  border-left-color: var(--cf-accent);
+}
+.cf-airev__verdict {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.84rem;
+}
+.cf-airev__summary {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+}
+.cf-airev__changeslabel,
+.cf-airev__provlabel {
+  margin: var(--cf-space-2) 0 2px;
+  color: var(--cf-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cf-airev__changes,
+.cf-airev__issues {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+}
+.cf-airev__drift {
+  margin: var(--cf-space-2) 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.cf-airev__frames {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cf-airev__frame {
+  padding-left: var(--cf-space-2);
+  border-left: 2px solid var(--cf-border);
+}
+.cf-airev__frame[data-severity="wrong"] {
+  border-left-color: var(--cf-danger, #c02323);
+}
+.cf-airev__frame[data-severity="minor"] {
+  border-left-color: var(--cf-warn, #d0a020);
+}
+.cf-airev__id {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cf-space-2);
+  margin: 0;
+  font-size: 0.74rem;
+}
+.cf-airev__sev {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--cf-accent-soft);
+  font-size: 0.68rem;
+}
+.cf-airev__sev[data-severity="wrong"] {
+  background: color-mix(in srgb, var(--cf-danger, #c02323) 30%, transparent);
+}
+/* `shows` is the load-bearing line: it is what the model says is in the picture, and reading it
+   against the thumbnail is the only check there is on the reviewer. So it gets the body size. */
+.cf-airev__shows {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+}
+.cf-airev__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cf-space-2);
+}
+.cf-airev__mark {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: var(--cf-space-1) var(--cf-space-2);
+  cursor: pointer;
+}
+.cf-airev__prov {
+  color: var(--cf-muted);
+  font-size: 0.74rem;
+}
+.cf-airev__intent {
+  margin: 0;
+  max-height: 12rem;
+  overflow: auto;
+  padding: var(--cf-space-2);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+}
+.cf-airev__provline {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The model's description on the frame card itself, beside the picture it is about. */
+.cf-review__opinion {
+  margin: var(--cf-space-1) 0 0;
+  font-size: 0.76rem;
+  border-left: 2px solid var(--cf-border);
+  padding-left: var(--cf-space-2);
+}
+.cf-review__opinion[data-severity="wrong"] {
+  border-left-color: var(--cf-danger, #c02323);
+}
+.cf-review__opinionlabel {
+  color: var(--cf-muted);
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  margin-right: 4px;
 }

@@ -78,9 +78,7 @@ nodes:
     values:
       model: hidream-o1
       prompt: "the scene exactly as the control passes stage it, held in one consistent look"
-      style: >
-        cinematic practical-camera photography, natural light, shallow depth of field, filmic
-        grading, physically plausible surfaces, no video-game gloss, no illustration
+      style: cinematic
     note: One anchor per shot keyframe, conditioned on the passes rather than on a described camera.
   - key: motion
     type: generate_video

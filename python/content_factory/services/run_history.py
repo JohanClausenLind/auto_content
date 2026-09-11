@@ -28,19 +28,28 @@ which reads the same reports for their timings.
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
-from content_factory.services import frame_reviews
+from content_factory.services import frame_reviews, run_nodes
 from content_factory.services.durations import infer_workflow
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 Kind = Literal["image", "video", "audio", "text", "data"]
-Outcome = Literal["complete", "review", "blocked", "stopped", "failed"]
-"""The five states a run ends in. `review` and `blocked` both mean "a person has to look", and
-they are kept apart because a gate is a planned stop and a block is a stage that gave up."""
+Outcome = Literal["running", "complete", "review", "blocked", "stopped", "failed"]
+"""What a run is, or the state it ended in.
+
+`review` and `blocked` both mean "a person has to look", and they are kept apart because a gate is
+a planned stop and a block is a stage that gave up.
+
+`running` needs the run registry rather than the report, and without it a healthy run in progress
+read as **failed**: a report is written after every step and only carries `passed` at the very
+end, so mid-flight it is indistinguishable from a run whose last stage gave up. That was visible
+in the workspace the moment a run was watched from it — the history row for a lane that was
+drawing frames said `failed` in red.
+"""
 
 MEDIA_TYPES: dict[str, tuple[Kind, str]] = {
     ".png": ("image", "image/png"),
@@ -84,7 +93,14 @@ _ROLE_BY_PATH: tuple[tuple[str, str], ...] = (
 # Files the runner writes so a stage can be re-run safely, not files a run produced. Measured on
 # a finished picture story: **85 of its 125 JSON files** were `<frame>.done.json` markers, which
 # would have made the "text and data" list of a six-picture story 130 rows of bookkeeping.
-_MARKER_NAMES = frozenset({"manifest.json", "chain.json", "job.json", "bundle.json"})
+#
+# `pins.json` and `run.json` join them because they are the run's own paperwork: the report is
+# what this module is *reading*, and listing it among the run's outputs put the bookkeeping in
+# the review panel next to the film. `controls/<shot>/run.json` is caught by the same name and
+# that is the right answer too — it is the control compiler's marker, not a deliverable.
+_MARKER_NAMES = frozenset(
+    {"manifest.json", "chain.json", "job.json", "bundle.json", "pins.json", "run.json"}
+)
 
 
 def _is_marker(relative: str) -> bool:
@@ -112,6 +128,15 @@ class RunOutput:
     role: str
     bytes: int
     content_type: str
+    node: str | None = None
+    """The step that made it, so the canvas can hang it off that node the way ComfyUI does.
+    ``None`` when neither the run's own record nor the path table could place it — see
+    :mod:`content_factory.services.run_nodes`, which never guesses between two candidates."""
+    stage: str | None = None
+    attribution: run_nodes.Attribution | None = None
+    """``recorded`` when the run observed which step wrote this file, ``inferred`` when the path
+    said so. Carried per file because the same run can hold both: a resumed run records the steps
+    it re-ran and inherits the path guess for the ones it did not."""
 
 
 @dataclass(frozen=True)
@@ -140,6 +165,17 @@ class RunRecord:
     question the history is opened with. It is not the same as `outcome == "review"`: a run whose
     frames were all rejected is also parked at the gate, and what it needs is a redraw, not a
     reviewer."""
+    subject: str | None = None
+    """What the run was rendering, in the operator's own words.
+
+    On every row, including the cheap list, because without it a history of 241 runs is a list of
+    directory names: `a20-imageset-owl`, `m04-picture-story-24`, `h06-kiln`. Those say which lane
+    ran and nothing about what came out of it, which is the thing somebody scanning for
+    yesterday's work is actually looking for. One extra file read per row, and only for a run
+    whose report did not already carry a brief (:func:`run_nodes.subject`)."""
+    nodes: list[run_nodes.NodeRecord] = field(default_factory=list)
+    """The run's steps, each with the files it produced. Only on the detail view: it is the
+    per-node output list, and building it means having walked the outputs."""
 
     @property
     def film(self) -> str | None:
@@ -158,12 +194,26 @@ class RunRecord:
         images = [o for o in self.outputs if o.kind == "image" and o.role not in DEBUG_ROLES]
         return images[0].path if images else None
 
+    @property
+    def unattributed(self) -> int:
+        """Files no step claimed. Reported rather than hidden: on the 241 runs that predate
+        per-node recording it is the difference between "this node made nothing" and "nobody
+        wrote down which node made this", and a panel that conflated the two would send somebody
+        looking for a fault at the wrong step.
+
+        Markers are not counted. A `.done.json` or the run's own `run.json` having no node is not
+        information about the run, and counting them would put a floor of a dozen under every
+        row — which is exactly how a number meant to be noticed stops being noticed."""
+        return sum(1 for o in self.outputs if o.node is None and o.role != "marker")
+
     def as_dict(self) -> dict[str, Any]:
         return {
-            **{k: v for k, v in asdict(self).items() if k != "outputs"},
+            **{k: v for k, v in asdict(self).items() if k not in {"outputs", "nodes"}},
             "outputs": [asdict(o) for o in self.outputs],
+            "nodes": [n.as_dict() for n in self.nodes],
             "film": self.film,
             "poster": self.poster,
+            "unattributed": self.unattributed,
         }
 
 
@@ -293,12 +343,22 @@ def _rank(output: RunOutput) -> tuple[int, int, str]:
     return (1 if output.role in DEBUG_ROLES else 0, kind_rank.get(output.kind, 5), output.path)
 
 
-def run_outputs(run_dir: Path, *, limit: int = MAX_OUTPUTS) -> tuple[list[RunOutput], int]:
+def run_outputs(
+    run_dir: Path,
+    *,
+    limit: int = MAX_OUTPUTS,
+    report: dict[str, Any] | None = None,
+    workflow: str | None = None,
+) -> tuple[list[RunOutput], int]:
     """What a run produced, and how many files that is before truncation.
 
     The manifest is used where it exists **and** the scan is still run, because a manifest lists
     the *deliverable* — the film, the narration, the captions — and says nothing about the six
     anchor drawings, which for a run blocked at review are the only thing there is to look at.
+
+    Given the ``report``, every file also carries the step that made it. That attribution is done
+    over the whole set before truncation, so which files get a node does not depend on where the
+    cap fell.
     """
     found: dict[str, RunOutput] = {}
     for deliverable in sorted((run_dir / "deliverables").glob("*")):
@@ -307,17 +367,43 @@ def run_outputs(run_dir: Path, *, limit: int = MAX_OUTPUTS) -> tuple[list[RunOut
                 found[entry.path] = entry
     for entry in _by_scan(run_dir):
         found.setdefault(entry.path, entry)  # the manifest's own account wins on a collision
+    if report is not None:
+        placed = run_nodes.attribute(report, list(found), workflow=workflow)
+        for path, (node, stage, how) in placed.items():
+            found[path] = replace(found[path], node=node, stage=stage, attribution=how)
     ordered = sorted(found.values(), key=_rank)
     return ordered[:limit], len(ordered)
 
 
-def _outcome(report: dict, stages: list[dict]) -> Outcome:
-    """What happened, in the four words that want four different responses.
+def live_project_dirs() -> frozenset[Path]:
+    """The project directories of runs whose process is alive right now.
+
+    Read once per listing and passed down, not per row: it is a directory of small JSON files and
+    a history of 241 rows should not stat all of them 241 times.
+
+    ``prune=False`` matters. The pruning form deletes the registry files of dead runs, and this
+    module promises to write nothing — a page refresh must not be able to clean up after a run.
+    """
+    from content_factory.runners.registry import active_runs
+
+    try:
+        # `project_dir` is a plain string on the registry record, not a Path.
+        return frozenset(Path(run.project_dir).resolve() for run in active_runs(prune=False))
+    except OSError:
+        return frozenset()
+
+
+def _outcome(report: dict, stages: list[dict], *, running: bool = False) -> Outcome:
+    """What happened, in the words that want different responses.
 
     A human review gate records neither `blocked` nor `blocked_at` — it raises like any other
     stage failure — so without this check the six picture stories and six image sets parked at
     `review_frames` with their drawings finished all read as **failed**. They are waiting for
     somebody to look, which is the opposite of a defect.
+
+    ``running`` comes from the run registry, and it is checked after the three terminal fields
+    but before the stage records: a run still registered has by definition not written `passed`,
+    and reading its half-finished report the usual way calls a working run failed.
     """
     if report.get("passed"):
         return "complete"
@@ -325,6 +411,8 @@ def _outcome(report: dict, stages: list[dict]) -> Outcome:
         return "stopped"
     if report.get("blocked_at"):
         return "blocked"
+    if running:
+        return "running"
     last = stages[-1] if stages else None
     if last is not None and not last.get("ok"):
         from content_factory.deliverables.dag_compiler import human_gate_stages
@@ -334,7 +422,13 @@ def _outcome(report: dict, stages: list[dict]) -> Outcome:
     return "failed"
 
 
-def _record(report_path: Path, root: Path, *, with_outputs: bool) -> RunRecord | None:
+def _record(
+    report_path: Path,
+    root: Path,
+    *,
+    with_outputs: bool,
+    live: frozenset[Path] = frozenset(),
+) -> RunRecord | None:
     try:
         report = json.loads(report_path.read_text())
     except (OSError, ValueError):
@@ -356,12 +450,33 @@ def _record(report_path: Path, root: Path, *, with_outputs: bool) -> RunRecord |
         workflow = infer_workflow([s["stage"] for s in stages if isinstance(s.get("stage"), str)])
     outputs: list[RunOutput] = []
     total = 0
+    nodes: list[run_nodes.NodeRecord] = []
     if with_outputs:
-        outputs, total = run_outputs(run_dir)
+        outputs, total = run_outputs(run_dir, report=report, workflow=workflow)
+        # Each node's list is drawn from the outputs, not from the report's recorded paths: a
+        # path the run wrote and something later cleared away would otherwise become a link the
+        # panel offers and the file route 404s. `outputs_total` keeps the run's own count, so a
+        # node that wrote 2,904 files still says so while showing the ones that are there.
+        by_node: dict[str, list[str]] = {}
+        for output in outputs:
+            if output.node is not None:
+                by_node.setdefault(output.node, []).append(output.path)
+        nodes = [
+            replace(
+                record,
+                outputs=by_node.get(record.node, []),
+                outputs_total=(
+                    record.outputs_total
+                    if record.attribution == "recorded"
+                    else len(by_node.get(record.node, []))
+                ),
+            )
+            for record in run_nodes.node_records(report, workflow=workflow)
+        ]
     return RunRecord(
         run_id=run_id,
         workflow=workflow,
-        outcome=_outcome(report, stages),
+        outcome=_outcome(report, stages, running=run_dir.resolve() in live),
         finished_at=report_path.stat().st_mtime,
         seconds=round(sum(float(s.get("seconds") or 0.0) for s in stages), 1),
         stages=len(stages),
@@ -374,6 +489,8 @@ def _record(report_path: Path, root: Path, *, with_outputs: bool) -> RunRecord |
         outputs=outputs,
         outputs_total=total,
         awaiting_review=frame_reviews.waiting_frames(run_dir),
+        subject=run_nodes.subject(run_dir, report),
+        nodes=nodes,
     )
 
 
@@ -387,10 +504,11 @@ def list_runs(*, root: Path | None = None, limit: int = 100) -> list[RunRecord]:
     root = (root or history_root()).resolve()
     if not root.is_dir():
         return []
+    live = live_project_dirs()  # once for the whole listing, not once per row
     records = [
         record
         for path in root.rglob("run.json")
-        if (record := _record(path, root, with_outputs=False)) is not None
+        if (record := _record(path, root, with_outputs=False, live=live)) is not None
     ]
     records.sort(key=lambda r: r.finished_at, reverse=True)
     return records[:limit]
@@ -407,7 +525,7 @@ def get_run(run_id: str, *, root: Path | None = None) -> RunRecord | None:
         *([run_dir / "run.json"] if (run_dir / "run.json").is_file() else []),
     ]
     for report_path in reports:
-        record = _record(report_path, root, with_outputs=True)
+        record = _record(report_path, root, with_outputs=True, live=live_project_dirs())
         if record is not None:
             return record
     return None

@@ -1,5 +1,16 @@
 import type { RunNode } from "@content-factory/pipeline-canvas";
-import type { ActionItem, HistoryRun, HistoryRunDetail, RunDetail, RunEta, RunReviewPage, RunSummary } from "../../src/api/types";
+import type {
+  ActionItem,
+  AiSetReview,
+  HistoryRun,
+  HistoryRunDetail,
+  RunDetail,
+  RunEta,
+  RunOutput,
+  RunReviewPage,
+  RunStep,
+  RunSummary,
+} from "../../src/api/types";
 
 export function makeNode(overrides: Partial<RunNode> & Pick<RunNode, "node_id" | "stage">): RunNode {
   return {
@@ -69,6 +80,7 @@ export function makeRunDetail(overrides: Partial<RunDetail> = {}): RunDetail {
 export function makeHistoryRun(overrides: Partial<HistoryRun> & Pick<HistoryRun, "run_id">): HistoryRun {
   return {
     workflow: "audio-picture-story",
+    subject: "a single open pine cone, brown and woody, alone on bare pale sand",
     outcome: "complete",
     finished_at: 1_757_520_000,
     seconds: 228.1,
@@ -85,21 +97,117 @@ export function makeHistoryRun(overrides: Partial<HistoryRun> & Pick<HistoryRun,
 
 export const HISTORY_RUNS: HistoryRun[] = [
   makeHistoryRun({ run_id: "overnight~ps1c-pinecone" }),
-  makeHistoryRun({ run_id: "overnight~ps2c-amber", outcome: "review", stages_ok: 5, stages: 6, seconds: 203.7, awaiting_review: 2 }),
-  makeHistoryRun({ run_id: "local-runs~single-image", workflow: "single-image", outcome: "failed", stages_ok: 1, stages: 4, seconds: 56.7, outputs_total: 2 }),
+  makeHistoryRun({
+    run_id: "overnight~ps2c-amber",
+    subject: "one rough irregular lump of unpolished amber with a small insect inside it",
+    outcome: "review",
+    stages_ok: 5,
+    stages: 6,
+    seconds: 203.7,
+    awaiting_review: 2,
+  }),
+  makeHistoryRun({ run_id: "local-runs~single-image", workflow: "single-image", subject: "a wet river pebble, banded grey and rust, studio light", outcome: "failed", stages_ok: 1, stages: 4, seconds: 56.7, outputs_total: 2 }),
 ];
+
+/** One file of a run, with the step that made it. `node` is the lane's key, which is the join
+ *  onto the canvas — see `workspace/nodeOutputs.ts`. */
+function output(overrides: Partial<RunOutput> & Pick<RunOutput, "path" | "kind">): RunOutput {
+  return {
+    role: "other",
+    bytes: 1024,
+    content_type: "application/octet-stream",
+    node: null,
+    stage: null,
+    attribution: "recorded",
+    ...overrides,
+  };
+}
+
+export function makeRunStep(overrides: Partial<RunStep> & Pick<RunStep, "node" | "stage">): RunStep {
+  return {
+    ok: true,
+    pinned: false,
+    blocked: false,
+    ran: true,
+    seconds: 1.0,
+    error: null,
+    facts: {},
+    outputs: [],
+    outputs_total: 0,
+    attribution: "recorded",
+    ...overrides,
+  };
+}
 
 export const HISTORY_DETAIL: HistoryRunDetail = {
   ...HISTORY_RUNS[0]!,
   film: "deliverables/dlv_short0000001/exports/final.mp4",
   poster: "deliverables/dlv_short0000001/anchors/frames/0000.png",
-  outputs: [
-    { path: "deliverables/dlv_short0000001/exports/final.mp4", kind: "video", role: "video", bytes: 1_870_876, content_type: "video/mp4" },
-    { path: "deliverables/dlv_short0000001/anchors/frames/0000.png", kind: "image", role: "anchor", bytes: 812_000, content_type: "image/png" },
-    { path: "deliverables/dlv_short0000001/audio/narration-mastered.wav", kind: "audio", role: "audio", bytes: 2_879_118, content_type: "audio/wav" },
-    { path: "deliverables/dlv_short0000001/captions/captions.srt", kind: "text", role: "caption", bytes: 797, content_type: "text/plain" },
-    { path: "deliverables/dlv_short0000001/controls/shot_a/pose_skeleton/frames/0000.png", kind: "image", role: "control", bytes: 40_000, content_type: "image/png" },
+  unattributed: 0,
+  // Keyed by the lane's own node names, the way `run.json` records them: `anchor` drew the
+  // picture, `cut` made the film, `mix` mastered the voice. The canvas joins on these.
+  nodes: [
+    makeRunStep({
+      node: "anchor",
+      stage: "generate_anchor",
+      seconds: 48.1,
+      facts: { backend: "hidream-o1", attempts: 3 },
+      outputs: ["deliverables/dlv_short0000001/anchors/frames/0000.png"],
+      outputs_total: 1,
+    }),
+    makeRunStep({ node: "mix", stage: "mix_audio", seconds: 4.2, outputs_total: 1 }),
+    makeRunStep({ node: "cut", stage: "compose_video", seconds: 31.5, outputs_total: 2 }),
+    // A step the lane has that this run did not reach — as a `--from` resume leaves it.
+    makeRunStep({ node: "pack", stage: "compile_destination_packages", ok: false, ran: false }),
   ],
+  outputs: [
+    output({ path: "deliverables/dlv_short0000001/exports/final.mp4", kind: "video", role: "video", bytes: 1_870_876, content_type: "video/mp4", node: "cut", stage: "compose_video" }),
+    output({ path: "deliverables/dlv_short0000001/anchors/frames/0000.png", kind: "image", role: "anchor", bytes: 812_000, content_type: "image/png", node: "anchor", stage: "generate_anchor" }),
+    output({ path: "deliverables/dlv_short0000001/audio/narration-mastered.wav", kind: "audio", role: "audio", bytes: 2_879_118, content_type: "audio/wav", node: "mix", stage: "mix_audio" }),
+    output({ path: "deliverables/dlv_short0000001/captions/captions.srt", kind: "text", role: "caption", bytes: 797, content_type: "text/plain", node: "cut", stage: "compose_video" }),
+    output({ path: "deliverables/dlv_short0000001/controls/shot_a/pose_skeleton/frames/0000.png", kind: "image", role: "control", bytes: 40_000, content_type: "image/png", node: "anchor", stage: "generate_anchor" }),
+  ],
+};
+
+/** What the vision model said about the amber set: one frame is a different object.
+ *
+ * Shaped like a real answer, including the thing that makes one useful — `shows` describing what
+ * is in the picture rather than repeating the brief, which is how a reader tells the model looked.
+ */
+export const AI_REVIEW: AiSetReview = {
+  deliverable_id: "dlv_short0000001",
+  reviewed_at: "2026-09-11T09:28:43.627613+00:00",
+  model_alias: "local_structured_quality",
+  model_id: "qwen3.6-27b-heretic:Q4_K_M",
+  intent: "Subject: one rough irregular lump of unpolished amber with a small insect inside it",
+  frames: [
+    {
+      frame_id: "shot_9ff49b91f418:0000",
+      shows: "a translucent orange lump of amber on plain ground, an insect visible inside it",
+      matches_intent: true,
+      issues: [],
+      severity: "fine",
+    },
+    {
+      frame_id: "shot_d3f50497205c:0000",
+      shows: "a polished honey-coloured glass bead, no insect, on a reflective surface",
+      matches_intent: false,
+      issues: ["a different object from the other frame: glass rather than amber, and polished"],
+      severity: "wrong",
+    },
+  ],
+  set: {
+    same_world: false,
+    what_changes: ["the material changes from rough amber to polished glass"],
+    drifting_frames: ["shot_d3f50497205c:0000"],
+    summary: "the second frame is a different object; the first is what was asked for",
+  },
+  digests: { "shot_9ff49b91f418:0000": "a".repeat(64), "shot_d3f50497205c:0000": "b".repeat(64) },
+  elapsed_s: 42.7,
+  input_tokens: 2910,
+  output_tokens: 1168,
+  current: true,
+  flagged: ["shot_d3f50497205c:0000"],
 };
 
 /** The frame-review gate of the run parked at it: two drawings, one measurement flagged.
@@ -113,6 +221,7 @@ export const REVIEW_PAGE: RunReviewPage = {
   project_dir: "/home/vega/git/auto_content/output/overnight/ps2c-amber",
   resume_command:
     "content-factory run-local audio-picture-story --project-dir /home/vega/git/auto_content/output/overnight/ps2c-amber --from review_frames",
+  ai_reviews: {},
   reviews: [
     {
       deliverable: "dlv_short0000001",
@@ -131,6 +240,7 @@ export const REVIEW_PAGE: RunReviewPage = {
           frame_id: "shot_9ff49b91f418:0000",
           verdict: "unreviewed",
           reason: "",
+          redirect: "",
           image: "deliverables/dlv_short0000001/anchors/shot_9ff49b91f418/0000.png",
           png_sha256: "a".repeat(64),
           on_disk: true,
@@ -143,6 +253,7 @@ export const REVIEW_PAGE: RunReviewPage = {
           frame_id: "shot_d3f50497205c:0000",
           verdict: "unreviewed",
           reason: "",
+          redirect: "",
           image: "deliverables/dlv_short0000001/anchors/shot_d3f50497205c/0000.png",
           png_sha256: "b".repeat(64),
           on_disk: true,

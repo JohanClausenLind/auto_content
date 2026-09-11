@@ -4,7 +4,8 @@ The definitions in ``workflows/*.yaml`` are the single source of truth: this mod
 through ``content_factory.workflows.catalog`` rather than keeping its own copy of what a workflow
 is. It used to keep one, and it drifted from the canvas's copy in every way a duplicated definition
 can. Stages that need GPU servers start them through services/local.py. Each run writes
-``run.json`` (per-stage hashes, facts, timings) next to the deliverable.
+``run.json`` (per-stage hashes, facts, timings, and the files each node left behind — observed by
+``runners/attribution.py``, because no stage executor reports its own) next to the deliverable.
 
 Steps are keyed by NODE KEY, not by stage, so a workflow may use one stage twice with different
 parameters. The stage-keyed table this replaced silently collapsed those.
@@ -21,7 +22,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
-from content_factory.runners import pins
+from content_factory.runners import attribution, pins
 from content_factory.runners.registry import RunHandle, RunStopped, register_run
 from content_factory.schemas.dag import Stage
 from content_factory.schemas.fixtures import sample_campaign
@@ -305,6 +306,28 @@ def _release_gpu_if_idle(log=print) -> dict | None:
     return freed
 
 
+def _recorded_outputs(report_path: Path) -> dict[str, dict[str, Any]]:
+    """What each node was last seen to produce, by node key, from the report already on disk.
+
+    Read for one reason: a **pinned** node executes nothing this run, so the walk observes no
+    files for it — and a canvas that then showed the frozen node as having produced nothing would
+    be saying the opposite of what a pin means. The paths are carried forward from the run that
+    did produce them, which is the same carry-forward :func:`_merged_step_record` does for widget
+    values and for the same reason.
+    """
+    if not report_path.is_file():
+        return {}
+    try:
+        stages = json.loads(report_path.read_text()).get("stages") or []
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for entry in stages:
+        if isinstance(entry, dict) and entry.get("node") and isinstance(entry.get("outputs"), dict):
+            out[str(entry["node"])] = entry["outputs"]
+    return out
+
+
 def _run_steps(
     steps: Sequence[Step],
     ctx: StageContext,
@@ -319,6 +342,37 @@ def _run_steps(
     pinned = pinned or {}
     durations.refresh()  # once per run, so a long process estimates from history it helped write
     _log_eta_header(steps, workflow, log)
+    # What each step leaves behind, observed rather than reported: no stage executor knows its own
+    # file list, and the history needs one to answer "which node made this picture". See
+    # runners/attribution.py — the walk costs ~21 ms against stages that cost 48 s to 608 s.
+    carried = _recorded_outputs(report_path)
+    before = attribution.snapshot(ctx.project_dir)
+
+    # The run's own paperwork, which the walk would otherwise hand to whichever step happened to
+    # run last: `run.json` is rewritten after *every* step, and `pins.json` is the operator's.
+    # Named as relative paths rather than by filename, because `controls/<shot>/run.json` is a
+    # real output of the control compiler and has to keep belonging to it.
+    own_files = {
+        path.relative_to(ctx.project_dir).as_posix()
+        for path in (report_path, report_path.parent / pins.PINS_FILENAME)
+        if path.is_relative_to(ctx.project_dir)
+    }
+
+    def observe() -> dict[str, Any]:
+        """What the step that just ran left behind, and roll the baseline forward.
+
+        Called on every exit from a step, not only the successful one. A **blocked** step is the
+        case that matters most: ``review_frames`` stops the run, and the contact sheet and batch
+        it wrote are exactly what the person it stopped for needs to see. A **failed** step often
+        leaves partial output too, and that is the evidence for why it failed.
+        """
+        nonlocal before
+        current = attribution.snapshot(ctx.project_dir)
+        touched = [p for p in attribution.changed(before, current) if p not in own_files]
+        record = attribution.node_files(touched).as_record()
+        before = current
+        return record
+
     for index, (node_key, stage, stage_params) in enumerate(steps):
         pin = pinned.get(node_key)
         if pin is not None:
@@ -331,6 +385,7 @@ def _run_steps(
                     "node": node_key,
                     "ok": True,
                     "pinned": True,
+                    **({"outputs": carried[node_key]} if node_key in carried else {}),
                     "seconds": 0.0,
                     "outputs_hash": pin.outputs_hash,
                     "facts": pin.facts,
@@ -388,6 +443,7 @@ def _run_steps(
                 "seconds": round(time.monotonic() - started, 1),
                 "error": f"{type(exc).__name__}: {exc}",
                 "traceback": traceback.format_exc()[-4000:],
+                "outputs": observe(),
             }
             if blocked is not None:
                 record["blocked"] = blocked
@@ -405,6 +461,7 @@ def _run_steps(
                 "seconds": seconds,
                 "outputs_hash": out.outputs_hash,
                 "facts": out.facts,
+                "outputs": observe(),
             }
         )
         _write_report(report_path, report)

@@ -1,0 +1,325 @@
+[
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 20.953016,
+  "filename": "texture/calm_texture_air.flac",
+  "moods": [
+   "texture",
+   "airy",
+   "shimmer",
+   "light",
+   "loop",
+   "barely-music"
+  ],
+  "sha256": "85bb2d7a9cd56cc24591e5a4037d8fd6f3c5a0519df07f768c761b9c217a6de4",
+  "track_id": "calm_texture_air"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 9.0,
+  "filename": "texture/calm_texture_deep.flac",
+  "moods": [
+   "texture",
+   "deep",
+   "low",
+   "weight",
+   "loop",
+   "barely-music"
+  ],
+  "sha256": "9930bd8a59bbc0d712a6d65fe4f11ae79a830e63a1b09f9f9dfe50788202a532",
+  "track_id": "calm_texture_deep"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 12.106213,
+  "filename": "texture/calm_texture_glass.flac",
+  "moods": [
+   "texture",
+   "glass",
+   "sparse",
+   "delicate",
+   "loop",
+   "barely-music"
+  ],
+  "sha256": "38ae6f8cf6f9fb81e1899971ad20931ccec41609621581de74dc6eea8599f5c3",
+  "track_id": "calm_texture_glass"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 23.600091,
+  "filename": "texture/calm_texture_warm.flac",
+  "moods": [
+   "texture",
+   "drone",
+   "warm",
+   "ambient",
+   "loop",
+   "barely-music"
+  ],
+  "sha256": "b297c95a167d76f4d982933021ccfb091a3c3cd9edd2f8e878057527fbedef62",
+  "track_id": "calm_texture_warm"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 32.751746,
+  "filename": "explainer/corporate_uplift_soft.flac",
+  "moods": [
+   "explainer",
+   "corporate",
+   "uplifting",
+   "inspirational",
+   "warm",
+   "restrained"
+  ],
+  "sha256": "067be5fdd29d3fe834dc05e2a93745df0d85a80828f34f12e4ce841eaebe4887",
+  "track_id": "corporate_uplift_soft"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 72.840998,
+  "filename": "explainer/data_calm_pulse.flac",
+  "moods": [
+   "explainer",
+   "data",
+   "charts",
+   "quiet",
+   "pulse",
+   "focus"
+  ],
+  "sha256": "e6f132a75cc434c6721a2b7c8a3274abc99f3d4126383fdb3883beb79716d1af",
+  "track_id": "data_calm_pulse"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 37.279637,
+  "filename": "documentary/doc_hopeful_resolve.flac",
+  "moods": [
+   "documentary",
+   "hopeful",
+   "resolve",
+   "ending",
+   "warm",
+   "strings"
+  ],
+  "sha256": "3fd9ee9ed9b8baa17814f25bac10e174da8d3c05905206fc46be0cd4121a61fa",
+  "track_id": "doc_hopeful_resolve"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 25.82059,
+  "filename": "tension/doc_investigative_pulse.flac",
+  "moods": [
+   "tension",
+   "pulse",
+   "investigative",
+   "ticking",
+   "steady",
+   "underscore"
+  ],
+  "sha256": "0fcf079e4102d8ed989bf33dad22eb9bad96828d5926e242bd0121feada81341",
+  "track_id": "doc_investigative_pulse"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 42.678277,
+  "filename": "documentary/doc_piano_felt.flac",
+  "moods": [
+   "documentary",
+   "piano",
+   "felt",
+   "sparse",
+   "intimate",
+   "underscore"
+  ],
+  "sha256": "3611766085a1c4f801357be50d09df8a12fc25785ee9384b18c6ec5353d1d97a",
+  "track_id": "doc_piano_felt"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 45.812971,
+  "filename": "documentary/doc_solemn_low.flac",
+  "moods": [
+   "documentary",
+   "solemn",
+   "cello",
+   "historical",
+   "grave",
+   "underscore"
+  ],
+  "sha256": "633ecc8a4f20394ff23709eb74abe82fac6b741e38f6b092f7788a9f75e4df69",
+  "track_id": "doc_solemn_low"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 44.849342,
+  "filename": "documentary/doc_strings_piano_arc.flac",
+  "moods": [
+   "documentary",
+   "arc",
+   "build",
+   "strings",
+   "piano",
+   "pacing"
+  ],
+  "sha256": "aa570bb0849b1ffd76ac3d2c94c1bfd99e712e778961e08ea647217699cbb859",
+  "track_id": "doc_strings_piano_arc"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 32.391837,
+  "filename": "documentary/doc_strings_reflective.flac",
+  "moods": [
+   "documentary",
+   "strings",
+   "classical",
+   "reflective",
+   "calm",
+   "underscore"
+  ],
+  "sha256": "b41f659d21908ae1e4cbb98bc2dfe605a461a2e928de5eb44c58155eb8d0a635",
+  "track_id": "doc_strings_reflective"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 82.941678,
+  "filename": "tension/doc_tension_slow_build.flac",
+  "moods": [
+   "tension",
+   "build",
+   "suspense",
+   "science",
+   "underscore"
+  ],
+  "sha256": "56c89be0269b52327445e34ac405c3d72198dc22000d6c6c7266d3edf6a49841",
+  "track_id": "doc_tension_slow_build"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 22.915102,
+  "filename": "tension/doc_unease_drone.flac",
+  "moods": [
+   "tension",
+   "drone",
+   "unease",
+   "dark",
+   "texture",
+   "underscore"
+  ],
+  "sha256": "4ec5ef6f84b002f68af89cbc883d83d8dbf20b417f8a91755e3fc89d31f57f59",
+  "track_id": "doc_unease_drone"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 43.200726,
+  "filename": "explainer/explainer_light_pulse.flac",
+  "moods": [
+   "explainer",
+   "light",
+   "positive",
+   "pulse",
+   "corporate"
+  ],
+  "sha256": "c4989dd4eb63b84153d28d6124b52944aaf54cf15ff0f47246435536baf93da5",
+  "track_id": "explainer_light_pulse"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 77.217959,
+  "filename": "explainer/explainer_neutral_marimba.flac",
+  "moods": [
+   "explainer",
+   "neutral",
+   "marimba",
+   "steady",
+   "unobtrusive"
+  ],
+  "sha256": "3a18ca19df810af7d16ddf26bc18f5b6e64fa70b0b8794256282c156de03fd17",
+  "track_id": "explainer_neutral_marimba"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 51.21161,
+  "filename": "human/human_bittersweet_strings.flac",
+  "moods": [
+   "human",
+   "bittersweet",
+   "strings",
+   "melancholy",
+   "restrained"
+  ],
+  "sha256": "0f01440b1e4652d27187990e4cc785e4e5cb5ee862b4b8b41c30ac324d5a2b1f",
+  "track_id": "human_bittersweet_strings"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 37.883356,
+  "filename": "human/human_warm_piano.flac",
+  "moods": [
+   "human",
+   "piano",
+   "warm",
+   "personal",
+   "gentle"
+  ],
+  "sha256": "34be40d08edc8a92b2eb0433d85967f9c58cd936118b74585eaebd064f7d04d3",
+  "track_id": "human_warm_piano"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 76.61424,
+  "filename": "nature/nature_gentle_curious.flac",
+  "moods": [
+   "nature",
+   "curious",
+   "light",
+   "woodwind",
+   "gentle"
+  ],
+  "sha256": "a0095dcc672fe02474cb76be42197e411f398d976b8e6068ca23563147251c68",
+  "track_id": "nature_gentle_curious"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 32.426667,
+  "filename": "nature/nature_open_wide.flac",
+  "moods": [
+   "nature",
+   "landscape",
+   "open",
+   "airy",
+   "strings"
+  ],
+  "sha256": "1652cfa4c5a9948faabc532ffc14192e96445b804725d68cc8ad77e3ae3a7290",
+  "track_id": "nature_open_wide"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 17.957642,
+  "filename": "nature/nature_vast_slow.flac",
+  "moods": [
+   "nature",
+   "vast",
+   "slow",
+   "cinematic",
+   "wide",
+   "restrained"
+  ],
+  "sha256": "07892bdc0cfb6b7795bdda76df3343a3b3d95056ae80815b752d0e53968db6a1",
+  "track_id": "nature_vast_slow"
+ },
+ {
+  "attribution": "Generated locally with MiniMaxAI/MiniMax-Music3 (GGUF, q8_0 LM/DiT/depth + f16 cond/voc). MiniMax-Music3 Community License (weights) \u2014 requires clear disclosure of AI generation for publicly distributed outputs; HOT-Step engine MIT",
+  "duration_s": 33.668934,
+  "filename": "explainer/tech_minimal_grid.flac",
+  "moods": [
+   "explainer",
+   "tech",
+   "minimal",
+   "electronic",
+   "clean",
+   "product"
+  ],
+  "sha256": "507afe968740fb8dd5e5800872d631c56ce420e740fbefed183b750d240cea4d",
+  "track_id": "tech_minimal_grid"
+ }
+]

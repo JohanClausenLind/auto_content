@@ -74,6 +74,16 @@ MODEL_PATH = Path(
 MODEL_TYPE = os.environ.get(
     "CF_HIDREAM_MODEL_TYPE", "full"
 )  # full: 50 steps, cfg 5; dev: 28, cfg 0
+LORA_PATH = os.environ.get("CF_HIDREAM_LORA", "").strip()
+"""A musubi-tuner HiDream-O1 adapter to merge at startup, or "" for the base model.
+
+Merged once into the loaded weights rather than attached per request, so generation costs nothing
+extra and every frame of a sequence sees the same model. It cannot be unloaded — a different
+adapter is a server restart, which `ensure()` already performs when it switches GPU tenants.
+
+The adapter's own metadata says which base it was trained against and `_load` refuses a mismatch,
+because a LoRA merged onto the wrong weights produces plausible nonsense rather than an error."""
+LORA_MULTIPLIER = float(os.environ.get("CF_HIDREAM_LORA_MULTIPLIER", "1.0"))
 PORT = int(os.environ.get("CF_HIDREAM_PORT", "8801"))
 HOST = os.environ.get("CF_HIDREAM_HOST", "127.0.0.1")
 """Loopback by default: this server has no auth and hands a whole GPU to whoever asks.
@@ -86,7 +96,7 @@ MAX_LAYOUT_BOXES = 5  # upstream models/utils.py MAX_BOX
 sys.path.insert(0, str(REPO))
 
 app = Flask(__name__)
-_state: dict = {"model": None, "processor": None, "lock": threading.Lock()}
+_state: dict = {"model": None, "processor": None, "lora": None, "lock": threading.Lock()}
 
 
 def _load() -> None:
@@ -107,6 +117,43 @@ def _load() -> None:
     _state["model"] = model
     _state["processor"] = processor
     print(f"[hidream-server] {MODEL_TYPE} model loaded from {MODEL_PATH}", flush=True)
+    if LORA_PATH:
+        _state["lora"] = _merge_lora(model)
+        print(f"[hidream-server] lora {_state['lora']}", flush=True)
+
+
+def _merge_lora(model) -> dict:
+    """Fold CF_HIDREAM_LORA into the loaded weights, refusing an adapter for a different base.
+
+    The check is not ceremony. The adapter on this host was trained with
+    `--dit .../hidream-o1-comfy/checkpoints/hidream_o1_image_bf16.safetensors --model_type full`,
+    and this server's default MODEL_PATH is the *dev* repo. The module tree is the same either way,
+    so every key would match and the merge would succeed silently onto distilled weights it was
+    never fit against. `ss_base_model_version` is what upstream records and what this compares.
+    """
+    from lora import merge, read_metadata
+
+    path = Path(LORA_PATH).expanduser()
+    if not path.exists():
+        msg = f"CF_HIDREAM_LORA={path} does not exist"
+        raise SystemExit(msg)
+    meta = read_metadata(path)
+    trained_for = meta.get("ss_base_model_version", "")
+    if (
+        trained_for
+        and trained_for != f"hidream_o1_{'image' if MODEL_TYPE == 'full' else MODEL_TYPE}"
+    ):
+        msg = (
+            f"{path.name} was trained against {trained_for!r} but this server is serving"
+            f" MODEL_TYPE={MODEL_TYPE!r} from {MODEL_PATH}. Merging it would produce plausible"
+            " nonsense rather than an error. Set CF_HIDREAM_MODEL_TYPE/CF_HIDREAM_MODEL_PATH to the"
+            " weights it was trained on, or point CF_HIDREAM_LORA at an adapter for these."
+        )
+        raise SystemExit(msg)
+    report = merge(model, path, LORA_MULTIPLIER)
+    report["trained_for"] = trained_for
+    report["network_module"] = meta.get("ss_network_module", "")
+    return report
 
 
 def xywh_to_xxyy(boxes: list) -> list[list[float]]:
@@ -199,6 +246,10 @@ def healthz():
             "model": str(MODEL_PATH),
             "model_type": MODEL_TYPE,
             "loaded": _state["model"] is not None,
+            # Which adapter, if any, is baked into the weights being served. A sequence's frames
+            # may be spread over several hosts, so "same endpoint" is not "same model" — this is
+            # how a caller can tell.
+            "lora": _state["lora"],
         }
     )
 
@@ -279,6 +330,7 @@ def generate():
             "refs": len(ref_paths),
             "layout_boxes": len(boxes),
             "model_type": MODEL_TYPE,
+            "lora": (_state["lora"] or {}).get("adapter"),
         }
     )
 

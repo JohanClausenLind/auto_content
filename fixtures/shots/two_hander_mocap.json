@@ -6,6 +6,7 @@
  "schema_version": 1,
  "shots": [
   {
+   "action": "",
    "anchor_frames": [
     0,
     30
@@ -38,6 +39,7 @@
    },
    "characters": [
     {
+     "appearance": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey crew-neck, dark trousers, brown leather boots",
      "asset": "man_01",
      "id": "man",
      "pose": {
@@ -61,6 +63,7 @@
      }
     },
     {
+     "appearance": "a woman in her thirties, shoulder-length auburn hair, a rust-red belted coat, dark jeans, tan ankle boots",
      "asset": "woman_01",
      "id": "woman",
      "pose": {
@@ -85,6 +88,7 @@
     }
    ],
    "description": "they meet and shake hands (mocap cmu_18_19_01)",
+   "end_state": null,
    "environment": {
     "background_color": [
      0.07,
@@ -140,9 +144,11 @@
    "schema_version": 1,
    "seed": 1000,
    "shot_id": "sht_mocap_0000",
+   "staging_note": null,
    "width": 1024
   },
   {
+   "action": "",
    "anchor_frames": [
     0,
     23
@@ -175,6 +181,7 @@
    },
    "characters": [
     {
+     "appearance": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey crew-neck, dark trousers, brown leather boots",
      "asset": "man_01",
      "id": "man",
      "pose": {
@@ -198,6 +205,7 @@
      }
     },
     {
+     "appearance": "a woman in her thirties, shoulder-length auburn hair, a rust-red belted coat, dark jeans, tan ankle boots",
      "asset": "woman_01",
      "id": "woman",
      "pose": {
@@ -222,6 +230,7 @@
     }
    ],
    "description": "arms linked, walking together (mocap cmu_20_21_02)",
+   "end_state": null,
    "environment": {
     "background_color": [
      0.07,
@@ -277,9 +286,11 @@
    "schema_version": 1,
    "seed": 1001,
    "shot_id": "sht_mocap_0001",
+   "staging_note": null,
    "width": 1024
   },
   {
+   "action": "",
    "anchor_frames": [
     0,
     52
@@ -312,6 +323,7 @@
    },
    "characters": [
     {
+     "appearance": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey crew-neck, dark trousers, brown leather boots",
      "asset": "man_01",
      "id": "man",
      "pose": {
@@ -335,6 +347,7 @@
      }
     },
     {
+     "appearance": "a woman in her thirties, shoulder-length auburn hair, a rust-red belted coat, dark jeans, tan ankle boots",
      "asset": "woman_01",
      "id": "woman",
      "pose": {
@@ -359,6 +372,7 @@
     }
    ],
    "description": "one hand on her shoulder, comforting her (mocap cmu_22_23_04)",
+   "end_state": null,
    "environment": {
     "background_color": [
      0.07,
@@ -414,9 +428,11 @@
    "schema_version": 1,
    "seed": 1002,
    "shot_id": "sht_mocap_0002",
+   "staging_note": null,
    "width": 1024
   },
   {
+   "action": "",
    "anchor_frames": [
     0,
     81
@@ -449,6 +465,7 @@
    },
    "characters": [
     {
+     "appearance": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey crew-neck, dark trousers, brown leather boots",
      "asset": "man_01",
      "id": "man",
      "pose": {
@@ -472,6 +489,7 @@
      }
     },
     {
+     "appearance": "a woman in her thirties, shoulder-length auburn hair, a rust-red belted coat, dark jeans, tan ankle boots",
      "asset": "woman_01",
      "id": "woman",
      "pose": {
@@ -496,6 +514,7 @@
     }
    ],
    "description": "she sits with her face in her hands; he kneels to comfort her (mocap cmu_22_23_03)",
+   "end_state": null,
    "environment": {
     "background_color": [
      0.07,
@@ -551,9 +570,11 @@
    "schema_version": 1,
    "seed": 1003,
    "shot_id": "sht_mocap_0003",
+   "staging_note": null,
    "width": 1024
   },
   {
+   "action": "",
    "anchor_frames": [
     0,
     23
@@ -586,6 +607,7 @@
    },
    "characters": [
     {
+     "appearance": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey crew-neck, dark trousers, brown leather boots",
      "asset": "man_01",
      "id": "man",
      "pose": {
@@ -609,6 +631,7 @@
      }
     },
     {
+     "appearance": "a woman in her thirties, shoulder-length auburn hair, a rust-red belted coat, dark jeans, tan ankle boots",
      "asset": "woman_01",
      "id": "woman",
      "pose": {
@@ -633,6 +656,7 @@
     }
    ],
    "description": "holding hands, swinging their arms as they walk (mocap cmu_22_23_08)",
+   "end_state": null,
    "environment": {
     "background_color": [
      0.07,
@@ -688,9 +712,11 @@
    "schema_version": 1,
    "seed": 1004,
    "shot_id": "sht_mocap_0004",
+   "staging_note": null,
    "width": 1024
   },
   {
+   "action": "",
    "anchor_frames": [
     0,
     52
@@ -723,6 +749,7 @@
    },
    "characters": [
     {
+     "appearance": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey crew-neck, dark trousers, brown leather boots",
      "asset": "man_01",
      "id": "man",
      "pose": {
@@ -746,6 +773,7 @@
      }
     },
     {
+     "appearance": "a woman in her sixties, short silver hair, a deep green quilted jacket, navy trousers, grey walking shoes",
      "asset": "woman_02",
      "id": "woman",
      "pose": {
@@ -770,6 +798,7 @@
     }
    ],
    "description": "he shelters her from something out of frame (mocap cmu_22_23_10)",
+   "end_state": null,
    "environment": {
     "background_color": [
      0.07,
@@ -825,6 +854,7 @@
    "schema_version": 1,
    "seed": 1005,
    "shot_id": "sht_mocap_0005",
+   "staging_note": null,
    "width": 1024
   }
  ],

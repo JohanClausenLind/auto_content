@@ -5,10 +5,23 @@ the *same* string for every frame or the sequence drifts — so it lives here as
 rather than being retyped per run. ``GenerationLock`` freezes whichever string was used, and the
 anchor's input hash includes it, so changing the look re-draws every frame and nothing else.
 
-These are deliberately different families, not variations of one look: three realistic ones
-first, then an outline style, a tonal style, a paint style, a print style. Each excludes what the
-model otherwise reaches for by default — for the illustration styles that means photographic
-lighting and gradient shading; for the realistic ones it means outlines and posterisation.
+These are deliberately different families, not variations of one look: the realistic ones first,
+then an outline style, a tonal style, a paint style, a print style.
+
+The two halves are written differently, and the reason is the note at the bottom of this file: the
+dev weights are distilled to guidance 0, so a "no ..." clause is a hint the model may or may not
+take rather than something it can be steered away from. The illustration presets can afford that —
+"no photographic lighting" is one clause among several that already name a medium the model knows
+how to draw. The realistic ones could not: `photographic` was nine clauses of which four were
+negations ("no outlines, no posterisation, no illustration, not a drawing"), and what came back was
+a 3D render every time. Measured on `w-iceberg` 2026-09-10 with zero references and nothing else
+attached, that preset produced a triangulated flat-shaded mesh on procedural water, and 91.4 % of
+its 16-px tiles carried no texture at all (a photograph runs under 10 %).
+
+So the realistic presets now say what a photograph *has* instead of what it is not: grain, halation
+where a highlight clips, dust and wear on the surfaces. That is strictly the better instruction at
+guidance 0 whether or not the negations were also doing harm, and it is the half of the diagnosis
+that does not depend on guessing what the text encoder does with "not".
 """
 
 from __future__ import annotations
@@ -17,13 +30,34 @@ STYLE_PRESETS: dict[str, str] = {
     # Realistic. The tonal clauses are not decoration: the illustration presets below collapse the
     # midtones (one measured 31 % of pixels crushed to near-black and only 36 % midtones, where a
     # photograph runs 60-80 %), so asking explicitly for detail in both shadows and highlights is
-    # what keeps the range open. Negations name what the model otherwise reaches for by default
-    # here — outlines and posterisation — rather than generic quality words.
+    # what keeps the range open.
+    #
+    # "shallow depth of field" used to lead the second half of this clause and it is gone. It was
+    # house style on a preset that every realistic lane uses, and it throws most of the frame away:
+    # `ps2b-amber`'s background is a clean uniform Gaussian with no bokeh disc structure and no
+    # grain in the blur, which reads as a defocus pass rather than a lens. `prompt_compile` already
+    # records the same clause wrecking `ps1-pinecone` on 2026-09-10. Shallow focus is a decision
+    # about one shot, so it belongs to `cinematic` (where it is the point of the look) and to a
+    # subject line that asks for it, not to the general-purpose preset.
     "photographic": (
-        "photographic, natural available light, physically convincing materials with a true "
-        "specular response, full tonal range with detail held in both the shadows "
-        "and the highlights, shallow depth of field, no outlines, no posterisation, "
-        "no illustration, not a drawing"
+        "colour photograph on 35 mm film, fine grain visible in the flat areas, natural available "
+        "light, physically convincing materials with a true specular response, full tonal range "
+        "with detail held in both the shadows and the highlights, soft halation where a highlight "
+        "clips, every surface carrying its own dust, wear and small imperfections"
+    ),
+    # The set version of the same look. `image-set` used to carry its own hand-written string --
+    # "consistent character and material design, even flat lighting, no dramatic shadow, plain
+    # neutral background, same rendering idiom in every image" -- which is a spec sheet for a 3D
+    # asset turntable and came back as one: `demo-pebble` 2026-09-10 returned a ceramic paperweight
+    # with painted decal banding on crumpled paper, for "one wet river pebble, banded grey and
+    # rust, on plain pale sand". Nothing photographed has even flat lighting and no dramatic
+    # shadow, and "rendering idiom" is a word about renders. What that lane actually wants is a
+    # medium plus the things that have to hold still between images, so it says both.
+    "photographic_set": (
+        "colour photograph on 35 mm film, fine grain visible in the flat areas, natural available "
+        "light, physically convincing materials with a true specular response, full tonal range, "
+        "one light direction and one colour response held from image to image, the same lens and "
+        "the same working distance in every frame"
     ),
     # A style clause says how the picture is *rendered* and must not name anything the picture
     # could contain: the style leads the prompt (`_anchor_prompt`), so a noun here outranks the
@@ -34,14 +68,21 @@ STYLE_PRESETS: dict[str, str] = {
     #       focus behind it
     #   "wet surfaces with real specular reflections"                          -> a glossy globe
     #       ornament on a wet rooftop terrace, for "the curve of the Earth from low orbit"
+    #   "oval highlight bokeh"                                                 -> a literal iris:
+    #       a hard black mask with a soft-edged oval cut out of the middle, like looking down a
+    #       telescope. FLUX.2, 2026-09-12, measured corner/centre brightness 0.03 where natural
+    #       vignetting runs 0.7-0.9; the same prompt with the clause removed measured 1.76 and
+    #       had no mask at all. An adjective naming a *shape* is a noun to the model, even when
+    #       the shape belongs to the lens rather than the scene.
     #
     # "life-drawing study", "Nordic figurative painting", "gouache sky", "figures reduced to
     # silhouettes" and "natural skin tones" were re-worded in the same pass for the same reason.
     # The last put a smiling woman in front of a chalkboard that had been asked for on its own.
     "cinematic": (
-        "anamorphic widescreen, oval highlight bokeh and shallow focus, motion-picture colour "
-        "response, lit only by sources inside the scene, deep shadows that still hold detail, "
-        "muted naturalistic colour, fine grain, no outlines, no posterisation, not a drawing"
+        "anamorphic widescreen, a long lens held wide open so the background falls softly away, "
+        "motion-picture colour response, lit only by sources inside the scene, deep shadows that "
+        "still hold detail, muted naturalistic colour, fine grain, faint halation around the "
+        "practicals, surfaces scuffed and lived-in"
     ),
     # The twelve presets had no dark one, and every photographic clause here asks for the opposite:
     # "full tonal range with detail held in both the shadows and the highlights" is exactly wrong
@@ -50,13 +91,13 @@ STYLE_PRESETS: dict[str, str] = {
     # back fogged grey where it should have been black, and `cinematic` lit the ocean like a reef.
     "low_key": (
         "low-key photography, one hard light source and everything outside it falling to true "
-        "black, deep crushed shadows with no lift and no fill, high contrast, fine grain, "
-        "no outlines, no posterisation, not a drawing"
+        "black, deep crushed shadows with no lift and no fill, high contrast, fine grain in the "
+        "lit areas, the source flaring slightly into the lens"
     ),
     "documentary": (
-        "candid documentary photograph, available light, neutral true-to-life colour, "
-        "unposed, slight motion blur, full tonal range, no stylisation, no outlines, "
-        "not a drawing"
+        "candid documentary photograph, available light, neutral true-to-life colour, unposed, "
+        "slight motion blur, full tonal range, visible sensor grain, an ordinary cluttered "
+        "background the photographer did not arrange"
     ),
     "ink_wash": (
         "hand-drawn ink and watercolour illustration, confident brush line, flat washes, "

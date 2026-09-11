@@ -293,6 +293,21 @@ def _callout_text(display: str):
     return TextRef(text=display[:2000])
 
 
+HEAD_LEAD_MS = 220
+"""How much of the pause before a beat's first word belongs to that beat.
+
+Enough to carry the breath and the onset of the first consonant, which is what makes a line sound
+*started* rather than spliced in. Not more: a long pause handed to the next beat delays its line
+and holds the previous picture past the point the eye has finished with it, so the remainder of a
+gap stays with the beat that precedes it as tail."""
+
+TAIL_PAD_MS = 400
+"""How far past the last word of the LAST beat to run, so the recording's final decay survives.
+
+Only the last beat needs it. Every other beat runs to the next beat's start, so its tail is
+whatever the speaker actually left there."""
+
+
 def beat_spans(transcript: SpeechTranscript, plan: StoryPlan) -> dict[str, tuple[int, int]]:
     """``beat_id -> (start_ms, end_ms)`` in the recording, matched by walking the words.
 
@@ -305,6 +320,19 @@ def beat_spans(transcript: SpeechTranscript, plan: StoryPlan) -> dict[str, tuple
     A beat that matches nothing at all keeps its own measured span when it has one; failing that
     it is reported by name, because a beat whose audio nobody can locate must not silently become
     the whole recording.
+
+    **The spans abut, and that is the point.** A beat used to end at the ASR's ``end_ms`` for its
+    last word and the next began at its own first word, so every pause between sentences was
+    discarded and the mix concatenated hard-cut clips. Measured on `ps2b-amber` 2026-09-10, six
+    beats with five gaps of 520-1140 ms: **4.24 s of breath thrown away**, and each beat truncated
+    mid-decay because a word's nominal end is where the transcriber stopped counting, not where
+    the sound stopped. What that sounds like is a voice cut off at the end of every line and
+    jumping into the next — which is exactly how it was reported.
+
+    So a boundary now falls *inside* the gap rather than on a word edge: the next beat takes at
+    most :data:`HEAD_LEAD_MS` of run-up and the rest stays as the previous beat's tail. Nothing is
+    discarded, consecutive beats join sample-for-sample, and every cut lands in silence, which is
+    also why no fade is needed to hide it.
     """
     words = transcript.words
     normalised = [[t.lower() for t in tokenize_words(w.word)] for w in words]
@@ -345,6 +373,47 @@ def beat_spans(transcript: SpeechTranscript, plan: StoryPlan) -> dict[str, tuple
             "these beats say nothing the recording says, so there is no audio to cut for them: "
             + ", ".join(missing)
         )
+    order = [b.beat_id for b in sorted(plan.beats, key=lambda b: b.order)]
+    return _close_the_gaps(out, order, transcript.duration_ms)
+
+
+def _close_the_gaps(
+    spans: dict[str, tuple[int, int]], order: Sequence[str], duration_ms: int
+) -> dict[str, tuple[int, int]]:
+    """Move every boundary off a word edge and into the silence beside it.
+
+    Takes the beat ids in story order rather than the plan, because the order is the only thing it
+    needs — which keeps it pure, testable against a bare list, and honest about its dependency.
+    Spans that already overlap are left alone rather than reordered: a beat matched out of order is
+    a different fault, and silently resolving it here would hide it from the caller that reports it.
+    """
+    ordered = [beat_id for beat_id in order if beat_id in spans]
+    if not ordered:
+        return spans
+    starts = {b: spans[b][0] for b in ordered}
+    ends = {b: spans[b][1] for b in ordered}
+
+    # One boundary per adjacent pair, placed inside the gap and then used as BOTH the end of the
+    # earlier beat and the start of the later one. Computing it once is what makes the beats abut
+    # sample-for-sample; moving each edge independently leaves a sliver between them, which is the
+    # same hard cut in miniature.
+    for index in range(len(ordered) - 1):
+        this_id, next_id = ordered[index], ordered[index + 1]
+        gap = spans[next_id][0] - spans[this_id][1]
+        if gap <= 0:
+            continue  # overlapping or touching already: a different fault, and not this one's
+        boundary = spans[next_id][0] - min(HEAD_LEAD_MS, gap)
+        ends[this_id] = boundary
+        starts[next_id] = boundary
+
+    # The first line needs its run-up too, and has no previous beat to take it from. The last
+    # needs its decay, and has no next beat to bound it.
+    starts[ordered[0]] = max(0, spans[ordered[0]][0] - HEAD_LEAD_MS)
+    ends[ordered[-1]] = min(duration_ms, spans[ordered[-1]][1] + TAIL_PAD_MS)
+
+    out = dict(spans)
+    for beat_id in ordered:
+        out[beat_id] = (starts[beat_id], ends[beat_id])
     return out
 
 

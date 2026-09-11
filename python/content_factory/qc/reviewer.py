@@ -57,15 +57,21 @@ def intended_reviewer(
 def missing_decisions(
     frames: Sequence[FrameRecord], accepted: set[str], rejected: set[str]
 ) -> list[str]:
-    """Frames an agent's verdict did not mention, in frame order.
+    """Frames an agent's verdict did not mention and which nobody has decided yet, in frame order.
 
     This is what makes "review every image" a rule rather than a hope. A person reviews from a
     contact sheet — one image showing all of them — and may reasonably say "all fine". An agent
     reads them one at a time, so a verdict that does not name a frame is a frame it did not open,
     and the gate says which ones instead of accepting the batch.
+
+    A frame that already carries a verdict is not one of them. The batch reaching here is merged,
+    and `merge_verdict` only carries a decision when the digest is unchanged — so such a frame is a
+    picture somebody has already looked at and which has not been redrawn since. Requiring it to be
+    named again would mean one rejected drawing costs a re-review of the whole set; `image-set`'s
+    own note promises the opposite, and until anchors could actually be redrawn nobody could tell.
     """
     decided = accepted | rejected
-    return [f.frame_id for f in frames if f.frame_id not in decided]
+    return [f.frame_id for f in frames if f.verdict == "unreviewed" and f.frame_id not in decided]
 
 
 def request_markdown(
@@ -85,6 +91,10 @@ def request_markdown(
     """
     outliers = consistency["outliers"]
     worst = consistency["worst_pair"]
+    # Only what is actually outstanding. A resumed run carries forward the verdicts on frames that
+    # were not redrawn, and listing those again told a reviewer to open six pictures when three
+    # were settled and unchanged.
+    frames = [f for f in frames if f.verdict == "unreviewed"] or list(frames)
     lines = [
         f"# Frame review — {deliverable}",
         "",

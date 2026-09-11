@@ -86,6 +86,10 @@ def test_anchors_per_shot_from_blender_controls(ctx: StageContext, env, monkeypa
         # One attempt each. Above the anchor count means the deterministic blocker checks sent
         # frames back, which is GPU time spent on frames that arrived unusable.
         "attempts": 4,
+        # Nothing has been reviewed yet, so nothing was turned down and nothing was redrawn. A
+        # resume after a rejection names the frames here, because a redraw nobody can see in the
+        # record is a redraw nobody can audit.
+        "redrawn_after_rejection": [],
     }
     manifest = json.loads((ctx.ddir() / "anchors" / "manifest.json").read_text())
     assert [s["shot_id"] for s in manifest["shots"]] == [s.shot_id for s in plan.shots]

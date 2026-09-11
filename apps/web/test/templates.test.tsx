@@ -230,7 +230,11 @@ describe("picture story template", () => {
       skeleton: true,
     });
     expect(byType.get("generate_anchor")!.values.model).toBe("hidream-o1");
-    expect(String(byType.get("generate_anchor")!.values.style).length).toBeGreaterThan(20);
+    // A preset NAME, not the prompt written out. The lane carried the ink_wash text verbatim,
+    // which meant `style_name_for` returned "" for it and it silently got no per-style drift
+    // override. The length check was standing in for "the style is set at all"; the name is the
+    // stronger assertion, because only a name resolves.
+    expect(byType.get("generate_anchor")!.values.style).toBe("ink_wash");
 
     // The voice is recorded, never synthesized: no TTS node in this graph.
     expect(byType.has("voice_over")).toBe(true);

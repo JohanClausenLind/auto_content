@@ -39,7 +39,11 @@ async def list_history(
     of the run somebody opened.
     """
     return [
-        {k: v for k, v in record.as_dict().items() if k not in {"outputs", "film", "poster"}}
+        {
+            k: v
+            for k, v in record.as_dict().items()
+            if k not in {"outputs", "nodes", "film", "poster", "unattributed"}
+        }
         for record in history.list_runs(limit=limit)
     ]
 

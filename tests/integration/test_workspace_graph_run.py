@@ -91,7 +91,15 @@ async def _wait_state(run_id: str, state: str, timeout_s: float = 120) -> dict:
     raise TimeoutError(f"run {run_id} never reached {state}; last: {view}")
 
 
-def test_workspace_graph_runs_end_to_end(tmp_path: Path) -> None:
+def test_workspace_graph_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
+    # Pin the fixture music library. The configured default is `assets/music`, which is
+    # host-specific git-ignored media; asserting a track id from it would make this test pass on
+    # this machine and fail on a fresh checkout.
+    repo_root = Path(__file__).resolve().parents[2]
+    monkeypatch.setenv("CF__MEDIA_LIBRARY__MUSIC_DIR", str(repo_root / "fixtures" / "music"))
+    from content_factory.config import get_settings
+
+    get_settings.cache_clear()  # type: ignore[attr-defined]
     previous = os.environ.get("CF_PROJECTS_DIR")
     try:
         asyncio.run(_flow(tmp_path))
@@ -100,6 +108,7 @@ def test_workspace_graph_runs_end_to_end(tmp_path: Path) -> None:
             os.environ.pop("CF_PROJECTS_DIR", None)
         else:
             os.environ["CF_PROJECTS_DIR"] = previous
+        get_settings.cache_clear()  # type: ignore[attr-defined]
 
 
 async def _flow(tmp_path: Path) -> None:
@@ -162,7 +171,7 @@ async def _flow(tmp_path: Path) -> None:
     deliverable_id = compilation.campaign.deliverables[0].deliverable_id
     ddir = project_dir / "deliverables" / deliverable_id
     selection = json.loads((ddir / "audio" / "music-selection.json").read_text())
-    assert selection["track_id"] == "calm_bed_a"
+    assert selection["track_id"] == "calm_bed_a"  # the pinned fixture library, not assets/music
     assert (ddir / "audio" / "narration-with-music.wav").exists()
     assert (ddir / "audio" / "narration-mastered.wav").exists()
     assert (ddir / "exports" / "generated.mp4").stat().st_size > 0

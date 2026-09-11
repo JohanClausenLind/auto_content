@@ -153,7 +153,7 @@ describe("order and validation", () => {
       ...graph,
       nodes: [
         ...graph.nodes,
-        { id: "x", type: "gone.type", title: null, x: 0, y: 0, width: null, collapsed: false, note: "", values: {}, mode: "always" as const },
+        { id: "x", type: "gone.type", key: "", title: null, x: 0, y: 0, width: null, collapsed: false, note: "", values: {}, mode: "always" as const },
       ],
     };
     const problems = validateGraph(graph, catalog);

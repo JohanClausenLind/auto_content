@@ -20,7 +20,7 @@ import { api } from "../api/client";
 import { historyRunQuery, runReviewQuery } from "../api/queries";
 import type { OutputKind, RunOutput } from "../api/types";
 import { FrameReview } from "./FrameReview";
-import { formatBytes, formatCost, formatWhen, OUTCOME_LABEL, OUTCOME_TONE, runLabel } from "./runFormat";
+import { formatBytes, formatCost, formatExact, OUTCOME_LABEL, OUTCOME_TONE, runLabel } from "./runFormat";
 
 /** Debug and intermediate output: kept, because it is what you want when a drawing came out
  * wrong, but folded away so it cannot bury the six pictures that are the actual result. */
@@ -142,9 +142,15 @@ export function RunPane({ runId, onClose }: { runId: string; onClose(): void }) 
         </button>
         {run.data && (
           <>
+            {/* What it was rendering, above the lane and the counts: it is the thing that says
+                which run this is, where "audio-picture-story, 12/12 stages" says which kind. */}
+            {run.data.subject && <p className="cf-hist__detailsubject">{run.data.subject}</p>}
             <p className="cf-hist__detailmeta">
               {run.data.workflow ?? "unknown lane"} · {run.data.stages_ok}/{run.data.stages} stages
-              {run.data.seconds > 0 ? ` · took ${formatCost(run.data.seconds)}` : ""} · {formatWhen(run.data.finished_at)}
+              {run.data.seconds > 0 ? ` · took ${formatCost(run.data.seconds)}` : ""} ·{" "}
+              <time dateTime={new Date(run.data.finished_at * 1000).toISOString()}>
+                {formatExact(run.data.finished_at)}
+              </time>
               {run.data.blocked_at ? ` · blocked at ${run.data.blocked_at}` : ""}
             </p>
             <p className="cf-hist__detailpath">
@@ -162,6 +168,7 @@ export function RunPane({ runId, onClose }: { runId: string; onClose(): void }) 
             runId={runId}
             review={gate}
             resumeCommand={review.data?.resume_command ?? ""}
+            aiReview={review.data?.ai_reviews?.[gate.deliverable]}
           />
         ))}
 

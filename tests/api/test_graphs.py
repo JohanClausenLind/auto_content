@@ -153,13 +153,29 @@ async def test_crud_validates_and_scopes(client, sessionmaker):
     listing = (await client.get("/v1/graphs")).json()
     assert [g["graph_id"] for g in listing] == [doc["graph_id"]]
     fetched = (await client.get(f"/v1/graphs/{doc['graph_id']}")).json()
-    # Byte-for-byte what was stored, plus the fields the contract fills in. `groups` is one: a
-    # document written before folded groups existed — this one, and every graph already in a
-    # browser's localStorage — comes back with an empty list rather than being refused.
-    assert fetched == {**doc, "groups": []}
+    # Byte-for-byte what was stored, plus the fields the contract fills in.
+    assert fetched == _with_server_defaults(doc)
 
     assert (await client.delete(f"/v1/graphs/{doc['graph_id']}")).status_code == 204
     assert (await client.get(f"/v1/graphs/{doc['graph_id']}")).status_code == 404
+
+
+def _with_server_defaults(doc: dict) -> dict:
+    """``doc`` as the contract returns it: the fields a node gets a default for, filled in.
+
+    The test already had one of these — a document written before folded groups existed comes back
+    with an empty ``groups`` list rather than being refused — and ``key`` is the second. A node's
+    ``key`` defaults to "", so a document that predates it (this one, and every graph already in a
+    browser's localStorage) round-trips with the field added rather than failing to load.
+
+    Written as a helper so the next defaulted field is one line here instead of two silent
+    round-trip failures.
+    """
+    return {
+        **doc,
+        "groups": doc.get("groups", []),
+        "nodes": [{"key": "", **node} for node in doc["nodes"]],
+    }
 
 
 async def test_a_folded_graph_round_trips_and_a_broken_group_is_refused(client, sessionmaker):
@@ -182,7 +198,7 @@ async def test_a_folded_graph_round_trips_and_a_broken_group_is_refused(client, 
     ]
     r = await client.put(f"/v1/graphs/{doc['graph_id']}", json=doc)
     assert r.status_code == 200, r.text
-    assert (await client.get(f"/v1/graphs/{doc['graph_id']}")).json() == doc
+    assert (await client.get(f"/v1/graphs/{doc['graph_id']}")).json() == _with_server_defaults(doc)
 
     # Folding changes nothing about what would run.
     body = (await client.post(f"/v1/graphs/{doc['graph_id']}/compile")).json()

@@ -2,9 +2,9 @@
  "events": [
   {
    "eventId": "1",
-   "eventTime": "2026-09-11T07:50:57.271395741Z",
+   "eventTime": "2026-09-12T20:00:37.841333895Z",
    "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_STARTED",
-   "taskId": "14689867",
+   "taskId": "18894923",
    "workflowExecutionStartedEventAttributes": {
     "workflowType": {
      "name": "SpikeProductionRun"
@@ -24,20 +24,20 @@
      ]
     },
     "workflowTaskTimeout": "10s",
-    "originalExecutionRunId": "01a08f72-bff7-7601-bae8-3e9e08ea37bb",
-    "identity": "123044@vegaserv",
-    "firstExecutionRunId": "01a08f72-bff7-7601-bae8-3e9e08ea37bb",
+    "originalExecutionRunId": "01a09735-25d1-7511-8e97-dc4e355d3d0f",
+    "identity": "352230@vegaserv",
+    "firstExecutionRunId": "01a09735-25d1-7511-8e97-dc4e355d3d0f",
     "attempt": 1,
     "firstWorkflowTaskBackoff": "0s",
-    "workflowId": "spike-958f251e",
+    "workflowId": "spike-496e90b8",
     "priority": {}
    }
   },
   {
    "eventId": "2",
-   "eventTime": "2026-09-11T07:50:57.271540551Z",
+   "eventTime": "2026-09-12T20:00:37.841439483Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-   "taskId": "14689868",
+   "taskId": "18894924",
    "workflowTaskScheduledEventAttributes": {
     "taskQueue": {
      "name": "control",
@@ -49,36 +49,36 @@
   },
   {
    "eventId": "3",
-   "eventTime": "2026-09-11T07:50:57.431221789Z",
+   "eventTime": "2026-09-12T20:00:38.108252605Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-   "taskId": "14689873",
+   "taskId": "18894932",
    "workflowTaskStartedEventAttributes": {
     "scheduledEventId": "2",
-    "identity": "123044@vegaserv",
-    "requestId": "1c864dc8-7e4a-4f29-8d15-17e65534f79a",
+    "identity": "352230@vegaserv",
+    "requestId": "f5f7b819-ec48-42f6-a4b5-38b53a460c13",
     "historySizeBytes": "345",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "4",
-   "eventTime": "2026-09-11T07:50:57.505608812Z",
+   "eventTime": "2026-09-12T20:00:38.189171887Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-   "taskId": "14689877",
+   "taskId": "18894936",
    "workflowTaskCompletedEventAttributes": {
     "scheduledEventId": "2",
     "startedEventId": "3",
-    "identity": "123044@vegaserv",
+    "identity": "352230@vegaserv",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     },
     "sdkMetadata": {
      "coreUsedFlags": [
+      1,
       2,
-      3,
-      1
+      3
      ],
      "sdkName": "temporal-python",
      "sdkVersion": "1.32.0"
@@ -88,9 +88,9 @@
   },
   {
    "eventId": "5",
-   "eventTime": "2026-09-11T07:50:57.505720999Z",
+   "eventTime": "2026-09-12T20:00:38.189239967Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-   "taskId": "14689878",
+   "taskId": "18894937",
    "activityTaskScheduledEventAttributes": {
     "activityId": "1",
     "activityType": {
@@ -128,24 +128,24 @@
   },
   {
    "eventId": "6",
-   "eventTime": "2026-09-11T07:50:57.549028429Z",
+   "eventTime": "2026-09-12T20:00:38.232877112Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-   "taskId": "14689884",
+   "taskId": "18894943",
    "activityTaskStartedEventAttributes": {
     "scheduledEventId": "5",
-    "identity": "123044@vegaserv",
-    "requestId": "c0dc5ea2-d9b9-4d37-af8a-00abae765ac8",
+    "identity": "352230@vegaserv",
+    "requestId": "7df59b3e-ce10-46f8-9b9d-78fc69fdaa55",
     "attempt": 1,
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "7",
-   "eventTime": "2026-09-11T07:50:57.593931259Z",
+   "eventTime": "2026-09-12T20:00:38.278656312Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-   "taskId": "14689885",
+   "taskId": "18894944",
    "activityTaskCompletedEventAttributes": {
     "result": {
      "payloads": [
@@ -159,17 +159,17 @@
     },
     "scheduledEventId": "5",
     "startedEventId": "6",
-    "identity": "123044@vegaserv"
+    "identity": "352230@vegaserv"
    }
   },
   {
    "eventId": "8",
-   "eventTime": "2026-09-11T07:50:57.593949850Z",
+   "eventTime": "2026-09-12T20:00:38.278670554Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-   "taskId": "14689886",
+   "taskId": "18894945",
    "workflowTaskScheduledEventAttributes": {
     "taskQueue": {
-     "name": "123044@vegaserv-05c4963c2f61468fa5c5160de5a3ba5c",
+     "name": "352230@vegaserv-dcd4f1cecf63456e8ae6c99988ff0e4f",
      "kind": "TASK_QUEUE_KIND_STICKY",
      "normalName": "control"
     },
@@ -179,30 +179,30 @@
   },
   {
    "eventId": "9",
-   "eventTime": "2026-09-11T07:50:57.633875602Z",
+   "eventTime": "2026-09-12T20:00:38.320013476Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-   "taskId": "14689890",
+   "taskId": "18894949",
    "workflowTaskStartedEventAttributes": {
     "scheduledEventId": "8",
-    "identity": "123044@vegaserv",
-    "requestId": "1642872e-e535-414b-b5a9-2a2992d8bec0",
-    "historySizeBytes": "1306",
+    "identity": "352230@vegaserv",
+    "requestId": "111f1207-bf6f-40b0-8cff-31166cd20bc7",
+    "historySizeBytes": "1302",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "10",
-   "eventTime": "2026-09-11T07:50:57.694618415Z",
+   "eventTime": "2026-09-12T20:00:38.373860795Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-   "taskId": "14689894",
+   "taskId": "18894953",
    "workflowTaskCompletedEventAttributes": {
     "scheduledEventId": "8",
     "startedEventId": "9",
-    "identity": "123044@vegaserv",
+    "identity": "352230@vegaserv",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     },
     "sdkMetadata": {},
     "meteringMetadata": {}
@@ -210,9 +210,9 @@
   },
   {
    "eventId": "11",
-   "eventTime": "2026-09-11T07:50:57.748372373Z",
+   "eventTime": "2026-09-12T20:00:38.429748104Z",
    "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_SIGNALED",
-   "taskId": "14689896",
+   "taskId": "18894955",
    "workflowExecutionSignaledEventAttributes": {
     "signalName": "approve",
     "input": {
@@ -225,17 +225,17 @@
       }
      ]
     },
-    "identity": "123044@vegaserv"
+    "identity": "352230@vegaserv"
    }
   },
   {
    "eventId": "12",
-   "eventTime": "2026-09-11T07:50:57.748389904Z",
+   "eventTime": "2026-09-12T20:00:38.429755443Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-   "taskId": "14689897",
+   "taskId": "18894956",
    "workflowTaskScheduledEventAttributes": {
     "taskQueue": {
-     "name": "123044@vegaserv-05c4963c2f61468fa5c5160de5a3ba5c",
+     "name": "352230@vegaserv-dcd4f1cecf63456e8ae6c99988ff0e4f",
      "kind": "TASK_QUEUE_KIND_STICKY",
      "normalName": "control"
     },
@@ -245,30 +245,30 @@
   },
   {
    "eventId": "13",
-   "eventTime": "2026-09-11T07:50:57.789961100Z",
+   "eventTime": "2026-09-12T20:00:38.471234494Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-   "taskId": "14689901",
+   "taskId": "18894960",
    "workflowTaskStartedEventAttributes": {
     "scheduledEventId": "12",
-    "identity": "123044@vegaserv",
-    "requestId": "04bff0b2-8613-44a2-a1b6-f2ef83893bc4",
-    "historySizeBytes": "1707",
+    "identity": "352230@vegaserv",
+    "requestId": "8806bb36-a40f-4be6-9ad4-b0896bfb8ddd",
+    "historySizeBytes": "1703",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "14",
-   "eventTime": "2026-09-11T07:50:57.833457124Z",
+   "eventTime": "2026-09-12T20:00:38.521211449Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-   "taskId": "14689905",
+   "taskId": "18894964",
    "workflowTaskCompletedEventAttributes": {
     "scheduledEventId": "12",
     "startedEventId": "13",
-    "identity": "123044@vegaserv",
+    "identity": "352230@vegaserv",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     },
     "sdkMetadata": {},
     "meteringMetadata": {}
@@ -276,9 +276,9 @@
   },
   {
    "eventId": "15",
-   "eventTime": "2026-09-11T07:50:57.833511988Z",
+   "eventTime": "2026-09-12T20:00:38.521310402Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-   "taskId": "14689906",
+   "taskId": "18894965",
    "activityTaskScheduledEventAttributes": {
     "activityId": "2",
     "activityType": {
@@ -316,24 +316,24 @@
   },
   {
    "eventId": "16",
-   "eventTime": "2026-09-11T07:50:57.875950348Z",
+   "eventTime": "2026-09-12T20:00:38.562346731Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-   "taskId": "14689911",
+   "taskId": "18894970",
    "activityTaskStartedEventAttributes": {
     "scheduledEventId": "15",
-    "identity": "123044@vegaserv",
-    "requestId": "a77691f2-3929-4cc5-beb2-c0c98006b31f",
+    "identity": "352230@vegaserv",
+    "requestId": "2b691289-f7b7-4f75-993a-6e163b73f237",
     "attempt": 1,
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "17",
-   "eventTime": "2026-09-11T07:50:57.898143510Z",
+   "eventTime": "2026-09-12T20:00:38.587768912Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-   "taskId": "14689912",
+   "taskId": "18894971",
    "activityTaskCompletedEventAttributes": {
     "result": {
      "payloads": [
@@ -347,17 +347,17 @@
     },
     "scheduledEventId": "15",
     "startedEventId": "16",
-    "identity": "123044@vegaserv"
+    "identity": "352230@vegaserv"
    }
   },
   {
    "eventId": "18",
-   "eventTime": "2026-09-11T07:50:57.898158128Z",
+   "eventTime": "2026-09-12T20:00:38.587801353Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-   "taskId": "14689913",
+   "taskId": "18894972",
    "workflowTaskScheduledEventAttributes": {
     "taskQueue": {
-     "name": "123044@vegaserv-05c4963c2f61468fa5c5160de5a3ba5c",
+     "name": "352230@vegaserv-dcd4f1cecf63456e8ae6c99988ff0e4f",
      "kind": "TASK_QUEUE_KIND_STICKY",
      "normalName": "control"
     },
@@ -367,30 +367,30 @@
   },
   {
    "eventId": "19",
-   "eventTime": "2026-09-11T07:50:57.945876634Z",
+   "eventTime": "2026-09-12T20:00:38.629580320Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-   "taskId": "14689917",
+   "taskId": "18894976",
    "workflowTaskStartedEventAttributes": {
     "scheduledEventId": "18",
-    "identity": "123044@vegaserv",
-    "requestId": "14149f1a-79d9-4d98-ba51-6bd569515598",
-    "historySizeBytes": "2637",
+    "identity": "352230@vegaserv",
+    "requestId": "eb7dbf32-37c1-4d77-9fcb-161ffb5fbe6d",
+    "historySizeBytes": "2633",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "20",
-   "eventTime": "2026-09-11T07:50:57.992106135Z",
+   "eventTime": "2026-09-12T20:00:38.680591268Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-   "taskId": "14689921",
+   "taskId": "18894980",
    "workflowTaskCompletedEventAttributes": {
     "scheduledEventId": "18",
     "startedEventId": "19",
-    "identity": "123044@vegaserv",
+    "identity": "352230@vegaserv",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     },
     "sdkMetadata": {},
     "meteringMetadata": {}
@@ -398,9 +398,9 @@
   },
   {
    "eventId": "21",
-   "eventTime": "2026-09-11T07:50:57.992228967Z",
+   "eventTime": "2026-09-12T20:00:38.680715567Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-   "taskId": "14689922",
+   "taskId": "18894981",
    "activityTaskScheduledEventAttributes": {
     "activityId": "3",
     "activityType": {
@@ -438,24 +438,24 @@
   },
   {
    "eventId": "22",
-   "eventTime": "2026-09-11T07:50:58.033592607Z",
+   "eventTime": "2026-09-12T20:00:38.729702461Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-   "taskId": "14689927",
+   "taskId": "18894986",
    "activityTaskStartedEventAttributes": {
     "scheduledEventId": "21",
-    "identity": "123044@vegaserv",
-    "requestId": "0329c0dd-4b2a-491e-b77a-ca54c52f1796",
+    "identity": "352230@vegaserv",
+    "requestId": "d10a4af4-1cd5-464d-8a18-cea6ee4f4b8b",
     "attempt": 1,
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "23",
-   "eventTime": "2026-09-11T07:50:58.055759450Z",
+   "eventTime": "2026-09-12T20:00:38.751578028Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-   "taskId": "14689928",
+   "taskId": "18894987",
    "activityTaskCompletedEventAttributes": {
     "result": {
      "payloads": [
@@ -469,17 +469,17 @@
     },
     "scheduledEventId": "21",
     "startedEventId": "22",
-    "identity": "123044@vegaserv"
+    "identity": "352230@vegaserv"
    }
   },
   {
    "eventId": "24",
-   "eventTime": "2026-09-11T07:50:58.055768735Z",
+   "eventTime": "2026-09-12T20:00:38.751587690Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-   "taskId": "14689929",
+   "taskId": "18894988",
    "workflowTaskScheduledEventAttributes": {
     "taskQueue": {
-     "name": "123044@vegaserv-05c4963c2f61468fa5c5160de5a3ba5c",
+     "name": "352230@vegaserv-dcd4f1cecf63456e8ae6c99988ff0e4f",
      "kind": "TASK_QUEUE_KIND_STICKY",
      "normalName": "control"
     },
@@ -489,30 +489,30 @@
   },
   {
    "eventId": "25",
-   "eventTime": "2026-09-11T07:50:58.098052557Z",
+   "eventTime": "2026-09-12T20:00:38.791512123Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-   "taskId": "14689933",
+   "taskId": "18894992",
    "workflowTaskStartedEventAttributes": {
     "scheduledEventId": "24",
-    "identity": "123044@vegaserv",
-    "requestId": "b591ff48-3069-426a-a7ee-088fedd26d59",
-    "historySizeBytes": "3562",
+    "identity": "352230@vegaserv",
+    "requestId": "505be70e-d4a3-48c6-bdd1-737b38d171bf",
+    "historySizeBytes": "3561",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "26",
-   "eventTime": "2026-09-11T07:50:58.148747024Z",
+   "eventTime": "2026-09-12T20:00:38.840801219Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-   "taskId": "14689937",
+   "taskId": "18894996",
    "workflowTaskCompletedEventAttributes": {
     "scheduledEventId": "24",
     "startedEventId": "25",
-    "identity": "123044@vegaserv",
+    "identity": "352230@vegaserv",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     },
     "sdkMetadata": {},
     "meteringMetadata": {}
@@ -520,9 +520,9 @@
   },
   {
    "eventId": "27",
-   "eventTime": "2026-09-11T07:50:58.148791281Z",
+   "eventTime": "2026-09-12T20:00:38.840843265Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_SCHEDULED",
-   "taskId": "14689938",
+   "taskId": "18894997",
    "activityTaskScheduledEventAttributes": {
     "activityId": "4",
     "activityType": {
@@ -560,24 +560,24 @@
   },
   {
    "eventId": "28",
-   "eventTime": "2026-09-11T07:50:58.189683446Z",
+   "eventTime": "2026-09-12T20:00:38.882620854Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_STARTED",
-   "taskId": "14689943",
+   "taskId": "18895002",
    "activityTaskStartedEventAttributes": {
     "scheduledEventId": "27",
-    "identity": "123044@vegaserv",
-    "requestId": "25e96936-fa94-4f9d-9c3c-b78873d03752",
+    "identity": "352230@vegaserv",
+    "requestId": "a7a44ff4-3a26-4a13-a64a-3dc0b7be8de5",
     "attempt": 1,
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "29",
-   "eventTime": "2026-09-11T07:50:58.215913988Z",
+   "eventTime": "2026-09-12T20:00:38.909930084Z",
    "eventType": "EVENT_TYPE_ACTIVITY_TASK_COMPLETED",
-   "taskId": "14689944",
+   "taskId": "18895003",
    "activityTaskCompletedEventAttributes": {
     "result": {
      "payloads": [
@@ -591,17 +591,17 @@
     },
     "scheduledEventId": "27",
     "startedEventId": "28",
-    "identity": "123044@vegaserv"
+    "identity": "352230@vegaserv"
    }
   },
   {
    "eventId": "30",
-   "eventTime": "2026-09-11T07:50:58.215941228Z",
+   "eventTime": "2026-09-12T20:00:38.909982491Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_SCHEDULED",
-   "taskId": "14689945",
+   "taskId": "18895004",
    "workflowTaskScheduledEventAttributes": {
     "taskQueue": {
-     "name": "123044@vegaserv-05c4963c2f61468fa5c5160de5a3ba5c",
+     "name": "352230@vegaserv-dcd4f1cecf63456e8ae6c99988ff0e4f",
      "kind": "TASK_QUEUE_KIND_STICKY",
      "normalName": "control"
     },
@@ -611,30 +611,30 @@
   },
   {
    "eventId": "31",
-   "eventTime": "2026-09-11T07:50:58.266143724Z",
+   "eventTime": "2026-09-12T20:00:38.952092662Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_STARTED",
-   "taskId": "14689949",
+   "taskId": "18895008",
    "workflowTaskStartedEventAttributes": {
     "scheduledEventId": "30",
-    "identity": "123044@vegaserv",
-    "requestId": "08af44af-9a84-4224-a897-fb6567d8e086",
-    "historySizeBytes": "4484",
+    "identity": "352230@vegaserv",
+    "requestId": "45954923-8319-41b5-8ccd-d4e6a0201ddc",
+    "historySizeBytes": "4489",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     }
    }
   },
   {
    "eventId": "32",
-   "eventTime": "2026-09-11T07:50:58.315914586Z",
+   "eventTime": "2026-09-12T20:00:39.001941835Z",
    "eventType": "EVENT_TYPE_WORKFLOW_TASK_COMPLETED",
-   "taskId": "14689953",
+   "taskId": "18895012",
    "workflowTaskCompletedEventAttributes": {
     "scheduledEventId": "30",
     "startedEventId": "31",
-    "identity": "123044@vegaserv",
+    "identity": "352230@vegaserv",
     "workerVersion": {
-     "buildId": "23349d7cbbb43629c516e530619422a8"
+     "buildId": "6acb7bba118f912e6f85c35ba89c0694"
     },
     "sdkMetadata": {},
     "meteringMetadata": {}
@@ -642,9 +642,9 @@
   },
   {
    "eventId": "33",
-   "eventTime": "2026-09-11T07:50:58.315986643Z",
+   "eventTime": "2026-09-12T20:00:39.002031159Z",
    "eventType": "EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED",
-   "taskId": "14689954",
+   "taskId": "18895013",
    "workflowExecutionCompletedEventAttributes": {
     "result": {
      "payloads": [
