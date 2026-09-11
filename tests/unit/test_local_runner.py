@@ -122,7 +122,7 @@ def test_run_workflow_passes_the_chosen_film_to_the_stages_that_need_it(tmp_path
 
     seen: dict[str, dict[str, str]] = {}
 
-    def fake_run_plan(steps, ctx, *, report_path=None, workflow="", log=print):
+    def fake_run_plan(steps, ctx, *, report_path=None, workflow="", use_pins=True, log=print):
         for _key, stage, values in steps:
             if values:
                 seen.setdefault(stage.value, {}).update(values)
@@ -160,7 +160,7 @@ def test_from_and_until_together_slice_to_the_stages_asked_for(tmp_path: Path) -
 
     seen: list[str] = []
 
-    def fake_run_plan(steps, ctx, *, report_path=None, workflow="", log=print):
+    def fake_run_plan(steps, ctx, *, report_path=None, workflow="", use_pins=True, log=print):
         seen.extend(stage.value for _key, stage, _v in steps)
         return {"passed": True, "stages": [], "project_dir": str(ctx.project_dir)}
 

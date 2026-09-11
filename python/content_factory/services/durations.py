@@ -143,6 +143,10 @@ def _reports(root: Path) -> Iterable[tuple[str | None, str, float]]:
         for stage in entries:
             seconds = stage.get("seconds")
             name = stage.get("stage")
+            # A pinned stage was skipped, not run. Its 0.0 s would tell every future run that a
+            # six-minute generation is instant, which is worse than having no sample at all.
+            if stage.get("pinned"):
+                continue
             if stage.get("ok") and isinstance(seconds, int | float) and isinstance(name, str):
                 yield workflow, name, float(seconds)
 

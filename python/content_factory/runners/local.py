@@ -21,6 +21,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
+from content_factory.runners import pins
 from content_factory.runners.registry import RunHandle, RunStopped, register_run
 from content_factory.schemas.dag import Stage
 from content_factory.schemas.fixtures import sample_campaign
@@ -197,6 +198,7 @@ def run_plan(
     *,
     report_path: Path | None = None,
     workflow: str = "run",
+    use_pins: bool = True,
     log=print,
 ) -> dict:
     """Execute ``steps`` in order; stop at the first failure. The report is written after every
@@ -235,6 +237,16 @@ def run_plan(
         "passed": False,
     }
     report_path = report_path or ctx.ddir() / "run.json"
+    # Refused before anything is spent, not six minutes in when a later stage cannot find what a
+    # pinned node was supposed to have left it.
+    pinned = {} if use_pins is False else pins.load(report_path.parent)
+    problems = pins.validate(report_path.parent, pinned, [key for key, _s, _p in steps])
+    if problems:
+        msg = "pinned nodes cannot be honoured:\n  " + "\n  ".join(problems)
+        raise pins.PinError(msg)
+    if pinned:
+        report["pinned"] = sorted(pinned)
+        log(f"--- {len(pinned)} pinned node(s), not run: {', '.join(sorted(pinned))}")
     _refuse_while_gpu_claimed()
     try:
         with register_run(workflow, ctx.project_dir) as handle:
@@ -245,6 +257,7 @@ def run_plan(
                 report_path=report_path,
                 handle=handle,
                 workflow=workflow,
+                pinned=pinned,
                 log=log,
             )
     finally:
@@ -300,11 +313,37 @@ def _run_steps(
     report_path: Path,
     handle: RunHandle,
     workflow: str = "run",
+    pinned: Mapping[str, pins.Pin] | None = None,
     log=print,
 ) -> None:
+    pinned = pinned or {}
     durations.refresh()  # once per run, so a long process estimates from history it helped write
     _log_eta_header(steps, workflow, log)
     for index, (node_key, stage, stage_params) in enumerate(steps):
+        pin = pinned.get(node_key)
+        if pin is not None:
+            # Recorded as `ok` because the output is there and later stages will read it, and as
+            # `pinned` so provenance says it was frozen rather than produced by this run, and so
+            # `services/durations.py` keeps a 0.0 s sample out of the medians.
+            report["stages"].append(
+                {
+                    "stage": stage.value,
+                    "node": node_key,
+                    "ok": True,
+                    "pinned": True,
+                    "seconds": 0.0,
+                    "outputs_hash": pin.outputs_hash,
+                    "facts": pin.facts,
+                }
+            )
+            _write_report(report_path, report)
+            # Two lines, the same shape every other stage uses: `==>` sets the current node for a
+            # terse front end, and the outcome line is what it renders. A pinned node that printed
+            # nothing would simply vanish from the run's output, which is the one thing a pin must
+            # never do — the whole design rests on it being visible that a step was not run.
+            log(f"==> {stage.value} [{node_key}]")
+            log(f"    pinned {pin.outputs_hash[:12]}, not run")
+            continue
         reason = handle.stop_reason()
         if reason:
             report["stopped"] = {"reason": reason, "before": node_key}
@@ -701,6 +740,7 @@ def run_workflow(
     artifacts_dir: Path | None = None,
     from_stage: str | None = None,
     until_stage: str | None = None,
+    use_pins: bool = True,
     quality: str = "demo",
     story: str | None = None,
     shots: str | None = None,
@@ -758,7 +798,9 @@ def run_workflow(
         # A resume runs the configuration the run was started with. See `recorded_values`.
         recorded=recorded_values(ctx.ddir() / "run.json") if from_stage else None,
     )
-    return run_plan(cast("list[Step]", resolved), ctx, workflow=workflow, log=log)
+    return run_plan(
+        cast("list[Step]", resolved), ctx, workflow=workflow, use_pins=use_pins, log=log
+    )
 
 
 def _write_report(path: Path, report: dict) -> None:

@@ -842,6 +842,7 @@ def demo(quality: str = typer.Option("smoke", help="smoke (one scene) | demo (fu
 from content_factory.cli import reference_cmd, workflows_cmd  # noqa: E402
 
 app.add_typer(workflows_cmd.app, name="workflows")
+app.add_typer(workflows_cmd.pins_app, name="pins")
 app.add_typer(reference_cmd.app, name="reference")
 # `make` is the one command an agent needs: one call runs a whole production.
 app.command("make")(workflows_cmd.make)

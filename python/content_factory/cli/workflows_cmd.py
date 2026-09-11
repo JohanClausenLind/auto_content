@@ -40,6 +40,16 @@ def _run_report(run_dir: Path) -> Path:
     return found[0] if found else run_dir / "deliverables" / "none" / "run.json"
 
 
+def _load_report(run_dir: Path) -> dict:
+    """The last run's report, or an empty one. Pinning reads it to learn what a node produced."""
+    path = _run_report(run_dir)
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _parse_overrides(
     set_: list[str], steps
 ) -> tuple[dict[str, dict[str, str]], dict[Stage, dict[str, str]]]:
@@ -333,6 +343,12 @@ def make(
     ),
     plan_only: bool = typer.Option(False, "--plan", help="Print the steps and exit"),
     force: bool = typer.Option(False, "--force", help="Run even if the preflight found gaps"),
+    pin: list[str] = typer.Option(
+        [], "--pin", help="Freeze this node before running: skip it and reuse its last output"
+    ),
+    no_pins: bool = typer.Option(
+        False, "--no-pins", help="Ignore every pin and run the whole lane"
+    ),
 ) -> None:
     """Run one workflow end to end. This is the whole interface: one call, one line per stage.
 
@@ -512,6 +528,8 @@ def make(
                 body, _, bracket = body.rpartition("  [")
                 eta = f"  [{bracket}"
             typer.echo(f"ok   {getattr(terse, 'current', '?'):28s} {body[:96]}{eta}")
+        elif message.startswith("    pinned "):
+            typer.echo(f"pin  {getattr(terse, 'current', '?'):28s} {message.strip()[7:]}")
         elif message.startswith("    WARN "):
             typer.echo(f"WARN {getattr(terse, 'current', '?'):28s} {message[9:][:200]}")
         elif message.startswith("    BLOCKED"):
@@ -521,10 +539,26 @@ def make(
             label = "GATE" if current in human_stages else "FAIL"
             typer.echo(f"{label} {current:28s} {message.strip()[:200]}")
 
+    # `--pin` is applied before the run so one command can freeze a node and go, rather than
+    # needing a separate `pins add` between two runs.
+    if pin:
+        from content_factory.runners import pins as pins_mod
+
+        try:
+            frozen = pins_mod.pin_nodes(
+                _run_report(run_dir).parent, _load_report(run_dir), list(pin)
+            )
+        except pins_mod.PinError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=2) from exc
+        listed = ", ".join(f.describe() for f in sorted(frozen.values(), key=lambda x: x.node))
+        typer.echo(f"pinned: {listed}")
+
     try:
         report = run_workflow(
             workflow,
             project_dir=Path(project_dir).expanduser() if project_dir else None,
+            use_pins=not no_pins,
             from_stage=from_stage or None,
             until_stage=until_stage or None,
             quality=quality,
@@ -593,3 +627,76 @@ def make(
             }
         )
     )
+
+
+pins_app = typer.Typer(
+    help=(
+        "Freeze a node so a rerun skips it and reuses what it already produced.\n\n"
+        "The costly nodes in a lane are near the front and the node being worked on is near the "
+        "back, so `--from` means naming the tail every time and a full run means paying for "
+        "pictures nobody is looking at. Pin the front once and run the lane flat out instead."
+    )
+)
+
+
+def _pins_run_dir(workflow: str, project_dir: str) -> Path:
+    if project_dir:
+        base = Path(project_dir).expanduser()
+    else:
+        base = Path(__file__).resolve().parents[3] / "output" / "local-runs" / workflow
+    return _run_report(base).parent
+
+
+@pins_app.command("list")
+def pins_list(
+    workflow: str = typer.Argument(..., help="Workflow id"),
+    project_dir: str = typer.Option("", help="Where the run wrote"),
+) -> None:
+    """What is frozen for this lane's run directory."""
+    from content_factory.runners import pins as pins_mod
+
+    run_dir = _pins_run_dir(workflow, project_dir)
+    frozen = pins_mod.load(run_dir)
+    if not frozen:
+        typer.echo(f"no pins for {workflow} ({run_dir})")
+        return
+    for pin in sorted(frozen.values(), key=lambda p: p.node):
+        typer.echo(pin.describe())
+
+
+@pins_app.command("add")
+def pins_add(
+    workflow: str = typer.Argument(..., help="Workflow id"),
+    nodes: list[str] = typer.Argument(..., help="Node keys to freeze"),
+    project_dir: str = typer.Option("", help="Where the run wrote"),
+) -> None:
+    """Freeze nodes using what the last run recorded for them."""
+    from content_factory.runners import pins as pins_mod
+
+    run_dir = _pins_run_dir(workflow, project_dir)
+    try:
+        frozen = pins_mod.pin_nodes(run_dir, _load_report(run_dir.parent.parent), list(nodes))
+    except pins_mod.PinError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    for node in sorted(nodes):
+        typer.echo(frozen[node].describe())
+
+
+@pins_app.command("clear")
+def pins_clear(
+    workflow: str = typer.Argument(..., help="Workflow id"),
+    nodes: list[str] = typer.Argument(None, help="Node keys to release; omit for all"),
+    project_dir: str = typer.Option("", help="Where the run wrote"),
+) -> None:
+    """Release some pins, or all of them."""
+    from content_factory.runners import pins as pins_mod
+
+    run_dir = _pins_run_dir(workflow, project_dir)
+    before = pins_mod.load(run_dir)
+    if not before:
+        typer.echo(f"no pins for {workflow}")
+        return
+    targets = list(nodes) if nodes else sorted(before)
+    after = pins_mod.unpin_nodes(run_dir, targets)
+    typer.echo(f"released {len(before) - len(after)}; {len(after)} still pinned")
