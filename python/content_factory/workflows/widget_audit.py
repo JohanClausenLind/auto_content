@@ -247,3 +247,43 @@ def stale_exemptions() -> dict[str, tuple[str, ...]]:
         if stale:
             out[stage] = tuple(sorted(stale))
     return out
+
+
+def undeclared_reads() -> dict[str, tuple[str, ...]]:
+    """``stage value -> keys the executor reads that its node never declares``.
+
+    The mirror of :func:`unread_widgets`, and the half that was missing. A declared widget nothing
+    reads is a control that looks bound and does nothing. A read key nothing declares is the
+    opposite: reachable from `--set` and from nowhere else — invisible on the canvas, and rejected
+    by `workflows/catalog.py` if a lane tries to freeze it.
+
+    `generate_keyframes` is how this was found. `drift_profile`, `locked_min` and
+    `style_delta_max` had always been read, the stage's own comment told the operator to reach for
+    `--set spokes.drift_profile=uncalibrated`, and none of the three was declared anywhere. A run
+    resumed without that flag met the mock-calibrated 0.92 that no real frame reaches and was
+    BLOCKED at a measured 0.8491 (2026-09-10). They are declared now.
+
+    **This is a report, not a gate, and the remaining entries are untriaged.** Two legitimate
+    reasons to read an undeclared key are already visible in the code, and telling them apart from
+    a real gap needs reading each one rather than a rule:
+
+    - the runner injects it from a dedicated flag (`resolved_steps` writes `story`, `subject`,
+      `planner` and `fixture_path` from `--story`, `--subject` and `--shots`);
+    - the stage injects it itself before reading it back through the same path
+      (`stage_lock_generation` writes `style` and `model` from the anchor's recorded marker, so
+      that a lock can never name art direction the anchor was not drawn in).
+
+    The test pins whatever this currently returns, so the list can shrink deliberately but cannot
+    grow by accident.
+    """
+    reads = widget_reads()
+    catalog = node_catalog()
+    out: dict[str, tuple[str, ...]] = {}
+    for stage, read in reads.items():
+        node = catalog.get(stage)
+        if node is None:
+            continue  # not a canvas node; nothing declares its keys by design
+        missing = read - set(node.get("widgets", ()))
+        if missing:
+            out[stage] = tuple(sorted(missing))
+    return out

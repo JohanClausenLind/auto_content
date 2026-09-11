@@ -50,6 +50,35 @@ def _load_report(run_dir: Path) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def _refuse_unknown_widget(node: str, key: str, steps) -> None:
+    """A `--set` naming a widget the node does not declare is a typo, and has to say so.
+
+    The owner was already checked; the key never was. A lane definition setting a widget that does
+    not exist is rejected by `workflows/catalog.py` for exactly the reason its docstring gives —
+    "a typo'd key is silently swallowed by the stage's `_param` default and the workflow quietly
+    does something else" — and `--set` is the same door with no lock on it. Measured while adding
+    the drift knobs: `--set spokes.drift_profil=uncalibrated` was accepted, ignored, and the run
+    gated on the threshold the override was meant to lift.
+
+    Stage-scoped overrides are left alone: they apply to every node running that stage, and a
+    stage is not a node, so there is no single declaration to check against.
+    """
+    from content_factory.workflows.catalog import node_catalog
+
+    stage = next((s for k, s, _v in steps if k == node), None)
+    if stage is None:
+        return
+    declared = (node_catalog().get(stage.value) or {}).get("widgets")
+    if not isinstance(declared, list) or key in declared:
+        return
+    known = ", ".join(sorted(declared)) if declared else "none"
+    typer.echo(
+        f"--set {node}.{key} names a widget {stage.value} does not declare. Declared: {known}",
+        err=True,
+    )
+    raise typer.Exit(code=2)
+
+
 def _parse_overrides(
     set_: list[str], steps
 ) -> tuple[dict[str, dict[str, str]], dict[Stage, dict[str, str]]]:
@@ -71,6 +100,7 @@ def _parse_overrides(
         target, value = item.split("=", 1)
         owner, key = target.rsplit(".", 1)
         if owner in known_nodes:
+            _refuse_unknown_widget(owner, key, steps)
             node_params.setdefault(owner, {})[key] = value
         else:
             stage_params.setdefault(owner, {})[key] = value

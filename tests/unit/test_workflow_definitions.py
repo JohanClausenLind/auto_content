@@ -405,13 +405,53 @@ def test_every_declared_widget_is_one_the_stage_actually_reads() -> None:
     # `frames` and `seed` were removed here because the stage reads neither; `model` was added
     # because it reads that one — `_reference_backends` resolves the spoke backend from this
     # node's own widget, and without it `photo-sequence-video` drew a real anchor and mock
-    # spokes (2026-09-10). The audit above proves the binding; this pins the intent.
-    assert catalog["generate_keyframes"]["widgets"] == ["model"]
+    # spokes (2026-09-10). The three drift knobs joined them on 2026-09-11: the stage had always
+    # read them and its own comment told the operator to reach for
+    # `--set spokes.drift_profile=uncalibrated`, but nothing declared them, so they were settable
+    # from the command line, invisible on the canvas, and refused if a lane tried to freeze one.
+    # The audit above proves the binding; this pins the intent.
+    assert catalog["generate_keyframes"]["widgets"] == [
+        "model",
+        "drift_profile",
+        "locked_min",
+        "style_delta_max",
+    ]
+
     # The three the audit found and this check now covers by construction.
     reads = widget_reads()
     assert "resolution" in reads["upscale_video"]
     assert {"default_route", "generate_kinds"} <= reads["route_shots"]
     assert {"noise_seed", "guide_strength", "unet_name"} <= reads["generate_video"]
+
+
+def test_no_new_stage_reads_a_key_its_node_never_declares() -> None:
+    """The mirror of the audit above, and the half that was missing.
+
+    A declared widget nothing reads is a control that looks bound and does nothing. A read key
+    nothing declares is the opposite: reachable from `--set` and from nowhere else. That is how
+    `generate_keyframes` came to read three drift knobs the canvas could not set and a lane could
+    not freeze.
+
+    The rest of this list is **untriaged**, and pinned rather than asserted empty because two
+    legitimate reasons to read an undeclared key already exist in the code — the runner injecting
+    one from a dedicated flag (`--story`, `--subject`, `--shots`), and a stage injecting one
+    itself before reading it back (`stage_lock_generation` takes `style` and `model` from the
+    anchor's recorded marker so a lock can never name art direction the anchor was not drawn in).
+    Telling those from a real gap needs reading each one. Pinning means the backlog can shrink
+    deliberately and cannot grow by accident.
+    """
+    from content_factory.workflows.widget_audit import undeclared_reads
+
+    assert undeclared_reads() == {
+        "generate_anchor": ("backend", "references"),
+        "generate_keyframes": ("backend",),
+        "lock_generation": ("backend", "megapixels", "model", "seed", "style"),
+        "plan_shots": ("style",),
+        "plan_story": ("subject",),
+        "review_assets": ("references", "style"),
+        "review_frames": ("style",),
+        "synthesize_narration": ("language",),
+    }
 
 
 def test_a_widget_the_node_does_not_declare_is_refused(tmp_path: Path) -> None:

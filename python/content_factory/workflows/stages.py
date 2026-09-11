@@ -2974,10 +2974,14 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
     # `--set spokes.drift_profile=uncalibrated` observes rather than gates, which is what the run
     # that produces the numbers a real threshold is set from needs. `locked_min` and
     # `style_delta_max` set a measured pair directly.
-    if _param(ctx, "drift_profile", "").strip().lower() == "uncalibrated":
+    if _param(ctx, "drift_profile", "configured").strip().lower() == "uncalibrated":
         locked_min, delta_max = UNCALIBRATED
-    locked_min = _param_float(ctx, "locked_min", locked_min)
-    delta_max = _param_float(ctx, "style_delta_max", delta_max)
+    # 0 is "leave the profile's own value alone", not "a floor of zero". The real thresholds are
+    # per-style and per-camera and resolved above; a widget that had to carry a number would be a
+    # third calibration to keep in step with the other two, and its default would silently
+    # override them on every node that never touched it.
+    locked_min = _param_float(ctx, "locked_min", 0.0) or locked_min
+    delta_max = _param_float(ctx, "style_delta_max", 0.0) or delta_max
     pool = _reference_backends(ctx)
     result = build_sequence(
         plan,

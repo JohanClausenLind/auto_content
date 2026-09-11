@@ -593,13 +593,20 @@
    "category": "image sequence",
    "executor": "ai",
    "widgets": [
-    "model"
+    "model",
+    "drift_profile",
+    "locked_min",
+    "style_delta_max"
    ],
    "widget_options": {
     "model": [
      "hidream-o1",
      "flux2-dev",
      "mock"
+    ],
+    "drift_profile": [
+     "configured",
+     "uncalibrated"
     ]
    },
    "widget_display": {},

@@ -543,6 +543,45 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       // hidream-o1 on the anchor node and got a real anchor with **mock spokes**, because the
       // pin could not be written here (measured 2026-09-10).
       { name: "model", kind: "combo", default: "hidream-o1", options: ["hidream-o1", "flux2-dev", "mock"] },
+      // The drift gate's three knobs. The stage has always read them (`stage_generate_keyframes`
+      // -> `_param(ctx, "drift_profile" | "locked_min" | "style_delta_max")`) and its own comment
+      // tells the operator to reach for `--set spokes.drift_profile=uncalibrated`, but they were
+      // declared nowhere: settable from the command line, invisible on the canvas, and rejected
+      // by `catalog.py` if a lane tried to freeze one. An `image-set` resumed to redraw a single
+      // frame lost that `--set`, met the mock-calibrated 0.92 that no real frame reaches, and was
+      // BLOCKED after three attempts at a measured 0.8491 (2026-09-10). Declaring them is what
+      // lets a lane carry the calibration instead of the operator remembering it every time.
+      {
+        name: "drift_profile",
+        kind: "combo",
+        default: "configured",
+        options: ["configured", "uncalibrated"],
+        help:
+          "configured uses the per-style thresholds; uncalibrated (0.30/1.0) observes rather " +
+          "than gates, for the run that produces the numbers a real threshold is set from",
+      },
+      // 0 means "leave it to the profile": the real defaults are per-style and per-camera and are
+      // resolved at run time, so a fixed number here would be a third calibration to keep in step.
+      {
+        name: "locked_min",
+        kind: "float",
+        default: 0,
+        min: 0,
+        max: 1,
+        step: 0.01,
+        precision: 4,
+        help: "Measured locked-region similarity floor. 0 leaves the profile's own value alone.",
+      },
+      {
+        name: "style_delta_max",
+        kind: "float",
+        default: 0,
+        min: 0,
+        max: 2,
+        step: 0.01,
+        precision: 4,
+        help: "Measured style-delta ceiling. 0 leaves the profile's own value alone.",
+      },
     ],
   },
   drift_qc: {
