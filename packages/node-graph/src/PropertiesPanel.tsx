@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { splitTypes } from "./datatypes";
 import { groupOf, isHidden, nodeById, type NodeMode } from "./graphModel";
-import type { NodeDefinition } from "./nodeDefs";
+import { visibleWidgets, type NodeDefinition } from "./nodeDefs";
 import type { GraphEditor } from "./useGraphEditor";
 import { WidgetRow } from "./widgets";
 
@@ -33,6 +33,7 @@ function SelectedNode({ editor, nodeId, readOnly }: { editor: GraphEditor; nodeI
   const node = nodeById(editor.graph, nodeId);
   if (!node) return null;
   const def = editor.catalog.get(node.type);
+  const shownWidgets = def ? visibleWidgets(def, node.values) : [];
   const problems = editor.problemsByNode.get(node.id) ?? [];
   const group = groupOf(editor.graph, node.id);
 
@@ -92,9 +93,9 @@ function SelectedNode({ editor, nodeId, readOnly }: { editor: GraphEditor; nodeI
         </select>
       </label>
 
-      {def && def.widgets.length > 0 && (
+      {def && shownWidgets.length > 0 && (
         <div className="ng-props__widgets">
-          {def.widgets.map((spec) => (
+          {shownWidgets.map((spec) => (
             <WidgetRow
               key={spec.name}
               nodeId={`props-${node.id}`}

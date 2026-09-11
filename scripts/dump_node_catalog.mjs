@@ -79,6 +79,14 @@ try {
           .filter((w) => Array.isArray(w.options) && w.options.length > 0)
           .map((w) => [w.name, w.options]),
       ),
+      // When a widget applies, keyed by widget name. Absent means always. Carried through so a
+      // Python-side check can tell "this lane sets a widget that does not exist" (an error) from
+      // "this lane sets a widget its own other values hide" (worth saying, not worth failing on).
+      widget_display: Object.fromEntries(
+        (def.widgets ?? [])
+          .filter((w) => w.displayOptions)
+          .map((w) => [w.name, w.displayOptions]),
+      ),
       inputs: (def.inputs ?? []).map((s) => s.name),
       outputs: (def.outputs ?? []).map((s) => s.name),
       required_inputs: (def.inputs ?? []).filter((s) => !s.optional).map((s) => s.name),

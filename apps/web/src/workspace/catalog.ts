@@ -370,7 +370,10 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         name: "fixture_path",
         kind: "text",
         default: "",
-        placeholder: "fixtures/shots/<plan>.json (planner: fixture)",
+        placeholder: "fixtures/shots/<plan>.json",
+        // Read only on the `fixture` branch (stages.py:1316-1317). The placeholder used to carry
+        // "(planner: fixture)" because the widget could not say it itself; now it can.
+        displayOptions: { show: { planner: ["fixture"] } },
       },
       { name: "size", kind: "combo", default: "1024x576", options: LTX_SIZES, label: "size (WxH)" },
       { name: "fps", kind: "combo", default: "24", options: ["24", "25", "30", "60"] },
@@ -792,8 +795,25 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         options: ["off", "clearervoice_sr"],
       },
       { name: "enhancer", kind: "combo", default: "off", options: ["off", "resemble_enhance"] },
-      { name: "enhancer_mode", kind: "combo", default: "enhance", options: ["enhance", "denoise"] },
-      { name: "enhancer_nfe", kind: "int", default: 32, min: 1, max: 128 },
+      // Read only inside `if spec.enhancer == "resemble_enhance"` (audio/restore.py:317), so with
+      // the enhancer off these two are two controls that do nothing and read as if they might.
+      // `device` stays visible: it applies to whichever of the three neural steps is on, and
+      // "show when any of three is not off" is a disjunction this model deliberately cannot say.
+      {
+        name: "enhancer_mode",
+        kind: "combo",
+        default: "enhance",
+        options: ["enhance", "denoise"],
+        displayOptions: { show: { enhancer: ["resemble_enhance"] } },
+      },
+      {
+        name: "enhancer_nfe",
+        kind: "int",
+        default: 32,
+        min: 1,
+        max: 128,
+        displayOptions: { show: { enhancer: ["resemble_enhance"] } },
+      },
       { name: "gate", kind: "combo", default: "detected", options: ["detected", "always"] },
       { name: "device", kind: "combo", default: "cpu", options: ["cpu", "cuda"] },
     ],
@@ -983,18 +1003,24 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         kind: "combo",
         default: "ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf",
         options: ["ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf"],
+        // The three weight names are read on the LTX branch only (stages.py:5433-5443, after
+        // `wan-animate-2.pose` has already returned), so on mock and on the pose model they are
+        // three GGUF filenames that change nothing.
+        displayOptions: { show: { model: ["ltx-2.5.i2v"] } },
       },
       {
         name: "clip_name",
         kind: "combo",
         default: "gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf",
         options: ["gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf"],
+        displayOptions: { show: { model: ["ltx-2.5.i2v"] } },
       },
       {
         name: "vae_name",
         kind: "combo",
         default: "ltx-2.5-video-vae-conv-bf16.safetensors",
         options: ["ltx-2.5-video-vae-conv-bf16.safetensors"],
+        displayOptions: { show: { model: ["ltx-2.5.i2v"] } },
       },
       // `audio_vae` was here and there is no audio branch in the i2v graph to load it into:
       // shots are generated silent and the sound is designed against the cut (sound_design ->

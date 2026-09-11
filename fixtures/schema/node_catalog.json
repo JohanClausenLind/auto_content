@@ -7,6 +7,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "audio",
     "script"
@@ -42,6 +43,7 @@
      "story"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story"
    ],
@@ -65,6 +67,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "timings"
    ],
@@ -88,6 +91,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "story"
    ],
@@ -124,6 +128,7 @@
      "blender"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "shots",
     "lock",
@@ -151,6 +156,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "evidence"
    ],
@@ -172,6 +178,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "deliverable",
     "qc"
@@ -197,6 +204,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "text"
    ],
@@ -222,6 +230,7 @@
     "focus_keyword"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "text"
    ],
@@ -245,6 +254,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "text"
    ],
@@ -270,6 +280,7 @@
     "fps"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "story",
     "timings",
@@ -297,6 +308,7 @@
    "executor": "ai",
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "story"
    ],
@@ -320,6 +332,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "frames",
     "audio",
@@ -356,6 +369,7 @@
     "words"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "story",
     "claims"
@@ -381,6 +395,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "frames"
    ],
@@ -404,6 +419,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "package"
    ],
@@ -435,6 +451,7 @@
      "listmonk"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "text"
    ],
@@ -477,6 +494,7 @@
      "reference_only"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story"
    ],
@@ -503,6 +521,7 @@
     "mask_dilation"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "frames",
     "mask"
@@ -547,6 +566,7 @@
      "mock"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story",
     "controls",
@@ -582,6 +602,7 @@
      "mock"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "lock",
     "controls"
@@ -647,6 +668,29 @@
      "ltx-2.5-video-vae-conv-bf16.safetensors"
     ]
    },
+   "widget_display": {
+    "unet_name": {
+     "show": {
+      "model": [
+       "ltx-2.5.i2v"
+      ]
+     }
+    },
+    "clip_name": {
+     "show": {
+      "model": [
+       "ltx-2.5.i2v"
+      ]
+     }
+    },
+    "vae_name": {
+     "show": {
+      "model": [
+       "ltx-2.5.i2v"
+      ]
+     }
+    }
+   },
    "inputs": [
     "first_frame",
     "last_frame",
@@ -676,6 +720,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [],
    "outputs": [
     "sources"
@@ -697,6 +742,7 @@
     "bytes"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [],
    "outputs": [
     "audio"
@@ -723,6 +769,7 @@
      "demo"
     ]
    },
+   "widget_display": {},
    "inputs": [],
    "outputs": [
     "brief"
@@ -744,6 +791,7 @@
     "bytes"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [],
    "outputs": [
     "image"
@@ -765,6 +813,7 @@
     "bytes"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [],
    "outputs": [
     "video"
@@ -795,6 +844,7 @@
      "none"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "frames"
    ],
@@ -818,6 +868,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "text"
    ],
@@ -841,6 +892,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "anchor"
    ],
@@ -864,6 +916,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "story",
     "text"
@@ -889,6 +942,7 @@
     "target_lufs"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "audio",
     "music",
@@ -916,6 +970,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "deliverable"
    ],
@@ -939,6 +994,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "brief"
    ],
@@ -962,6 +1018,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "packages",
     "files",
@@ -983,6 +1040,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "packages"
    ],
@@ -1006,6 +1064,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "frames"
    ],
@@ -1066,6 +1125,15 @@
      "interior_warm"
     ]
    },
+   "widget_display": {
+    "fixture_path": {
+     "show": {
+      "planner": [
+       "fixture"
+      ]
+     }
+    }
+   },
    "inputs": [
     "story",
     "reference"
@@ -1094,6 +1162,7 @@
     "story"
    ],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "brief",
     "claims",
@@ -1123,6 +1192,7 @@
    "executor": "human",
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "brief",
     "story"
@@ -1170,6 +1240,7 @@
      "export_only"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "packages"
    ],
@@ -1189,6 +1260,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "deliverable"
    ],
@@ -1233,6 +1305,7 @@
      "1080x1080"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story"
    ],
@@ -1254,6 +1327,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "artboards"
    ],
@@ -1277,6 +1351,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "timeline"
    ],
@@ -1307,6 +1382,7 @@
      "2x"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "artboards"
    ],
@@ -1338,6 +1414,7 @@
      "deep"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "brief",
     "sources"
@@ -1400,6 +1477,22 @@
      "cuda"
     ]
    },
+   "widget_display": {
+    "enhancer_mode": {
+     "show": {
+      "enhancer": [
+       "resemble_enhance"
+      ]
+     }
+    },
+    "enhancer_nfe": {
+     "show": {
+      "enhancer": [
+       "resemble_enhance"
+      ]
+     }
+    }
+   },
    "inputs": [
     "audio"
    ],
@@ -1423,6 +1516,7 @@
    "executor": "human",
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "shots"
    ],
@@ -1454,6 +1548,7 @@
      "agent"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "frames"
    ],
@@ -1485,6 +1580,7 @@
      "generate"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story",
     "shots"
@@ -1521,6 +1617,7 @@
      "energetic"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story"
    ],
@@ -1554,6 +1651,7 @@
      "mmaudio"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "video",
     "frames"
@@ -1606,6 +1704,7 @@
      "whisperx"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "script"
    ],
@@ -1647,6 +1746,7 @@
      "large-v3"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "audio"
    ],
@@ -1679,6 +1779,7 @@
      "2160"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "frames"
    ],
@@ -1702,6 +1803,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [],
    "outputs": [],
    "required_inputs": [],
@@ -1715,6 +1817,7 @@
    "executor": null,
    "widgets": [],
    "widget_options": {},
+   "widget_display": {},
    "inputs": [
     "claims"
    ],
@@ -1752,6 +1855,7 @@
      "whisperx"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "script",
     "recording"
@@ -1786,6 +1890,7 @@
      "formal"
     ]
    },
+   "widget_display": {},
    "inputs": [
     "story"
    ],

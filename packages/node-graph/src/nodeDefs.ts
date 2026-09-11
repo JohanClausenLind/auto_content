@@ -18,6 +18,34 @@ export type WidgetKind =
   | "toggle"
   | "seed";
 
+/**
+ * A condition on sibling widgets' values, keyed by widget name.
+ *
+ * `{ enhancer: ["resemble_enhance"] }` reads "…when `enhancer` is `resemble_enhance`".
+ */
+export type DisplayCondition = Readonly<Record<string, readonly WidgetValue[]>>;
+
+/**
+ * When to show a widget, as data rather than as a second node type.
+ *
+ * Half the controls on a busy node are dead most of the time: `restore_speech` shows
+ * `enhancer_mode` and `enhancer_nfe` whether or not an enhancer is on, and `generate_video`
+ * shows three GGUF filenames that only mean anything to one of its three models. The choices
+ * were to render them always (and let the operator guess), or to split the node per backend
+ * (and duplicate every shared widget). This is the third option, and it is the one n8n settled
+ * on too: the definition says when a control applies, and the editor, the panel and the height
+ * estimate all read the same answer.
+ *
+ * A hidden widget keeps its value — it is not cleared, and a lane that sets it stays valid —
+ * but it stops being required, because a control nobody can see must never block a graph.
+ */
+export interface DisplayOptions {
+  /** Show only when every named widget holds one of the listed values. */
+  readonly show?: DisplayCondition;
+  /** Hide when any named widget holds one of the listed values. `hide` beats `show`. */
+  readonly hide?: DisplayCondition;
+}
+
 export interface WidgetSpec {
   readonly name: string;
   readonly kind: WidgetKind;
@@ -44,6 +72,8 @@ export interface WidgetSpec {
    * about it, and a lane template that opens with an empty file input needs the second thing.
    */
   readonly hint?: string;
+  /** When this widget applies. Absent means always. */
+  readonly displayOptions?: DisplayOptions;
 }
 
 export interface SlotSpec {
@@ -123,14 +153,20 @@ export const NODE_WIDGET_HEIGHT = 20;
  * it until ResizeObserver reports truth, and thumbnails never measure at all.
  */
 export function estimateNodeSize(
-  node: { readonly width: number | null; readonly collapsed: boolean },
+  node: {
+    readonly width: number | null;
+    readonly collapsed: boolean;
+    readonly values?: Readonly<Record<string, WidgetValue>>;
+  },
   def: NodeDefinition | null,
 ): { width: number; height: number } {
   const width = node.width ?? def?.width ?? DEFAULT_NODE_WIDTH;
   if (node.collapsed || !def) return { width, height: NODE_TITLE_HEIGHT + 2 };
   const slotRows = Math.max(def.inputs.length, def.outputs.length);
   let height = NODE_TITLE_HEIGHT + 14 + slotRows * NODE_SLOT_HEIGHT + 24;
-  for (const widget of def.widgets) {
+  // Only the widgets that will actually be drawn: a node whose estimate counts hidden rows
+  // reserves space the canvas then leaves blank until ResizeObserver corrects it.
+  for (const widget of visibleWidgets(def, node.values ?? {})) {
     if (widget.kind === "textarea") height += 90;
     else if (widget.kind === "chips") {
       // Label row plus the pill grid, three to a row at the default node width.
@@ -163,6 +199,50 @@ export function formatChips(values: readonly string[], options?: readonly string
   const ordered = options ? options.filter((o) => unique.includes(o)) : unique;
   const extras = unique.filter((v) => !ordered.includes(v));
   return [...ordered, ...extras].join(",");
+}
+
+/**
+ * Does `condition` hold against the node's current values?
+ *
+ * A widget the node has never set reads as its own default, which is the same resolution the
+ * editor uses to render it — otherwise a freshly dropped node would answer differently from the
+ * same node one click later.
+ */
+function conditionHolds(
+  condition: DisplayCondition,
+  def: NodeDefinition,
+  values: Readonly<Record<string, WidgetValue>>,
+  every: boolean,
+): boolean {
+  const entries = Object.entries(condition);
+  if (entries.length === 0) return every;
+  const test = ([name, allowed]: [string, readonly WidgetValue[]]): boolean => {
+    const spec = def.widgets.find((w) => w.name === name);
+    const value = values[name] ?? spec?.default;
+    return allowed.some((a) => a === value);
+  };
+  return every ? entries.every(test) : entries.some(test);
+}
+
+/** Whether a widget applies, given what the node's other widgets currently hold. */
+export function isWidgetVisible(
+  widget: WidgetSpec,
+  def: NodeDefinition,
+  values: Readonly<Record<string, WidgetValue>>,
+): boolean {
+  const opts = widget.displayOptions;
+  if (!opts) return true;
+  if (opts.hide && conditionHolds(opts.hide, def, values, false)) return false;
+  if (opts.show && !conditionHolds(opts.show, def, values, true)) return false;
+  return true;
+}
+
+/** The widgets that apply right now, in definition order. */
+export function visibleWidgets(
+  def: NodeDefinition,
+  values: Readonly<Record<string, WidgetValue>>,
+): readonly WidgetSpec[] {
+  return def.widgets.filter((w) => isWidgetVisible(w, def, values));
 }
 
 export function widgetDefaults(def: NodeDefinition): Record<string, WidgetValue> {

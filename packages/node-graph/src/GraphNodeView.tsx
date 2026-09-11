@@ -14,6 +14,7 @@ import {
   DEFAULT_NODE_WIDTH,
   MAX_NODE_WIDTH,
   MIN_NODE_WIDTH,
+  visibleWidgets,
   type NodeDefinition,
   type SlotSpec,
 } from "./nodeDefs";
@@ -176,6 +177,7 @@ function ResizeGrip({ node }: { node: GraphNode; }) {
 export const GraphNodeView = memo(function GraphNodeView({ data, selected }: NodeProps<GraphFlowNode>) {
   const { editor, readOnly } = useEditorContext();
   const { node, def, problems, status } = data;
+  const shownWidgets = def ? visibleWidgets(def, node.values) : [];
   const noteRef = useAutoGrowTextarea(node.note, 22);
   const isNote = def?.kind === "note";
   const errors = problems.filter((p) => p.severity === "error");
@@ -282,9 +284,9 @@ export const GraphNodeView = memo(function GraphNodeView({ data, selected }: Nod
             </div>
           )}
 
-          {def && def.widgets.length > 0 && (
+          {def && shownWidgets.length > 0 && (
             <div className="ng-node__widgets nodrag nowheel">
-              {def.widgets.map((spec) => (
+              {shownWidgets.map((spec) => (
                 <WidgetRow
                   key={spec.name}
                   nodeId={node.id}

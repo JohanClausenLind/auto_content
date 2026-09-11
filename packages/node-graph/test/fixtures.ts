@@ -50,6 +50,48 @@ export const DEFS: readonly NodeDefinition[] = [
     widgets: [{ name: "prefix", kind: "text", default: "out" }],
   },
   {
+    // Conditional widgets: `enhancer` gates its own two settings, the way restore_speech does.
+    type: "test.enhance",
+    title: "Enhance",
+    category: "audio",
+    summary: "Optional restoration with settings that only apply when it is on",
+    inputs: [{ name: "audio", type: "AUDIO" }],
+    outputs: [{ name: "audio", type: "AUDIO" }],
+    widgets: [
+      { name: "enhancer", kind: "combo", default: "off", options: ["off", "resemble", "clearer"] },
+      {
+        name: "mode",
+        kind: "combo",
+        default: "enhance",
+        options: ["enhance", "denoise"],
+        displayOptions: { show: { enhancer: ["resemble"] } },
+      },
+      {
+        name: "nfe",
+        kind: "int",
+        default: 32,
+        min: 1,
+        max: 128,
+        displayOptions: { show: { enhancer: ["resemble", "clearer"] } },
+      },
+      {
+        name: "legacy",
+        kind: "text",
+        default: "",
+        displayOptions: { hide: { enhancer: ["resemble"] } },
+      },
+      {
+        // Required *and* conditional: must not block the graph while it is hidden.
+        name: "profile",
+        kind: "text",
+        default: "",
+        required: true,
+        hint: "name the restoration profile",
+        displayOptions: { show: { enhancer: ["resemble"] } },
+      },
+    ],
+  },
+  {
     type: "test.remix",
     title: "Remix",
     category: "video",

@@ -66,7 +66,9 @@ export {
   estimateNodeSize,
   findSlot,
   formatChips,
+  isWidgetVisible,
   parseChips,
+  visibleWidgets,
   MAX_NODE_WIDTH,
   MIN_NODE_WIDTH,
   NODE_SLOT_HEIGHT,
@@ -75,6 +77,8 @@ export {
   widgetDefaults,
 } from "./nodeDefs";
 export type {
+  DisplayCondition,
+  DisplayOptions,
   NodeCatalog,
   NodeDefinition,
   NodeExecutor,

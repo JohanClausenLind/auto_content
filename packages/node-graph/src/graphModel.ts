@@ -6,7 +6,14 @@
  * snapshot diff. Nothing here touches React or the DOM, so all of it is testable in isolation.
  */
 
-import { findSlot, parseChips, widgetDefaults, type NodeCatalog, type WidgetValue } from "./nodeDefs";
+import {
+  findSlot,
+  parseChips,
+  visibleWidgets,
+  widgetDefaults,
+  type NodeCatalog,
+  type WidgetValue,
+} from "./nodeDefs";
 import { typesCompatible } from "./datatypes";
 
 export type NodeMode = "always" | "muted" | "bypass";
@@ -685,7 +692,9 @@ export function validateGraph(graph: WorkspaceGraph, catalog: NodeCatalog): read
           `${def.title}: connect one of ${labels.join(" or ")}` + (hint ? ` — ${hint}` : ""),
       });
     }
-    for (const widget of def.widgets) {
+    // Hidden widgets are skipped: a control the operator cannot see must never block a graph,
+    // and `restore_speech` with the enhancer off should not demand an enhancer mode.
+    for (const widget of visibleWidgets(def, node.values)) {
       if (!widget.required) continue;
       const value = node.values[widget.name];
       const empty =
