@@ -156,7 +156,14 @@ class FakeHost:
         for rel in wanted:
             src = source / rel
             if not src.is_file():
-                continue  # rsync does not fail over a name absent from the source
+                if "--ignore-missing-args" not in argv:
+                    # What rsync really does, and what the first real harvest against nova hit:
+                    # a name it cannot stat in the source is an error, exit 23, *after* copying
+                    # everything else. A double that silently skipped it hid a live bug.
+                    return subprocess.CompletedProcess(
+                        argv, 23, "", f'rsync: [sender] link_stat "{src}" failed'
+                    )
+                continue
             out = dest / rel
             out.parent.mkdir(parents=True, exist_ok=True)
             if rel in self.symlink:
@@ -307,6 +314,8 @@ def test_the_file_list_is_nul_separated(far, tmp_path) -> None:
     assert "--safe-links" in rsync
     assert "-L" not in rsync
     assert any(a.startswith("--timeout=") for a in rsync)
+    # Evidence is requested optimistically and rsync errors (exit 23) on a name it cannot stat.
+    assert "--ignore-missing-args" in rsync
 
 
 # -- refusing to believe a partial transfer ---------------------------------------------------
@@ -416,7 +425,9 @@ def test_a_gallery_name_already_taken_by_other_bytes_is_reported(far, tmp_path) 
     be told rather than have one of the films disappear."""
     repo = _repo(tmp_path)
     (repo / "videos").mkdir(parents=True)
-    (repo / "videos" / "clash.mp4").write_bytes(b"vegaserv's own film, of a different length")
+    # Deliberately the SAME LENGTH as the harvested film: two different films can be the same
+    # number of bytes, so identity here has to be the digest and not the size.
+    (repo / "videos" / "clash.mp4").write_bytes(b"other!" * 40)
     far.add_run("clash", files=FILM)
     outcome = harvest_mod.harvest_run(harvest_mod.discover(HOST)[0], repo_root=repo)
     assert outcome.result == "harvested"  # the bytes are home
@@ -498,3 +509,15 @@ def test_an_unknown_field_on_a_host_is_an_error(monkeypatch) -> None:
     monkeypatch.setenv("CF__REMOTE__HOSTS", '[{"name":"nova","ssh":"n","typo_root":"/x"}]')
     with pytest.raises(ValueError, match="typo_root"):
         Settings()
+
+
+def test_the_same_film_already_in_the_gallery_is_recognised_not_refused(far, tmp_path) -> None:
+    """Harvesting a film this machine already has a copy of is not a collision. Only different
+    bytes under the same name are."""
+    repo = _repo(tmp_path)
+    (repo / "videos").mkdir(parents=True)
+    (repo / "videos" / "twice.mp4").write_bytes(b"a film" * 40)
+    far.add_run("twice", files=FILM)
+    outcome = harvest_mod.harvest_run(harvest_mod.discover(HOST)[0], repo_root=repo)
+    assert outcome.gallery == "videos/twice.mp4"
+    assert outcome.detail == ""

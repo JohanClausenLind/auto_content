@@ -385,6 +385,13 @@ def fetch_argv(run: RemoteRun, *, list_file: Path, dest: Path, partial: Path) ->
         "-a",
         "--safe-links",
         "--from0",
+        # The evidence list is optimistic - which of `sequence/chain.json`, `reviews/frames/*` and
+        # the rest exists depends on the lane - and rsync treats a name it cannot stat in the
+        # source as an ERROR, exiting 23 after transferring everything else. Measured against nova
+        # 2026-09-10: without this the first real harvest refused a run whose files had all
+        # arrived. Missing evidence is normal; missing *manifest* files are still caught, by the
+        # digest check in `verify`.
+        "--ignore-missing-args",
         f"--files-from={list_file}",
         "--partial-dir",
         str(partial),
@@ -405,8 +412,8 @@ def fetch(run: RemoteRun, dest: Path) -> None:
     wanted.append("destination-packages/packages.json")
     handle = tempfile.NamedTemporaryFile("w", suffix=".files", delete=False, newline="")
     try:
-        # NUL-separated, matching --from0. Evidence files that do not exist are simply not sent;
-        # rsync does not fail a transfer over a name it cannot find in the source.
+        # NUL-separated, matching --from0. Evidence that does not exist is skipped by
+        # --ignore-missing-args, without which rsync exits 23 over a name absent from the source.
         handle.write("\0".join(dict.fromkeys(wanted)) + "\0")
         handle.close()
         _run(
@@ -511,6 +518,7 @@ def publish(run: RemoteRun, landing: Path, *, repo_root: Path = REPO_ROOT) -> st
         gallery_dir=get_settings().gallery.dir,
         repo_root=repo_root,
         replace=False,
+        expect_sha256=film.sha256,
     )
 
 

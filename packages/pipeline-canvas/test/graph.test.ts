@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGraph, describeRunNode, formatDuration } from "../src/graph";
+import { buildGraph, describeRunNode, formatDuration, formatEta } from "../src/graph";
 import { deliverableOf, isSharedNode } from "../src/types";
 import { node, RUN_NODES } from "./fixtures";
 
@@ -82,5 +82,31 @@ describe("provided edges", () => {
     // fan-out, not a chain: the implicit heuristic would have chained g -> a
     const implicit = buildGraph([...nodes]);
     expect(implicit.edges.some((e) => e.source === "generate_video:g")).toBe(true);
+  });
+});
+
+describe("formatEta", () => {
+  it("phrases an estimate as one, coarsely, and says nothing when it has nothing to say", () => {
+    // Coarse on purpose: the medians behind these have a real spread, and "3 m 47 s" reads as a
+    // promise the estimator never made.
+    expect(formatEta(42)).toBe("~42 s");
+    expect(formatEta(89)).toBe("~89 s");
+    expect(formatEta(90)).toBe("~2 min");
+    expect(formatEta(608)).toBe("~10 min");
+    expect(formatEta(7200)).toBe("~2.0 h");
+    // "0 left" on a stage still running is not "done", it is imminent.
+    expect(formatEta(0.4)).toBe("~any moment");
+    // No estimate is the empty string, so a caller can && it into place like formatDuration.
+    expect(formatEta(null)).toBe("");
+    expect(formatEta(undefined)).toBe("");
+    expect(formatEta(-5)).toBe("");
+    expect(formatEta(Number.NaN)).toBe("");
+  });
+
+  it("puts the estimate in the accessible description of an unfinished node", () => {
+    const running = node({ node_id: "script:d1", stage: "script", state: "running", eta_seconds: 42 });
+    expect(describeRunNode(running)).toContain("~42 s to go");
+    const done = node({ node_id: "plan", stage: "plan", state: "complete", duration_ms: 1200 });
+    expect(describeRunNode(done)).not.toContain("to go");
   });
 });

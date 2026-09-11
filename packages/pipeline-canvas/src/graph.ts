@@ -76,6 +76,8 @@ export function describeRunNode(node: RunNode): string {
   if (node.cache_hit) parts.push("from cache");
   const duration = formatDuration(node.duration_ms);
   if (duration) parts.push(duration);
+  const eta = formatEta(node.eta_seconds);
+  if (eta) parts.push(`${eta} to go`);
   if (node.attempts > 1) parts.push(`${node.attempts} attempts`);
   if (node.error) parts.push(`error: ${node.error}`);
   return parts.join(", ");
@@ -89,4 +91,17 @@ export function formatDuration(ms: number | null | undefined): string {
   const minutes = Math.floor(ms / 60_000);
   const seconds = Math.round((ms % 60_000) / 1000);
   return `${minutes} m ${String(seconds).padStart(2, "0")} s`;
+}
+
+/**
+ * An estimate, phrased as one. "~30 s", "~4 min", "~1.2 h" — coarse on purpose, because the
+ * spread behind these medians is real and a figure like "3 m 47 s" reads as a promise. Empty
+ * string for no estimate, so a caller can `&&` it into place like `formatDuration`.
+ */
+export function formatEta(seconds: number | null | undefined): string {
+  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return "";
+  if (seconds < 1) return "~any moment";
+  if (seconds < 90) return `~${Math.round(seconds)} s`;
+  if (seconds < 5400) return `~${Math.round(seconds / 60)} min`;
+  return `~${(seconds / 3600).toFixed(1)} h`;
 }

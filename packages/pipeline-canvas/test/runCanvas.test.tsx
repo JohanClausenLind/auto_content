@@ -13,4 +13,15 @@ describe("RunCanvas", () => {
     expect(selected).not.toBeNull();
     expect(selected).toHaveAttribute("aria-label", expect.stringContaining("plan"));
   });
+
+  it("shows each unfinished node's estimate on the node itself", async () => {
+    render(<RunCanvas nodes={RUN_NODES} aria-label="Run graph" />);
+    const region = screen.getByRole("region", { name: "Run graph" });
+    await waitFor(() => expect(region.querySelectorAll(".cf-runnode")).toHaveLength(RUN_NODES.length));
+    const etas = [...region.querySelectorAll(".cf-runnode__eta")].map((el) => el.textContent);
+    expect(etas).toEqual(["~42 s", "~10 min"]);  // the running and the queued node, and only those
+    // The estimate says how much evidence is behind it rather than presenting a median of one
+    // and a median of three hundred as the same claim.
+    expect(region.querySelector(".cf-runnode__eta")).toHaveAttribute("title", "median of 9 past run(s)");
+  });
 });

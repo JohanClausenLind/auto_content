@@ -93,6 +93,13 @@ class ActiveRun:
     rebuilding a resume command from the workflow name alone would quietly resume a different
     film. Empty for a run registered by a caller that had no argv to give, e.g. a test."""
 
+    eta_seconds: float = 0.0
+    """Seconds of work the run thinks it has left, refreshed at every step boundary.
+
+    Written here rather than only logged so that "how long until the card is free" is answerable
+    from another terminal — which is where the question is actually asked, when deciding whether
+    to queue the next film or wait. Zero means the run has not said, not that it is finishing."""
+
     @property
     def alive(self) -> bool:
         return PID_ALIVE(self.pid)
@@ -100,7 +107,8 @@ class ActiveRun:
     def describe(self, now: float | None = None) -> str:
         elapsed = int((now if now is not None else time.time()) - self.started_at)
         where = f" at {self.step}" if self.step else ""
-        return f"{self.run_key} (pid {self.pid}, {elapsed // 60}m{elapsed % 60:02d}s{where})"
+        left = f", ~{self.eta_seconds / 60:.0f}m left" if self.eta_seconds > 0 else ""
+        return f"{self.run_key} (pid {self.pid}, {elapsed // 60}m{elapsed % 60:02d}s{where}{left})"
 
 
 def _atomic_write(path: Path, data: dict) -> None:
@@ -134,6 +142,7 @@ def _as_active(path: Path, data: dict) -> ActiveRun | None:
         stopped_reason=str(stop.get("reason", "")) if isinstance(stop, dict) else None,
         path=path,
         argv=[str(a) for a in (data.get("argv") or [])],
+        eta_seconds=float(data.get("eta_seconds") or 0.0),
     )
 
 
@@ -252,6 +261,7 @@ def register_run(
             "project_dir": str(project_dir),
             "started_at": time.time(),
             "step": "",
+            "eta_seconds": 0.0,
             "argv": list(argv) if argv is not None else list(sys.argv),
         },
     )

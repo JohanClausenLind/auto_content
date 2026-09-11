@@ -14,6 +14,16 @@ export interface RunNode {
   cache_hit: boolean;
   duration_ms: number | null;
   error: string | null;
+  /**
+   * Seconds this node is still expected to take: the median of what this machine actually
+   * measured for the stage, minus whatever a running node has already used. Null for a finished
+   * node (it has a real `duration_ms` — an estimate would be replacing a measurement with a
+   * guess) and for a stage with no history at all. Optional because a hand-built graph has no run
+   * behind it to estimate from.
+   */
+  eta_seconds?: number | null;
+  /** How many past runs the estimate is a median of. One sample is not three. */
+  eta_samples?: number;
 }
 
 /** The deliverable a node belongs to, or null for shared nodes. */

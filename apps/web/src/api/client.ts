@@ -9,6 +9,8 @@ import type {
   BrandNode,
   EngagementSyncResult,
   FanMessage,
+  HistoryRun,
+  HistoryRunDetail,
   CampaignPreview,
   DeliverableMatrix,
   LoginResult,
@@ -27,9 +29,11 @@ import type {
   RevisionOutcome,
   RunDetail,
   RunQuality,
+  RunReviewPage,
   RunSummary,
   Session,
   ThemePrefs,
+  VerdictBody,
   Workspace,
   ComfyModelsInventory,
   DownloadJob,
@@ -225,6 +229,22 @@ export const api = {
     create: (body: { name: string; parent_id?: string | null; tokens?: Record<string, string>; locked_tokens?: string[]; policies?: Record<string, string>; locked_policies?: string[] }) =>
       request<BrandNode>("POST", "/brand-nodes", body).then((r) => r.data),
     effective: (id: string) => request<BrandEffective>("GET", `/brand-nodes/${encodeURIComponent(id)}/effective`).then((r) => r.data),
+  },
+  history: {
+    list: () => request<HistoryRun[]>("GET", "/run-history").then((r) => r.data),
+    get: (runId: string) =>
+      request<HistoryRunDetail>("GET", `/run-history/${encodeURIComponent(runId)}`).then((r) => r.data),
+    // A plain URL, not a fetch: the session is a cookie, so <img src> and <video src> authenticate
+    // themselves and the browser streams and caches the file without JS holding it in memory.
+    fileUrl: (runId: string, file: string) =>
+      url(`/run-history/${encodeURIComponent(runId)}/files/${file.split("/").map(encodeURIComponent).join("/")}`),
+    review: (runId: string) =>
+      request<RunReviewPage>("GET", `/run-history/${encodeURIComponent(runId)}/review`).then((r) => r.data),
+    // A refusal comes back as a 422 whose detail says which rule and which frames; `isApiError`
+    // carries it, so the panel can point at the three frames nobody decided rather than at a
+    // sentence about them.
+    recordVerdict: (runId: string, body: VerdictBody) =>
+      request<RunReviewPage>("POST", `/run-history/${encodeURIComponent(runId)}/review`, body).then((r) => r.data),
   },
   sequences: {
     list: () => request<SequenceSummary[]>("GET", "/sequences").then((r) => r.data),

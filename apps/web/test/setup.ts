@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { installJsdomShims } from "@content-factory/test-support";
 import {afterAll, afterEach, beforeAll} from "vitest";
-import { appearancePuts, graphRunPosts, graphStore, hfTokenStore, installPosts, keymapPuts, relinkPosts, themePuts, uploadPosts } from "./msw/handlers";
+import { appearancePuts, graphRunPosts, graphStore, hfTokenStore, installPosts, keymapPuts, relinkPosts, themePuts, uploadPosts, verdictPosts } from "./msw/handlers";
 import { server } from "./msw/server";
 
 installJsdomShims();
@@ -19,6 +19,7 @@ afterEach(() => {
   installPosts.length = 0;
   relinkPosts.length = 0;
   uploadPosts.length = 0;
+  verdictPosts.length = 0;
   hfTokenStore.token = null;
   window.localStorage.clear();
   document.documentElement.removeAttribute("style");

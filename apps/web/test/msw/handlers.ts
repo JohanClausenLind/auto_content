@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw";
 import type { Meta, Session, Workspace } from "../../src/api/types";
 import { productHandlers } from "./campaigns";
+import { HISTORY_DETAIL, HISTORY_RUNS, REVIEW_PAGE } from "./runs";
 
 export const WORKSPACES: Workspace[] = [
   { id: "ws_1", slug: "acme", name: "Acme Studio", role: "owner" },
@@ -282,6 +283,9 @@ export const downloadPosts: { url: string; relative_path: string; filename: stri
 export const graphStore = new Map<string, Record<string, unknown>>();
 export const graphRunPosts: string[] = [];
 
+/** Verdicts the review panel recorded, in order. Reset per test via setup.ts. */
+export const verdictPosts: { runId: string; body: Record<string, unknown> }[] = [];
+
 export const unauthenticated = () => http.get("*/v1/session", () => HttpResponse.json({ detail: "Not signed in" }, { status: 401 }));
 export const authenticated = (session: Session = makeSession()) => http.get("*/v1/session", () => HttpResponse.json(session));
 
@@ -290,6 +294,50 @@ export const baseHandlers = [
   http.get("*/v1/meta", () => HttpResponse.json(META)),
   http.get("*/v1/action-items", () => HttpResponse.json([])),
   http.get("*/v1/runs", () => HttpResponse.json([])),
+  http.get("*/v1/run-history", () => HttpResponse.json(HISTORY_RUNS)),
+  http.get("*/v1/run-history/:runId", ({ params }) =>
+    params.runId === HISTORY_DETAIL.run_id
+      ? HttpResponse.json(HISTORY_DETAIL)
+      : HttpResponse.json({ ...HISTORY_DETAIL, run_id: String(params.runId), outputs: [], outputs_total: 0, film: null, poster: null }),
+  ),
+  http.get("*/v1/run-history/:runId/review", ({ params }) =>
+    HttpResponse.json(
+      params.runId === REVIEW_PAGE.run_id
+        ? REVIEW_PAGE
+        : { ...REVIEW_PAGE, run_id: String(params.runId), reviews: [] },
+    ),
+  ),
+  // The verdict the panel sends is what the CLI would have written, so the fixture answers with
+  // the batch as decided: accepted frames accepted, the rest untouched.
+  http.post("*/v1/run-history/:runId/review", async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    verdictPosts.push({ runId: String(params.runId), body });
+    const accept = new Set((body.accept as string[] | undefined) ?? []);
+    const reject = new Set((body.reject as string[] | undefined) ?? []);
+    const gate = REVIEW_PAGE.reviews[0]!;
+    const frames = gate.frames.map((f) => ({
+      ...f,
+      verdict: reject.has(f.frame_id) ? "reject" : body.accept_rest || accept.has(f.frame_id) ? "accept" : "unreviewed",
+      reason: reject.has(f.frame_id) ? String(body.reason ?? "") : "",
+    }));
+    const accepted = frames.filter((f) => f.verdict === "accept").length;
+    const rejected = frames.filter((f) => f.verdict === "reject").length;
+    return HttpResponse.json({
+      ...REVIEW_PAGE,
+      reviews: [
+        {
+          ...gate,
+          frames,
+          reviewer: body.reviewer ?? "operator",
+          reviewed_at: "2026-09-10T20:00:00Z",
+          accepted,
+          rejected,
+          unreviewed: frames.length - accepted - rejected,
+          passed: rejected === 0 && accepted === frames.length,
+        },
+      ],
+    });
+  }),
   http.get("*/v1/comfy/models", () => HttpResponse.json(COMFY_INVENTORY)),
   http.get("*/v1/models/catalog", () =>
     HttpResponse.json({

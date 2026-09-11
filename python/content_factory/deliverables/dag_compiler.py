@@ -130,6 +130,20 @@ _EXTRA_STAGES: dict[Stage, tuple[ResourceClass, Executor]] = {
 }
 
 
+def human_gate_stages() -> frozenset[str]:
+    """Stage names that wait for a person rather than failing.
+
+    One definition, because three callers now need it and they must agree: `make` labels the line
+    GATE instead of FAIL (a gate must not invite `--force`), the run history calls the run
+    "awaiting review" instead of "failed", and the compiler assigns the executor. A stage that
+    parked on a human is not broken — six of seven overnight image sets sat at `review_frames`
+    with their drawings finished, and reporting those as failures is both wrong and demoralising.
+    """
+    return frozenset(
+        stage.value for stage, (_rc, ex) in stage_defaults().items() if ex is Executor.human
+    )
+
+
 def stage_defaults() -> dict[Stage, tuple[ResourceClass, Executor]]:
     """Default (resource class, executor) per stage — the same values compile_dag assigns,
     consumed by the workspace-graph compiler so a hand-drawn node runs identically."""

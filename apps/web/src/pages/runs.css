@@ -131,6 +131,35 @@
   padding: var(--cf-space-2) var(--cf-space-3);
   border-radius: var(--cf-radius-md);
 }
+/* The estimated finish. Quiet by default — it is a guess, and a guess styled like an alert
+   trains people to distrust the alerts. `data-confident` marks the ones with real evidence
+   behind them; `data-overdue` the ones that have already passed their usual time. */
+.cf-runeta {
+  margin: 0;
+  padding: var(--cf-space-2) var(--cf-space-3);
+  border: 1px dashed var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  color: var(--cf-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.cf-runeta__left {
+  color: var(--cf-fg);
+  font-weight: 600;
+}
+.cf-runeta[data-confident] {
+  border-style: solid;
+}
+.cf-runeta[data-overdue] .cf-runeta__left {
+  color: var(--cf-warn);
+}
+.cf-runeta__unknown {
+  font-style: italic;
+}
+.cf-inspector__basis {
+  color: var(--cf-muted);
+}
+
 .cf-rundetail__report summary {
   cursor: pointer;
   color: var(--cf-muted);

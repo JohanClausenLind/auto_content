@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatDuration } from "./graph";
+import { formatDuration, formatEta } from "./graph";
 import { deliverableOf, type RunNode } from "./types";
 
 export interface RunNodeListProps {
@@ -13,6 +13,7 @@ export interface RunNodeListProps {
 function StepContent({ node }: { node: RunNode }) {
   const deliverable = deliverableOf(node);
   const duration = formatDuration(node.duration_ms);
+  const eta = duration ? "" : formatEta(node.eta_seconds);
   return (
     <>
       <span className="cf-runlist__stage">{node.stage}</span>
@@ -23,6 +24,7 @@ function StepContent({ node }: { node: RunNode }) {
       <span className="cf-runlist__meta">
         {node.cache_hit && <span className="cf-runlist__badge">cached</span>}
         {duration && <span className="cf-runlist__duration">{duration}</span>}
+        {eta && <span className="cf-runlist__eta">{eta}</span>}
         {node.attempts > 1 && <span className="cf-runlist__attempts">{node.attempts} attempts</span>}
         {node.error && <span className="cf-runlist__error">{node.error}</span>}
       </span>

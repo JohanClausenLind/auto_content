@@ -4,7 +4,7 @@ export { RunNodeList } from "./RunNodeList";
 export type { RunNodeListProps } from "./RunNodeList";
 export { StageNode } from "./StageNode";
 export type { StageFlowNode, StageNodeData } from "./StageNode";
-export { buildGraph, describeRunNode, formatDuration } from "./graph";
+export { buildGraph, describeRunNode, formatDuration, formatEta } from "./graph";
 export type { GraphEdge, ProvidedEdge, RunGraph } from "./graph";
 export { layoutGraph, layoutRunNodes, NODE_HEIGHT, NODE_WIDTH } from "./layout";
 export type { LaidOutGraph, PositionedRunNode } from "./layout";

@@ -128,6 +128,19 @@
 .cf-wsbtn--run:hover:not(:disabled) {
   background: var(--cf-accent-hover);
 }
+/* The gate's count, on the button that opens it. A run parked at `review_frames` is finished
+   work waiting on a person, and it stayed invisible from the screen the person works on. */
+.cf-wsbtn__badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: var(--cf-radius-full);
+  background: var(--cf-warn);
+  color: var(--cf-bg);
+  font-size: 0.68rem;
+  font-weight: 700;
+  vertical-align: 1px;
+}
 .cf-wsbtn__tri {
   display: inline-block;
   width: 0;
@@ -150,6 +163,15 @@
   border-right: 1px solid var(--cf-border);
   background: var(--cf-panel);
   min-height: 0;
+}
+/* The history needs a run's name, its lane and what it cost on one row; a node's name does not. */
+.cf-workspace__library[data-tab="history"] {
+  width: 21rem;
+}
+@media (max-width: 900px) {
+  .cf-workspace__library[data-tab="history"] {
+    width: 15rem;
+  }
 }
 .cf-workspace__canvas {
   position: relative;
@@ -468,14 +490,14 @@
    * `auto` tracks they collapsed to (panel - padding - gaps) / rows: measured in Firefox and
    * Chromium alike, five cards per column came out 144px tall instead of 620px, which squashed
    * each thumbnail to 1px and clipped 330px off every card — the Models expander and the "Use
-   * template" button among it — while `/*
- * Block cards: the parts of a lane you add to the graph you are already editing.
- *
- * Visually the opposite of a template card — no thumbnail, a numbered list of the steps, and the
- * boundary stated in words — because a template replaces what you have and a block joins it. The
- * stacked mark is the same one a folded group wears on the canvas, so the card and the node it
- * becomes are recognisably the same object.
- */
+   * template" button among it — while `.cf-tpl { overflow: hidden }` hid that it had happened.
+   * The grid then had nothing left to overflow, so it could not scroll either.
+   */
+  grid-auto-rows: max-content;
+  gap: 1rem;
+  padding: 1rem;
+  align-content: start;
+}
 .cf-templates__lead {
   grid-column: 1 / -1;
   margin: 0;
@@ -483,6 +505,14 @@
   font-size: 0.85rem;
   line-height: 1.5;
 }
+/*
+ * Block cards: the parts of a lane you add to the graph you are already editing.
+ *
+ * Visually the opposite of a template card — no thumbnail, a numbered list of the steps, and the
+ * boundary stated in words — because a template replaces what you have and a block joins it. The
+ * stacked mark is the same one a folded group wears on the canvas, so the card and the node it
+ * becomes are recognisably the same object.
+ */
 .cf-block {
   display: flex;
   flex-direction: column;
@@ -543,14 +573,6 @@
   justify-content: flex-end;
 }
 
-.cf-tpl { overflow: hidden }` hid that it had happened.
-   * The grid then had nothing left to overflow, so it could not scroll either.
-   */
-  grid-auto-rows: max-content;
-  gap: 1rem;
-  padding: 1rem;
-  align-content: start;
-}
 .cf-templates__empty {
   color: var(--cf-muted);
   padding: 1rem;
@@ -1038,4 +1060,503 @@
 .cf-drop__converted {
   color: var(--cf-warn);
   font-size: 11px;
+}
+
+/* --- Run history, docked left -------------------------------------------------------------------
+   A list you scan and click, in the dock, with the run itself open over the canvas. It used to be
+   a window over everything, which made "look at this one, then the next one" a sequence of opening
+   and closing the same panel. */
+.cf-hist {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.cf-hist__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cf-space-2);
+  padding: var(--cf-space-3) var(--cf-space-3) var(--cf-space-2);
+  border-bottom: 1px solid var(--cf-border);
+}
+.cf-hist__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.cf-hist__nav {
+  padding: var(--cf-space-2);
+  border-bottom: 1px solid var(--cf-border);
+}
+.cf-hist__lanes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.cf-hist__lanes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px var(--cf-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.74rem;
+  text-align: left;
+  cursor: pointer;
+}
+.cf-hist__lanes button:hover {
+  background: var(--cf-hover);
+}
+.cf-hist__lanes button[aria-pressed="true"] {
+  background: var(--cf-accent-soft);
+  border-color: var(--cf-border);
+  font-weight: 600;
+}
+/* The gate gets the warning colour whenever it holds anything, pressed or not: "13 drawings are
+   waiting" is not a filter setting, it is a fact about the machine. */
+.cf-hist__lane--review {
+  color: var(--cf-warn);
+}
+.cf-hist__lane--review[aria-pressed="true"] {
+  background: var(--cf-warn-soft);
+}
+.cf-hist__count {
+  color: var(--cf-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cf-hist__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.cf-hist__list ul {
+  list-style: none;
+  margin: 0;
+  padding: var(--cf-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cf-hist__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name state" "lane meta" "badge badge";
+  gap: 1px var(--cf-space-2);
+  width: 100%;
+  padding: var(--cf-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.cf-hist__row:hover {
+  background: var(--cf-hover);
+}
+.cf-hist__row[aria-pressed="true"] {
+  background: var(--cf-accent-soft);
+  border-color: var(--cf-border);
+}
+.cf-hist__rowname {
+  grid-area: name;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.cf-hist__rowlane {
+  grid-area: lane;
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+}
+.cf-hist__rowstate {
+  grid-area: state;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cf-hist__rowstate[data-tone="ok"] {
+  color: var(--cf-accent);
+}
+.cf-hist__rowstate[data-tone="bad"] {
+  color: var(--cf-danger);
+}
+.cf-hist__rowstate[data-tone="wait"] {
+  color: var(--cf-warn);
+}
+.cf-hist__rowbadge {
+  grid-area: badge;
+  justify-self: start;
+  margin-top: 3px;
+  padding: 1px var(--cf-space-2);
+  border-radius: var(--cf-radius-full);
+  background: var(--cf-warn-soft);
+  color: var(--cf-warn);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+.cf-hist__rowmeta {
+  grid-area: meta;
+  justify-self: end;
+  display: flex;
+  gap: var(--cf-space-3);
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- One run, over the canvas -------------------------------------------------------------------
+   Absolute over the editor rather than replacing it: the graph keeps its scroll, its selection and
+   its pending edits while a run is being looked at. */
+.cf-runpane {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--cf-panel);
+  min-height: 0;
+}
+.cf-runpane__head {
+  position: relative;
+  flex: none;
+  padding: var(--cf-space-3) var(--cf-space-6) var(--cf-space-3) var(--cf-space-4);
+  border-bottom: 1px solid var(--cf-border);
+}
+.cf-runpane__title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cf-space-3);
+}
+.cf-runpane__title h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.cf-runpane__close {
+  position: absolute;
+  top: var(--cf-space-2);
+  right: var(--cf-space-3);
+  border: 0;
+  background: transparent;
+  color: var(--cf-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.cf-runpane__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--cf-space-4);
+}
+.cf-hist__detailmeta,
+.cf-hist__detailpath,
+.cf-hist__note {
+  margin: 2px 0 0;
+  color: var(--cf-muted);
+  font-size: 0.78rem;
+}
+.cf-hist__detailpath code {
+  font-size: 0.72rem;
+  word-break: break-all;
+}
+.cf-hist__group {
+  margin-top: var(--cf-space-4);
+}
+.cf-hist__grouptitle {
+  margin: 0 0 var(--cf-space-2);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cf-muted);
+}
+.cf-hist__video video {
+  width: 100%;
+  max-width: 42rem;
+  border-radius: var(--cf-radius-md);
+  background: #000;
+}
+.cf-hist__video {
+  margin: 0 0 var(--cf-space-3);
+}
+.cf-hist__video figcaption {
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+}
+.cf-hist__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: var(--cf-space-2);
+}
+.cf-hist__grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+}
+.cf-hist__audio,
+.cf-hist__files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-hist__audio li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cf-hist__audio audio {
+  width: 100%;
+  max-width: 30rem;
+}
+.cf-hist__filename,
+.cf-hist__files li {
+  font-size: 0.76rem;
+}
+.cf-hist__files li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cf-space-3);
+}
+.cf-hist__size {
+  color: var(--cf-muted);
+  font-variant-numeric: tabular-nums;
+}
+.cf-hist__debugtoggle {
+  margin-top: var(--cf-space-4);
+  padding: 4px var(--cf-space-3);
+  border: 1px dashed var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: transparent;
+  color: var(--cf-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+.cf-hist__empty {
+  padding: var(--cf-space-3);
+  color: var(--cf-muted);
+  font-size: 0.8rem;
+}
+
+/* --- The frame-review gate ----------------------------------------------------------------------
+   The drawings, big enough to judge, with the measurements beside each and the two buttons that
+   answer. This is the top of the pane when a run is parked here, because it is the only thing that
+   run can be given. */
+.cf-review {
+  margin: 0 0 var(--cf-space-5);
+  padding: var(--cf-space-3);
+  border: 1px solid var(--cf-warn);
+  border-radius: var(--cf-radius-lg);
+  background: var(--cf-warn-soft);
+}
+.cf-review__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.cf-review__lead {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+}
+.cf-review__meta {
+  margin: 2px 0 var(--cf-space-3);
+  color: var(--cf-muted);
+  font-size: 0.75rem;
+}
+.cf-review__frames {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--cf-space-3);
+}
+.cf-review__frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+  padding: var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+}
+.cf-review__frame[data-mark="accept"] {
+  border-color: var(--cf-success);
+  background: var(--cf-success-soft);
+}
+.cf-review__frame[data-mark="reject"] {
+  border-color: var(--cf-danger);
+  background: var(--cf-danger-soft);
+}
+.cf-review__shot {
+  margin: 0;
+}
+.cf-review__shot img {
+  width: 100%;
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+}
+.cf-review__shot figcaption {
+  margin-top: 2px;
+  color: var(--cf-muted);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+.cf-review__missing,
+.cf-review__stale {
+  margin: 0;
+  color: var(--cf-warn);
+  font-size: 0.72rem;
+}
+.cf-review__reason {
+  margin: 0;
+  font-size: 0.74rem;
+}
+.cf-review__findings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cf-review__finding {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--cf-warn);
+}
+.cf-review__finding[data-severity="blocker"] {
+  color: var(--cf-danger);
+}
+.cf-review__all {
+  font-size: 0.72rem;
+  color: var(--cf-muted);
+}
+.cf-review__all ul {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cf-review__all li[data-passed] {
+  color: var(--cf-muted);
+}
+.cf-review__all span {
+  font-family: var(--cf-font-mono, monospace);
+}
+.cf-review__marks {
+  display: flex;
+  gap: var(--cf-space-2);
+  margin-top: auto;
+}
+.cf-review__mark {
+  flex: 1;
+  padding: 4px;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.cf-review__mark[data-mark="accept"][aria-pressed="true"] {
+  background: var(--cf-success);
+  border-color: var(--cf-success);
+  color: var(--cf-accent-fg);
+}
+.cf-review__mark[data-mark="reject"][aria-pressed="true"] {
+  background: var(--cf-danger);
+  border-color: var(--cf-danger);
+  color: var(--cf-accent-fg);
+}
+.cf-review__decide {
+  margin-top: var(--cf-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cf-space-2);
+}
+.cf-review__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.76rem;
+}
+.cf-review__field textarea {
+  width: 100%;
+  max-width: 42rem;
+  padding: var(--cf-space-2);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.8rem;
+  resize: vertical;
+}
+.cf-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cf-space-2);
+}
+.cf-review__submit,
+.cf-review__acceptall {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-panel);
+  color: var(--cf-fg);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cf-review__submit {
+  background: var(--cf-accent);
+  border-color: var(--cf-accent);
+  color: var(--cf-accent-fg);
+}
+.cf-review__submit:disabled,
+.cf-review__acceptall:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.cf-review__hint {
+  margin: 0;
+  color: var(--cf-muted);
+  font-size: 0.74rem;
+}
+.cf-review__refused {
+  margin: 0;
+  padding: var(--cf-space-2);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-danger-soft);
+  color: var(--cf-danger);
+  font-size: 0.78rem;
+}
+.cf-review__done {
+  font-size: 0.78rem;
+}
+.cf-review__done code {
+  display: block;
+  margin-top: 4px;
+  padding: var(--cf-space-2);
+  border-radius: var(--cf-radius-md);
+  background: var(--cf-bg);
+  font-size: 0.74rem;
+  overflow-wrap: anywhere;
 }

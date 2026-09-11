@@ -479,12 +479,9 @@ def make(
         )
         raise typer.Exit(code=3)
 
-    from content_factory.deliverables.dag_compiler import stage_defaults
-    from content_factory.schemas.dag import Executor
+    from content_factory.deliverables.dag_compiler import human_gate_stages
 
-    human_stages = {
-        stage.value for stage, (_res, ex) in stage_defaults().items() if ex is Executor.human
-    }
+    human_stages = human_gate_stages()
     lines: list[str] = []
 
     def terse(message: str) -> None:
@@ -497,10 +494,24 @@ def make(
         reaching for --force, which is the one response a gate and a block must not get.
         """
         lines.append(message)
-        if message.startswith("==> "):
+        if message.startswith("--- "):
+            # When the run should be done, on the evidence of past runs. One line, at the top,
+            # because "is it stuck or is it slow?" is the question a long lane provokes and the
+            # only other way to answer it was watching nvidia-smi.
+            typer.echo(message[4:])
+        elif message.startswith("    not counted, never timed:"):
+            typer.echo(message.strip())
+        elif message.startswith("==> "):
             terse.current = message[4:].split()[0]  # type: ignore[attr-defined]
         elif message.startswith("    ok "):
-            typer.echo(f"ok   {getattr(terse, 'current', '?'):28s} {message[7:][:96]}")
+            # The trailing "[Nm left]" is kept whole: it is appended after the facts are
+            # truncated, so a chatty stage cannot push the countdown off the line.
+            body = message[7:]
+            eta = ""
+            if body.endswith("]") and "  [" in body:
+                body, _, bracket = body.rpartition("  [")
+                eta = f"  [{bracket}"
+            typer.echo(f"ok   {getattr(terse, 'current', '?'):28s} {body[:96]}{eta}")
         elif message.startswith("    WARN "):
             typer.echo(f"WARN {getattr(terse, 'current', '?'):28s} {message[9:][:200]}")
         elif message.startswith("    BLOCKED"):

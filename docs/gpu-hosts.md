@@ -360,6 +360,88 @@ long render unfinishable.
 
 ---
 
+---
+
+# Part 3 — The second host as a producer, and bringing the work home
+
+Parts 1 and 2 make a second host *draw*. That is only half of what a card can do, and the smaller
+half: HiDream is endpoint-addressable so its output never touches the far disk, but the post chain,
+MMAudio, the TTS skills, Blender and ffmpeg all take absolute local paths (the table at the top),
+so the only way to use a second card for those is to run whole lanes there. Then the finished work
+is on the wrong machine.
+
+## What comes home, and what does not
+
+Only what the lane actually delivers. `compile_destination_packages` already writes
+`deliverables/<id>/destination-packages/packages.json` naming every shippable file with its role,
+its deliverable-relative path and its **sha256** — so the harvest reads a manifest a stage
+produced rather than inventing a second idea of what a lane delivers, and verifies every byte it
+receives against it. Measured on the first real pull, `o04-single-clip-post` from nova:
+
+```
+47 files / 8.0 MB on nova   ->   11 files / 3.7 MB here
+```
+
+The frames, the control passes and the chain steps stay where they were made. Alongside the
+package come a few hundred KB of **evidence** (`run.json`, `qc/report.json`, `sequence/chain.json`,
+the frame-review batch and verdict), so a harvested run is diagnosable rather than only watchable.
+
+The direction is always **pull**. The control plane reaches the worker; a worker is never given
+write access to this machine's run directories, and never needs a key here.
+
+```bash
+# .env on the control plane. Single-quote the JSON, same trap as the endpoint lists above.
+CF__REMOTE__HOSTS='[{"name":"nova","ssh":"nova@100.82.150.94","runs_root":"output/runs"}]'
+```
+
+```bash
+just remote-list                 # what each host has; one ssh per host, not a byte of media
+just harvest --dry-run           # names what would come home
+just harvest                     # fetch, verify every digest, land, link the film into videos/
+just harvest --limit 0 --interval 60    # keep going; a pass that finds nothing costs one ssh
+```
+
+A harvested run lands at `output/harvest/<host>/<slug>/` and carries a `harvest.json` sidecar
+written **last** — origin host, origin path, the far host's git rev, the digest, `qc_passed`. That
+sidecar is the only record: there is no ledger, "already here" is derived from it, a directory with
+bytes and no sidecar is a harvest that failed part way and gets redone, and
+`rm -rf output/harvest/nova/<slug>` is a complete undo.
+
+## Before nova can produce anything worth harvesting
+
+1. **Code parity.** A worker one commit behind cannot run the current stages at all. `git pull`,
+   `uv sync --frozen`, then **re-install the flash-attn wheel** — `uv sync` removes it every time
+   (step 6 above). The far host's rev is recorded in every `harvest.json`, so drift is visible
+   after the fact rather than guessed at.
+2. **A real backend selection in the far host's `.env`.** A stock `.env.example` runs every lane on
+   **mock** backends, and mock output still writes a valid `packages.json` — so it would be
+   harvested and filed as a real deliverable. Set what `run-local`'s docstring names:
+   `CF__IMAGE_SEQUENCES__BACKEND=hidream`, `CF__VIDEO__BACKEND=comfyui`,
+   `CF__NARRATION__TTS=qwen3tts`, `CF__CONTROLS__COMPILER=blender`,
+   `CF__COMFYUI__EXTRA_MODEL_ROOTS='["/mnt/fast/models"]'`. Look at the first harvested film; do
+   not just read its exit code.
+3. **Decide who owns the card.** A host cannot be a producer and a drawing endpoint at full speed
+   at once: its HiDream server is single-worker, so the control plane's frames queue behind the
+   worker's own run and the server looks wedged (it is not — it is busy). While the far host
+   produces, take it out of `CF__IMAGE_SEQUENCES__HIDREAM_ENDPOINTS` here.
+4. **Unique run names.** `run-local` defaults its project directory to
+   `output/local-runs/<workflow>` — the *same path for every run of a lane* — and `deliverable_id`
+   is the constant `dlv_short0000001`. Two hosts running `image-set` produce byte-identical paths.
+   Use `--project-dir output/runs/<slug>`, the convention `output/overnight/` already follows.
+
+## The human review gate is where an image lane actually stops
+
+Worth knowing before you go looking for deliverables that are not there. `image-set` runs
+`drift -> frames_gate -> package -> qc -> pack`, and `frames_gate` (`review_frames`) **blocks**: a
+verdict binds to the digests of the exact images reviewed. So a finished-looking image set ends
+with `passed: false` and **no `destination-packages/` at all** — six of seven overnight image sets
+sat exactly there.
+
+`remote list` reports those as `awaiting review` rather than staying silent about them, because
+silence reads as "there is nothing to collect". Getting them the rest of the way still means
+reviewing on the host that drew them (`content-factory frames review`, then
+`run-local --from package`); shipping the review material here and the verdict back is not built.
+
 # Things that will bite you
 
 - **`external/` empty but weights present.** Reads as "cutie is missing" and looks like a download
@@ -396,6 +478,18 @@ long render unfinishable.
 
   Verify the binary, not the package: `blender --background --python-expr "import OpenImageIO"`.
 - **A different mount point than `/mnt/fast`.** Five modules hardcode it.
+- **`rsync --files-from` treats a missing name as an error**, exits 23, and does it *after*
+  transferring everything else — so the first real harvest refused a run whose files had all
+  arrived. The evidence list is optimistic by design (which of `sequence/chain.json`,
+  `reviews/frames/*` exists depends on the lane), so `--ignore-missing-args` is mandatory. Missing
+  *manifest* files are still caught, by the digest check on arrival.
+- **`rsync -a` preserves symlinks, and sha256 follows them.** A symlink that arrived as a symlink
+  would be hashed *through* — reading a local file and calling it harvested. `--safe-links` on the
+  wire, and a refusal before hashing on this side.
+- **A file list is newline-delimited unless you ask otherwise**, and `DeliveryFile` permits a
+  newline in a path. `--from0` closes the class.
+- **The repo is on `/home` (465 GB free), not on `/` (30 GB).** `df -h .`, not `df -h /` — the
+  wrong one has been used to argue for a design decision.
 - **`ubuntu-drivers autoinstall` on a fresh Ubuntu picks `-open`.** Freezes the box under load.
 - **Tests can leak into the live weight index.** A `models/frame_interpolation/GIMM-VFI` symlink was
   found pointing into `/tmp/pytest-of-*/…` on 2026-09-09 and mirrored to the second host before it

@@ -148,6 +148,15 @@
   color: var(--cf-muted);
   font-variant-numeric: tabular-nums;
 }
+/* An estimate, set apart from a measurement: italic and dimmer than a real duration, in the
+   same slot, so the eye can tell "took 32 s" from "about 32 s to go" without reading the tilde. */
+.cf-runnode__eta,
+.cf-runlist__eta {
+  color: var(--cf-muted);
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
 
 /* Parallel plain list (screen readers / small screens). */
 .cf-runlist {

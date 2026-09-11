@@ -27,7 +27,13 @@ def gallery_path(name: str, suffix: str, *, gallery_dir: str, repo_root: Path) -
 
 
 def publish_film(
-    *, name: str, source: Path, gallery_dir: str, repo_root: Path, replace: bool = True
+    *,
+    name: str,
+    source: Path,
+    gallery_dir: str,
+    repo_root: Path,
+    replace: bool = True,
+    expect_sha256: str | None = None,
 ) -> str | None:
     """Put one film in the gallery under ``name``; return its repo-relative path.
 
@@ -48,8 +54,13 @@ def publish_film(
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         if not replace:
-            if target.stat().st_size == source.stat().st_size:
-                return str(target.relative_to(repo_root))  # already this film
+            # Digests, not sizes. Two different films can be the same number of bytes, and
+            # "close enough" here means one of them silently never reaches the gallery.
+            from content_factory.schemas.base import file_sha256
+
+            want = expect_sha256 or file_sha256(source)
+            if file_sha256(target) == want:
+                return str(target.relative_to(repo_root))  # already this exact film
             msg = f"{target.name} is already in the gallery with different bytes"
             raise FileExistsError(msg)
         target.unlink()

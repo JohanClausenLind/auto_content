@@ -263,6 +263,25 @@ export interface RunSummary {
   created_at: string;
 }
 
+/**
+ * When the run will be done, estimated from the durations this machine has already measured for
+ * these stages (`services/durations.py`). Null once nothing is left to wait for.
+ */
+export interface RunEta {
+  /** Seconds of work left: the queued stages plus what remains of the one in flight. */
+  remaining_seconds: number;
+  /** ISO-8601, UTC and aware, so the browser can render it in local time. */
+  finish_at: string;
+  /** Past runs behind the weakest term in the total. A total is only as good as its worst term. */
+  samples: number;
+  /** Three or more samples for every stage, and no stage missing from the history. */
+  confident: boolean;
+  /** The running stage has already outlasted its median — the honest reading of "0 left". */
+  overdue: boolean;
+  /** Stages with no timing history, named rather than silently counted as free. */
+  unknown_stages: string[];
+}
+
 export interface RunDetail extends RunSummary {
   preflight_revision_hash: string | null;
   approved_by: string | null;
@@ -270,7 +289,133 @@ export interface RunDetail extends RunSummary {
   report: unknown;
   /** Real dependency edges (compiled workspace graphs); null for legacy/campaign chains. */
   edges: { source: string; target: string }[] | null;
+  /** Estimated finish; null when the run has no unfinished nodes left. */
+  eta: RunEta | null;
   nodes: RunNode[];
+}
+
+// --- Run history (local runs on this machine) ---
+//
+// The counterpart to RunSummary: those are durable Temporal runs from the database, these are the
+// runs made with `content-factory make`, which write no database row and whose outputs — every
+// film, drawing and narration on this machine — were unreachable from the app before this.
+
+export type RunOutcome = "complete" | "review" | "blocked" | "stopped" | "failed";
+
+/** What kind of thing a file is, which decides whether it gets a player, a grid or a link. */
+export type OutputKind = "image" | "video" | "audio" | "text" | "data";
+
+export interface RunOutput {
+  /** Relative to the run directory. Both the id and what you pass to `fileUrl`. */
+  path: string;
+  kind: OutputKind;
+  /** Where it came from: video, anchor, frame, control, audio, caption, metadata… */
+  role: string;
+  bytes: number;
+  content_type: string;
+}
+
+export interface HistoryRun {
+  /** The run's directory under `output/`, with "/" written "~" — e.g. `overnight~ps1c-pinecone`. */
+  run_id: string;
+  workflow: string | null;
+  outcome: RunOutcome;
+  /** Epoch seconds: when the run last wrote anything. */
+  finished_at: number;
+  /** What it actually cost. This is the evidence behind every ETA. */
+  seconds: number;
+  stages: number;
+  stages_ok: number;
+  blocked_at: string | null;
+  project_dir: string;
+  deliverable_id: string | null;
+  outputs_total: number;
+  /** Drawings this run is waiting on somebody to look at. Not the same as `outcome === "review"`:
+   *  a run whose frames were all rejected is parked at the gate too, and it needs a redraw. */
+  awaiting_review: number;
+}
+
+export interface HistoryRunDetail extends HistoryRun {
+  outputs: RunOutput[];
+  /** The finished film, when the run made one. */
+  film: string | null;
+  /** One image to represent the run — never a control map. */
+  poster: string | null;
+}
+
+// --- The frame-review gate ---
+
+/** One measured property of one drawing. Advisory findings inform the reviewer; a blocker fails
+ *  the frame on its own, whatever anybody says about it. */
+export interface ReviewFinding {
+  check: string;
+  passed: boolean;
+  severity: "blocker" | "advisory" | (string & {});
+  detail: string;
+  measured: number | null;
+  threshold: number | null;
+}
+
+export type FrameVerdict = "accept" | "reject" | "unreviewed";
+
+export interface ReviewFrame {
+  frame_id: string;
+  verdict: FrameVerdict;
+  reason: string;
+  /** Relative to the run directory — fetched through the same files route as any other output. */
+  image: string | null;
+  png_sha256: string;
+  /** Whether the file still hashes to what the batch decided on. False means the picture was
+   *  regenerated after the gate ran, so this is not what a verdict would bind to. */
+  on_disk: boolean;
+  blocked: boolean;
+  findings: ReviewFinding[];
+}
+
+export type ReviewerKind = "operator" | "agent" | "vlm";
+
+/** One deliverable's frame-review gate. */
+export interface RunReview {
+  deliverable: string;
+  deliverable_id: string;
+  contact_sheet: string | null;
+  reviewer: ReviewerKind | null;
+  reviewed_at: string | null;
+  notes: string;
+  passed: boolean;
+  frames: ReviewFrame[];
+  unreviewed: number;
+  rejected: number;
+  accepted: number;
+  flagged: number;
+}
+
+export interface RunReviewPage {
+  run_id: string;
+  workflow: string | null;
+  project_dir: string;
+  /** A verdict unblocks the gate; it does not restart the stages after it. This is what does. */
+  resume_command: string;
+  reviews: RunReview[];
+}
+
+export interface VerdictBody {
+  deliverable?: string;
+  accept?: string[];
+  reject?: string[];
+  /** Accept every frame not named as rejected — a person's yes to one contact sheet. */
+  accept_rest?: boolean;
+  reason?: string;
+  note?: string;
+  reviewer?: ReviewerKind;
+}
+
+/** Why a verdict was refused, from the 422 body: which rule, and which frames it is about. */
+export interface VerdictRefusal {
+  problem: string;
+  kind: string;
+  frames: string[];
+  details: string[];
 }
 
 export type ApprovalDecision = "approve" | "reject";

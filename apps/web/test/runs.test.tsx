@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { authenticated } from "./msw/handlers";
-import { makeRunDetail, RUN_LIST, RUN_NODES } from "./msw/runs";
+import { makeEta, makeRunDetail, RUN_LIST, RUN_NODES } from "./msw/runs";
 import { server } from "./msw/server";
 import { renderApp } from "./render";
 
@@ -87,6 +87,76 @@ describe("run detail", () => {
 
     await user.click(facts.getByRole("button", { name: "Close details" }));
     expect(screen.queryByRole("complementary", { name: "Node details" })).not.toBeInTheDocument();
+  });
+
+  it("says when the run will be done, and what that estimate is made of", async () => {
+    server.use(authenticated(), http.get("*/v1/runs/run_1", () => HttpResponse.json(makeRunDetail())));
+    renderApp("/projects/run_1");
+
+    // 655 s of work left, reported coarsely, plus the clock time it lands at. The query polls
+    // every two seconds, so both move as the run progresses.
+    const eta = await screen.findByText(/~11 min left/);
+    expect(eta.parentElement).toHaveTextContent("done about");
+    // How much history is behind it, because a median of four runs and a median of one are not
+    // the same claim and the number alone cannot tell them apart.
+    expect(eta.parentElement).toHaveTextContent("from 4 past runs");
+  });
+
+  it("names the stages it has never timed instead of counting them as free", async () => {
+    server.use(
+      authenticated(),
+      http.get("*/v1/runs/run_1", () =>
+        HttpResponse.json(makeRunDetail({ eta: makeEta({ confident: false, samples: 1, unknown_stages: ["master_audio", "burn_captions"] }) })),
+      ),
+    );
+    renderApp("/projects/run_1");
+    expect(await screen.findByText(/2 stage\(s\) never timed/)).toHaveTextContent("master_audio, burn_captions");
+    expect(screen.getByText(/from 1 past run$/)).toBeInTheDocument();  // singular
+  });
+
+  it("says a stage is running long rather than promising a finish that has passed", async () => {
+    server.use(
+      authenticated(),
+      http.get("*/v1/runs/run_1", () => HttpResponse.json(makeRunDetail({ eta: makeEta({ remaining_seconds: 0, overdue: true }) }))),
+    );
+    renderApp("/projects/run_1");
+    expect(await screen.findByText("Running longer than usual")).toBeInTheDocument();
+    expect(screen.queryByText(/done about/)).not.toBeInTheDocument();
+  });
+
+  it("says finishing now rather than \"~any moment left\" when the work is down to seconds", async () => {
+    server.use(
+      authenticated(),
+      http.get("*/v1/runs/run_1", () => HttpResponse.json(makeRunDetail({ eta: makeEta({ remaining_seconds: 0.4 }) }))),
+    );
+    renderApp("/projects/run_1");
+    expect(await screen.findByText("Finishing now")).toBeInTheDocument();
+    // No clock time either: "done about 14:32" for something finishing this second is noise.
+    expect(screen.queryByText(/done about/)).not.toBeInTheDocument();
+  });
+
+  it("shows no estimate at all once the run has nothing left to wait for", async () => {
+    server.use(authenticated(), http.get("*/v1/runs/run_1", () => HttpResponse.json(makeRunDetail({ state: "COMPLETE", eta: null }))));
+    renderApp("/projects/run_1");
+    expect(await screen.findByRole("heading", { name: "Run run_1" })).toBeInTheDocument();
+    expect(screen.queryByText(/left/)).not.toBeInTheDocument();
+  });
+
+  it("gives the inspector the node's own remaining time, and a finished node none", async () => {
+    const user = userEvent.setup();
+    server.use(authenticated(), http.get("*/v1/runs/run_1", () => HttpResponse.json(makeRunDetail())));
+    renderApp("/projects/run_1");
+
+    const list = within(await screen.findByRole("list", { name: "Pipeline steps" }));
+    await user.click(list.getAllByRole("button")[2]!);  // the running script:d1
+    let inspector = within(await screen.findByRole("complementary", { name: "Node details" }));
+    expect(inspector.getByText("Still to go").nextElementSibling).toHaveTextContent("~45 s");
+    expect(inspector.getByText("Still to go").nextElementSibling).toHaveTextContent("median of 12");
+
+    await user.click(list.getAllByRole("button")[0]!);  // research, complete and measured
+    inspector = within(await screen.findByRole("complementary", { name: "Node details" }));
+    expect(inspector.getByText("Duration").nextElementSibling).toHaveTextContent("850 ms");
+    expect(inspector.queryByText("Still to go")).not.toBeInTheDocument();
   });
 
   it("selects nodes from the canvas with the keyboard", async () => {

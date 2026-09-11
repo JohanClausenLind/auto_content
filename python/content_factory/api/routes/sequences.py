@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import FileResponse
 
 from content_factory.api.deps import Principal, app_settings, require_role
+from content_factory.api.files import serve_contained
 from content_factory.db.models import Role
 
 router = APIRouter(prefix="/v1/sequences", tags=["sequences"])
@@ -81,12 +82,6 @@ async def get_sequence_file(
     root = _root(request)
     if "/" in name or name.startswith("."):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
-    target = (root / name / file_path).resolve()
-    # The resolved path must stay inside the sequence's own directory (no traversal, no links out).
-    seq_dir = (root / name).resolve()
-    if not target.is_relative_to(seq_dir) or not target.is_file():
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
-    media_type = _MEDIA_TYPES.get(target.suffix.lower())
-    if media_type is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
-    return FileResponse(target, media_type=media_type)
+    # The resolve-and-contain rule lives in `api/files.py`: `/v1/run-history` needs the same one,
+    # and two copies of it is how the one that serves /etc/shadow gets written.
+    return serve_contained(root / name, file_path, _MEDIA_TYPES)

@@ -56,6 +56,8 @@ def test_run_stages_writes_a_report_and_stops_at_the_first_failure(
     ]
     assert all(s["ok"] and s["outputs_hash"] for s in report["stages"])
     on_disk = json.loads((ctx.ddir() / "run.json").read_text())
+    # Both these stages are bookkeeping that costs no measurable time, so no timing bracket is
+    # printed at all — see `_clock`. The lines a slow lane gets are covered in test_run_eta.py.
     assert on_disk["passed"] is True and logs[0] == "==> plan_shots"
 
     # compose_video needs compile_timeline output: it fails, the report keeps the failure

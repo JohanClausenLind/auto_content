@@ -1444,8 +1444,16 @@
    "title": "Review Frames",
    "category": "image sequence",
    "executor": "human",
-   "widgets": [],
-   "widget_options": {},
+   "widgets": [
+    "reviewer"
+   ],
+   "widget_options": {
+    "reviewer": [
+     "",
+     "operator",
+     "agent"
+    ]
+   },
    "inputs": [
     "frames"
    ],

@@ -78,3 +78,61 @@ async def test_a_run_the_engine_no_longer_has_is_reported_not_raised(client, ses
     stops = [e for e in events if e.action == "run.stop"]
     assert len(stops) == 1 and stops[0].target_id == "run-stopme000001"
     assert stops[0].detail["reason"] == "changed my mind"
+
+
+async def test_the_run_view_carries_the_estimate_over_the_wire(client, sessionmaker, monkeypatch):
+    """GET /v1/runs/{id} is what the canvas polls every two seconds, and the estimate is only
+    useful if it survives the route. The unit tests prove the arithmetic; this proves the field is
+    there, is JSON, and is absent rather than zero once nothing is left to wait for.
+    """
+    from datetime import datetime
+
+    from content_factory.db.models import NodeState, RunNode
+    from content_factory.services import durations
+
+    workspace_id = await seed(sessionmaker)
+    async with sessionmaker() as db:
+        db.add_all(
+            [
+                RunNode(
+                    id="rn_eta00000000001",
+                    run_id="run-stopme000001",
+                    workspace_id=workspace_id,
+                    node_id="plan_story",
+                    stage="plan_story",
+                    state=NodeState.complete,
+                    duration_ms=400,
+                ),
+                RunNode(
+                    id="rn_eta00000000002",
+                    run_id="run-stopme000001",
+                    workspace_id=workspace_id,
+                    node_id="generate_anchor",
+                    stage="generate_anchor",
+                    state=NodeState.queued,
+                ),
+            ]
+        )
+        await db.commit()
+
+    # A fixed history, so the assertion is about the route rather than about this machine's runs.
+    monkeypatch.setattr(
+        durations,
+        "estimate_stage",
+        lambda stage, workflow=None, **_: (
+            durations.Estimate(120.0, 7) if stage == "generate_anchor" else None
+        ),
+    )
+    await client.post("/v1/session", json={"username": "owner", "password": PW})
+    view = (await client.get("/v1/runs/run-stopme000001")).json()
+
+    eta = view["eta"]
+    assert eta["remaining_seconds"] == 120.0
+    assert eta["samples"] == 7 and eta["confident"] is True and eta["overdue"] is False
+    assert datetime.fromisoformat(eta["finish_at"]).tzinfo is not None  # aware, for the browser
+    by_node = {n["node_id"]: n for n in view["nodes"]}
+    assert by_node["generate_anchor"]["eta_seconds"] == 120.0
+    assert by_node["generate_anchor"]["eta_samples"] == 7
+    # The finished node keeps its measurement and is given no estimate to compete with it.
+    assert by_node["plan_story"]["duration_ms"] == 400
+    assert by_node["plan_story"]["eta_seconds"] is None

@@ -20,9 +20,10 @@ two figures where two were staged. That is what the contact sheet and a reviewer
 from __future__ import annotations
 
 import io
+import statistics
 from collections.abc import Sequence
 from pathlib import Path
-from typing import cast
+from typing import TypedDict, cast
 
 from PIL import Image, ImageChops, ImageDraw, ImageStat
 
@@ -271,11 +272,169 @@ def continuity_finding(previous: bytes, current: bytes) -> FrameFinding:
     )
 
 
+SET_DISTANCE_MAX = 0.11
+"""How far one frame may sit from the rest of its set before it is the odd one out.
+
+Distance is palette and tone, scaled 0-1 (see `_descriptor`), and the number is a frame's *median*
+distance to the others. Calibrated against this machine's own output rather than guessed, because
+the first guess (0.22) was wrong in the direction that matters — it would have flagged nothing:
+
+===============================================  =========================
+six views of one pinecone (`ps1c-pinecone`)      0.033 - 0.046 per frame
+six views of one whelk (`ps3c-whelk`)            0.033 - 0.053 per frame
+six views of one amber (`ps2c-amber`)            0.020 median, the *lowest*
+one whelk drawing dropped into the pinecone set  **0.140**
+two frames from genuinely different runs         0.111 - 0.167 pairwise
+===============================================  =========================
+
+So 0.11 sits at twice the worst legitimate reading and a fifth below a real intruder. The amber
+entry is the one to remember: that set's palette went **uniformly tan**, a fault obvious by eye
+and scored here as the most consistent set of the three — because it was. Low distance means "one
+world", never "good"."""
+
+
+def _descriptor(png: bytes) -> tuple[list[float], list[float]]:
+    """What "the same world" is measurable as: the palette and the tonal shape.
+
+    A coarse hue histogram (12 buckets, weighted by saturation so a grey wall does not vote on
+    hue) and a 16-bucket luma histogram. Deliberately coarse — this must not fire because a
+    subject moved, only because the *world* changed.
+    """
+    img = _load(png)
+    hues = [0.0] * 12
+    for hue, saturation in zip(_channel_values(img, "H"), _channel_values(img, "S"), strict=True):
+        hues[min(hue * 12 // 256, 11)] += saturation / 255.0
+    hue_total = sum(hues) or 1.0
+    luma = [0.0] * 16
+    for value in _channel_values(img):
+        luma[min(value * 16 // 256, 15)] += 1.0
+    luma_total = sum(luma) or 1.0
+    return ([h / hue_total for h in hues], [v / luma_total for v in luma])
+
+
+def _distance(a: tuple[list[float], list[float]], b: tuple[list[float], list[float]]) -> float:
+    """Half the total variation distance of both histograms, averaged: 0 identical, 1 disjoint."""
+    hue = sum(abs(x - y) for x, y in zip(a[0], b[0], strict=True)) / 2
+    luma = sum(abs(x - y) for x, y in zip(a[1], b[1], strict=True)) / 2
+    return (hue + luma) / 2
+
+
+class ConsistencyPair(TypedDict):
+    a: str
+    b: str
+    distance: float
+
+
+class ConsistencyReport(TypedDict):
+    """The whole comparison, written beside the images so a reviewer can cite it."""
+
+    frames: int
+    pairs_compared: int
+    median_distance: float
+    per_frame_median: dict[str, float]
+    worst_pair: ConsistencyPair | None
+    threshold: float
+    spread: bool
+    """The set has no consistent core: the *typical* pair already disagrees. Then there is no odd
+    one out to name, and `outliers` is empty — see `consistency_matrix`."""
+    outliers: list[str]
+    pairs: list[ConsistencyPair]
+
+
+def consistency_matrix(pngs: Sequence[tuple[str, bytes]]) -> ConsistencyReport:
+    """Every frame against **every other frame**, not just its neighbour.
+
+    `continuity_finding` compares consecutive frames, which answers "was there a cut here" and
+    cannot answer "do all six of these belong to one set" — a set can drift a little at each step
+    and end somewhere else entirely, with every consecutive pair looking fine. So this is all
+    pairs: 15 comparisons for a six-picture story.
+
+    Each frame gets its **median distance to the others**, which is what identifies the odd one
+    out: one frame that disagrees with everything has a high median, while a set with two equal
+    halves has no outlier and says so instead of blaming one side.
+
+    What it cannot judge, and the reason a reviewer still looks: whether the *subject* is the same
+    subject. Two drawings of different objects in the same palette and light score as consistent,
+    which is precisely the failure this machine produced when "honey-coloured" drew jars of honey.
+    """
+    ids = [frame_id for frame_id, _ in pngs]
+    descriptors = [_descriptor(png) for _, png in pngs]
+    pairs: list[ConsistencyPair] = []
+    distances: list[float] = []
+    for i in range(len(ids)):
+        for j in range(i + 1, len(ids)):
+            distance = _distance(descriptors[i], descriptors[j])
+            distances.append(distance)
+            pairs.append({"a": ids[i], "b": ids[j], "distance": round(distance, 4)})
+    per_frame: dict[str, float] = {}
+    for i, frame_id in enumerate(ids):
+        others = [_distance(descriptors[i], descriptors[j]) for j in range(len(ids)) if j != i]
+        per_frame[frame_id] = round(statistics.median(others), 4) if others else 0.0
+    worst = pairs[distances.index(max(distances))] if pairs else None
+    median = round(statistics.median(distances), 4) if distances else 0.0
+    # An outlier is only meaningful against a set that agrees with itself. When the *typical* pair
+    # is already past the threshold there is no centre to be far from, and naming every frame an
+    # outlier is both useless and wrong — measured on `w-iceberg`, an image-set of six
+    # deliberately different viewpoints: median 0.243, and all six "outliers". A set is allowed
+    # to be varied on purpose; what it cannot hide is one frame that left the others behind.
+    spread = median > SET_DISTANCE_MAX
+    return {
+        "frames": len(ids),
+        "pairs_compared": len(pairs),
+        "median_distance": median,
+        "per_frame_median": per_frame,
+        "worst_pair": worst,
+        "threshold": SET_DISTANCE_MAX,
+        "spread": spread,
+        "outliers": []
+        if spread
+        else sorted(f for f, d in per_frame.items() if d > SET_DISTANCE_MAX),
+        "pairs": pairs,
+    }
+
+
+def consistency_findings(pngs: Sequence[tuple[str, bytes]]) -> dict[str, FrameFinding]:
+    """One finding per frame: how far it sits from the rest of the set."""
+    if len(pngs) < 2:
+        return {}
+    matrix = consistency_matrix(pngs)
+    per_frame = matrix["per_frame_median"]
+    spread = matrix["spread"]
+    median = matrix["median_distance"]
+    out: dict[str, FrameFinding] = {}
+    for frame_id, distance in per_frame.items():
+        if spread:
+            # One statement about the set, repeated on each frame rather than six accusations.
+            detail = (
+                f"this set has no consistent core: the typical pair sits {median:.3f} apart "
+                f"(one world measures 0.02-0.05). Deliberate for a set of different viewpoints, "
+                f"wrong for frames meant to share a world — which of the two it is, is what "
+                f"looking decides"
+            )
+        else:
+            detail = (
+                f"palette and tone sit {distance:.3f} from the median of the other "
+                f"{len(pngs) - 1} frame(s), which agree with each other at {median:.3f} "
+                f"(a frame from another set measures 0.14). Says nothing about whether the "
+                f"subject is the same subject, or whether the set is any good"
+            )
+        out[frame_id] = FrameFinding(
+            check="set_consistency",
+            passed=not spread and distance <= SET_DISTANCE_MAX,
+            severity="advisory",
+            detail=detail,
+            measured=distance,
+            threshold=SET_DISTANCE_MAX,
+        )
+    return out
+
+
 def review_findings(
     pngs: Sequence[tuple[str, bytes]], *, expect_monochrome: bool = False
 ) -> dict[str, list[FrameFinding]]:
     """Every finding for every frame, in frame order."""
     out: dict[str, list[FrameFinding]] = {}
+    consistency = consistency_findings(pngs)
     previous: bytes | None = None
     for frame_id, png in pngs:
         findings = tonal_findings(png)
@@ -284,6 +443,8 @@ def review_findings(
         findings += edge_findings(png)
         if previous is not None:
             findings.append(continuity_finding(previous, png))
+        if frame_id in consistency:
+            findings.append(consistency[frame_id])
         out[frame_id] = findings
         previous = png
     return out

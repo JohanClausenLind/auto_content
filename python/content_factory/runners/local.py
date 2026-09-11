@@ -24,6 +24,7 @@ from typing import Any, cast
 from content_factory.runners.registry import RunHandle, RunStopped, register_run
 from content_factory.schemas.dag import Stage
 from content_factory.schemas.fixtures import sample_campaign
+from content_factory.services import durations
 from content_factory.workflows.blocked import blocked_details
 from content_factory.workflows.catalog import (
     WorkflowDefinitionError,
@@ -213,6 +214,10 @@ def run_plan(
         msg = f"stages without executors: {missing}"
         raise ValueError(msg)
     report: dict = {
+        # Named in the report because `services/durations.py` estimates per (workflow, stage):
+        # `generate_anchor` is one picture at ~32 s on `image-set` and six at ~608 s on
+        # `audio-picture-story`, and a single median over both is wrong for both.
+        "workflow": workflow,
         "project_dir": str(ctx.project_dir),
         "deliverable_id": ctx.deliverable_id,
         # What each node was actually configured with, so a `--from` resume can run the same
@@ -233,7 +238,15 @@ def run_plan(
     _refuse_while_gpu_claimed()
     try:
         with register_run(workflow, ctx.project_dir) as handle:
-            _run_steps(steps, ctx, report=report, report_path=report_path, handle=handle, log=log)
+            _run_steps(
+                steps,
+                ctx,
+                report=report,
+                report_path=report_path,
+                handle=handle,
+                workflow=workflow,
+                log=log,
+            )
     finally:
         _release_gpu_if_idle(log)
     report["passed"] = True
@@ -286,19 +299,27 @@ def _run_steps(
     report: dict,
     report_path: Path,
     handle: RunHandle,
-    log,
+    workflow: str = "run",
+    log=print,
 ) -> None:
-    for node_key, stage, stage_params in steps:
+    durations.refresh()  # once per run, so a long process estimates from history it helped write
+    _log_eta_header(steps, workflow, log)
+    for index, (node_key, stage, stage_params) in enumerate(steps):
         reason = handle.stop_reason()
         if reason:
             report["stopped"] = {"reason": reason, "before": node_key}
             _write_report(report_path, report)
             log(f"    STOPPED before {node_key}: {reason}")
             raise RunStopped(reason, at=node_key, report=report)
-        handle.note(step=node_key)
+        left = durations.forecast([s.value for _k, s, _p in steps[index:]], workflow)
+        handle.note(step=node_key, eta_seconds=left.remaining_seconds)
         started = time.monotonic()
         label = stage.value if node_key == stage.value else f"{stage.value} [{node_key}]"
-        log(f"==> {label}{'  ' + json.dumps(stage_params) if stage_params else ''}")
+        mine = durations.estimate_stage(stage.value, workflow)
+        # What this step should cost and what is left after it, on the line that announces it —
+        # the two numbers somebody watching a terminal for ten minutes actually wants.
+        shown = "  " + json.dumps(stage_params) if stage_params else ""
+        log(f"==> {label}{shown}{_clock(mine, left)}")
         try:
             out = STAGE_EXECUTORS[stage](replace(ctx, params=dict(stage_params)))
         except RunStopped as stop:  # SIGTERM reached the run in the middle of this stage
@@ -348,9 +369,45 @@ def _run_steps(
             }
         )
         _write_report(report_path, report)
-        log(f"    ok {seconds}s {json.dumps(out.facts, default=str)[:160]}")
+        # The countdown after this stage, so a terminal watched for ten minutes always shows how
+        # much is left rather than how much was left when the run started.
+        after = durations.forecast([s.value for _k, s, _p in steps[index + 1 :]], workflow)
+        tail = _clock(None, after) if index + 1 < len(steps) else ""
+        log(f"    ok {seconds}s {json.dumps(out.facts, default=str)[:160]}{tail}")
         for warning in stage_warnings(out.facts):
             log(f"    WARN {warning}")
+
+
+def _clock(stage: durations.Estimate | None, remaining: durations.Forecast | None) -> str:
+    """The timing bracket for one log line, or nothing at all.
+
+    Numbers under a second are dropped rather than printed as "0s": most stages in a lane are
+    bookkeeping that costs no measurable time, and a bracket reading `[~0s, 0s left]` is noise
+    that trains the eye to skip the line where the real number appears.
+    """
+    parts: list[str] = []
+    if stage is not None and stage.seconds >= 1:
+        parts.append(f"~{stage.describe()}")
+    if remaining is not None and (remaining.remaining_seconds >= 1 or remaining.unknown):
+        parts.append(remaining.describe())
+    return f"  [{', '.join(parts)}]" if parts else ""
+
+
+def _log_eta_header(steps: Sequence[Step], workflow: str, log) -> None:
+    """One line at the top saying when the whole thing should be done, and on what evidence.
+
+    A run that prints nothing about its length leaves the only honest answer to "is it stuck?" as
+    watching nvidia-smi. The evidence is stated because these medians come from as few as one past
+    run for a new stage and from 149 for `generate_anchor`, and those are not the same promise.
+    """
+    fc = durations.forecast([s.value for _k, s, _p in steps], workflow)
+    if fc.remaining_seconds <= 0 and not fc.unknown:
+        return
+    finish = fc.finish_at().astimezone().strftime("%H:%M")
+    basis = f"median of {fc.samples} past run(s)" if fc.samples else "no history for these stages"
+    log(f"--- {workflow}: {len(steps)} steps, {fc.describe()}, done about {finish} ({basis})")
+    if fc.unknown:
+        log(f"    not counted, never timed: {', '.join(sorted(set(fc.unknown)))}")
 
 
 def _resolve_boundary(steps: Sequence[Step], name: str, which: str) -> int:

@@ -1,10 +1,15 @@
 /**
  * The workspace: a node graph editor over the real pipeline stages.
  *
- * Layout mirrors the classic node-editor chrome — workflow tabs on top, the node library on the
- * left, the canvas in the middle, a Workflow Overview panel on the right, and a job queue that
- * shows actual production runs. Dropping a file on the canvas uploads it, identifies it from its
- * bytes and spawns the node that holds it, with the next steps offered underneath.
+ * Layout mirrors the classic node-editor chrome — workflow tabs on top, a dock on the left, the
+ * canvas in the middle, a Workflow Overview panel on the right, and a job queue that shows actual
+ * production runs. Dropping a file on the canvas uploads it, identifies it from its bytes and
+ * spawns the node that holds it, with the next steps offered underneath.
+ *
+ * The dock holds the node library, the model library and the run history behind one set of tabs,
+ * and opening a run opens it over the canvas (`RunPane`) with the list still there. That is the
+ * whole point: a run parked at the frame-review gate is answered here, with the drawings in front
+ * of you and the next run one click away — no page to leave and come back from.
  *
  * Graphs persist to the server and to this browser (see storage.ts); Check is real validation,
  * and Run compiles the graph onto the production pipeline — a stage with no executor is refused
@@ -24,13 +29,15 @@ import {
   type WorkspaceGraph,
 } from "@content-factory/node-graph";
 import { api, isApiError } from "../api/client";
-import { queryKeys, runsQuery } from "../api/queries";
+import { historyQuery, queryKeys, runsQuery } from "../api/queries";
 import type { GraphRunStarted, RunSummary } from "../api/types";
 import { insertBlockOps, type WorkflowBlock } from "./blocks";
 import { workspaceCatalog } from "./catalog";
 import { DropSuggestions, useFileDrops } from "./DroppedFile";
 import { loadWorkspace, newUntitledGraph, saveActive, saveGraphs } from "./storage";
 import { ModelsPanel } from "./ModelsPanel";
+import { HistoryPanel } from "./HistoryPanel";
+import { RunPane } from "./RunPane";
 import { TemplatesPanel } from "./TemplatesPanel";
 import type { WorkflowTemplate } from "./templates";
 
@@ -76,6 +83,16 @@ const RUN_STATE_TONE: Record<string, string> = {
   CANCELLED: "bad",
 };
 
+/** What the left dock is showing. One dock, because "the node library" and "what I made
+ *  yesterday" compete for exactly the same strip of screen, and only one is ever in use. */
+type DockTab = "nodes" | "models" | "history";
+
+const DOCK_LABEL: Record<DockTab, string> = {
+  nodes: "Node library",
+  models: "Model library",
+  history: "Run history",
+};
+
 function QueuePanel({ runs, onClose }: { runs: readonly RunSummary[] | undefined; onClose(): void }) {
   return (
     <section className="cf-queue" aria-label="Job queue">
@@ -85,7 +102,10 @@ function QueuePanel({ runs, onClose }: { runs: readonly RunSummary[] | undefined
           ✕
         </button>
       </header>
-      <p className="cf-queue__hint">Production runs started from Create. Workspace graphs are not runnable yet.</p>
+      <p className="cf-queue__hint">
+        Durable runs — started from Create or by Run on this canvas. Local runs made with{" "}
+        <code>content-factory make</code> are not here: they are under History, with their outputs.
+      </p>
       <ul className="cf-queue__list">
         {(runs ?? []).map((run) => (
           <li key={run.run_id}>
@@ -107,11 +127,13 @@ export function WorkspacePage() {
   const initial = useMemo(loadWorkspace, []);
   const [graphs, setGraphs] = useState<readonly WorkspaceGraph[]>(initial.graphs);
   const [activeId, setActiveId] = useState(initial.activeId);
-  const [libraryOpen, setLibraryOpen] = useState(true);
-  const [libraryTab, setLibraryTab] = useState<"nodes" | "models">("nodes");
+  const [dockOpen, setDockOpen] = useState(true);
+  const [dockTab, setDockTab] = useState<DockTab>("nodes");
   const [overviewOpen, setOverviewOpen] = useState(true);
   const [queueOpen, setQueueOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  /** The run open over the canvas. Null is the canvas, which is what the workspace is for. */
+  const [openRun, setOpenRun] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
   const [runState, setRunState] = useState<
     | null
@@ -212,8 +234,22 @@ export function WorkspacePage() {
 
   const { data: runs } = useQuery(runsQuery);
   const activeRuns = (runs ?? []).filter((r) => !["COMPLETE", "FAILED", "CANCELLED"].includes(r.state)).length;
+  // The same cached list the dock's history panel reads. It is here for one number: how many
+  // drawings are waiting on somebody, on the button that opens them. A gate nobody can see from
+  // the screen they work on is a gate that parks 25 runs overnight.
+  const { data: history } = useQuery(historyQuery);
+  const awaitingReview = (history ?? []).reduce((sum, run) => sum + run.awaiting_review, 0);
 
   useEffect(() => saveActive(activeId), [activeId]);
+
+  /** Clicking the tab you are already on closes the dock, the way the other side panels behave. */
+  const toggleDock = (tab: DockTab) => {
+    if (dockOpen && dockTab === tab) setDockOpen(false);
+    else {
+      setDockTab(tab);
+      setDockOpen(true);
+    }
+  };
 
   const switchTo = (graph: WorkspaceGraph) => {
     setActiveId(graph.graph_id);
@@ -353,14 +389,8 @@ export function WorkspacePage() {
             type="button"
             className="cf-wsbtn"
             aria-label="Toggle node library"
-            aria-pressed={libraryOpen && libraryTab === "nodes"}
-            onClick={() => {
-              if (libraryOpen && libraryTab === "nodes") setLibraryOpen(false);
-              else {
-                setLibraryTab("nodes");
-                setLibraryOpen(true);
-              }
-            }}
+            aria-pressed={dockOpen && dockTab === "nodes"}
+            onClick={() => toggleDock("nodes")}
           >
             Nodes
           </button>
@@ -368,14 +398,8 @@ export function WorkspacePage() {
             type="button"
             className="cf-wsbtn"
             aria-label="Toggle model library"
-            aria-pressed={libraryOpen && libraryTab === "models"}
-            onClick={() => {
-              if (libraryOpen && libraryTab === "models") setLibraryOpen(false);
-              else {
-                setLibraryTab("models");
-                setLibraryOpen(true);
-              }
-            }}
+            aria-pressed={dockOpen && dockTab === "models"}
+            onClick={() => toggleDock("models")}
           >
             Models
           </button>
@@ -386,6 +410,19 @@ export function WorkspacePage() {
             onClick={() => setTemplatesOpen((o) => !o)}
           >
             Templates
+          </button>
+          {/* No aria-label: the badge is part of what this button says, and "History, 2 to
+              review" is the whole point of putting the count here. */}
+          <button
+            type="button"
+            className="cf-wsbtn"
+            aria-pressed={dockOpen && dockTab === "history"}
+            onClick={() => toggleDock("history")}
+          >
+            History
+            {awaitingReview > 0 && (
+              <span className="cf-wsbtn__badge">{awaitingReview} to review</span>
+            )}
           </button>
           <button type="button" className="cf-wsbtn" disabled={!editor.canUndo} onClick={editor.undo}>
             Undo
@@ -406,20 +443,23 @@ export function WorkspacePage() {
       </div>
 
       <div className="cf-workspace__body">
-        {libraryOpen && (
+        {dockOpen && (
           <aside
             className="cf-workspace__library"
-            aria-label={libraryTab === "nodes" ? "Node library" : "Model library"}
+            data-tab={dockTab}
+            aria-label={DOCK_LABEL[dockTab]}
           >
-            {libraryTab === "nodes" ? (
-              <NodeLibraryPanel catalog={workspaceCatalog} onAdd={addFromLibrary} />
-            ) : (
-              <ModelsPanel />
-            )}
+            {dockTab === "nodes" && <NodeLibraryPanel catalog={workspaceCatalog} onAdd={addFromLibrary} />}
+            {dockTab === "models" && <ModelsPanel />}
+            {dockTab === "history" && <HistoryPanel selected={openRun} onSelect={setOpenRun} />}
           </aside>
         )}
 
         <div className="cf-workspace__canvas">
+          {/* Over the canvas, not instead of it: the editor keeps its scroll, its selection and
+              its pending edits while a run is being looked at, and closing the run puts the graph
+              back exactly as it was. */}
+          {openRun && <RunPane runId={openRun} onClose={() => setOpenRun(null)} />}
           <NodeGraphEditor
             editor={editor}
             aria-label={`Graph: ${activeGraph.name}`}

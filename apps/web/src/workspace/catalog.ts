@@ -301,8 +301,25 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     executor: "human",
     inputs: [{ name: "frames", type: "SEQUENCE,IMAGE" }],
     outputs: [{ name: "frames", type: "SEQUENCE,IMAGE" }],
-    widgets: [],
-    keywords: ["review", "contact sheet", "gate", "qc", "approval", "look"],
+    widgets: [
+      {
+        name: "reviewer",
+        kind: "combo",
+        default: "",
+        options: ["", "operator", "agent"],
+        label: "who reviews the drawings",
+        hint: "blank lets the run decide",
+        help:
+          "Left blank, the run decides for itself: one started from a Claude Code session routes" +
+          " to the **agent**, anything else to a **person**. Set it explicitly to override that" +
+          " — `operator` keeps a human in the loop on a Claude-started run, which is what you" +
+          " want for a set you intend to judge yourself.\n\nAn agent review is not a lighter" +
+          " one: it must name every frame it decided, so `--accept-all` is refused. The gate" +
+          " writes `reviews/frames/request.md` listing every image to open, every measurement," +
+          " and the command that answers.",
+      },
+    ],
+    keywords: ["review", "contact sheet", "gate", "qc", "approval", "look", "reviewer", "agent"],
   },
   find_reference: {
     title: "Find Reference",

@@ -18,6 +18,9 @@ export const queryKeys = {
   brandEffective: (id: string) => ["brand-nodes", id, "effective"] as const,
   fanInbox: ["engagement", "inbox"] as const,
   sequences: ["sequences"] as const,
+  history: ["run-history"] as const,
+  historyRun: (runId: string) => ["run-history", runId] as const,
+  runReview: (runId: string) => ["run-history", runId, "review"] as const,
   portalLinks: ["portal-links"] as const,
   portalBriefs: ["portal-briefs"] as const,
   comfyModels: ["comfy-models"] as const,
@@ -95,6 +98,35 @@ export const brandEffectiveQuery = (id: string) =>
   queryOptions({
     queryKey: queryKeys.brandEffective(id),
     queryFn: () => api.brands.effective(id),
+  });
+
+export const historyQuery = queryOptions({
+  queryKey: queryKeys.history,
+  queryFn: () => api.history.list(),
+  // A run appears here the moment it writes its report, so a modest poll keeps the list honest
+  // while several lanes are producing. The rows are cheap: no output scanning.
+  refetchInterval: 10_000,
+});
+
+export const historyRunQuery = (runId: string) =>
+  queryOptions({
+    queryKey: queryKeys.historyRun(runId),
+    queryFn: () => api.history.get(runId),
+    // A finished run's outputs do not change, so this is fetched once and kept.
+    staleTime: 5 * 60_000,
+  });
+
+/** The frame-review gate of one run: what it is asking, and what has been decided so far.
+ *
+ * Not polled. Answering it is the only thing that changes it, and the answer comes from this tab;
+ * a poll would re-hash every drawing on disk (the digest check behind `on_disk`) every few
+ * seconds for a question nobody else is answering.
+ */
+export const runReviewQuery = (runId: string) =>
+  queryOptions({
+    queryKey: queryKeys.runReview(runId),
+    queryFn: () => api.history.review(runId),
+    staleTime: 60_000,
   });
 
 export const sequencesQuery = queryOptions({

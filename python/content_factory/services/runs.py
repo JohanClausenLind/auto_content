@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,8 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio.client import Client
 
 from content_factory.config import get_settings
-from content_factory.db.models import ActionItem, ProductionRun, RunNode
+from content_factory.db.models import ActionItem, NodeState, ProductionRun, RunNode
 from content_factory.schemas.content import ContentCampaign
+from content_factory.services import durations
 from content_factory.workflows.production import (
     ApprovalSignal,
     ProductionInput,
@@ -236,6 +239,115 @@ def dag_edges(project_dir: Path) -> list[dict[str, str]] | None:
     return edges
 
 
+# Node states that will not move on their own. `complete`, `failed` and `skipped` are over and
+# carry a real `duration_ms`, so estimating them would replace a measurement with a guess.
+# `blocked` belongs here too and the reason is different: the stage *has* run — it generated,
+# checked its own output and handed the decision to a person — so its remaining cost is a human
+# looking at it, not seconds, and "~42 s" is the one thing that is certainly wrong.
+_SETTLED = {NodeState.complete, NodeState.failed, NodeState.skipped, NodeState.blocked}
+
+
+_NO_ETA: dict[str, Any] = {"eta_seconds": None, "eta_samples": 0}
+
+_warming: set[asyncio.Task] = set()
+"""Live background warms. Held because asyncio only weakly references a running task, and a
+fire-and-forget task with no reference can be collected mid-flight."""
+
+
+def _read_durations_in_background(build) -> None:
+    """Read the duration history off the request path. `build` is `warm` or `rebuild`."""
+    try:
+        task = asyncio.create_task(asyncio.to_thread(build))
+    except RuntimeError:
+        return  # no running loop (a sync caller): the next async read will start it
+    _warming.add(task)
+    task.add_done_callback(_warming.discard)
+
+
+def _elapsed_seconds(node: RunNode, now: datetime) -> float:
+    """How long a running node has been running, from the transition that set it running.
+
+    `updated_at` is the row's last write and a running node's last write is the transition into
+    `running`, so this is the start of the stage. Naive timestamps come back from SQLite, which
+    stores what it was given without a zone; they are UTC by construction here.
+    """
+    stamp = node.updated_at
+    if stamp is None:
+        return 0.0
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=UTC)
+    return max((now - stamp).total_seconds(), 0.0)
+
+
+def _run_forecast(
+    nodes: Sequence[RunNode], workflow: str | None, now: datetime
+) -> dict[str, Any] | None:
+    """The run-level "done at", from the stages that have not finished.
+
+    Built here rather than in the browser because the history lives on this machine, and computed
+    from node *state* rather than from position in the list: a DAG runs several branches at once,
+    so "everything after the running one" is not a thing the list order knows.
+
+    None once every node is over — a zero the UI has to translate back into "done" is a worse
+    contract than an absent field.
+    """
+    if all(n.state in _SETTLED for n in nodes):
+        return None
+    queued = [n.stage for n in nodes if n.state == NodeState.queued]
+    # Several stages can be in flight at once (a DAG's branches overlap), and those run
+    # concurrently, so the run waits on the *slowest* of them rather than on their sum. Whichever
+    # has the most left is the one to charge; a node with no history has no claim to be the
+    # longest, so it cannot displace one that does.
+    in_flight: tuple[str, float] | None = None
+    most_left = -1.0
+    for node in nodes:
+        if node.state != NodeState.running:
+            continue
+        elapsed = _elapsed_seconds(node, now)
+        est = durations.estimate_stage(node.stage, workflow)
+        left = max(est.seconds - elapsed, 0.0) if est is not None else -1.0
+        if left > most_left:
+            if in_flight is not None:
+                queued.append(in_flight[0])  # demoted: it is not the one being waited on
+            in_flight, most_left = (node.stage, elapsed), left
+        else:
+            queued.append(node.stage)
+    fc = durations.forecast(queued, workflow, running=in_flight)
+    return {
+        "remaining_seconds": fc.remaining_seconds,
+        "finish_at": fc.finish_at(now).isoformat(),
+        "samples": fc.samples,
+        "confident": fc.confident,
+        "overdue": fc.overdue,
+        "unknown_stages": list(fc.unknown),
+    }
+
+
+def _node_eta(node: RunNode, workflow: str | None, now: datetime) -> dict[str, Any]:
+    """Per-node estimate: seconds still to come, and how much evidence is behind that."""
+    if node.state in _SETTLED:
+        return {"eta_seconds": None, "eta_samples": 0}
+    est = durations.estimate_stage(node.stage, workflow)
+    if est is None:
+        return {"eta_seconds": None, "eta_samples": 0}
+    left = est.seconds
+    if node.state == NodeState.running:
+        left = max(est.seconds - _elapsed_seconds(node, now), 0.0)
+    return {"eta_seconds": round(left, 1), "eta_samples": est.samples}
+
+
+def _run_workflow_name(run: ProductionRun) -> str | None:
+    """The lane this run is, when the report names one.
+
+    `generate_anchor` is 32 s on `image-set` and ten minutes on `audio-picture-story`; without a
+    lane name the estimate falls back to the median across every lane, which is the right answer
+    to a question that has no better one.
+    """
+    report = run.report
+    name = report.get("workflow") if isinstance(report, dict) else None
+    return name if isinstance(name, str) and name else None
+
+
 async def run_view(db: AsyncSession, workspace_id: str, run_id: str) -> dict[str, Any] | None:
     run = (
         await db.execute(
@@ -255,6 +367,22 @@ async def run_view(db: AsyncSession, workspace_id: str, run_id: str) -> dict[str
         .scalars()
         .all()
     )
+    now = datetime.now(UTC)
+    workflow = _run_workflow_name(run)
+    # The estimate is skipped entirely until the history has been read in the background, and
+    # never built on this thread. Doing it here — even inside `to_thread` — cost 410 ms of
+    # GIL-holding YAML parsing on a view the UI polls every two seconds, and in a process that
+    # also hosts a Temporal worker that starved the worker's activity heartbeats: it failed
+    # `test_run_stop::..._cancels_the_node_in_flight` reproducibly with "Heartbeat timeout" and
+    # passed as soon as this work left the request path. One poll without an ETA is nothing; a
+    # cancelled run is not.
+    warm = durations.is_warm()
+    if not warm:
+        _read_durations_in_background(durations.warm)
+    elif durations.is_stale():
+        # Every finished run changes these medians, and this process may run for days. The
+        # rebuild swaps in whole, so the current answer keeps serving while it happens.
+        _read_durations_in_background(durations.rebuild)
     return {
         "run_id": run.id,
         "state": run.state.value,
@@ -267,6 +395,9 @@ async def run_view(db: AsyncSession, workspace_id: str, run_id: str) -> dict[str
         "report": run.report,
         # File I/O off the event loop: the run views poll this every couple of seconds.
         "edges": await asyncio.to_thread(dag_edges, projects_root() / run.project_id),
+        # None once there is nothing left to wait for (see `_run_forecast`), and until the
+        # history behind it has been read.
+        "eta": _run_forecast(nodes, workflow, now) if warm else None,
         "nodes": [
             {
                 "node_id": n.node_id,
@@ -277,6 +408,7 @@ async def run_view(db: AsyncSession, workspace_id: str, run_id: str) -> dict[str
                 "cache_hit": n.cache_hit,
                 "duration_ms": n.duration_ms,
                 "error": n.error,
+                **(_node_eta(n, workflow, now) if warm else _NO_ETA),
             }
             for n in nodes
         ],

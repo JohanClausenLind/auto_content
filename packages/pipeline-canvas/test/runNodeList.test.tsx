@@ -24,6 +24,13 @@ describe("RunNodeList", () => {
     expect(failed).toHaveTextContent("failed");
     expect(failed).toHaveTextContent("voice model unavailable");
 
+    // An unfinished step shows what it will take; a finished one shows what it took, and never
+    // both — a measurement and a guess side by side invites reading the guess as a fact.
+    const running = items[2]!;
+    expect(running).toHaveTextContent("~42 s");
+    expect(items[3]!).toHaveTextContent("~10 min");
+    expect(research).not.toHaveTextContent("~");
+
     // Read-only list has no buttons.
     expect(within(list).queryByRole("button")).not.toBeInTheDocument();
   });

@@ -3063,7 +3063,13 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
     """
     import datetime as dt
 
-    from content_factory.qc.frame_review import contact_sheet, review_findings
+    from content_factory.qc.frame_review import (
+        consistency_matrix,
+        contact_sheet,
+        review_findings,
+    )
+    from content_factory.qc.reviewer import intended_reviewer, request_markdown
+    from content_factory.qc.verdict import merge_verdict
     from content_factory.schemas.review import FrameRecord, FrameReviewBatch
 
     # Review what this lane's graph actually put in front of the reviewer. The keyframe lanes
@@ -3101,6 +3107,11 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
     findings = review_findings(pngs, expect_monochrome=monochrome)
     sheet_rel = Path("reviews") / "frames" / "contact-sheet.png"
     sheet_png = contact_sheet(pngs, ctx.ddir() / sheet_rel, findings=findings)
+    # Every frame against every other, not just its neighbour: a set can drift a little at each
+    # step and end somewhere else entirely with every consecutive pair looking fine. Written out
+    # whole so a reviewer can cite the number rather than the impression.
+    matrix = consistency_matrix(pngs)
+    _write(ctx.ddir() / "reviews" / "frames" / "consistency.json", json.dumps(matrix, indent=1))
 
     records = tuple(
         FrameRecord(
@@ -3117,38 +3128,42 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
         frames=records,
         created_at=dt.datetime.now(dt.UTC),
     )
-    # A verdict recorded earlier applies only if it reviewed these same images.
+    # A verdict recorded earlier applies only if it reviewed these same images. The overlay is
+    # `qc.verdict.merge_verdict`, shared with the review panel in the app: the panel has to show
+    # exactly what this gate will decide on, and two copies of a digest comparison is how it would
+    # come to show something else.
     verdict_path = ctx.ddir() / "reviews" / "frames" / "verdict.json"
     if verdict_path.exists():
         prior = FrameReviewBatch.model_validate_json(verdict_path.read_text())
-        by_id = {f.frame_id: f for f in prior.frames}
-        batch = batch.model_copy(
-            update={
-                "reviewer": prior.reviewer,
-                "reviewed_at": prior.reviewed_at,
-                "notes": prior.notes,
-                "frames": tuple(
-                    r.model_copy(
-                        update={
-                            "verdict": by_id[r.frame_id].verdict,
-                            "reason": by_id[r.frame_id].reason,
-                        }
-                    )
-                    if r.frame_id in by_id and by_id[r.frame_id].png_sha256 == r.png_sha256
-                    else r
-                    for r in batch.frames
-                ),
-            }
-        )
+        batch = merge_verdict(batch, prior)
     _write(ctx.ddir() / "reviews" / "frames" / "batch.json", batch.model_dump_json(indent=1))
 
     flagged = sum(1 for r in batch.frames for f in r.findings if not f.passed)
+    # Who is being asked. A run started from a Claude Code session has an agent present, and 27
+    # runs on this machine were parked here with their drawings finished and nobody coming.
+    # Empty means "not set on the node", which is what lets the environment decide.
+    wants = intended_reviewer(_param(ctx, "reviewer") or None)
+    request_rel = Path("reviews") / "frames" / "request.md"
+    if wants == "agent" and not batch.passed:
+        _write(
+            ctx.ddir() / request_rel,
+            request_markdown(
+                run_dir=str(ctx.project_dir),
+                deliverable=ctx.deliverable_id or "dlv_short0000001",
+                contact_sheet=str(sheet_rel),
+                frames=batch.frames,
+                consistency=matrix,
+            ),
+        )
     facts = {
         "frames": len(batch.frames),
         "reviewed_from": source,
         "findings_flagged": flagged,
         "contact_sheet": str(sheet_rel),
         "reviewer": batch.reviewer,
+        "review_wanted_from": wants,
+        "consistency_median": matrix["median_distance"],
+        "consistency_outliers": matrix["outliers"],
         "rejected": [r.frame_id for r in batch.rejected],
     }
     if not batch.passed:
@@ -3159,11 +3174,18 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
             )
             detail.append(f"{record.frame_id}: {why}")
         if batch.unreviewed:
-            detail.append(
-                f"{len(batch.unreviewed)} frame(s) not yet reviewed — look at "
-                f"{sheet_rel}, then `content-factory frames review --accept-all` "
-                f"or reject the ones that are wrong"
-            )
+            if wants == "agent":
+                detail.append(
+                    f"{len(batch.unreviewed)} frame(s) awaiting an agent review — read "
+                    f"{request_rel}: it lists every image to open, the consistency measurements, "
+                    f"and the command that answers. `--accept-all` is not available to an agent"
+                )
+            else:
+                detail.append(
+                    f"{len(batch.unreviewed)} frame(s) not yet reviewed — look at "
+                    f"{sheet_rel}, then `content-factory frames review --accept-all` "
+                    f"or reject the ones that are wrong"
+                )
         raise RuntimeError("review_frames blocked the run:\n  " + "\n  ".join(detail))
     return StageOutput(_hash_obj([r.png_sha256 for r in batch.frames]), facts)
 

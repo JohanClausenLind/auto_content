@@ -58,7 +58,7 @@
 .cf-store__count {
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  background: var(--cf-panel-2));
+  background: var(--cf-panel-2);
   border: 1px solid var(--cf-border);
   font-size: 0.75rem;
   color: var(--cf-muted);

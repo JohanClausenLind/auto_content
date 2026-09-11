@@ -1,6 +1,6 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { memo, type KeyboardEvent } from "react";
-import { describeRunNode, formatDuration } from "./graph";
+import { describeRunNode, formatDuration, formatEta } from "./graph";
 import { deliverableOf, type RunNode } from "./types";
 
 export interface StageNodeData extends Record<string, unknown> {
@@ -17,6 +17,9 @@ export const StageNode = memo(function StageNode({ data }: NodeProps<StageFlowNo
   const { run, interactive, isSelected, onSelect } = data;
   const deliverable = deliverableOf(run);
   const duration = formatDuration(run.duration_ms);
+  // A node shows what it took or what it will take, never both: the first is measured and the
+  // second is a guess, and putting them side by side invites reading the guess as a fact.
+  const eta = duration ? "" : formatEta(run.eta_seconds);
 
   const select = () => onSelect?.(run);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -54,6 +57,11 @@ export const StageNode = memo(function StageNode({ data }: NodeProps<StageFlowNo
         <span className="cf-runnode__state">{run.state}</span>
         {run.cache_hit && <span className="cf-runnode__badge">cached</span>}
         {duration && <span className="cf-runnode__duration">{duration}</span>}
+        {eta && (
+          <span className="cf-runnode__eta" title={run.eta_samples ? `median of ${run.eta_samples} past run(s)` : undefined}>
+            {eta}
+          </span>
+        )}
       </span>
       <Handle type="source" position={Position.Right} isConnectable={false} className="cf-runnode__handle" />
     </div>

@@ -8,12 +8,15 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import typer
 from rich.console import Console
 
 from content_factory import __version__
+
+if TYPE_CHECKING:
+    from content_factory.qc.verdict import VerdictRefusedError
 
 app = typer.Typer(
     name="content-factory",
@@ -574,18 +577,56 @@ def assets_approve(
     )
 
 
+def _refusal_lines(exc: VerdictRefusedError, *, base: Path, frames: int) -> list[str]:
+    """A refused verdict, worded for a terminal.
+
+    The rule and its sentence come from `qc.verdict`; what is added here is the part that only
+    exists at a command line — which flag would have done it, and the file to open first.
+    """
+    if exc.kind == "agent_blanket":
+        return [f"--accept-all is not available to --as agent: {exc.reason}"]
+    if exc.kind == "undecided":
+        return [
+            exc.reason,
+            f"open each one, then name it in --accept or --reject. {base / 'request.md'} lists"
+            " them.",
+        ]
+    if exc.kind == "nothing_decided":
+        return [
+            f"look at {base / 'contact-sheet.png'} — {frames} frames",
+            "then pass --accept-all, or --reject <ids> --reason <why>",
+        ]
+    if exc.kind == "contract":
+        return [
+            "this verdict does not satisfy the review contract:",
+            *(f"  {detail}" for detail in exc.details),
+            "nothing was written. Shorten it and run again.",
+        ]
+    return [exc.reason]
+
+
 @frames_app.command("review")
 def frames_review(
     project_dir: str = typer.Argument(..., help="The run's project directory"),
     deliverable: str = typer.Option("dlv_short0000001"),
-    accept_all: bool = typer.Option(False, "--accept-all", help="Accept every frame"),
+    accept_all: bool = typer.Option(
+        False, "--accept-all", help="Accept every frame. Not available to --as agent"
+    ),
+    accept: str = typer.Option("", help="Comma-separated frame ids to accept"),
     reject: str = typer.Option("", help="Comma-separated frame ids to reject"),
     reason: str = typer.Option("", help="Why those frames were rejected"),
+    note: str = typer.Option("", help="What the reviewer saw, kept with the verdict"),
     reviewer: str = typer.Option("operator", "--as", help="operator, agent or vlm"),
 ) -> None:
     """Record a verdict on a batch of frames. Run the pipeline's review_frames stage first: it
-    writes the contact sheet and the batch this command decides on."""
-    import datetime as dt
+    writes the contact sheet and the batch this command decides on.
+
+    An **agent** has to name every frame. `--accept-all` is a reviewer saying yes to a batch
+    without opening it, which is defensible for a person looking at one contact sheet and is not
+    defensible for an agent that reads the images one at a time — so it is refused, and the
+    frames left unmentioned are listed. `reviews/frames/request.md` beside the images carries the
+    list to work from.
+    """
     import pathlib
     import typing
 
@@ -605,30 +646,26 @@ def frames_review(
         typer.echo(f"no batch at {batch_path}; run the review_frames stage first", err=True)
         raise typer.Exit(code=1)
     batch = FrameReviewBatch.model_validate_json(batch_path.read_text())
-    rejected = {f.strip() for f in reject.split(",") if f.strip()}
-    unknown = rejected - {f.frame_id for f in batch.frames}
-    if unknown:
-        typer.echo(f"unknown frame id(s): {sorted(unknown)}", err=True)
-        raise typer.Exit(code=1)
-    if not accept_all and not rejected:
-        typer.echo(f"look at {base / 'contact-sheet.png'} — {len(batch.frames)} frames", err=True)
-        typer.echo("then pass --accept-all, or --reject <ids> --reason <why>", err=True)
-        raise typer.Exit(code=2)
-    decided = batch.model_copy(
-        update={
-            "reviewer": reviewer,  # type: ignore[arg-type]
-            "reviewed_at": dt.datetime.now(dt.UTC),
-            "frames": tuple(
-                f.model_copy(
-                    update={
-                        "verdict": "reject" if f.frame_id in rejected else "accept",
-                        "reason": reason if f.frame_id in rejected else "",
-                    }
-                )
-                for f in batch.frames
-            ),
-        }
-    )
+    from content_factory.qc.verdict import VerdictRefusedError, decide
+
+    try:
+        decided = decide(
+            batch,
+            reviewer=typing.cast("ReviewerKind", reviewer),
+            accept=accept.split(","),
+            reject=reject.split(","),
+            accept_rest=accept_all,
+            reason=reason,
+            note=note,
+        )
+    except VerdictRefusedError as exc:
+        # The rules themselves live in `qc.verdict`, shared with the review panel in the app —
+        # one place decides whether a verdict may be written, so the two surfaces cannot drift
+        # into different answers about whether an unopened batch is acceptable. What is left here
+        # is the wording that only makes sense at a terminal: flag names, and the path to open.
+        for line in _refusal_lines(exc, base=base, frames=len(batch.frames)):
+            typer.echo(line, err=True)
+        raise typer.Exit(code=1 if exc.kind == "unknown_frames" else 2) from exc
     (base / "verdict.json").write_text(decided.model_dump_json(indent=1))
     typer.echo(
         json.dumps(

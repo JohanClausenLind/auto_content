@@ -38,3 +38,16 @@ export function formatWhen(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
 }
+
+/**
+ * A finish time as a clock reading: "14:32", or "Thu 14:32" when it is not today. An estimate
+ * minutes away is easiest to act on as a time of day, and one that lands tomorrow has to say so
+ * or it reads as being twelve hours early.
+ */
+export function formatFinish(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const today = new Date().toDateString() === date.toDateString();
+  return today ? time : `${date.toLocaleDateString([], { weekday: "short" })} ${time}`;
+}
