@@ -1,14 +1,4 @@
-"""Build one character asset from a recipe (runs inside Blender with MPFB2 enabled):
-
-    assets_build/run_in_blender.sh assets_build/build_character.py recipes/man_01.json <assets_root>
-
-Writes <assets_root>/characters/<name>/<name>.blend with collection CH_<name> holding
-  <name>:body  the MakeHuman basemesh (Mask modifier hides helpers), custom props
-               cf_role="body", cf_rig_type, cf_kp_anchors (OpenPose-18 -> basemesh vertex ids)
-  <name>:rig   the MPFB default rig (163 bones), rotation mode QUATERNION
-  <name>:kp    keypoint proxy: same mesh, armature modifier, NO mask, hide_render
-and <name>.asset.json with provenance (recipe hash, MPFB + Blender versions, height, digests).
-"""
+"""Build one character asset from a recipe (runs inside Blender with MPFB2 enabled)."""
 
 from __future__ import annotations
 
@@ -30,8 +20,7 @@ def _sha(path: Path) -> str:
 
 
 def evaluated_world_coords(body) -> list:
-    """Vertex positions with shape keys (macro targets) and modifiers applied — ``data.vertices``
-    alone is the undeformed base mesh and would put every recipe at the same height."""
+    """Vertex positions with shape keys (macro targets) and modifiers applied."""
     depsgraph = bpy.context.evaluated_depsgraph_get()
     ev = body.evaluated_get(depsgraph)
     me = ev.to_mesh()
@@ -43,10 +32,7 @@ def evaluated_world_coords(body) -> list:
 
 
 def bake_anchors(m: Mpfb, body, rig) -> dict[str, list[int]]:
-    """OpenPose-18 joint -> basemesh vertex indices, resolved in the rest pose on the evaluated
-    (shape-keyed) mesh. Vertex/mean entries use MPFB's indices directly; bone head/tail entries
-    take the nearest vertices to the rest-pose bone end, which lands on MakeHuman's joint helper
-    cubes (so the anchor follows the joint)."""
+    """OpenPose-18 joint -> basemesh vertex indices."""
     coords = evaluated_world_coords(body)
     kd = kdtree.KDTree(len(coords))
     for i, co in enumerate(coords):

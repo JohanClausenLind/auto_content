@@ -1,27 +1,4 @@
-/**
- * The workspace: a node graph editor over the real pipeline stages.
- *
- * Layout mirrors the classic node-editor chrome — workflow tabs on top, a dock on the left, the
- * canvas in the middle, a Workflow Overview panel on the right, and a job queue that shows actual
- * production runs. Dropping a file on the canvas uploads it, identifies it from its bytes and
- * spawns the node that holds it, with the next steps offered underneath.
- *
- * The dock holds the node library, the model library and the run history behind one set of tabs,
- * and opening a run opens it over the canvas (`RunPane`) with the list still there. That is the
- * whole point: a run parked at the frame-review gate is answered here, with the drawings in front
- * of you and the next run one click away — no page to leave and come back from.
- *
- * Graphs persist to the server and to this browser (see storage.ts); Check is real validation,
- * and Run compiles the graph onto the production pipeline — a stage with no executor is refused
- * with its reason rather than quietly dropped.
- *
- * **A run can be laid over the canvas.** Picking one from the history attaches what each step
- * produced to the node that produced it — thumbnails on the node, the way ComfyUI does it — and
- * closing the run's pane leaves the graph there with the drawings still on it. That is what makes
- * the canvas a place to review from rather than only a place to build in: the node that drew a
- * bad picture, the knobs that drew it and the picture itself are one thing on screen, and
- * clicking the node's own count opens every frame, voice line and film that step made.
- */
+/** The workspace: a node graph editor over the real pipeline stages. */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -93,8 +70,7 @@ const RUN_STATE_TONE: Record<string, string> = {
   CANCELLED: "bad",
 };
 
-/** What the left dock is showing. One dock, because "the node library" and "what I made
- *  yesterday" compete for exactly the same strip of screen, and only one is ever in use. */
+/** What the left dock is showing; one dock. */
 type DockTab = "nodes" | "models" | "history";
 
 const DOCK_LABEL: Record<DockTab, string> = {
@@ -144,14 +120,7 @@ export function WorkspacePage() {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   /** The run open over the canvas. Null is the canvas, which is what the workspace is for. */
   const [openRun, setOpenRun] = useState<string | null>(null);
-  /**
-   * The run whose output is drawn on the nodes. Separate from `openRun` on purpose.
-   *
-   * Picking a run sets both, and closing the run's pane clears only the first — so the operator
-   * lands on the canvas with that run's drawings on the nodes that made them, which is the view
-   * the whole feature exists for. A pane over the canvas cannot be the answer to "show me the
-   * output on the node page", because it is in front of the node page.
-   */
+  /** The run whose output is drawn on the nodes; separate from `openRun`. */
   const [shownRun, setShownRun] = useState<string | null>(null);
   /** The node whose full output is open: every frame at size, the voice lines playing. */
   const [openNode, setOpenNode] = useState<string | null>(null);
@@ -184,9 +153,8 @@ export function WorkspacePage() {
           .put(graph.graph_id, JSON.parse(serializeGraph(graph)))
           .then(() => setSaveError(null))
           .catch((err) => {
-            // Offline (status 0) or a lost session: the browser copy stays the source until
-            // the next save. A 4xx/5xx means the server REFUSED the document — surface it,
-            // or the operator edits for an hour believing everything is persisted.
+            // Offline (status 0) or a lost session: the browser copy stays the source until the next
+            // save. A 4xx/5xx means the server REFUSED the document, so it must be surfaced.
             if (isApiError(err) && err.status >= 400) setSaveError(err.detail);
           });
       }, 800),
@@ -255,9 +223,8 @@ export function WorkspacePage() {
 
   const { data: runs } = useQuery(runsQuery);
   const activeRuns = (runs ?? []).filter((r) => !["COMPLETE", "FAILED", "CANCELLED"].includes(r.state)).length;
-  // The same cached list the dock's history panel reads. It is here for one number: how many
-  // drawings are waiting on somebody, on the button that opens them. A gate nobody can see from
-  // the screen they work on is a gate that parks 25 runs overnight.
+  // The same cached list the dock's history panel reads, here for one number: how many drawings
+  // are waiting on somebody, shown on the button that opens them.
   const { data: history } = useQuery(historyQuery);
   const awaitingReview = (history ?? []).reduce((sum, run) => sum + run.awaiting_review, 0);
 
@@ -275,12 +242,7 @@ export function WorkspacePage() {
   );
   const openNodeStep = openNode ? onCanvas.stepByNodeId[openNode] : undefined;
 
-  /**
-   * Show a run on the canvas and open it.
-   *
-   * One click does both because they are one intention — "let me look at this run" — and the
-   * pane is closed with its own ✕, which is what leaves the canvas showing it.
-   */
+  /** Show a run on the canvas and open it; closing the pane with its own ✕ leaves the canvas showing it. */
   const selectRun = (runId: string) => {
     setOpenRun(runId);
     setShownRun(runId);
@@ -352,11 +314,7 @@ export function WorkspacePage() {
     setTemplatesOpen(false);
   };
 
-  /**
-   * A block goes into the graph that is open, not into a new tab: it is a step, not a lane. It
-   * lands to the right of everything already there so it never covers a node, and folded, so the
-   * graph gains one node called "Clean up the voice" rather than three the operator has to read.
-   */
+  /** A block goes into the open graph as a step, not a new tab: to the right of everything. */
   const insertBlock = (block: WorkflowBlock) => {
     const nodes = editor.graph.nodes;
     const right = nodes.length > 0 ? Math.max(...nodes.map((n) => n.x)) + 380 : 80;
@@ -516,9 +474,8 @@ export function WorkspacePage() {
         )}
 
         <div className="cf-workspace__canvas">
-          {/* Over the canvas, not instead of it: the editor keeps its scroll, its selection and
-              its pending edits while a run is being looked at, and closing the run puts the graph
-              back exactly as it was. */}
+          {/* Over the canvas, not instead of it: the editor keeps its scroll, its selection and its
+             pending edits while a run is being looked at. */}
           {openRun && <RunPane runId={openRun} onClose={() => setOpenRun(null)} />}
           {/* The node's own output, over the canvas but under nothing else: it is opened from a
               node and closed back to the same node, so it must not push the graph around. */}
@@ -545,10 +502,8 @@ export function WorkspacePage() {
           />
           <DropSuggestions state={dropState} editor={editor} />
           {shownRun && (
-            /* What the canvas is currently showing, with the way out of it and the way to the
-               next one. It is a strip at the top rather than a note in a panel because the graph
-               underneath now has somebody else's drawings on it, and a canvas that is quietly
-               showing last night's run is a canvas nobody can trust. */
+            /* A strip at the top, not a note in a panel: a canvas quietly showing last night's run
+               is a canvas nobody can trust. */
             <section className="cf-onnodes" aria-label="Run shown on the canvas">
               <span className="cf-onnodes__label">On the nodes</span>
               <span className="cf-onnodes__name">
@@ -567,9 +522,8 @@ export function WorkspacePage() {
                 )}
               </span>
               {onCanvas.unmatchedSteps.length > 0 && (
-                /* The graph on screen is not the lane that ran. Said plainly, with the steps
-                   named, because the alternative is a canvas that looks like the run produced
-                   nothing at six of its nodes. */
+                /* The graph on screen is not the lane that ran; said with the steps named, or the
+                   canvas looks like the run produced nothing at those nodes. */
                 <span className="cf-onnodes__warn">
                   {onCanvas.unmatchedSteps.length} step
                   {onCanvas.unmatchedSteps.length === 1 ? "" : "s"} of this run are not on this

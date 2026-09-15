@@ -1,5 +1,4 @@
-"""Allowlisted ModelManager (18.8): compare inventory to a signed plan; emit `comfy model download`
-argument arrays; verify hashes; never download from a model-generated URL."""
+"""Allowlisted ModelManager: plan compare, `comfy model download` arrays, hash checks."""
 
 from __future__ import annotations
 
@@ -43,8 +42,7 @@ class InstallAction:
 
 
 def validate_model_source(source_url: str, filename: str) -> None:
-    """The one rulebook for where a model may come from and what it may be called; every
-    download path (plan compare and one-click alike) goes through it."""
+    """The one rulebook for where a model may come from and what it may be called."""
     parsed = urlparse(source_url)
     if parsed.scheme != "https":
         raise ModelInstallError(f"{filename}: model downloads must use https")

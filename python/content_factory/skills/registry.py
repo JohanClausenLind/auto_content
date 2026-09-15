@@ -1,9 +1,4 @@
-"""SkillRegistry (18.1): load, verify (Ed25519), and select skills. No marketplace.
-
-Manifests live at ``skills/<domain>/<name>/manifest.json``. Every manifest must be signed by a key
-in the operator's trust store; unsigned or tampered manifests are refused. Lifecycle governs
-selection: only ``active``/``canary`` skills are selectable for production.
-"""
+"""SkillRegistry (18.1): load, verify (Ed25519), and select skills."""
 
 from __future__ import annotations
 

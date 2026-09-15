@@ -1,7 +1,4 @@
-/**
- * The node library: every node type, grouped by category, searchable, and draggable onto the
- * canvas. Clicking a row also adds the node (at the view centre) for people who don't drag.
- */
+/** The node library: every type by category, searchable and draggable; a click adds at view centre. */
 
 import { useMemo, useState, type DragEvent } from "react";
 import { NODE_DRAG_MIME } from "./NodeGraphEditor";

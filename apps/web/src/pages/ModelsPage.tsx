@@ -1,12 +1,4 @@
-/**
- * Models: the store page. Everything the workflows need, installed from here.
- *
- * Missing comes first because that is what an operator opens this page for, and the button next
- * to a missing weight downloads it — to the configured weight store, then links it into the
- * repo's category index and ComfyUI's model folders, which is what makes it usable rather than
- * merely present. Installed sits below it, grouped the way the store is laid out, with the path
- * and licence of every family visible instead of implied.
- */
+/** The model store page: missing weights first. */
 
 import { useMemo, useState } from "react";
 import { isApiError } from "../api/client";

@@ -1,6 +1,5 @@
-// Pinned local fonts only: Inter (body) and Sora (optional display face). Faces come from the
-// pinned @fontsource packages, materialized into public/fonts by the render scripts and served by
-// Remotion via staticFile(). No remote fonts.
+// Pinned local fonts only (Inter body, Sora display), from the @fontsource packages materialized
+// into public/fonts by the render scripts and served via staticFile(). No remote fonts.
 import { FONT_FACES } from "@content-factory/content-ui";
 import { loadFont } from "@remotion/fonts";
 import { staticFile } from "remotion";

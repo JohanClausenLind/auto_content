@@ -1,26 +1,4 @@
-"""Uploaded CSV/JSON to a typed ``DatasetTable``, through transforms that are declared.
-
-Every on-screen figure in this repo resolves through a ``DatasetTable`` to a source, which is the
-whole reason `BigNumberScene` takes a `DataRef` and not a number. The stage that was supposed to
-produce those tables returned `sample_dataset()` — the committed fixture — so a data-led film
-could only ever be about Swedish wind power, and the chain from a spreadsheet an operator actually
-has to a chart on screen did not exist.
-
-Two rules make the difference between this and "parse a CSV":
-
-**Transforms are declared, not written.** A transform is a typed step out of a closed set —
-select, rename, filter, sort, head, derive-share, round — and the list of them is recorded on the
-compiled table's ``label`` and in ``datasets/<id>.transforms.json``. Nothing here executes operator
-text, and the derivation is reproducible from the record without reading this module. Polars does
-the work (it is already a pinned dependency) because a CSV with mixed types, thousands separators
-and a European decimal comma is exactly what it exists for.
-
-**The classification is inferred, never assumed.** A table read straight from an upload is
-``SOURCE_DATA``; the moment a transform computes a value that was not in the file it becomes
-``DERIVED_DATA``. That distinction is load-bearing downstream: `ChartScene` labels an
-``ESTIMATE``/``ILLUSTRATIVE`` table on screen, and calling a derived share "source data" would put
-a computed number on a chart claiming to be measured.
-"""
+"""Uploaded CSV/JSON to a typed ``DatasetTable``, through transforms that are declared."""
 
 from __future__ import annotations
 
@@ -65,8 +43,7 @@ TransformKind = Literal["select", "rename", "filter", "sort", "head", "share_of_
 
 
 class Transform(SchemaModel):
-    """One declared step. A closed set on purpose: an operator describes the derivation, and this
-    module is the only thing that decides what a description does."""
+    """One declared step."""
 
     kind: TransformKind
     columns: tuple[str, ...] = ()
@@ -112,8 +89,7 @@ class Transform(SchemaModel):
         return self
 
     def describe(self) -> str:
-        """One line, readable, for the table's own label. This is what a viewer's source note and
-        an operator's audit both read; it must say what happened without this module."""
+        """One line, readable, for the table's own label."""
         if self.kind == "select":
             return f"select {', '.join(self.columns)}"
         if self.kind == "rename":
@@ -269,11 +245,7 @@ def compile_dataset(
     unit: str = "",
     label: str = "",
 ) -> CompiledDataset:
-    """One upload, one declared transform list, one typed table.
-
-    Pure with respect to the file: the same bytes and the same transforms give the same table, and
-    ``input_sha256`` is over the file so a re-uploaded spreadsheet is a different dataset.
-    """
+    """One upload, one declared transform list, one typed table."""
     frame = _read_frame(path)
     raw = path.read_bytes()
     if frame.height == 0:
@@ -316,8 +288,7 @@ def compile_dataset(
 
 
 def parse_transforms(payload: object) -> tuple[Transform, ...]:
-    """A transform list as it arrives from a widget or a sidecar file. Refused by name when wrong,
-    because a mistyped transform that validated as an empty list would silently change the film."""
+    """A transform list as it arrives from a widget or a sidecar file."""
     if payload in (None, "", []):
         return ()
     if isinstance(payload, str):

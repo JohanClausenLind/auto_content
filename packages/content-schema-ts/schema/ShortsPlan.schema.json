@@ -2,7 +2,7 @@
   "$defs": {
     "ShortExcerpt": {
       "additionalProperties": false,
-      "description": "One derived short: a contiguous, self-contained run of long-form beats plus its hook.\n\n``hook_text`` equal to the first beat's display text means \"verbatim\" — the claims on that\nbeat survive into the short. A rewritten hook is a new statement: the derived plan drops the\nclaim links on that beat rather than pretending the citation still holds.",
+      "description": "One derived short: a contiguous, self-contained run of long-form beats plus its hook.",
       "properties": {
         "claim_ids": {
           "default": [],

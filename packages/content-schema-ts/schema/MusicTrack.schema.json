@@ -2,7 +2,7 @@
   "$id": "https://content-factory.local/schema/MusicTrack.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "One track in the local music library (fixtures/music by default). Attribution is part of\nthe record, not an afterthought: it travels into destination packages with the mix.",
+  "description": "One track in the local music library (fixtures/music by default).",
   "properties": {
     "attribution": {
       "maxLength": 500,

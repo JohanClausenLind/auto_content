@@ -1,5 +1,4 @@
-"""Phase-5 gate: one media skill runs through both a ComfyUI fixture and a mock cloud backend
-unchanged (same request, same invocation path, equivalent verified results)."""
+"""Phase-5 gate: one media skill runs through both a ComfyUI fixture."""
 
 from __future__ import annotations
 

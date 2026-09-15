@@ -1,15 +1,4 @@
-"""Run a workflow's stages locally, in order, with the real executors and no Temporal.
-
-The definitions in ``workflows/*.yaml`` are the single source of truth: this module reads them
-through ``content_factory.workflows.catalog`` rather than keeping its own copy of what a workflow
-is. It used to keep one, and it drifted from the canvas's copy in every way a duplicated definition
-can. Stages that need GPU servers start them through services/local.py. Each run writes
-``run.json`` (per-stage hashes, facts, timings, and the files each node left behind — observed by
-``runners/attribution.py``, because no stage executor reports its own) next to the deliverable.
-
-Steps are keyed by NODE KEY, not by stage, so a workflow may use one stage twice with different
-parameters. The stage-keyed table this replaced silently collapsed those.
-"""
+"""Run a workflow's stages locally, in order, with the real executors and no Temporal."""
 
 from __future__ import annotations
 
@@ -73,17 +62,7 @@ def make_context(
     quality: str = "demo",
     brief: Mapping[str, object] | None = None,
 ) -> StageContext:
-    """A context addressing a deliverable the campaign actually contains.
-
-    The delivery stages look their own spec up in the campaign, so an invented id fails them with
-    a bare ``StopIteration`` several minutes into a run. Default to the campaign's video
-    deliverable, which is what every lane here produces.
-
-    ``brief`` are an ``input.brief`` node's widget values (topic, audience). Given them, the
-    campaign carries the lane's own brief instead of the demo fixture's — the same substitution
-    the canvas path makes, through the same helper. Without them the fixture brief survives, which
-    is what the non-lane callers (tests, the MCP tools) want.
-    """
+    """A context addressing a deliverable the campaign actually contains."""
     campaign = sample_campaign()
     if brief is not None:
         from content_factory.workspace.compile import campaign_with_brief
@@ -113,23 +92,14 @@ def run_stages(
     params: Mapping[Stage, Mapping[str, str]] | None = None,
     log=print,
 ) -> dict:
-    """Execute ``stages`` in order, with parameters keyed by stage.
-
-    Kept for callers that have a bare stage list. A workflow run goes through :func:`run_plan`,
-    which keys parameters by node and so can carry a stage that appears twice.
-    """
+    """Execute ``stages`` in order, with parameters keyed by stage."""
     params = params or {}
     steps: list[Step] = [(s.value, s, dict(params.get(s, {}))) for s in stages]
     return run_plan(steps, ctx, report_path=report_path, log=log)
 
 
 def stage_warnings(facts: dict[str, Any]) -> list[str]:
-    """Facts that need an operator to decide something, as their own lines.
-
-    The stage line is truncated to keep a run's output cheap to read, which means a warning
-    arriving as the tail of a fact blob is a warning nobody sees. This is emitted here rather than
-    in a CLI because this is where the untruncated facts are, and every front end gets it.
-    """
+    """Facts that need an operator to decide something, as their own lines."""
     out: list[str] = []
     under = facts.get("underframed") or []
     if isinstance(under, list) and under:
@@ -147,14 +117,7 @@ def stage_warnings(facts: dict[str, Any]) -> list[str]:
 
 
 def _refuse_while_gpu_claimed() -> None:
-    """Refuse to start while a higher-priority tenant holds the card.
-
-    Priority that only works one way is not priority: without this, a run started during a study
-    session takes back the VRAM that ``gpu yield`` just freed, and the session OOMs instead. The
-    claim expires on its own (see ``gpu_priority.MAX_CLAIM_HOLD_S``) because the other tenant is a
-    separate program that can crash, and a stale file must not stop this machine rendering ever
-    again. ``CF_IGNORE_GPU_CLAIM=1`` is the deliberate override.
-    """
+    """Refuse to start while a higher-priority tenant holds the card."""
     if os.environ.get("CF_IGNORE_GPU_CLAIM") == "1":
         return
     from content_factory.services import gpu_priority
@@ -175,11 +138,7 @@ def _refuse_while_gpu_claimed() -> None:
 def _merged_step_record(
     report_path: Path, steps: Sequence[tuple[str, Stage, Mapping[str, Any]]]
 ) -> list[dict[str, Any]]:
-    """This run's node configuration, over whatever the last run in this directory recorded.
-
-    Order follows the previous record and then appends anything new, so the list reads like the
-    lane rather than like the last slice somebody happened to run.
-    """
+    """This run's node configuration, over whatever the last run in this directory recorded."""
     previous = recorded_values(report_path)
     now = {key: (stage.value, dict(values)) for key, stage, values in steps}
     order = list(previous) + [key for key in now if key not in previous]
@@ -202,37 +161,19 @@ def run_plan(
     use_pins: bool = True,
     log=print,
 ) -> dict:
-    """Execute ``steps`` in order; stop at the first failure. The report is written after every
-    step, so a crash leaves a record of what completed.
-
-    Parameters are the widget values a workspace graph would have frozen onto each node, so a local
-    run and a Run started from the canvas execute the same way.
-
-    The run publishes itself in the registry (``runners/registry``) for as long as it executes, so
-    ``content-factory stop`` can find it from another terminal. A stop asked for between steps ends
-    the run as :class:`RunStopped` with the report written and every finished stage left on disk,
-    which is what makes ``--from`` a resume rather than a restart."""
+    """Execute ``steps`` in order; stop at the first failure."""
     missing = sorted({stage.value for _key, stage, _p in steps if stage not in STAGE_EXECUTORS})
     if missing:
         msg = f"stages without executors: {missing}"
         raise ValueError(msg)
     report: dict = {
-        # Named in the report because `services/durations.py` estimates per (workflow, stage):
-        # `generate_anchor` is one picture at ~32 s on `image-set` and six at ~608 s on
-        # `audio-picture-story`, and a single median over both is wrong for both.
+        # services/durations.py estimates per (workflow, stage): generate_anchor is ~32 s on
+        # image-set and ~608 s on audio-picture-story, and one median over both is wrong for both.
         "workflow": workflow,
         "project_dir": str(ctx.project_dir),
         "deliverable_id": ctx.deliverable_id,
-        # What each node was actually configured with, so a `--from` resume can run the same
-        # configuration instead of a different one. Nothing recorded these, so an override given
-        # on the first invocation was simply gone on the second: an `image-set` resumed to redraw
-        # one rejected frame lost `--set generate_keyframes.drift_profile=uncalibrated`, met the
-        # mock-calibrated 0.92 default that no real frame reaches, and was BLOCKED after three
-        # attempts at a measured 0.8491 (2026-09-10).
-        #
-        # Merged with what is already on disk, not replaced: a `--from` run executes a *slice*,
-        # so recording only its own steps would forget every node before the resume point and
-        # each resume would narrow the memory further.
+        # What each node was configured with, so a --from resume reruns the same configuration
+        # (journal 2026-09-10); merged with disk, since a slice must not forget earlier nodes.
         "steps": _merged_step_record(report_path or ctx.ddir() / "run.json", steps),
         "stages": [],
         "passed": False,
@@ -269,24 +210,7 @@ def run_plan(
 
 
 def _release_gpu_if_idle(log=print) -> dict | None:
-    """Stop the model servers once no run is left to use them.
-
-    A server keeps its weights loaded so the next request does not pay the ~72 s load. That is the
-    right trade while work is queued and the wrong one when the queue is empty: measured 2026-09-10,
-    an idle HiDream held **18,936 MiB** and `gpu status` reported 3.2 GiB free, so the other GPU
-    tenant on this machine could not have used the card at all. Releasing it took free VRAM back to
-    21.9 GiB.
-
-    Not an energy saving, and worth saying so rather than implying it: idle draw was **34.11 W with
-    the model resident and 34.09 W without**, both at P8. The only readings above that were the
-    107 W spike of the teardown itself. The 19 GB is the whole argument.
-
-    Runs in a ``finally``, so a failed or stopped run releases the card too — a crash is exactly
-    when a forgotten 19 GB is least likely to be noticed. ``active_runs`` prunes dead entries, so
-    "nothing else is running" is a real check and not a guess, and this run has already left the
-    registry by the time it is asked. ``free_the_gpu`` probes each tenant before stopping it, so on
-    a machine with no server up this is two refused connections on loopback.
-    """
+    """Stop the model servers once no run is left to use them."""
     from content_factory.config.settings import get_settings
 
     if not get_settings().local_services.release_when_idle:
@@ -307,14 +231,7 @@ def _release_gpu_if_idle(log=print) -> dict | None:
 
 
 def _recorded_outputs(report_path: Path) -> dict[str, dict[str, Any]]:
-    """What each node was last seen to produce, by node key, from the report already on disk.
-
-    Read for one reason: a **pinned** node executes nothing this run, so the walk observes no
-    files for it — and a canvas that then showed the frozen node as having produced nothing would
-    be saying the opposite of what a pin means. The paths are carried forward from the run that
-    did produce them, which is the same carry-forward :func:`_merged_step_record` does for widget
-    values and for the same reason.
-    """
+    """What each node was last seen to produce, by node key, from the report already on disk."""
     if not report_path.is_file():
         return {}
     try:
@@ -342,16 +259,13 @@ def _run_steps(
     pinned = pinned or {}
     durations.refresh()  # once per run, so a long process estimates from history it helped write
     _log_eta_header(steps, workflow, log)
-    # What each step leaves behind, observed rather than reported: no stage executor knows its own
-    # file list, and the history needs one to answer "which node made this picture". See
-    # runners/attribution.py — the walk costs ~21 ms against stages that cost 48 s to 608 s.
+    # Outputs are observed, not reported: no stage executor knows its own file list. The
+    # runners/attribution.py walk costs ~21 ms against stages of 48 s to 608 s.
     carried = _recorded_outputs(report_path)
     before = attribution.snapshot(ctx.project_dir)
 
-    # The run's own paperwork, which the walk would otherwise hand to whichever step happened to
-    # run last: `run.json` is rewritten after *every* step, and `pins.json` is the operator's.
-    # Named as relative paths rather than by filename, because `controls/<shot>/run.json` is a
-    # real output of the control compiler and has to keep belonging to it.
+    # The run's own paperwork, or the walk hands it to whichever step ran last. Relative paths,
+    # not filenames: `controls/<shot>/run.json` is a real output of the control compiler.
     own_files = {
         path.relative_to(ctx.project_dir).as_posix()
         for path in (report_path, report_path.parent / pins.PINS_FILENAME)
@@ -359,13 +273,7 @@ def _run_steps(
     }
 
     def observe() -> dict[str, Any]:
-        """What the step that just ran left behind, and roll the baseline forward.
-
-        Called on every exit from a step, not only the successful one. A **blocked** step is the
-        case that matters most: ``review_frames`` stops the run, and the contact sheet and batch
-        it wrote are exactly what the person it stopped for needs to see. A **failed** step often
-        leaves partial output too, and that is the evidence for why it failed.
-        """
+        """What the step that just ran left behind, and roll the baseline forward."""
         nonlocal before
         current = attribution.snapshot(ctx.project_dir)
         touched = [p for p in attribution.changed(before, current) if p not in own_files]
@@ -376,9 +284,8 @@ def _run_steps(
     for index, (node_key, stage, stage_params) in enumerate(steps):
         pin = pinned.get(node_key)
         if pin is not None:
-            # Recorded as `ok` because the output is there and later stages will read it, and as
-            # `pinned` so provenance says it was frozen rather than produced by this run, and so
-            # `services/durations.py` keeps a 0.0 s sample out of the medians.
+            # `ok` because later stages will read the output; `pinned` so provenance says frozen,
+            # not produced, and services/durations.py keeps the 0.0 s sample out of the medians.
             report["stages"].append(
                 {
                     "stage": stage.value,
@@ -392,10 +299,8 @@ def _run_steps(
                 }
             )
             _write_report(report_path, report)
-            # Two lines, the same shape every other stage uses: `==>` sets the current node for a
-            # terse front end, and the outcome line is what it renders. A pinned node that printed
-            # nothing would simply vanish from the run's output, which is the one thing a pin must
-            # never do — the whole design rests on it being visible that a step was not run.
+            # Same two-line shape as every other stage: a pinned node that printed nothing would
+            # vanish from the run's output, and a pin must always be visible as a step not run.
             log(f"==> {stage.value} [{node_key}]")
             log(f"    pinned {pin.outputs_hash[:12]}, not run")
             continue
@@ -423,18 +328,16 @@ def _run_steps(
             stop.report = report
             raise
         except Exception as exc:
-            # A stage whose subprocess was killed by the same stop that killed the run raises an
-            # ordinary error. Reporting that as FAILED would invite a retry for something nobody
-            # broke, so a pending stop request re-labels it as what it is.
+            # A subprocess killed by the stop that killed the run raises an ordinary error; a
+            # pending stop request re-labels it, since FAILED would invite a retry.
             stopping = handle.stop_reason()
             if stopping:
                 report["stopped"] = {"reason": stopping, "during": node_key}
                 _write_report(report_path, report)
                 log(f"    STOPPED during {node_key}: {stopping}")
                 raise RunStopped(stopping, at=node_key, report=report) from exc
-            # A block is not a failure. The stage did its job, ran the deterministic checks and
-            # got an answer a person has to give — so the report says so in its own field, and the
-            # log line says BLOCKED, because "FAILED" is what invites reaching for a retry.
+            # A block is not a failure: the stage got an answer a person has to give, so it gets
+            # its own field and the log says BLOCKED, because FAILED invites a retry.
             blocked = blocked_details(exc)
             record = {
                 "stage": stage.value,
@@ -475,12 +378,7 @@ def _run_steps(
 
 
 def _clock(stage: durations.Estimate | None, remaining: durations.Forecast | None) -> str:
-    """The timing bracket for one log line, or nothing at all.
-
-    Numbers under a second are dropped rather than printed as "0s": most stages in a lane are
-    bookkeeping that costs no measurable time, and a bracket reading `[~0s, 0s left]` is noise
-    that trains the eye to skip the line where the real number appears.
-    """
+    """The timing bracket for one log line, or nothing at all."""
     parts: list[str] = []
     if stage is not None and stage.seconds >= 1:
         parts.append(f"~{stage.describe()}")
@@ -490,12 +388,7 @@ def _clock(stage: durations.Estimate | None, remaining: durations.Forecast | Non
 
 
 def _log_eta_header(steps: Sequence[Step], workflow: str, log) -> None:
-    """One line at the top saying when the whole thing should be done, and on what evidence.
-
-    A run that prints nothing about its length leaves the only honest answer to "is it stuck?" as
-    watching nvidia-smi. The evidence is stated because these medians come from as few as one past
-    run for a new stage and from 149 for `generate_anchor`, and those are not the same promise.
-    """
+    """One line at the top saying when the whole thing should be done, and on what evidence."""
     fc = durations.forecast([s.value for _k, s, _p in steps], workflow)
     if fc.remaining_seconds <= 0 and not fc.unknown:
         return
@@ -507,10 +400,7 @@ def _log_eta_header(steps: Sequence[Step], workflow: str, log) -> None:
 
 
 def _resolve_boundary(steps: Sequence[Step], name: str, which: str) -> int:
-    """Index of the step ``name`` selects, by node key or by stage name.
-
-    A stage name that appears twice in the workflow is ambiguous, and the error says so and names
-    the node keys, rather than quietly picking the first one."""
+    """Index of the step ``name`` selects, by node key or by stage name."""
     by_node = [i for i, (key, _s, _p) in enumerate(steps) if key == name]
     if len(by_node) == 1:
         return by_node[0]
@@ -538,30 +428,14 @@ SOURCE_NODE_KINDS: dict[str, str] = {
 
 
 def workflow_inputs(workflow: str) -> tuple[str, ...]:
-    """The kinds of file this lane needs supplied, from its declared file-input nodes.
-
-    A lane that reads the operator's material used to say so only in prose, in ``prerequisite``,
-    which meant the fact was unavailable to `workflows list`, to the preflight, and to `--input`.
-    The nodes carry it now, so one declaration answers all three.
-    """
+    """The kinds of file this lane needs supplied, from its declared file-input nodes."""
     template = load_definition(workflow)
     kinds = [SOURCE_NODE_KINDS[n.type] for n in template.nodes if n.type in SOURCE_NODE_KINDS]
     return tuple(dict.fromkeys(kinds))
 
 
 def workflow_needs_takes(workflow: str) -> bool:
-    """Whether this lane reads **one recording per beat**, named by beat id.
-
-    Not expressible as a file-input node, and that is the whole reason this exists: `input.audio`
-    stands for one dropped file, while a take set is a *directory* keyed by ids the run itself
-    generates. So `workflow_inputs` reported nothing for the two lanes that need the most material
-    of any in the catalogue, `make` accepted them with no material, and they failed inside
-    `voice_over` — stage 3 of 8 for `voice-over-track`, and stage 10 of 20 for `picture-story`,
-    which is an hour of drawings thrown away for a fact that was knowable in the first second.
-
-    Derived from the definition rather than declared beside it, so it cannot drift: a lane runs
-    `voice_over` in its default `takes` mode or it does not.
-    """
+    """Whether this lane reads **one recording per beat**, named by beat id."""
     template = load_definition(workflow)
     return any(
         n.type == Stage.voice_over.value and str(n.values.get("source", "takes")) == "takes"
@@ -570,12 +444,7 @@ def workflow_needs_takes(workflow: str) -> bool:
 
 
 def discovered_takes(project_dir: Path) -> list[str]:
-    """The recordings a takes-mode lane would find in this run directory, by file name.
-
-    Both places, because the run has two answers to "where does material go": the one rule
-    (`<project>/uploads`, which is where `--input` and a canvas drop put it) and `voice_over`'s own
-    configured `takes_dir`. An operator who followed either is not made to follow the other.
-    """
+    """The recordings a takes-mode lane would find in this run directory, by file name."""
     from content_factory.audio.takes import AUDIO_SUFFIXES
     from content_factory.config import get_settings
 
@@ -599,22 +468,7 @@ def discovered_takes(project_dir: Path) -> list[str]:
 def stage_inputs(
     project_dir: Path, paths: Sequence[Path], *, wanted: Sequence[str] = (), log=print
 ) -> list[dict[str, object]]:
-    """Copy the operator's material into the run's uploads folder, sniffed and checked.
-
-    One rule for every lane: **the material goes in ``<project>/uploads``**. The stages that need
-    it look there — ``ingest`` turns it into typed sources, ``transcribe_audio`` reads the
-    recording, the post chain picks up a clip or a folder of stills — so a lane's entry point is a
-    directory an operator can also fill by hand, with a flag, or by dropping a file on the canvas.
-    Nothing is converted here: the type is decided from the bytes and the file is copied as it is,
-    because the stages that read it convert on their own terms (and `ingest` keeps the operator's
-    original untouched by design).
-
-    A file whose sniffed kind is not one the lane asked for is refused by name. That check is the
-    whole reason ``wanted`` exists: ``make audio-restore --input holiday.mp4`` is a mistake worth
-    catching in the first second rather than in the first stage. It has one measured exception —
-    an MP4 with nothing to look at is a recording, and :func:`ingest.convert.blank_picture` is
-    what decides that, per file, rather than the extension or the operator's word for it.
-    """
+    """Copy the operator's material into the run's uploads folder, sniffed and checked."""
     from content_factory.ingest.convert import CONVERTIBLE, blank_picture
     from content_factory.ingest.uploads import ALLOWED, MAX_UPLOAD_BYTES, sniff_mime
 
@@ -651,11 +505,8 @@ def stage_inputs(
             raise ValueError(msg)
         blank = None
         if wanted and kind not in wanted:
-            # The one mismatch that is not a mistake. A phone, a voice-memo app and a meeting
-            # recorder all hand you sound wrapped in MP4, so an audio lane refusing every
-            # `video/mp4` sends an operator to ffmpeg for a file the lane can already read.
-            # Sound and no picture is a recording; sound and a picture is still refused, because
-            # `--input holiday.mp4` to an audio lane is exactly the mistake this check is for.
+            # Phones and voice-memo apps wrap sound in MP4: sound with a blank picture is a
+            # recording; sound with a real picture is still the mistake this check is for.
             blank = blank_picture(source) if kind == "video" and "audio" in wanted else None
             if blank is None:
                 msg = (
@@ -686,12 +537,7 @@ def stage_inputs(
 
 
 def _brief_for(workflow: str, subject: str | None) -> dict[str, object]:
-    """The lane's ``input.brief`` widget values, with ``--subject`` overriding the topic.
-
-    A lane with no brief node still gets one: ``--subject`` alone is enough, and failing that the
-    lane's name and description are a truthful placeholder rather than the demo fixture's question
-    about Swedish wind power.
-    """
+    """The lane's ``input.brief`` widget values, with ``--subject`` overriding the topic."""
     template = load_definition(workflow)
     node = next((n for n in template.nodes if n.type == "input.brief"), None)
     values: dict[str, object] = dict(node.values) if node is not None else {}
@@ -702,16 +548,7 @@ def _brief_for(workflow: str, subject: str | None) -> dict[str, object]:
 
 
 def recorded_values(report_path: Path) -> dict[str, dict[str, Any]]:
-    """What each node was configured with on the run recorded at ``report_path``, by node key.
-
-    Overrides used to live on the command line and nowhere else, so `--from` silently
-    reconfigured the run it was resuming. Measured 2026-09-10: an `image-set` resumed to redraw
-    one rejected frame lost `--set generate_keyframes.drift_profile=uncalibrated`, met the
-    mock-calibrated 0.92 default that no frame from a real diffusion backend reaches, and was
-    BLOCKED after three attempts at a measured 0.8491 — a number the profile it was started with
-    passes easily. An unreadable or absent report is not an error: it means no memory, which is
-    what every run before this one had.
-    """
+    """What each node was configured with on the run recorded at ``report_path``, by node key."""
     if not report_path.is_file():
         return {}
     try:
@@ -736,13 +573,7 @@ def resolved_steps(
     node_params: Mapping[str, Mapping[str, str]] | None = None,
     recorded: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[tuple[str, Stage, dict[str, Any]]]:
-    """The lane's steps with every override applied, in precedence order. Pure.
-
-    Extracted so `--plan` can print what will actually run. It used to print the lane's own
-    values, before any of this: `make ... --plan --set shots.characters=none` showed the shot
-    node's untouched defaults, which is the opposite of what a flag called "print the steps and
-    exit" is for (measured 2026-09-10, while checking whether an override had landed).
-    """
+    """The lane's steps with every override applied, in precedence order."""
     by_stage: dict[Stage, dict[str, str]] = {}
     # Which film: the story fixture chooses the script, the shot fixture the staging.
     if story:
@@ -752,19 +583,12 @@ def resolved_steps(
             {"planner": "fixture", "fixture_path": shots}
         )
     if subject:
-        # One sentence, three places, because three different models are told it. It becomes the
-        # story's ``visual_subject``, which is what the shot prompt compiler names the film's
-        # world from and what leads the anchor prompt; and it reaches the single-clip video path,
-        # which has no ShotSpec to compile from.
+        # Three models are told the one sentence: the story's visual_subject (which leads the
+        # anchor prompt) and the single-clip video path, which has no ShotSpec to compile from.
         by_stage.setdefault(Stage.plan_story, {})["subject"] = subject
         by_stage.setdefault(Stage.generate_video, {})["subject"] = subject
-        # The anchor's `prompt` widget is a *framing* instruction, not a subject — "one drawn
-        # frame, the subject filling it, nothing else in shot". Overwriting it used to be how
-        # --subject reached the image model, and it silently threw that framing away: an
-        # `audio-picture-story` run with --subject drew six wide vistas because the lane's "the
-        # subject filling it" had been replaced by the world sentence, which then also arrived
-        # through `visual_subject`. A lane that wrote no framing of its own still gets the
-        # subject here, because a framing with no subject in it asks the model to invent one.
+        # The anchor's `prompt` widget is a framing instruction, not a subject: overwriting it drew
+        # six wide vistas. Only a lane with no framing of its own gets the subject here.
         if not any(
             v.get("prompt", "").strip() for k, st, v in steps if st is Stage.generate_anchor
         ):
@@ -778,10 +602,8 @@ def resolved_steps(
 
     out: list[tuple[str, Stage, dict[str, Any]]] = []
     for key, stage, values in steps:
-        # Four layers, weakest first: the lane's own widget values, then what the run being
-        # resumed was configured with, then this invocation's stage-wide overrides, then its
-        # per-node ones. A resume therefore reproduces the original run unless told otherwise,
-        # and can still be told otherwise.
+        # Weakest first: lane widget values, the resumed run's configuration, this invocation's
+        # stage-wide overrides, then its per-node ones.
         merged: dict[str, Any] = dict(values)
         merged.update(dict((recorded or {}).get(key, {})))
         merged.update(by_stage.get(stage, {}))
@@ -808,10 +630,7 @@ def run_workflow(
     node_params: Mapping[str, Mapping[str, str]] | None = None,
     log=print,
 ) -> dict:
-    """Run one workflow definition end to end, or a slice of it.
-
-    ``--from`` and ``--until`` take a node key or a stage name. Overrides arrive two ways: by node
-    key, which is exact, or by stage, which applies to every node running that stage."""
+    """Run one workflow definition end to end, or a slice of it."""
     try:
         steps = workflow_steps(workflow)
     except WorkflowDefinitionError as exc:
@@ -828,9 +647,8 @@ def run_workflow(
     # Absolute paths only: the Remotion and skill subprocesses run from their own directories.
     project_dir = (project_dir or REPO_ROOT / "output" / "local-runs" / workflow).resolve()
     artifacts_dir = artifacts_dir.resolve() if artifacts_dir else None
-    # The lane's own brief, not the demo fixture's, and --subject overrides its topic. A run whose
-    # brief says "How much of Sweden's electricity came from wind in 2025?" asks the image model
-    # for that question over the top of whatever film was actually commissioned.
+    # The lane's own brief, not the demo fixture's, whose wind-in-Sweden question would otherwise
+    # reach the image model over the top of whatever film was commissioned.
     ctx = make_context(
         project_dir=project_dir,
         artifacts_dir=artifacts_dir,
@@ -838,9 +656,8 @@ def run_workflow(
         brief=_brief_for(workflow, subject),
     )
 
-    # The operator's own material, before the first stage runs: a lane that reads a recording or
-    # a clip has to have it in place, and staging it here means `--input` works the same way for
-    # every lane instead of each one documenting a different directory.
+    # Staged before the first stage runs, so `--input` works the same way for every lane instead
+    # of each one documenting a different directory.
     if inputs:
         stage_inputs(project_dir, inputs, wanted=workflow_inputs(workflow), log=log)
 
@@ -861,8 +678,7 @@ def run_workflow(
 
 
 def _write_report(path: Path, report: dict) -> None:
-    """Atomically, because a stop can interrupt the run between any two bytecodes and a truncated
-    run.json is worse than a stale one."""
+    """Write atomically: a stop can land between any two bytecodes."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(report, indent=1, sort_keys=True, default=str))

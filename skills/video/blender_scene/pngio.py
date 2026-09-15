@@ -1,5 +1,4 @@
-"""Canonical PNG encoding (venv side, Pillow): no ancillary chunks, fixed compression, so equal
-pixels give equal bytes — the same settings content-factory's control compiler uses."""
+"""Canonical PNG encoding (venv side, Pillow): no ancillary chunks, fixed compression."""
 
 from __future__ import annotations
 

@@ -1,14 +1,4 @@
-"""/v1/run-history/{run_id}/review: answering the frame gate from the browser.
-
-``review_frames`` is where this machine's work actually stops — 25 runs are parked at it right
-now, with their drawings finished. Answering meant the CLI and a path on disk, so the pictures
-that most needed a person were the hardest to reach.
-
-These tests pin the two halves that make the browser a real reviewer rather than a viewer: the
-gate arrives with every image it is asking about, and the rules that govern a verdict are the same
-ones ``content-factory frames review`` enforces — an agent still cannot accept a batch it never
-opened, whichever surface it reaches for.
-"""
+"""/v1/run-history/{run_id}/review: answering the frame gate from the browser."""
 
 from __future__ import annotations
 
@@ -121,8 +111,7 @@ async def sign_in(client, sessionmaker, *, role: Role | None = None) -> None:
 async def test_the_gate_arrives_with_every_drawing_it_is_asking_about(
     client, sessionmaker, output_root
 ):
-    """A review panel that lists filenames is a worse contact sheet. Each frame resolves to a
-    file the same route serves, so the reviewer looks at the picture, not at its digest."""
+    """A review panel that lists filenames is a worse contact sheet."""
     write_gated_run(output_root, "waiting")
     await sign_in(client, sessionmaker)
 
@@ -202,8 +191,7 @@ async def test_one_bad_drawing_costs_one_drawing(client, sessionmaker, output_ro
 async def test_an_agent_cannot_accept_a_batch_it_did_not_open_from_here_either(
     client, sessionmaker, output_root
 ):
-    """The rule that made the browser panel safe to add: it is enforced in one place
-    (`qc.verdict`) and both surfaces ask that place, so a second door does not open a wider one."""
+    """The rule that made the browser panel safe to add: it is enforced in one place."""
     run_dir = write_gated_run(output_root, "agentrun")
     await sign_in(client, sessionmaker)
 

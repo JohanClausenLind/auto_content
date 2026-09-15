@@ -1,9 +1,4 @@
-/**
- * One node on the canvas, drawn the way a node graph draws them: a 30px title bar with a
- * collapse chevron and an editable name, slot rows with coloured dots straddling the node edge,
- * widget pills, then the free-text note underneath. Geometry and palette follow litegraph
- * (30px title, 20px slots, 8px radius) so the canvas reads like the editors people know.
- */
+/** One node on the canvas; geometry follows litegraph (30px title, 20px slots, 8px radius). */
 
 import { Handle, Position, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
@@ -33,8 +28,7 @@ export interface GraphNodeData extends Record<string, unknown> {
   };
   /** What this node produced in the run being looked at, if any. See `NodeOutputs.tsx`. */
   readonly outputs?: NodeOutputs;
-  /** Open the full review for this node's output. The canvas draws four thumbnails; every frame
-   *  at size, with the voice lines playing, is the host application's panel. */
+  /** Open the host's full review of this node's output; the canvas only draws four thumbnails. */
   readonly onOpenOutputs?: () => void;
 }
 

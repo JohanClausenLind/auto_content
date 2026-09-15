@@ -1,20 +1,4 @@
-"""Ingest side of the SFX library: real recordings out of a local sound-effects bundle.
-
-Companion to `sfx.py`. That module owns the DSP every sound in `assets/sfx` goes through -- the
-loop wrap, the levelling, the QC -- and it is used unchanged here, so a recorded bed and a
-generated bed are processed by exactly the same code and land on exactly the same targets. This
-module owns only the two things that are specific to third-party source material:
-
-* getting audio out of it (96/192 kHz, sometimes mono or surround) at the library's 44.1 kHz
-  stereo, through ffmpeg's soxr resampler;
-* deciding *which part* of it to keep. A 680 s food-court ambience holds one good 30 s loop and a
-  lot of foreground chatter; a 60 s clock recording holds sixty ticks and we want one. Both
-  choices are made by measurement, not by a hand-written timestamp, and the winning offset is
-  recorded in the manifest -- the same discipline as the winning seed on the generated side.
-
-The bundle itself is never committed. It lives outside the repo (default `~/Music/sonniss_gdc_2026`,
-override with `CF_SONNISS_GDC_DIR`); only the 44.1 kHz excerpts written into `assets/sfx` are.
-"""
+"""Ingest side of the SFX library: real recordings out of a local sound-effects bundle."""
 
 from __future__ import annotations
 
@@ -35,9 +19,7 @@ FILELIST_GLOB = "*Filelist.xlsx"
 LICENCE_PDF = "License - GDC Game Audio.pdf"
 
 # The bundle ships one royalty-free licence covering every pack in it: unlimited projects,
-# commercial use, modification allowed, no attribution required. Attribution is recorded anyway --
-# provenance is not the same thing as an obligation, and a library you cannot trace is a library
-# you cannot re-cut.
+# commercial use, modification allowed, no attribution required.
 BUNDLE_LICENCE = (
     "Sonniss #GameAudioGDC Bundle licensing agreement: worldwide, non-exclusive, royalty-free; "
     "unlimited personal and commercial projects; modification permitted; no attribution required"
@@ -55,12 +37,7 @@ def bundle_root() -> Path:
 
 
 def pack_root(pack: dict, must_exist: bool = True) -> Path:
-    """The staging root of a pack recipe: its own env var, else the default it names.
-
-    Pack sources live outside the repo for the same reason the bundle does -- their licences
-    permit an End Product that incorporates a sound, not redistribution of the sound.
-    `must_exist=False` is for the stager, which is allowed to create the root it is filling.
-    """
+    """The staging root of a pack recipe: its own env var, else the default it names."""
     root = Path(os.environ.get(pack["root_env"], pack["root_default"])).expanduser()
     if must_exist and not root.is_dir():
         raise SystemExit(
@@ -80,13 +57,7 @@ _VALUE_RE = re.compile(r"<v>(.*?)</v>", re.S)
 
 
 def _cell_text(attrs: str, body: str) -> str:
-    """One cell's text, for the two encodings a tracklist of strings can arrive in.
-
-    `t="inlineStr"` puts it in `<is><t>`; `t="str"` -- a formula result, which is what this
-    sheet is -- puts it in `<v>`. A `t="s"` cell would be an index into a shared-string table
-    this workbook does not contain, so it is refused rather than reported as the integer it
-    literally holds.
-    """
+    """One cell's text, for the two encodings a tracklist of strings can arrive in."""
     if 't="s"' in attrs:
         raise SystemExit("tracklist uses a shared-string table this parser does not read")
     inline = _INLINE_RE.findall(body)
@@ -97,13 +68,7 @@ def _cell_text(attrs: str, body: str) -> str:
 
 
 def credits(root: Path) -> dict[str, dict]:
-    """filename -> {library, supplier, url}, read from the bundle's own tracklist.
-
-    Provenance is derived from the bundle rather than retyped into the recipe: the supplier and
-    their library URL are facts about the source, and the source is the only thing entitled to
-    state them. Cells are addressed by their column letter (`r="C7"`) because a row with an empty
-    cell is written short, and positional parsing would silently shift the supplier into the URL.
-    """
+    """filename -> {library, supplier, url}, read from the bundle's own tracklist."""
     sheets = sorted(root.glob(FILELIST_GLOB))
     if not sheets:
         raise SystemExit(f"no {FILELIST_GLOB} in {root}: cannot establish provenance")
@@ -160,13 +125,7 @@ def probe(path: Path) -> dict:
 
 
 def decode(path: Path, sr: int, start_s: float = 0.0, dur_s: float | None = None) -> np.ndarray:
-    """Decode to (2, n) float64 at `sr`, resampled with soxr at its highest precision.
-
-    `-ss` before `-i` is sample-accurate on PCM WAV, which is all the bundle contains. Mono
-    sources are duplicated to both channels and multichannel ones take ffmpeg's default downmix;
-    `-ac 2` covers both. Output is float32 off the wire and widened to float64 here because every
-    function in sfx.py works in double -- the loop wrap's seam assertion is an exact comparison.
-    """
+    """Decode to (2, n) float64 at `sr`, resampled with soxr at its highest precision."""
     cmd = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error"]
     if start_s:
         cmd += ["-ss", f"{start_s:.6f}"]
@@ -228,17 +187,7 @@ def block_rms_db(path: Path, sr: int, block_s: float = 0.25) -> np.ndarray:
 def prescore_windows(
     bdb: np.ndarray, block_s: float, length_s: float, crossfade_s: float, hop_s: float
 ) -> list[tuple[float, float]]:
-    """Rank every candidate start on the two things that give a loop away, from block RMS alone.
-
-    Returns [(prescore, start_s)] ascending, lower better. This is the same judgement the bed
-    branch of `build_library.score` makes -- a distinct event inside the loop, and a level
-    mismatch across the wrap -- computed on a 0.25 s envelope instead of the audio, so that a
-    680 s source can be swept in one pass. The harshness term is left out on purpose: it is a
-    property of the recording, identical for every window of it, so it cannot separate them.
-
-    The real score is recomputed on the actual wrapped audio for the finalists; this pass only
-    has to put them in the shortlist.
-    """
+    """Rank every candidate start on the two things that give a loop away, from block RMS alone."""
     need = round((length_s + crossfade_s) / block_s)
     seam = max(1, round(2.0 / block_s))
     body = round(length_s / block_s)
@@ -264,13 +213,7 @@ def pick_window(
     hop_s: float,
     finalists: int,
 ) -> tuple[np.ndarray, dict, float, float, int]:
-    """Choose the best loop window in a recording and return it wrapped.
-
-    Two passes, for cost: sweep the whole file on its 0.25 s envelope, then do the real work --
-    decode, `sfx.loop_wrap`, `sfx.tone_qc` + `sfx.loop_qc` -- on the shortlist only. The winner is
-    scored exactly as a generated bed is, so "which take" and "which window" are the same
-    question answered the same way.
-    """
+    """Choose the best loop window in a recording and return it wrapped."""
     bdb = block_rms_db(path, sr)
     ranked = prescore_windows(bdb, 0.25, length_s, crossfade_s, hop_s)
     if not ranked:
@@ -307,14 +250,7 @@ def find_events(
     min_gap_s: float = 0.15,
     min_len_s: float = 0.01,
 ) -> list[tuple[int, int]]:
-    """Split a recording into discrete events at `gate_db` below its peak.
-
-    The gate is relative to peak and the same -35 dB `sfx.trim_oneshot` uses to find an onset:
-    a level that finds the attack of a real transient without treating the room it was recorded
-    in as signal. `min_gap_s` is what decides whether two hits are one event or two -- a
-    double-click is one gesture at 150 ms and two at 20 ms, and only the caller knows which it
-    wanted.
-    """
+    """Split a recording into discrete events at `gate_db` below its peak."""
     env = np.max(np.abs(x), axis=0)
     peak = float(env.max())
     if peak <= 0:
@@ -346,17 +282,7 @@ def pick_event(
     gate_db: float = -35.0,
     pad_s: float = 0.05,
 ) -> tuple[np.ndarray, int, int]:
-    """Crop to the `index`-th event. Returns (audio, event_index, events_found).
-
-    A negative index selects by loudness instead of by position: -1 is the loudest event, which
-    is what you want out of a take that warms up before the hit you are after.
-
-    `gate_db` is the one knob that has to move for a sound that *swells*. At the default -35 dB
-    the gate finds the attack of a transient and ends the event where it falls back, which is
-    right for a click and wrong for a reverse sweep: the quiet approach is the sound, and cropping
-    it at -35 dB throws away the half of the gesture that makes it read as an arrival. Drop the
-    gate to -60 dB for those and the whole swell is one event.
-    """
+    """Crop to the `index`-th event."""
     events = find_events(x, sr, gate_db=gate_db, min_gap_s=min_gap_s)
     if not events:
         return x, 0, 0
@@ -374,13 +300,7 @@ def pick_event(
 def cap_and_fade(
     x: np.ndarray, sr: int, max_s: float, fade_ms: float = 30.0
 ) -> tuple[np.ndarray, float | None]:
-    """Cap a one-shot's length and fade the cut. Returns (audio, level at the cut in dB re peak).
-
-    The second return value is the whole point: it says how audible the truncation is. A cap that
-    lands at -60 dB into a reverb tail is free; the same cap landing at -12 dB is a decision to
-    end the sound early, and the caller flags it rather than shipping it silently. `None` means
-    the cap was never reached and the sound is intact.
-    """
+    """Cap a one-shot's length and fade the cut."""
     cap = int(max_s * sr)
     if x.shape[-1] <= cap:
         return x, None
@@ -397,22 +317,7 @@ def cap_and_fade(
 def cut_whole(
     path: Path, sr: int, highpass_hz: float, max_s: float | None = None, trim: bool = True
 ) -> tuple[np.ndarray, dict]:
-    """The file as delivered: trim the silence around it, optionally cap, high-pass.
-
-    The mode for a source that has already been cut by whoever made it -- a stock one-shot, a
-    supplier's sampler file. There is nothing to choose here and choosing anyway is the mistake:
-    an event gate over a file whose author already decided where the sound starts and stops
-    throws away the edit being licensed, and crops the quiet approach of anything that swells.
-
-    `max_s` is for the one case where the delivered file is a reel of takes rather than one
-    sound; `cap_and_fade` reports how audible the cut is and the caller flags it.
-
-    `trim=False` keeps the delivered length exactly. Silence is usually dead weight in front of a
-    one-shot, but in a *musical* render it is part of the bar count: trimming 8.8 s off a
-    thirty-second trailer alarm leaves 21.21 s, which no longer repeats on a bar line.
-
-    Returns (audio, provenance) with the same shape the other cut modes report.
-    """
+    """The file as delivered: trim the silence around it, optionally cap, high-pass."""
     raw = decode(path, sr)
     source_peak_dbfs = db(float(np.abs(raw).max()))
     x = sfx.trim_oneshot(raw, sr) if trim else raw

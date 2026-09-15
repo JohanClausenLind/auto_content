@@ -1,11 +1,4 @@
-"""Typed configuration (section 26 of the program).
-
-Precedence (highest wins): environment variables > YAML config file > model defaults.
-Immutable safety policy is *code*, not config, and cannot be weakened from here.
-
-Environment overrides use the ``CF__`` prefix with ``__`` as the nesting delimiter,
-e.g. ``CF__BUDGETS__MONTHLY_EXTERNAL_USD=40``.
-"""
+"""Typed configuration (section 26 of the program)."""
 
 from __future__ import annotations
 
@@ -134,14 +127,11 @@ class ExecutionSettings(StrictModel):
     # Draft copy with the local model catalog (qwen38-ridge via Ollama) instead of fixtures.
     # Off by default so offline runs and tests stay deterministic.
     local_copywriter: bool = False
-    # Run the real search -> fetch -> extract -> claim pipeline (research/pipeline.py) instead of
-    # the committed fixture. Off by default because it is the ONE thing in this repo that reaches
-    # the public internet, and `just test` must not: every SSRF guard, content-type allowlist and
-    # injection flag in research/fetch.py exists for what this switch turns on.
+    # The real research pipeline instead of the committed fixture: the one thing in this repo that
+    # reaches the public internet, which `just test` must never do.
     live_research: bool = False
-    # Draft the StoryPlan's beats AND typed scenes with the local model (models/scriptwriter.py)
-    # instead of loading a fixture. Off by default and staying off until the evaluation pack
-    # scores a build: a writer whose output nobody has scored is not a default.
+    # Draft beats and typed scenes with the local model (models/scriptwriter.py) instead of a
+    # fixture; off until the evaluation pack scores a build.
     local_scriptwriter: bool = False
     minimum_vram_headroom_ratio: float = Field(default=0.12, ge=0, lt=1)
     calibration_max_age_days: int = Field(default=30, ge=1)
@@ -174,8 +164,7 @@ class WorkflowLabSettings(StrictModel):
 
 
 class MediaLibrarySettings(StrictModel):
-    """Local libraries of reusable assets (music beds today). Directories are read-only inputs;
-    each library carries a manifest whose entries are validated contracts."""
+    """Local libraries of reusable assets (music beds today)."""
 
     music_dir: str = "assets/music"
     """The generated bed library: 22 beds in six categories (documentary, explainer, human, nature,
@@ -198,17 +187,7 @@ class MediaLibrarySettings(StrictModel):
 
 
 class GallerySettings(StrictModel):
-    """Where a finished film is put so a person can find it.
-
-    A run's deliverable lives at
-    ``output/<project>/deliverables/<id>/exports/final.mp4`` — correct, addressable, and no use to
-    anybody browsing. 213 run directories held 34 films between them and the only way to watch one
-    was to know the path. So the last stage of a run also publishes the film into one flat
-    directory, named by the run, and that directory is the answer to "where are the videos".
-
-    Hard-linked, not copied: same filesystem, no second copy of the bytes, and deleting the
-    gallery cannot lose anything. ``dir`` empty turns it off.
-    """
+    """Where a finished film is put so a person can find it."""
 
     dir: str = "videos"
 
@@ -238,15 +217,11 @@ class VideoSettings(StrictModel):
     # mock: deterministic ffmpeg clip. comfyui: LTX-2.5 i2v packages on the local ComfyUI
     # (started with --cache-none --reserve-vram 1.5 for the GGUF stack).
     backend: Literal["mock", "comfyui"] = "mock"
-    # ltx-2.5.i2v: first frame + anchor keyframe guides. wan-animate-2.pose: the anchor as the
-    # reference character driven by the Blender OpenPose skeleton video (needs clip_vision_h +
-    # wan_2.1_vae in the ComfyUI model dirs).
+    # ltx-2.5.i2v: first frame + anchor keyframe guides. wan-animate-2.pose: the anchor driven by
+    # the Blender OpenPose skeleton video (needs clip_vision_h + wan_2.1_vae in the ComfyUI dirs).
     package: Literal["ltx-2.5.i2v", "wan-animate-2.pose"] = "ltx-2.5.i2v"
-    # How the stills become moving picture. ltx: a generative model invents the motion between
-    # them. hold: each drawing is simply held for its shot's duration and the shots are cut
-    # together — no model, no blending, no interpolation, and the cuts stay visible. That jump
-    # between drawings is a deliberate look (limited animation, stop motion), not a defect, and it
-    # is the only mode that guarantees every frame on screen is a drawing you approved.
+    # ltx: a model invents the motion between drawings. hold: each drawing is held for its shot and
+    # the cuts stay visible, the only mode where every frame on screen is a drawing you approved.
     motion: Literal["ltx", "hold"] = "ltx"
     default_size: tuple[int, int] = (512, 896)
     default_duration_s: float = Field(default=3.0, ge=1.0, le=30.0)
@@ -410,30 +385,14 @@ class StyleExplorationSettings(StrictModel):
 
 
 class DriftThresholdSet(StrictModel):
-    """An override of one or both drift thresholds. Both fields are optional so an override can
-    say only what it means: a style has an opinion about global variation and a camera move has
-    one about composition, and neither should have to restate the other's number."""
+    """An override of one or both drift thresholds."""
 
     locked_region_similarity: float | None = Field(default=None, ge=0, le=1)
     style_delta_max: float | None = Field(default=None, ge=0, le=1)
 
 
 class DriftThresholds(StrictModel):
-    """How far a generated frame may drift from its anchor, with per-style and per-camera
-    overrides.
-
-    One global pair was never right for twelve art directions and nine camera moves. A watercolour
-    wash legitimately varies more between frames than a photograph does, and a slow push-in
-    legitimately moves the whole composition where a static shot does not — so a single
-    `locked_region_similarity` either fails honest frames in one style or passes drifting ones in
-    another. `scripts/generate_holding_hands.py` had already discovered this the hard way and
-    carried `0.30`/`0.60` inline with the comment "calibrate before tightening", which is a
-    calibration living in a script instead of in configuration.
-
-    **The tables start empty on purpose.** An override has to come from a measured run; inventing
-    per-style numbers here would be the same mistake as the hardcoded pair, with more places to
-    look for it. `sequences.drift.UNCALIBRATED` is the named profile for a first real-model run.
-    """
+    """Drift allowed from the anchor, with per-style and per-camera overrides that start empty."""
 
     locked_region_similarity: float = Field(default=0.92, ge=0, le=1)
     style_delta_max: float = Field(default=0.15, ge=0, le=1)
@@ -443,12 +402,7 @@ class DriftThresholds(StrictModel):
     by_camera: dict[str, DriftThresholdSet] = Field(default_factory=dict)
 
     def resolve(self, *, style: str = "", camera: str = "") -> tuple[float, float]:
-        """The (locked_region_similarity, style_delta_max) pair in force for one frame.
-
-        Layered per field: the default, then the camera override, then the style override. Style
-        last because it is the more specific art direction — a camera move is a fact about the
-        shot, a style is a decision about the film.
-        """
+        """The (locked_region_similarity, style_delta_max) pair in force for one frame."""
         locked = self.locked_region_similarity
         delta = self.style_delta_max
         for override in (self.by_camera.get(camera), self.by_style.get(style)):
@@ -467,6 +421,9 @@ class ImageSequenceSettings(StrictModel):
     # stand-in) or hidream (the loopback skill server at skills/image/hidream).
     backend: Literal["mock", "hidream", "flux2"] = "mock"
     hidream_endpoint: str = "http://127.0.0.1:8801"
+    ideogram4_endpoint: str = "http://127.0.0.1:8802"
+    """The Ideogram 4 SDNQ server (skills/image/ideogram4). 8802 because 8801 is HiDream and 8188
+    is ComfyUI; see the occupied-port list in docs/setup.md before moving it."""
     hidream_endpoints: tuple[str, ...] = ()
     """Every HiDream server to spread a sequence's frames over, one per GPU host.
 
@@ -475,12 +432,8 @@ class ImageSequenceSettings(StrictModel):
     to appear in the list -- including the local one. Frames are hub-and-spoke (each reads the
     anchor, never its neighbour) and each carries its own ``input_hash`` marker, so which host
     serves which frame changes the wall clock and nothing else."""
-    # flux2 is the multi-reference compositor and it is a different job from hidream, not a
-    # replacement: measured over thirty staged anchors, hidream held one world across every frame
-    # (consecutive-frame churn 9.6-19.8 against a threshold of 42) and changed the character's
-    # outfit four times inside it. One reference is a pose hint; identity needs several composed
-    # at once, which is what flux2's chained ReferenceLatent conditioning does. It is driven
-    # through the local ComfyUI, like LTX-2.5, rather than through a bespoke server.
+    # flux2 is the multi-reference compositor, a different job from hidream: one reference is a
+    # pose hint, identity needs several composed at once (chained ReferenceLatent, via ComfyUI).
     flux2_endpoint: str = "http://127.0.0.1:8188"
     flux2_endpoints: tuple[str, ...] = ()
     """The flux2 equivalent of ``hidream_endpoints``. These are ComfyUI hosts, so a pool here and
@@ -490,14 +443,8 @@ class ImageSequenceSettings(StrictModel):
     roughly three times the wall clock for a 4 MP frame on a 24 GB card."""
     # Provisional GenerationLock for anchors (the lock stage freezes these plus the anchor sha).
     anchor_seed: int = Field(default=7, ge=0)
-    # 28 steps at guidance 0, which is the *dev* recipe. These were 50 and 5.0 — the full model's
-    # recipe — left behind when hidream_model_type moved to "dev", so the lane was overriding the
-    # server's correct choice with the wrong one. It cost three times the GPU time per anchor
-    # (6 min 25 s against 114 s for the same request at the server's own default) and, since an
-    # explicit step count also drops the distilled timestep schedule, it was not the recipe any of
-    # this phase's measurements were taken on. Guidance 0 is not a tuning choice either: the dev
-    # weights are distilled not to need it, and the full model's 5.0 is what the two recipes
-    # differ by.
+    # 28 steps at guidance 0 is the dev recipe; the full model's 50 / 5.0 left here cost three
+    # times the GPU time per anchor and dropped the distilled schedule (journal 2026-09).
     anchor_steps: int = Field(default=28, ge=1, le=200)
     anchor_guidance: float = Field(default=0.0, ge=0)
     anchor_sampler: str = "flow_match"
@@ -505,32 +452,8 @@ class ImageSequenceSettings(StrictModel):
     two editing schedulers. With two or more references the count decides and the server picks
     ``flash`` — see anchor_references."""
     anchor_model_revision: str = "HiDream-O1-Image"
-    # Which control passes are sent to the image model as references, in order. HiDream-O1's IP
-    # pipeline treats *every* reference as subject material, so this is not a free knob: feeding it
-    # the Blender clay render makes it draw clay people, and feeding it an untextured MPFB
-    # turnaround as an identity reference makes it draw a nude mannequin.
-    #
-    # "identity" is now buildable. `controls/identity_sheets.py` draws a styled, clothed sheet per
-    # character per style from the asset's own turnaround views, `review_assets` gates it beside
-    # the mesh, and `_identity_reference` sends that and never the clay render. It is still NOT in
-    # the default list, and deliberately: adding it makes every anchor a three-reference request,
-    # which is a different editing recipe upstream and a third of the reference budget, and the
-    # comparison against the measured two-reference recipe below has not been run. Turn it on per
-    # lane (the generate_anchor `references` value) when the measurement says to.
-    #
-    # It is also, upstream, a recipe selector, and that is the bigger effect: inference.py
-    # branches on `len(ref_images) == 1`, sending one reference to the flow_match editing recipe
-    # and anything else to flash. Measured on one staged runner shot, same seed, same prompt:
-    #
-    #   skeleton alone (flow_match)       0.180 crushed  0.293 midtones  0.106 hi-freq  pose ok
-    #   skeleton + depth (flow_match)     0.176          0.460           0.175          pose ok
-    #   skeleton + depth (flash)          0.001          0.990           0.0004         pose ok
-    #
-    # The last row is the one to ship: a clean photographic frame with the staged stride and none
-    # of the high-frequency speckle the flow_match integration leaves on flat surfaces. Depth
-    # earns its place twice over - it is a smooth grey figure with no saturated colour in it, so
-    # the model reads it as structure rather than drawing it the way it will draw the skeleton's
-    # bright dots, and adding it is what moves this off the single-reference editing recipe.
+    # Control passes sent as references, in order. Every reference is subject material (the clay
+    # render draws clay people); the count picks the recipe: one = flow_match, 2+ = flash.
     control_as_reference: bool = False
     """Whether the sequence engine's 2D control raster is sent to the model as a reference image.
 
@@ -589,13 +512,7 @@ class ImageSequenceSettings(StrictModel):
 
 
 class ReferenceSettings(StrictModel):
-    """The reference library: where the real human-interaction material lives, and how much of it
-    a retrieval stage asks for.
-
-    The library is host-specific and lives outside the repo for the same reason model weights do.
-    An absent library is not an error: ``find_reference`` selects nothing and says so, and every
-    lane still runs.
-    """
+    """The host-specific reference library; an absent one is not an error, every lane still runs."""
 
     root: str = "/mnt/fast/reference"
     index_path: str = "/mnt/fast/reference/_index/index.sqlite"
@@ -641,43 +558,23 @@ class ControlSettings(StrictModel):
 
 
 class RoutingSettings(StrictModel):
-    """route_shots stage (hybrid workflow): which story beats the deterministic renderer draws
-    (Remotion: D3 / Vega-Lite / MapLibre / Manim scenes) and which the generative chain produces
-    (Blender controls -> HiDream anchors -> LTX-2.5). compose_video interleaves both, in beat
-    order."""
+    """route_shots: which beats the renderer draws and which the generative chain produces."""
 
     # Route for beats whose scene kind is in neither list.
     default_route: Literal["render", "generate"] = "render"
-    # Scene kinds whose beats go to the generative chain. Exactly one, and the reason is what the
-    # rendered films showed rather than what the taxonomy suggested.
-    #
-    # This list used to hold title, section_intro, chapter_transition, image, quote, callout and
-    # outro, on the theory that a beat which "sets a scene" has no single correct picture. Six of
-    # those seven are TEXT scenes: their whole content is words on screen — a title, a label and a
-    # heading, a pull quote with its attribution, a call to action. A card renderer sets those in
-    # the pinned face at the pinned size and gets them right every run; an image model renders
-    # typography as ornament that looks like letters, and every wind short v1-v5 shows it. Worse,
-    # a quote is the one scene where the words are a claim attributed to a named person: a
-    # generative pass over it is a fabrication risk, not a style choice.
-    #
-    # ``image`` is the kind with no text in it at all. It names an asset and an alt text, so there
-    # is nothing for the card renderer to typeset and nothing for the image model to garble. That
-    # makes it the only default. Anything else is a per-lane or per-beat decision, made in the
-    # lane's yaml or in ``overrides``, where it is written down.
+    # Only ``image`` by default: the other scene-setting kinds are text scenes, which a card
+    # renderer sets right every run and an image model garbles, and a quote is a fabrication risk.
     generate_kinds: tuple[str, ...] = ("image",)
     # Per-beat overrides by beat id, e.g. CF__ROUTING__OVERRIDES='{"beat_000000002": "generate"}'.
     overrides: dict[str, Literal["render", "generate"]] = {}
 
 
 class ComposeSettings(StrictModel):
-    """compose_video: burned-in captions. Most short-form viewing is muted, so the words go on the
-    picture, inside the platform safe zone (clear of the bottom UI band and the right-hand
-    button column), not only in the sidecar .srt."""
+    """compose_video: burned-in captions."""
 
     burn_captions: bool = True
-    # The caption face is the same family as the cards' body text: Inter Bold, from the pinned
-    # TTFs under assets/fonts/inter (SIL OFL 1.1). libass reads that directory directly, so no
-    # system font install is needed and the render is the same on every machine.
+    # The caption face is the same family as the cards' body text: Inter Bold, from the pinned TTFs
+    # under assets/fonts/inter (SIL OFL 1.1).
     caption_font: str = "HelveticaNeue Condensed"
     """The house face, resolved through fontconfig rather than shipped.
 
@@ -698,18 +595,14 @@ class ComposeSettings(StrictModel):
     hook_font: str = "HelveticaNeue Condensed"
     hook_size_frac: float = Field(default=0.0711, ge=0.02, le=0.12)
     hook_top_frac: float = Field(default=0.14, ge=0.03, le=0.5)
-    # Text sizes are fractions of the frame's SHORTER SIDE, so one number is one physical size in
-    # both orientations. They were fractions of the height, and every one of them was calibrated
-    # on a 1080x1920 vertical frame — so a 16:9 film got captions at 32 px and a headline at 43 px,
-    # 55 % of their intended size. 0.0533 x 1080 is the same 58 px that 0.03 x 1920 was.
+    # Fractions of the frame's shorter side, so one number is one physical size in both
+    # orientations; as fractions of the height a 16:9 film got 55 % of the intended size.
     caption_size_frac: float = Field(default=0.0533, ge=0.02, le=0.1)
     # A position, not a size, so still a fraction of the height: 0.22 keeps the block above the
     # ~320 px platform UI band on a 1920 px phone frame.
     caption_bottom_frac: float = Field(default=0.22, ge=0.05, le=0.5)
-    # Cue text is re-wrapped to this many characters per line before burning, so the block stays
-    # two or three short lines inside the safe width on any background. 0 derives it from the
-    # frame — 22 on a phone, 39 on 16:9 — because a fixed 22 makes a landscape caption a line one
-    # third of the frame wide, stacked four deep.
+    # Characters per line before burning; 0 derives it from the frame (22 on a phone, 39 on 16:9),
+    # since a fixed 22 makes a landscape caption a third of the frame wide, stacked four deep.
     caption_max_chars_per_line: int = Field(default=0, ge=0, le=48)
     # Semi-transparent box behind white text reads on cream cards and on dark footage alike.
     caption_box_alpha: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -731,23 +624,18 @@ class ComposeSettings(StrictModel):
 
 
 class NarrationSettings(StrictModel):
-    """synthesize_narration: which TTS speaks the locked script, and how it is timed.
-
-    mock: deterministic tone bursts (tests, offline demo). qwen3tts: the narration voice since
-    2026-09-07 — ``skills/audio/qwen3tts`` in its own uv environment, nine built-in timbres, style
-    control, ten languages, Apache-2.0 weights. kokoro: the fallback, 82M parameters, and the only
-    one whose word timings come from the model itself.
-    """
+    """synthesize_narration: which TTS speaks the locked script, and how it is timed."""
 
     tts: Literal["mock", "qwen3tts", "kokoro"] = "mock"
 
     # ---- Qwen3-TTS ---------------------------------------------------------------------------
-    # A CustomVoice timbre: ryan | aiden | vivian | serena | uncle_fu | dylan | eric | ono_anna |
-    # sohee. `run.py --list` prints what the downloaded weights actually declare.
+    # CustomVoice timbre (ryan, aiden, vivian, ...); `run.py --list` prints what it declares.
     qwen_speaker: str = Field(default="ryan", min_length=1, max_length=80)
     qwen_language: str = Field(default="english", min_length=1, max_length=32)
     # Natural-language delivery note, e.g. "Calm documentary narrator, unhurried." Empty = none.
     qwen_instruct: str = Field(default="", max_length=500)
+    qwen_describe: str = Field(default="", max_length=500)
+    """VoiceDesign: the narrator as a sentence. Set it and `qwen_speaker` no longer applies."""
     # ~5 GB at bf16, so unlike HiDream/LTX it does not need the exclusive-GPU dance. CPU works but
     # is far slower than Kokoro's, since this is 1.7B parameters, not 82M.
     qwen_device: str = Field(default="cuda:0", min_length=1, max_length=32)
@@ -755,30 +643,38 @@ class NarrationSettings(StrictModel):
     # The path is repo-relative unless absolute.
     qwen_ref_audio: str = ""
     qwen_ref_text: str = Field(default="", max_length=2000)
-    # Qwen3-TTS samples, so the same beat spoken twice differs audibly and by tens of milliseconds
-    # in length. A fixed seed makes a take a fact about its inputs (and is part of the cache key,
-    # so changing it re-speaks), which is what has to be true before any retry loop exists: a
-    # retry that cannot reproduce the take it is retrying is a dice roll, not a retry.
-    # None lets the model sample freely — for deliberately auditioning several reads of one line.
+    # Qwen3-TTS samples, so a fixed seed makes a take a fact about its inputs (and part of the
+    # cache key); a retry that cannot reproduce its take is a dice roll. None samples freely.
     qwen_seed: int | None = 7
     tts_timeout_s: int = Field(default=900, ge=30, le=86400)
 
     # ---- timing (Qwen3-TTS returns none of its own; ADR-0004 precedence) ---------------------
-    # faster_whisper: measured, the default for a real run. even_split: apportions the measured
-    # duration by word length, offline, and records itself as `estimated`, never as measured.
+    # faster_whisper measures; even_split apportions by word length offline, recorded as estimated.
     aligner: Literal["even_split", "faster_whisper", "whisperx"] = "faster_whisper"
     faster_whisper_model: str = "base.en"
     faster_whisper_compute_type: str = "int8"
     aligner_timeout_s: int = Field(default=600, ge=10, le=7200)
-    # Below this transcript similarity the beat failed to say the locked script and the stage says
-    # so. Lower than the recorded-take floor (0.85): a TTS reads normalized text, so the aligner's
-    # transcript legitimately differs more around numbers and units.
+    # Below this similarity the beat failed to say the locked script. Lower than the recorded-take
+    # floor (0.85): a TTS reads normalized text, so numbers and units legitimately differ.
     script_similarity_min: float = Field(default=0.8, ge=0.0, le=1.0)
-    # How many times a beat may be spoken before the gate above is treated as the script's fault
-    # rather than the sample's. Qwen3-TTS is a sampling model and it drops material: one beat of a
-    # curveball explainer came back as its second sentence alone (similarity 0.76) and failed a
-    # fourteen-stage run at stage four, and the next sample said the whole thing. Three takes, each
-    # reseeded; the cost is only paid by beats that actually failed.
+    # Takes before the gate above is treated as the script's fault: Qwen3-TTS drops material (one
+    # beat came back as its second sentence alone, 0.76) and the next reseeded sample says it all.
+    continuous_take: bool = True
+    """Speak every beat of a script as ONE take and cut it at the pauses.
+
+    A model handed a single sentence gives it a fresh onset and a terminal fall, because as far as
+    it knows that sentence is all it will ever say — so beat-at-a-time synthesis reads as a list of
+    announcements rather than one person talking. Measured over seven lines (2026-09-13): opening
+    pitch **169 Hz ± 35** and **6.1 dB** of speech-level spread beat to beat, against **± 15 Hz**
+    and **0.6 dB** for the same lines cut out of a single take.
+
+    Turn it off for a script whose beats genuinely are separate utterances — a two-hander, an
+    interview, anything where a fresh onset is correct. The cost of leaving it on is cache
+    granularity: beats share a take, so changing one line re-speaks the paragraph around it."""
+    match_beat_levels: bool = True
+    """Pull each cut beat towards the take's median speech level, capped (see
+    `audio.continuity.MAX_MATCH_DB`). Even inside one take the model does not hold its level: the
+    speech-only spread was still 5.4 dB, with the longest sentences consistently the quietest."""
     tts_takes: int = Field(default=3, ge=1, le=6)
 
     # ---- Kokoro (fallback) -------------------------------------------------------------------
@@ -792,15 +688,7 @@ class NarrationSettings(StrictModel):
 
 
 class SpeechRestorationSettings(StrictModel):
-    """restore_speech: the voice chain between the synthesized/recorded take and the mix.
-
-        detection -> cleanup -> band extension -> restoration -> de-esser -> EQ -> compression
-
-    The FFmpeg tail (de-esser, EQ, light compression, and the resample to the delivery rate) needs
-    nothing but FFmpeg, so it is on by default. The two model steps are opt-in exactly like the
-    other backends in this repo: their weights live in ``models/speech_restoration/`` and their
-    code in ``skills/audio/{clearervoice,resemble_enhance}``, each in its own uv environment.
-    """
+    """restore_speech: the voice chain between the synthesized/recorded take and the mix."""
 
     enabled: bool = True
     # ClearerVoice MossFormer2_SE_48K: noise, hum and room off a dirty take.
@@ -825,44 +713,23 @@ class SpeechRestorationSettings(StrictModel):
 
 
 class TranscriptionSettings(StrictModel):
-    """transcribe_audio: reading the words off a recording nobody wrote a script for.
-
-    ``faster_whisper`` measures word timings in its own uv environment (CPU int8, so it costs no
-    VRAM while the image models hold the card). ``fixture`` takes a transcript the operator
-    already has — a repo-relative or absolute text file, or the node's own ``transcript`` widget —
-    and apportions it across the recording by word length, recording itself as ``estimated``
-    rather than measured. That is the offline path the core suite runs on, and the honest answer
-    for a recording whose script is known.
-
-    The default is the measured one: a lane whose whole premise is "make a film out of what this
-    person said" must not silently fall back to text nobody checked against the audio.
-    """
+    """transcribe_audio: reading the words off a recording nobody wrote a script for."""
 
     engine: Literal["faster_whisper", "fixture"] = "faster_whisper"
     faster_whisper_model: str = "base.en"
     faster_whisper_compute_type: str = "int8"
     timeout_s: int = Field(default=1800, ge=10, le=86400)
     language: str = Field(default="en", pattern=r"^[a-z]{2,3}(-[A-Z]{2})?$")
-    # The rate the recording is normalised to before anything measures or cuts it. 24 kHz is what
-    # voice_over normalises a take to, and the restoration chain resamples to its own delivery
-    # rate afterwards, so matching voice_over is what keeps one recording indistinguishable from
-    # a set of per-beat takes.
+    # 24 kHz matches what voice_over normalises a take to, which keeps one recording
+    # indistinguishable from a set of per-beat takes; restoration resamples afterwards.
     sample_rate_hz: int = Field(default=24000, ge=8000, le=192000)
-    # How many drawings a film gets when the node does not say. Six is a two-minute recording at
-    # about twenty seconds a picture, which is the longest a still can hold before it reads as a
-    # stalled video rather than an illustration.
+    # Drawings when the node does not say: six is a two-minute recording at ~20 s a picture, the
+    # longest a still holds before it reads as a stalled video.
     beats: int = Field(default=6, ge=1, le=60)
 
 
 class VoiceOverSettings(StrictModel):
-    """voice_over: human takes recorded outside the factory, force-aligned to the locked script.
-
-    Takes live in ``takes_dir`` — relative to the run's project directory unless absolute, and an
-    absolute path is usually what an operator wants, since the project directory is per run — as
-    ``<beat_id>.wav`` — or
-    ``<beat_id>.<speaker>.wav`` when two people share a scene. Nothing is ever generated here:
-    a missing take is a typed failure, not a synthesized substitute.
-    """
+    """voice_over: human takes recorded outside the factory, force-aligned to the locked script."""
 
     takes_dir: str = "takes"
     # forced alignment (ADR-0004 precedence): faster-whisper is the installed fallback; whisperx
@@ -880,26 +747,18 @@ class SoundDesignSettings(StrictModel):
     """sound_design: video-synced SFX under the narration (MMAudio large 44k v2, ADR-0004 roles)."""
 
     backend: Literal["mock", "mmaudio"] = "mock"
-    # Lane-neutral on purpose. This used to read "footsteps on wet stone, distant sea wind, cloth
-    # rustle" — the ambience of one coastal walk, applied as the default to every lane in the
-    # catalogue, so a film about interest rates got footsteps and sea wind. MMAudio watches the
-    # picture, so a prompt that names no specific place lets it follow what is actually on screen.
-    # Per-shot prompts are the right answer and come after a live run has been measured; a
-    # per-shot prompt guessed from here would be the same mistake at finer grain.
+    # Lane-neutral on purpose: a coastal-walk default once gave a film about interest rates
+    # footsteps and sea wind. MMAudio watches the picture, so a placeless prompt follows the screen.
     prompt: str = "the natural ambience of whatever is shown, quiet and unobtrusive"
     negative_prompt: str = "music, speech, narration"
-    # Place the curated library's sounds from a deterministic cue sheet (audio.cues): a bed under
-    # the film, a soft mark on each cut, an accent where a card actually reveals something. Rules
-    # over the compiled timeline, so it needs no model and no GPU and is the same on every run.
+    # Place the curated library's sounds from a deterministic cue sheet (audio.cues): rules over
+    # the compiled timeline, no model, no GPU, the same on every run.
     library_cues: bool = True
     # The cue track's trim in the mix, on top of each cue's own gain. The library is already
     # normalised to a bed target, so this is placement and not a repair.
     cue_gain_db: float = Field(default=-6.0, ge=-60.0, le=0.0)
-    # Conditioning (content_factory.audio.condition): measure the generated bed, repair only what
-    # is broken, and normalise it to a known loudness. Without it the bed's place in the mix
-    # depends on how loud the model happened to render, which is not reproducible across prompts.
-    # It shares the detection and true-peak stages with the speech chain and NONE of its models —
-    # those were measured to destroy non-speech material (see the module docstring).
+    # Measure the generated bed, repair only what is broken, normalise to a known loudness. Shares
+    # the detection and true-peak stages with the speech chain and none of its models.
     condition: bool = True
     # Matches assets/sfx/library.json's bed target, so the runtime bed and the curated library sit
     # at the same level. About 9 LU under the -14 LUFS programme: audible, never competing.
@@ -919,18 +778,12 @@ class SoundDesignSettings(StrictModel):
 
 
 class LocalServicesSettings(StrictModel):
-    """GPU servers the stages bring up themselves (services/local.py): the HiDream skill server
-    for generate_anchor and ComfyUI for generate_video. On a 24 GB card the two never share the GPU
-    (HiDream ~17 GB, LTX-2.5 GGUF ~20 GB), so starting one stops the other first."""
+    """GPU servers the stages start themselves; on a 24 GB card starting one stops the other."""
 
     auto_start: bool = True
     exclusive_gpu: bool = True
-    # Stop the model servers when the last run finishes. A server keeps its weights loaded so the
-    # next request does not pay the ~72 s load, which is right *while work is queued* and wrong
-    # once the queue is empty: measured on 2026-09-10, an idle HiDream held **18,936 MiB** and the
-    # card reported 3.2 GiB free, so the other tenant on this machine could not have used it.
-    # Idle *power* is not the argument — 34.11 W with the model resident against 34.09 W without,
-    # both at P8, indistinguishable. The 19 GB is.
+    # Stop the model servers when the last run finishes: an idle HiDream held 18,936 MiB
+    # (2026-09-10) and idle power is identical either way, so the 19 GB is the argument.
     release_when_idle: bool = True
     startup_timeout_s: int = Field(default=1200, ge=30)
     poll_interval_s: float = Field(default=2.0, ge=0.2, le=30.0)
@@ -973,13 +826,11 @@ class LocalServicesSettings(StrictModel):
     and failing the run here would trade a rare hang for a common false alarm. The next load
     reports what it found."""
     hidream_skill_dir: str = "skills/image/hidream"
-    # Which inference recipe the HiDream server uses: full is 50 steps at guidance 5, dev is 28
-    # steps at guidance 0 with the distilled timestep schedule. These are recipes, not weights —
-    # the two upstream repos ship *different* shards (1-7 differ; shard 8 happens to be identical,
-    # which is why a single-file hash check is not enough), so this has to match what is on disk.
-    # The weights here are HiDream-O1-Image-Dev (shard 1 sha256 575a1b54a028...), and this was set
-    # to "full" — every image was pushed through nearly twice the steps it needed at a guidance the
-    # model was distilled not to require. `hidream doctor` now checks the two against each other.
+    ideogram4_skill_dir: str = "skills/image/ideogram4"
+    """The Ideogram 4 SDNQ server. A third GPU tenant, arbitrated exactly like the other two:
+    it holds a whole card while loaded, so `exclusive_gpu` stops it before starting HiDream."""
+    # full is 50 steps at guidance 5, dev 28 at guidance 0 with the distilled schedule. The two
+    # upstream repos ship different shards, so this must match the weights; `hidream doctor` checks.
     hidream_model_type: Literal["full", "dev"] = "dev"
     hidream_lora: str = ""
     """A musubi-tuner HiDream-O1 adapter to merge into the server's weights at startup, or "".
@@ -1005,9 +856,8 @@ class LocalServicesSettings(StrictModel):
     hidream_lora_multiplier: float = 1.0
     """Adapter strength, musubi's own convention: ``W += multiplier * (alpha / rank) * up @ down``.
     Its ``hidream_o1_generate_image.py`` calls the same number ``--lora_multiplier``."""
-    # comfy-cli is only asked where the workspace is (`comfy which`); ComfyUI itself is launched
-    # from that workspace's own .venv (comfy-cli's `launch` runs main.py under its tool Python,
-    # which lacks ComfyUI's newer deps — verified 2026-09-06: `No module named comfy_aimdo`).
+    # comfy-cli is only asked `comfy which`: its own `launch` runs under a tool Python that
+    # lacks newer deps (comfy_aimdo, journal 2026-09-06).
     comfy_bin: str = "comfy"
     comfy_workspace: str = ""  # empty = `comfy which`
     # LTX-2.5 needs the RAM cache off and headroom reserved (STATUS 2026-09-05), or it OOMs.
@@ -1021,13 +871,7 @@ class LocalServicesSettings(StrictModel):
 
 
 class RemoteHost(StrictModel):
-    """Another machine in this tailnet that runs whole lanes of its own.
-
-    Producing on a second box is the only way to use the stages that cannot be pooled over HTTP —
-    the post chain, MMAudio, TTS and Blender all take absolute local paths (postchain/runner.py),
-    so unlike HiDream they cannot be pointed at an endpoint. The cost of that is finished work on
-    the wrong disk, which is what `content-factory remote harvest` collects.
-    """
+    """Another machine in this tailnet that runs whole lanes of its own."""
 
     name: str = Field(min_length=1, max_length=32, pattern=r"^[a-z][a-z0-9_-]*$")
     """How the operator refers to the host, and the directory harvested work lands under."""
@@ -1045,18 +889,7 @@ class RemoteHost(StrictModel):
 
 
 class RemoteSettings(StrictModel):
-    """The other producers, and bringing their finished work home.
-
-    Empty `hosts` turns the whole feature off, including its doctor checks, and is byte for byte
-    what this repo did before.
-
-    In `.env`, **single-quote the JSON**. `.env` is sourced by bash, which eats the inner double
-    quotes and hands pydantic `[{name:nova,...}]`; the error says
-    `SettingsError: error parsing value for field "remote"` and does not mention quoting. Same
-    trap as `CF__IMAGE_SEQUENCES__HIDREAM_ENDPOINTS`:
-
-        CF__REMOTE__HOSTS='[{"name":"nova","ssh":"nova@100.82.150.94"}]'
-    """
+    """The other producers, and bringing their finished work home."""
 
     hosts: tuple[RemoteHost, ...] = ()
     harvest_root: str = "output/harvest"

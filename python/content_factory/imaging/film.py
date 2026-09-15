@@ -1,31 +1,4 @@
-"""Put the evidence of a camera back into a frame: grain, halation, a little lens falloff.
-
-Why this exists, measured rather than felt. A sensor puts a noise floor on every pixel it records,
-including a blurred sky; a diffusion model asked for a clean picture puts one nowhere. Over the
-generated sets on this host, counting 16-px tiles whose high-pass residual has a standard deviation
-under 0.6 (``qc.frame_review.dead_flat_fraction``):
-
-    demo-pebble   anchor, `single-image` lane      95.4 % of tiles carry no texture at all
-    w-iceberg     keyframe                         91.4 %
-    ps2b-amber    anchor                           86.7 %
-    ps2b-amber    after SeedVR2                    75.6 %   (the upscaler sharpens edges; it does
-                                                             not add a noise floor, and on a
-                                                             faceted subject it sharpens the
-                                                             facets)
-
-A photograph runs well under 10 %. That single number is most of what "it doesn't look real" means
-before composition or anatomy come into it.
-
-**This is a finisher, not a fix.** Grain on a faceted low-poly render is a grainy faceted low-poly
-render. The prompt and the model are what decide whether the picture is of a photographable thing;
-this decides whether the pixels carry the trace of having been photographed. Both matter and they
-are not substitutes, which is why this is a separate, explicit step rather than something bolted
-silently onto every generation.
-
-Deterministic by construction: the grain field is generated from an explicit seed with numpy's
-``default_rng``, so the same frame and the same settings give byte-identical output on any machine,
-and the whole :class:`FilmResponse` can therefore sit in a cache key.
-"""
+"""Put the evidence of a camera back into a frame: grain, halation, a little lens falloff."""
 
 from __future__ import annotations
 

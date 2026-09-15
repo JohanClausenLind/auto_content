@@ -1,27 +1,4 @@
-"""Turn review verdicts into proposed changes to the prompting guidance — proposals only.
-
-The guidance in ``skills/image/prompting/SKILL.md`` is how this pipeline knows to lead with the
-style clause, to name a process rather than a surface, to ask for tonal range. Every rule there was
-learned by rendering something, looking at it, and measuring why it was wrong. That loop should keep
-running: a review batch that rejects frames is evidence about prompting, and evidence should become
-guidance.
-
-The guidance updates itself, on the operator's instruction. What keeps that honest is not a
-permission prompt — it is that nothing here is self-assessed:
-
-* the failure -> guidance mapping is **fixed in code**, so the learner can report that an already
-  understood failure recurred but cannot invent a rule it was not taught;
-* a failure must **recur** before it becomes a rule, so one bad frame is not doctrine;
-* every lesson carries the **measurements and frame ids** behind it, so a claim can be checked
-  rather than trusted;
-* every self-applied change is **appended to an audit log** with its diff, so what changed and
-  why is reviewable afterwards even though nobody was asked beforehand;
-* applying still refuses when the file changed underneath it — that is not permission, it is
-  correctness: the recorded diff would no longer describe what happens, and someone else's edit
-  would be silently discarded.
-
-:func:`auto_apply` is the unattended path. :func:`apply_proposal` remains for the attended one.
-"""
+"""Turn review verdicts into proposed changes to the prompting guidance — proposals only."""
 
 from __future__ import annotations
 
@@ -41,9 +18,8 @@ SKILL_PATH = REPO_ROOT / "skills" / "image" / "prompting" / "SKILL.md"
 
 LessonKind = Literal["tonal_collapse", "monochrome_partial", "edge_intrusion", "continuity_break"]
 
-# What each measurable failure implies about prompting, and the rule to add if it recurs. The
-# mapping is fixed in code rather than inferred, so a proposal cannot invent a rule — it can only
-# report that an already-understood failure happened often enough to be worth writing down.
+# Fixed in code rather than inferred, so a proposal cannot invent a rule: it can only report that
+# an already-understood failure recurred often enough to be worth writing down.
 _LESSON_TEXT: dict[LessonKind, tuple[str, str]] = {
     "tonal_collapse": (
         "Ask explicitly for tonal range",
@@ -100,8 +76,7 @@ class GuidanceProposal(VersionedModel):
 
 
 def lessons_from_review(batches: list[FrameReviewBatch]) -> list[PromptLesson]:
-    """What the verdicts say, counted. Only failures the mapping already understands become
-    lessons — the learner reports recurrence, it does not invent rules."""
+    """What the verdicts say, counted."""
     tally: dict[LessonKind, list[tuple[str, float | None]]] = {}
     check_to_kind: dict[str, LessonKind] = {
         "midtone_range": "tonal_collapse",
@@ -226,12 +201,7 @@ def auto_apply(
     audit_log: Path = AUDIT_LOG,
     out_dir: Path | None = None,
 ) -> GuidanceProposal | None:
-    """Learn from the reviews and update the guidance, unattended.
-
-    Returns the applied proposal, or ``None`` when the reviews say nothing new — which is the
-    common case and not a failure. The proposal is still written out and still appended to the
-    audit log, so an unattended change is as inspectable afterwards as an approved one.
-    """
+    """Learn from the reviews and update the guidance, unattended."""
     lessons = lessons_from_review(batches)
     if not lessons:
         return None

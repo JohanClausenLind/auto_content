@@ -67,9 +67,7 @@ def test_catalog_prefers_ridge_on_the_3090_and_falls_back_on_small_gpus() -> Non
 
 
 def test_every_weight_field_is_recorded_and_the_quality_tier_is_a_better_quant() -> None:
-    """Two of these were wrong before they were read off `ollama show`: the primary's context was
-    recorded as 32768 (it declares 262144) and its quantisation was not recorded at all — which is
-    the fact that makes the quality tier worth having, because the primary is a *two-bit* quant."""
+    """The primary is a two-bit quant with a 262144 context, both read off `ollama show`."""
     by_alias = {m.alias: m for m in default_catalog()}
     for descriptor in by_alias.values():
         assert descriptor.revision and len(descriptor.revision) == 12, descriptor.alias

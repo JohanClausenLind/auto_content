@@ -1,0 +1,26 @@
+[project]
+name = "cf-skill-ideogram4"
+version = "0.1.0"
+description = "Isolated environment for the Ideogram 4 SDNQ local server (diffusers ModularPipeline + OzzyGT custom blocks). Never imported by the control plane."
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    # 0.39.0 and not the newer 0.40.0 on purpose: the custom blocks declare
+    # "_diffusers_version": "0.39.0.dev0" in modular_model_index.json, and ModularPipeline is
+    # still an experimental API whose block contract moves between minors. 0.39.0 is also the
+    # version already proven on this box in skills/image/hidream/.venv.
+    "diffusers==0.39.0",
+    "sdnq==0.2.6",              # the 4-bit dynamic-hadamard quantiser the weights were packed with
+    "torch>=2.8,<2.9",          # matches hidream: newest with a prebuilt wheel for this host (cu128)
+    "torchvision",
+    # 5.x, not hidream's 4.57.1: the SDNQ text_encoder config was written by transformers
+    # 5.10.0.dev0 and carries rope_scaling=None, which 4.57.1's Qwen3VL rotary embedding
+    # dereferences with .get() and dies on. Isolated skill envs are what let these differ.
+    "transformers==5.17.0",
+    "protobuf==7.36.1",      # the Qwen3-VL tokenizer's slow path imports it
+    "sentencepiece==0.2.2",
+    "accelerate",
+    "safetensors",
+    "numpy",
+    "pillow",
+    "flask",
+]

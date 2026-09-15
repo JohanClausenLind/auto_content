@@ -216,8 +216,7 @@ class NodeState(StrEnum):
 
 
 class WorkspaceGraphDoc(WorkspaceScoped, TimestampMixin, Base):
-    """A saved node-graph editor document. The doc column is the WorkspaceGraph contract JSON —
-    validated on every write, opaque to SQL."""
+    """A saved node-graph editor document."""
 
     __tablename__ = "workspace_graphs"
     __table_args__ = (Index("ix_workspace_graphs_ws_updated", "workspace_id", "updated_at"),)
@@ -318,8 +317,7 @@ class PushSubscription(TimestampMixin, Base):
 
 
 class ConnectedAccount(WorkspaceScoped, TimestampMixin, Base):
-    """A connected destination account. Token plaintext lives ONLY in the vault columns
-    (sealed); models, logs, and the browser never see it."""
+    """A connected destination account."""
 
     __tablename__ = "connected_accounts"
     __table_args__ = (UniqueConstraint("workspace_id", "platform", "handle"),)
@@ -354,7 +352,7 @@ class OAuthState(WorkspaceScoped, Base):
 
 
 class DistributionProfile(WorkspaceScoped, TimestampMixin, Base):
-    """Immutable authorized revisions: any change creates a new revision needing re-authorization."""  # noqa: E501
+    """Immutable authorized revisions."""
 
     __tablename__ = "distribution_profiles"
     __table_args__ = (UniqueConstraint("workspace_id", "name", "revision"),)
@@ -390,8 +388,7 @@ class MessageDisposition(StrEnum):
 
 
 class EngagementMessage(WorkspaceScoped, TimestampMixin, Base):
-    """A normalized inbound fan message with its classification and answer-ledger state.
-    Idempotent sync: (workspace, platform, message_id) is unique, re-fetching never duplicates."""
+    """A normalized inbound fan message with its classification and answer-ledger state."""
 
     __tablename__ = "engagement_messages"
     __table_args__ = (
@@ -419,8 +416,7 @@ class EngagementMessage(WorkspaceScoped, TimestampMixin, Base):
 
 
 class PersonaRow(WorkspaceScoped, TimestampMixin, Base):
-    """Persisted persona: `document` holds the full validated Persona contract at `revision`.
-    Revision history lives in the audit log (persona.apply records each diff)."""
+    """Persisted persona: `document` holds the full validated Persona contract at `revision`."""
 
     __tablename__ = "personas"
 

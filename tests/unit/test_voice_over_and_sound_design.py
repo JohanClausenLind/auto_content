@@ -1,9 +1,4 @@
-"""Recorded human takes (voice_over) and video-synced SFX (sound_design).
-
-Both stages stand in for a model the core suite must not run: the aligner and MMAudio are behind
-seams, and what is tested here is the contract around them — the same NarrationSegment a TTS
-produces, a take that says the wrong thing being refused, and the SFX bed reaching the mix.
-"""
+"""Recorded human takes (voice_over) and video-synced SFX (sound_design)."""
 
 from __future__ import annotations
 
@@ -37,8 +32,7 @@ LINE = "Hey. You are so beautiful."
 
 
 def _wav(path: Path, *, seconds: float = 2.0, rate: int = 24000) -> Path:
-    """A stand-in recording at a normal speaking level — the two-pass loudnorm master cannot lift
-    near-silence to -14 LUFS, and neither could a real take recorded that quietly."""
+    """A stand-in recording at a normal speaking level."""
     path.parent.mkdir(parents=True, exist_ok=True)
     n = int(rate * seconds)
     samples = [int(9000 * math.sin(2 * math.pi * 180 * i / rate)) for i in range(n)]
@@ -226,8 +220,7 @@ def test_sound_design_scores_the_silent_cut_and_leaves_a_bed_for_the_mix(tmp_pat
 def test_sound_design_falls_back_to_the_blind_cut_when_conditioning_is_off(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """With `condition=false` the bed is at whatever level the model rendered, so it still needs
-    the large attenuation to sit under speech — and nothing is measured or normalised."""
+    """With `condition=false` the bed is at whatever level the model rendered."""
     from content_factory.config import get_settings
 
     monkeypatch.setenv("CF__SOUND_DESIGN__CONDITION", "false")
@@ -255,8 +248,7 @@ def test_sound_design_says_what_is_missing_when_there_is_no_picture(tmp_path: Pa
 def test_mmaudio_backend_windows_a_long_clip_and_calls_its_own_interpreter(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """MMAudio generates eight seconds at a time; a 20-second film gets three windows, each with
-    its own seed, and each run goes through the checkout's interpreter — never this process."""
+    """MMAudio generates eight seconds at a time."""
     repo = tmp_path / "MMAudio"
     (repo / ".venv" / "bin").mkdir(parents=True)
     (repo / ".venv" / "bin" / "python").write_text("#!/bin/sh\n")
@@ -295,13 +287,13 @@ def test_mmaudio_backend_windows_a_long_clip_and_calls_its_own_interpreter(
     assert facts["windows"] == 3
     assert len(calls) == 3
     assert all(str(repo / ".venv" / "bin" / "python") == c[0] and c[1] == "demo.py" for c in calls)
-    assert [c[c.index("--seed") + 1] for c in calls] == ["7", "8", "9"]
+    # ONE seed for every window, not `seed + i`, which is what this asserted until 2026-09-13.
+    assert [c[c.index("--seed") + 1] for c in calls] == ["7", "7", "7"]
     assert (tmp_path / "out" / "sfx.wav").exists()
 
 
 def test_recorded_takes_and_sfx_reach_the_mastered_mix(tmp_path: Path) -> None:
-    """The whole point of the two stages: what the mix masters is the operator's own voice with
-    the foley bedded under it, through the same code path a synthesized narration takes."""
+    """The whole point of the two stages."""
     from content_factory.workflows.stages import stage_align_words, stage_mix_audio
 
     ctx = make_context(project_dir=tmp_path)
@@ -323,8 +315,7 @@ def test_recorded_takes_and_sfx_reach_the_mastered_mix(tmp_path: Path) -> None:
 
 
 def test_the_final_mux_takes_whichever_picture_the_lane_produced(tmp_path: Path) -> None:
-    """A drawn film has no Remotion bundle. compose_video used to look for one by name and fail
-    on a picture that was sitting right next to it."""
+    """A drawn film has no Remotion bundle."""
     from content_factory.workflows.stages import _silent_picture
 
     ctx = make_context(project_dir=tmp_path)
@@ -337,10 +328,7 @@ def test_the_final_mux_takes_whichever_picture_the_lane_produced(tmp_path: Path)
     _mp4(exports / "generated.mp4", seconds=1)
     assert _silent_picture(ctx).name == "generated.mp4"
     _mp4(exports / "postchain.mp4", seconds=1)
-    # The post chain's own output wins over the concatenated generated clips. `final.mp4` is
-    # deliberately absent from the search: it is the *delivered cut*, written by compose_video,
-    # and treating it as an input would feed a finished film with burned-in captions back into
-    # the next compose. The post chain writes `postchain.mp4` for exactly that reason.
+    # The post chain's own output wins over the concatenated generated clips.
     assert _silent_picture(ctx).name == "postchain.mp4"
     _mp4(exports / "postchain.mp4", seconds=1)
     assert _silent_picture(ctx).name == "postchain.mp4"
@@ -349,8 +337,7 @@ def test_the_final_mux_takes_whichever_picture_the_lane_produced(tmp_path: Path)
 
 
 def test_hold_mode_cuts_the_drawings_together_without_inventing_frames(tmp_path: Path) -> None:
-    """The choppiness is the point. Held drawings must stay dead still between cuts — an
-    interpolated or resampled join would put frames on screen that were never drawn."""
+    """The choppiness is the point."""
     import subprocess as sp
 
     from PIL import Image, ImageChops, ImageStat

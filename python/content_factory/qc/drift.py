@@ -1,9 +1,4 @@
-"""A/V cue drift QC: measured narration vs the compiled timeline, probed start/middle/end.
-
-The narration audio is the clock. After a timeline is compiled from measured word timings,
-every audio cue must sit where the measurement says the speech starts. Drift beyond two frames
-is a hard failure (blocker), not a warning — downstream captions and label cues inherit it.
-"""
+"""A/V cue drift QC: measured narration vs the compiled timeline, probed start/middle/end."""
 
 from __future__ import annotations
 

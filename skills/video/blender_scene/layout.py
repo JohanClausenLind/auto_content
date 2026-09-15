@@ -7,8 +7,7 @@ from typing import Any
 
 
 def bbox_from_points(points: list[tuple[float, float]]) -> tuple[float, float, float, float] | None:
-    """Axis-aligned box (x, y, w, h) in normalised coords, clipped to [0, 1]; None if empty or
-    fully outside the frame."""
+    """Axis-aligned box (x, y, w, h) in normalised coords, clipped to [0, 1]."""
     pts = [(u, v) for u, v in points if not (math.isnan(u) or math.isnan(v))]
     if not pts:
         return None
@@ -45,8 +44,7 @@ def xxyy(box: tuple[float, float, float, float]) -> list[float]:
 
 
 def hidream_boxes(objects: list[dict[str, Any]], max_boxes: int = 5) -> list[list[float]]:
-    """Layout boxes in object order (matching reference-image order), capped like HiDream caps
-    them; the largest boxes win when there are more than ``max_boxes``."""
+    """Layout boxes in object order (matching reference-image order)."""
     with_box = [o for o in objects if o.get("box") is not None]
     if len(with_box) > max_boxes:
         ranked = sorted(with_box, key=lambda o: o["box"]["w"] * o["box"]["h"], reverse=True)

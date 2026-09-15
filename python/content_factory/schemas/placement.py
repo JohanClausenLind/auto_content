@@ -1,11 +1,4 @@
-"""Placement contracts: where a workload runs, chosen on expected total cost, explained.
-
-The policy minimizes expected incremental completion cost subject to feasibility (VRAM,
-reliability class, deadline confidence) and budget. Every decision persists the candidates it
-considered and rejected with reasons — the downstream compute layer executes the approved
-choice or asks for a new decision; it never silently reorders by advertised hourly price.
-Waiting locally is itself a candidate: with no deadline it may honestly win.
-"""
+"""Placement contracts: where a workload runs, chosen on expected total cost, explained."""
 
 from __future__ import annotations
 
@@ -28,9 +21,7 @@ class PlacementRequest(SchemaModel):
 
 
 class PlacementCandidate(SchemaModel):
-    """One feasible action with its actual billable terms. ``rate_usd_per_hour`` for local
-    candidates is the configured local policy rate (marginal energy, or fully allocated —
-    a consistent configurable choice), never silently zero."""
+    """One feasible action with its actual billable terms."""
 
     candidate_id: str = Field(min_length=1, max_length=200)
     kind: CandidateKind

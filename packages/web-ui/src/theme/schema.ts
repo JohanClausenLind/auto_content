@@ -61,26 +61,14 @@ export function isThemeState(value: unknown): value is ThemeState {
   return themeStateSchema.safeParse(value).success;
 }
 
-/**
- * Repair a stored theme blob into a valid state instead of discarding it.
- *
- * A preference row written by an earlier build can be missing fields the schema now requires — a
- * real one on this machine held only `{preset, scale}`, and feeding that straight into state left
- * `customThemes` undefined and crashed the customizer on `.length`. Every field that validates on
- * its own is kept and everything else falls back to the default, so an operator keeps the theme
- * they picked and the row is rewritten complete on the next save. Returns null only when the value
- * is not an object at all.
- */
+/** Repair a stored theme blob into a valid state instead of discarding it. */
 export function coerceThemeState(value: unknown): ThemeState | null {
   const strict = themeStateSchema.safeParse(value);
   if (strict.success) return strict.data;
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   const stored = value as Record<string, unknown>;
 
-  // Repair is for rows written *before* the current schema, which carry no version at all. A row
-  // stamped with a version we do not know belongs to a newer client and is not ours to
-  // reinterpret: quietly rewriting it as version 1 would let an older build clobber newer
-  // settings. Fall back to the defaults instead.
+  // Repair is for rows written *before* the current schema, which carry no version at all.
   if ("version" in stored && stored["version"] !== DEFAULT_THEME_STATE.version) return null;
 
   const out: Record<string, unknown> = { ...DEFAULT_THEME_STATE };

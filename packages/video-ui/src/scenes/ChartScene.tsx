@@ -13,8 +13,7 @@ export interface SeriesPoint {
   values: number[];
 }
 
-/** Rows → labelled numeric points for the declared x column and y series. Pure and total:
- * non-numeric cells become 0 so a bad row can never crash a render. */
+/** Rows → labelled numeric points for the declared x column and y series. */
 export function chartPoints(dataset: DatasetTable | undefined, x: string, y: readonly string[]): SeriesPoint[] {
   if (!dataset) return [];
   return dataset.rows.map((row) => ({
@@ -26,8 +25,7 @@ export function chartPoints(dataset: DatasetTable | undefined, x: string, y: rea
   }));
 }
 
-/** One column as numbers, in row order. Non-numeric cells become 0 (same totality as chartPoints);
- * scatter needs a numeric x, where the bar family only ever needed the label. */
+/** One column as numbers, in row order. */
 export function numericColumn(dataset: DatasetTable | undefined, column: string): number[] {
   if (!dataset) return [];
   return dataset.rows.map((row) => {
@@ -60,8 +58,7 @@ export function waterfallSteps(values: readonly number[]): { start: number; end:
   });
 }
 
-/** Cumulative slice angles in radians for a donut, clockwise from 12 o'clock.
- * Empty when nothing positive is present, so a zero dataset draws no ring rather than NaN paths. */
+/** Cumulative slice angles in radians for a donut, clockwise from 12 o'clock. */
 export function donutAngles(values: readonly number[]): { start: number; end: number }[] {
   const total = values.reduce((sum, value) => sum + Math.max(0, value), 0);
   if (total <= 0) return [];
@@ -73,8 +70,7 @@ export function donutAngles(values: readonly number[]): { start: number; end: nu
   });
 }
 
-/** Every ChartKind the component draws for real. Anything outside this set still renders (as bars)
- * with the requested kind named on screen — honest, never silently wrong. */
+/** Every ChartKind the component draws for real. */
 const SUPPORTED = new Set([
   "bar",
   "horizontal_bar",
@@ -91,15 +87,7 @@ const SUPPORTED = new Set([
 
 const HISTOGRAM_BINS = 8;
 
-/**
- * An SVG path through the points as a staircase: hold the value, then jump.
- *
- * The reason a step chart is not a nicety: a line drawn between two monthly readings claims the
- * value passed through every point on the slope, and for a quantity that only ever changes at a
- * known moment — a tariff, a policy rate, a headcount — that claim is false. The staircase says
- * "this held, then it changed", which is what the data means. Drawn as `hv` (hold, then jump), so
- * each value owns the interval that follows its own reading rather than the one before it.
- */
+/** An SVG path through the points as a staircase: hold the value, then jump. */
 export function stepPath(points: readonly { x: number; y: number }[], endX?: number): string {
   if (points.length === 0) return "";
   const first = points[0]!;
@@ -120,19 +108,7 @@ export interface ReadingLabel {
   anchor: "start" | "middle" | "end";
 }
 
-/**
- * Where a line or step chart writes its own readings.
- *
- * Nothing in this file draws a y tick — the two axis lines are drawn bare, and the comment on the
- * line branch's domain says so outright. The bar family compensates by writing the value on every
- * bar; the line family wrote nothing, so `data-story-video`'s only real chart delivered a
- * staircase at three levels the viewer had to guess. Measured on the film shipped 2026-09-10 the
- * levels were 11 %, 15 % and 21 % and not one of those numbers appeared anywhere on the card.
- *
- * A step's reading belongs over the middle of the interval it holds for, which is where the step
- * label already sits. A line's reading belongs over its point, pulled inside the plot at the two
- * ends so the first and last numbers are not half outside the frame.
- */
+/** Where a line or step chart writes its own readings. */
 export function readingLabels(
   points: readonly { x: number; y: number }[],
   opts: { span: number; stepped: boolean; left: number; right: number; lift: number },
@@ -146,12 +122,7 @@ export function readingLabels(
   });
 }
 
-/**
- * Animated data chart drawn as plain SVG. D3 supplies the geometry that is genuinely hard —
- * arc paths, stack offsets, histogram thresholds — and React owns every element, so the frame
- * remains the only clock and two renders of the same frame produce identical bytes. No
- * d3.select, no d3.transition, no CSS animation anywhere in this file.
- */
+/** Animated data chart drawn as plain SVG. */
 export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): ReactElement {
   const frame = useCurrentFrame();
   const { bundle, theme } = useSceneEnv();
@@ -165,8 +136,7 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
   const fallback = !SUPPORTED.has(scene.chart);
   const kind = fallback ? "bar" : scene.chart;
   // `scene.source_ids` credits what the *chart* claims; the dataset's own `source_ids` say where
-  // the table came from. A chart that names neither is credited by its dataset label alone, which
-  // is the pre-existing behaviour and still the honest one for a derived table.
+  // the table came from.
   const credits = (scene.source_ids.length > 0 ? scene.source_ids : (dataset?.source_ids ?? []))
     .map((id) => {
       const card = bundle.sources[id];
@@ -175,20 +145,7 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
 
   const chartWidth = safe.width;
   const stepped = scene.chart === "step";
-  // The space the chart is actually left, not a fixed fraction of the safe area. 0.56 in portrait
-  // measured out as a card whose content stopped at 56 % of the frame with **43.6 %** of it blank
-  // below the last mark — the plot, the one thing a data card exists to show, taking 39 % of the
-  // picture while the title above it took 3 % (measured on `data-story-video`, 2026-09-10). The
-  // title and the credit line know their own heights, so the chart takes what is left of the safe
-  // area minus the two gaps below, and is still floored so a long title cannot squeeze it flat.
-  //
-  // A correction to what this comment said next, because the wrong version of it would have sent
-  // the next reader chasing a flex bug that is not there: the "36.9 % of the frame still blank
-  // below the last mark" I measured afterwards is the **caption band**. `useSceneGeometry` caps a
-  // portrait card's safe area at `CAPTION_BAND_TOP` (64 % of the height) because `compose_video`
-  // burns the captions into the lower third, and the delivered film does fill it — measured on
-  // `bnd_run000000001.captioned.mp4`, ink to row 1501 of 1920. Against the safe area, which is
-  // the box this layout actually owns, the chart block reaches ~87 %.
+  // The space the chart is actually left, not a fixed fraction of the safe area.
   const chartMargins = Math.round((16 + 6 + 8) * scale) + Math.round(28 * scale) * credits.length;
   const chartHeight = Math.max(
     Math.round(safe.height * 0.45),
@@ -223,8 +180,7 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
     const thickness = Math.min(band * (portrait ? 0.68 : 0.6), 120 * scale);
     const usableH = plotH - labelRoom - Math.round(40 * scale); // room for value labels above
     // Bars grow one after another (each over half the count-up, staggered across the rest) so the
-    // eye follows the series instead of watching one block rise; the latest value carries the
-    // accent, earlier ones the muted colour — the highlight is the point of the chart.
+    // eye follows the series instead of watching one block rise.
     const grow = Math.max(1, Math.round(f.countUp * 0.5));
     const stagger = n > 1 ? Math.max(1, Math.round((f.countUp * 0.5) / (n - 1))) : 0;
     const valueFont = Math.max(minTextPx(theme, scale), Math.round((portrait ? 30 : 24) * scale));
@@ -381,25 +337,18 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
     );
     labels = [];
   } else {
-    // The measured maximum with 6 % headroom, not a "nice" one — the same rule the bar family
-    // uses, and for the same reason. This branch kept `niceMax` and paid the price the bar
-    // branch's own comment names: a series peaking at 21 rounds to a 50-tick, so the staircase
-    // reached **42 %** of the plot and the top 58 % of a portrait card was blank (measured on
-    // `data-story-video`, 2026-09-10). A nice maximum buys a reader something only when the axis
-    // is *labelled*, and nothing here draws a y tick.
+    // The measured maximum with 6 % headroom, not a "nice" one — the same rule the bar family uses,
+    // and for the same reason.
     const max = Math.max(1e-9, ...points.flatMap((p) => p.values)) * 1.06;
-    // A step chart's readings are intervals, not instants: n readings need n intervals, so the
-    // x scale divides by n and each value holds until the next one. Line and area interpolate
-    // between instants and keep the n-1 scale that puts the last point on the right edge.
+    // A step chart's readings are intervals, not instants: n readings need n intervals, so the x
+    // scale divides by n and each value holds until the next one.
     const span = stepped ? plotW / n : plotW / Math.max(1, n - 1);
     // A stepped chart labels its intervals inside the plot, above the axis — the same arrangement
     // the bar family uses — so the staircase itself is drawn in what is left above the labels.
     const labelRoom = stepped ? Math.round(34 * scale) : 0;
     const usableH = plotH - labelRoom;
     // Readings are written above the mark, so the tallest one needs somewhere to go: the baseline
-    // stays on the axis and the top of the range comes down by the height of a label. Without
-    // this the highest number — which on a chart of a rising series is the one the card is about
-    // — is drawn off the top edge of the svg.
+    // stays on the axis and the top of the range comes down by the height of a label.
     const valueFont = Math.max(minTextPx(theme, scale), Math.round((portrait ? 28 : 22) * scale));
     const lift = Math.round(12 * scale);
     // One series only. Two series crossing would put two numbers in the same place with nothing
@@ -413,10 +362,7 @@ export function ChartScene({ scene }: { scene: Spec; compiled: unknown }): React
         y: pad + usableH - ((point.values[series] ?? 0) / max) * rise,
       }));
     const shown = Math.max(2, Math.ceil(n * t));
-    // A step's labels name intervals, so they sit under the middle of the interval they name. The
-    // line family's own labels are spread edge to edge outside the plot, which for a staircase
-    // would put "after" at the right edge while its riser starts two thirds of the way across —
-    // reading as a jump that happened before the label it belongs to.
+    // A step's labels name intervals, so they sit under the middle of the interval they name.
     const stepLabels = stepped ? (
       <g>
         {points.map((point, i) => (

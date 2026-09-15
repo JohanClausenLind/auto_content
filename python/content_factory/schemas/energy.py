@@ -1,11 +1,4 @@
-"""Energy contracts: measured watt-hours, tariffs, and attribution that reconciles.
-
-One report covers one metering source for one node and window. A wall meter already includes
-GPU/CPU/disk/PSU losses — GPU-only NVML energy is a separate physical metric and must never be
-added on top of the same node's wall energy in a financial total. Attribution shares (jobs plus
-an explicit idle bucket) must sum to the measured total: nothing is lost, nothing counted twice.
-Gaps in sampling are recorded as gaps, not silently interpolated into "measured" energy.
-"""
+"""Energy contracts: measured watt-hours, tariffs, and attribution that reconciles."""
 
 from __future__ import annotations
 
@@ -26,8 +19,7 @@ class PowerSample(SchemaModel):
 
 
 class Tariff(VersionedModel):
-    """All-in price per kWh plus its informational components. Timestamps are stored UTC;
-    the billing timezone applies period boundaries. GPU TDP is not a tariff input."""
+    """All-in price per kWh plus its informational components."""
 
     tariff_id: str = Field(min_length=1, max_length=80)
     currency: str = Field(pattern=r"^[A-Z]{3}$")

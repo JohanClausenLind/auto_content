@@ -1,5 +1,4 @@
-"""Mastodon adapter (Tier 1): native Idempotency-Key on POST /api/v1/statuses; media via
-/api/v2/media with async processing polling; instance limits read from /api/v2/instance."""
+"""Mastodon adapter: Idempotency-Key on statuses, polled media processing."""
 
 from __future__ import annotations
 

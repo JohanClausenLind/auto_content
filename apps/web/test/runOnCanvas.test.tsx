@@ -1,15 +1,4 @@
-/**
- * Reviewing a run from the canvas it was built on.
- *
- * Before this, a run's output was a panel *over* the graph: five lists grouped by file type, and
- * nothing connecting a bad drawing to the node that drew it. The screenshot this was built from
- * is 22 nodes at 20% zoom with a Run button and no way to see anything any of them made.
- *
- * So: picking a run lays it over the canvas, closing its pane leaves the drawings on the nodes,
- * and a node's own count opens every frame, voice line and film that step produced — with the
- * step's facts, because "3 attempts, backend hidream-o1" is the first thing to know about a
- * picture that came out wrong.
- */
+/** Reviewing a run from the canvas: picking one lays it over the nodes. */
 
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -21,12 +10,7 @@ import { server } from "./msw/server";
 import { workspaceCatalog } from "../src/workspace/catalog";
 import { renderApp } from "./render";
 
-/**
- * A graph carrying the lane keys the fixture run reports, seeded on the server.
- *
- * The keys are the join: without them a canvas shows nothing, which is the correct behaviour for
- * a hand-built graph and useless for a test about a lane's own run.
- */
+/** A graph carrying the lane keys the fixture run reports, seeded on the server. */
 function seedLaneGraph(): void {
   let graph = emptyGraph("graph_lane", "Picture story");
   for (const [key, type] of [

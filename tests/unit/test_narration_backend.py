@@ -65,26 +65,46 @@ class CountingTTS(TTSExecutor):
         return self.inner.synthesize(request)
 
 
-def test_beats_are_spoken_once_and_reused_until_the_script_or_voice_changes(
+def test_the_whole_script_is_one_take_and_is_reused_until_it_changes(
     ctx: StageContext, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Four beats, **one** call to the model, four segments out of it."""
     from content_factory.runners import demo as demo_fixtures
 
     tts = CountingTTS()
     monkeypatch.setattr(st, "_tts_executor", lambda _ctx=None: (tts, demo_fixtures.MOCK_VOICE))
     first = stage_synthesize_narration(ctx)
-    assert first.facts["spoken"] == 4 and tts.calls == 4
-    markers = sorted((ctx.ddir() / "audio").glob("*.tts.json"))
-    assert len(markers) == 4 and "audio_sha256" in json.loads(markers[0].read_text())
+    assert first.facts["spoken"] == 4, "four beats still produce four segments"
+    assert tts.calls == 1, "spoken as one take, not four utterances"
+    assert first.facts["take"] == "continuous"
+    marker = json.loads((ctx.ddir() / "audio" / "narration.take.json").read_text())
+    assert len(marker["audio_sha256s"]) == 4 and len(marker["spans_ms"]) == 4
+    assert (ctx.ddir() / "audio" / "narration.take.wav").exists(), "the take is kept, for review"
 
     second = stage_synthesize_narration(ctx)
-    assert second.facts["spoken"] == 0 and tts.calls == 4
+    assert second.facts["spoken"] == 0 and tts.calls == 1
     assert second.outputs_hash == first.outputs_hash
 
     faster = demo_fixtures.MOCK_VOICE.model_copy(update={"speed": 1.3})
     monkeypatch.setattr(st, "_tts_executor", lambda _ctx=None: (tts, faster))
     third = stage_synthesize_narration(ctx)
-    assert third.facts["spoken"] == 4 and tts.calls == 8  # a new voice re-speaks every beat
+    assert third.facts["spoken"] == 4 and tts.calls == 2  # a new voice re-speaks the whole take
+
+
+def test_beat_at_a_time_is_still_available_for_separate_utterances(
+    ctx: StageContext, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A two-hander or an interview wants a fresh onset per beat, which is what the flag is for."""
+    from content_factory.runners import demo as demo_fixtures
+
+    tts = CountingTTS()
+    monkeypatch.setattr(st, "_tts_executor", lambda _ctx=None: (tts, demo_fixtures.MOCK_VOICE))
+    monkeypatch.setattr(
+        st, "_param_bool", lambda _ctx, key, default: False if key == "continuous_take" else default
+    )
+    out = stage_synthesize_narration(ctx)
+    assert out.facts["spoken"] == 4 and tts.calls == 4
+    assert len(sorted((ctx.ddir() / "audio").glob("*.tts.json"))) == 4
 
 
 def test_kokoro_drops_punctuation_tokens_from_word_timings(tmp_path: Path, monkeypatch) -> None:
@@ -127,11 +147,8 @@ def test_kokoro_drops_punctuation_tokens_from_word_timings(tmp_path: Path, monke
     assert result.segment.timing_source == "provider" and result.segment.duration_ms == 1200
 
 
-# ---- Qwen3-TTS: the narration voice since 2026-09-07 -------------------------------------------
-#
-# It returns no word timings at all, so the interesting behaviour is not the audio — it is that the
-# timings are measured afterwards and snapped onto the locked script, and that a beat the model did
-# not actually speak is refused rather than shipped with captions that drift against it.
+# ---- Qwen3-TTS -----------------------------------------------------------------------------
+# No word timings of its own: they are measured afterwards against the locked script.
 
 QWEN_LINE = "In late 2024, Swedish wind out-produced nuclear."
 
@@ -167,8 +184,7 @@ def _qwen_request() -> NarrationRequest:
 
 
 def _fake_skill(monkeypatch: pytest.MonkeyPatch, wav_seconds: float = 2.0):
-    """Stand in for `skills/audio/qwen3tts/run.py`: writes the wav it was asked for and prints the
-    one JSON line the real script prints — `tokens` empty, because the model has no timings."""
+    """Stand in for `skills/audio/qwen3tts/run.py`."""
     import subprocess
 
     from content_factory.audio import tts as tts_mod
@@ -254,23 +270,14 @@ def test_qwen3tts_refuses_a_beat_that_does_not_say_the_script(tmp_path: Path, mo
     )
     with pytest.raises(TTSError, match="did not speak the locked script") as caught:
         Qwen3TTS(tmp_path, aligner="faster_whisper").synthesize(_qwen_request())
-    # A catastrophic score under an English locale usually means nobody set the locale, so the
-    # message says so. `narration.locale` is global configuration and a StoryPlan carries no
-    # language of its own: measured 2026-09-10, a French script on a default-config machine was
-    # spoken by an English voice and scored by an English ASR — "trois choses rendent ce bleu"
-    # came back "trasho's rance sublo" at 0.29 — and the message sent the reader hunting for a
-    # TTS fault instead of a one-line env var.
+    # A catastrophic score under an English locale usually means nobody set `narration.locale`,
+    # so the message says so rather than sending the reader after a TTS fault (journal 2026-09-10).
     assert "CF__NARRATION__LOCALE" in str(caught.value)
     assert "narration.locale is 'en'" in str(caught.value)
 
 
 def test_qwen3tts_retakes_a_beat_the_model_only_half_said(tmp_path: Path, monkeypatch) -> None:
-    """A dropped sentence is a sample, not a script error, so the executor speaks it again.
-
-    Measured on the narrated-video lane (2026-09-10): "A pitcher cannot make a ball turn by
-    throwing it harder. The turn comes from the spin." came back as the second sentence alone,
-    scored 0.76 against the 0.80 gate, and killed a fourteen-stage run at stage four.
-    """
+    """A dropped sentence is a sample, not a script error, so the executor speaks it again."""
     import subprocess
 
     from content_factory.audio import takes as takes_mod
@@ -382,8 +389,7 @@ def test_qwen3tts_voice_clone_needs_both_the_clip_and_its_transcript(env, tmp_pa
 
 
 def test_a_canvas_node_overrides_the_configured_voice(env, tmp_path: Path) -> None:
-    """The widgets on the Synthesize Narration node have to actually reach the executor, or they
-    are decoration. `voice` also accepts the canvas's label for Kokoro."""
+    """A node widget must reach the executor, or it is decoration."""
     from content_factory.audio.tts import KokoroTTS, Qwen3TTS
     from content_factory.schemas.fixtures import sample_campaign
 
@@ -413,12 +419,7 @@ def test_a_canvas_node_overrides_the_configured_voice(env, tmp_path: Path) -> No
 
 
 def test_the_aligner_checkpoint_follows_the_narration_language() -> None:
-    """`base.en` is an English-only Whisper checkpoint and Qwen3-TTS speaks ten languages.
-
-    It does not refuse the other nine — it transcribes them as English-sounding nonsense, so a
-    word-perfect German take scores near zero against its own script and the beat fails as a
-    mis-speech, with nothing saying which of the two was wrong.
-    """
+    """`base.en` is an English-only Whisper checkpoint and Qwen3-TTS speaks ten languages."""
     from content_factory.audio.languages import aligner_model_for
 
     # Defaulted and not English: the multilingual sibling.
@@ -461,3 +462,42 @@ def test_the_aligner_is_told_the_language_rather_than_guessing_it(
     Qwen3TTS(tmp_path, aligner="faster_whisper").synthesize(german)
     # The subtag, not the full locale: Whisper takes `de`, not `de-DE`.
     assert seen["cmd"][-1] == "de"
+
+
+def test_a_described_voice_uses_the_voicedesign_weights_and_no_timbre(
+    ctx: StageContext, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from content_factory.audio.tts import Qwen3TTS
+    from content_factory.config import get_settings
+
+    monkeypatch.setenv("CF__NARRATION__TTS", "qwen3tts")
+    monkeypatch.setenv("CF__NARRATION__QWEN_DESCRIBE", "a low, unhurried woman in her sixties")
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    try:
+        executor, voice = st._tts_executor(ctx)
+        assert voice.model_revision == "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+        assert voice.voice_id == "designed"
+        assert isinstance(executor, Qwen3TTS)
+        assert executor.describe == "a low, unhurried woman in her sixties"
+    finally:
+        get_settings.cache_clear()  # type: ignore[attr-defined]
+
+
+def test_describing_and_cloning_at_once_is_refused(
+    ctx: StageContext, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Different weights: VoiceDesign builds a voice, Base copies one."""
+    from content_factory.config import get_settings
+
+    clip = tmp_path / "ref.wav"
+    clip.write_bytes(b"RIFF" + b"\0" * 40)
+    monkeypatch.setenv("CF__NARRATION__TTS", "qwen3tts")
+    monkeypatch.setenv("CF__NARRATION__QWEN_DESCRIBE", "a low voice")
+    monkeypatch.setenv("CF__NARRATION__QWEN_REF_AUDIO", str(clip))
+    monkeypatch.setenv("CF__NARRATION__QWEN_REF_TEXT", "hello")
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    try:
+        with pytest.raises(RuntimeError, match="one or the other"):
+            st._tts_executor(ctx)
+    finally:
+        get_settings.cache_clear()  # type: ignore[attr-defined]

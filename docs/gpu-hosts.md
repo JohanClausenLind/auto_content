@@ -3,9 +3,12 @@
 How to add a second machine that generates frames alongside this one, and how to share a single
 card with another program that has priority over rendering.
 
-Verified end to end on 2026-09-09 between **vegaserv** (Ubuntu 24.04, RTX 3090, driver 595.84) and
-**nova** (Ubuntu 26.04.1, RTX 3090, driver 595.91.07, 20 cores, 76 GB RAM), 1 GbE, measured
-107 MB/s host to host.
+Verified end to end on 2026-09-09 between **vegaserv** (Ubuntu 24.04, RTX 3090, driver 595.84,
+31 GB RAM) and **nova** (Ubuntu 26.04.1, RTX 3090, driver 595.91.07, 20 cores, 76 GB RAM), 1 GbE,
+measured 107 MB/s host to host (100 MB/s again on 2026-09-13).
+
+Re-verified 2026-09-13 by running a whole Ideogram 4 lane on nova from vegaserv — see **"Where to
+run which model"** below, which is the first thing to read if you are deciding where to put a job.
 
 ## Why a second host, and what it can actually take
 
@@ -27,6 +30,62 @@ A sequence's frames are hub-and-spoke: each is an edit of the *anchor*, never of
 `drift_report` measures each against the *anchor*. Nothing in a frame depends on another frame, and
 each already carries its own `input_hash` marker — which is why splitting them across cards changes
 the wall clock and nothing else.
+
+## Where to run which model
+
+**Both hosts have the same card.** vegaserv and nova are each an RTX 3090 with 24 GB, so VRAM is
+never the reason to prefer one. What differs is **system RAM: 31 GB on vegaserv, 76 GB on nova** —
+and that is the number that decides, because a ComfyUI graph too big for the card does not fail,
+it *stages the overflow through system RAM* and keeps going until something dies.
+
+| Model | Runs on | Cost per frame | Why |
+| --- | --- | --- | --- |
+| **Ideogram 4 SDNQ** (`ideogram_sdnq_backend.py`) | either | not yet measured | The 4-bit repack (17.31 GiB) behind leaf-level group offloading: built to fit a 24 GB card on a 31 GB host. The only path that inpaints (Differential Diffusion). Served on :8802, not ComfyUI. |
+| **Ideogram 4 fp8** (`ideogram_backend.py`) | **nova only** | 38–40 s | Two transformers stage 8849 MB *each* plus a 10.6 GB Qwen3-VL encoder ≈ **28 GB of system RAM**. Measured 2026-09-13: OOMs at model load on vegaserv at every ceiling tried, with or without `--cache-none`. |
+| **HiDream-O1** (`hidream_backend.py`) | either | 2 m 13 s at 16:9, 38 s for a text-to-image anchor | ~19.4 GB VRAM. Note it **snaps 1024×576 up to 2560×1440** — eleven fixed ~4 MP resolutions, upstream behaviour, not a setting — so a 16:9 frame costs four times what the aspect suggests. |
+| **HiDream full + romsketch LoRA** | either | ~6 min | Needs the *full* weights; the server refuses to merge onto `dev`. |
+| **FLUX.2-dev turbo** (`flux2_backend.py`) | either | 80–92 s | Fits vegaserv comfortably at 8 steps. |
+| **LTX-2.5, Wan, Krea2** | either | 40–74 s/clip | ComfyUI, weights must exist on the far side. |
+| Post chain, MMAudio, TTS, Blender | **the host that holds the files** | — | `job.json` carries absolute local paths; these need a worker, not an endpoint. |
+
+**The rule of thumb: if a graph's weights add up to more than about 20 GB, send it to nova.** The
+card is the same, so it will *appear* to work on vegaserv right up until the overflow lands in
+system RAM.
+
+### Pointing one lane at the other host
+
+An endpoint that is already answering makes `LocalServices.ensure` a no-op — nothing is started
+locally and there is nothing for `exclusive_gpu` to arbitrate:
+
+```bash
+# on nova, once
+cd ~/git/ComfyUI && .venv/bin/python main.py --reserve-vram 1.5 --listen 100.82.150.94 --port 8188
+
+# from vegaserv
+uv run python scripts/consistency_probe.py render --lane ideogram --endpoint http://100.82.150.94:8188
+```
+
+`exclusive_gpu` in `services/local.py` is **local-only and does not reach another machine**, so
+whoever points a lane at a remote host owns making sure only one tenant is generating there.
+
+Two things that will stop a fresh ComfyUI on nova, both seen 2026-09-13:
+
+* `ModuleNotFoundError: No module named 'comfy_aimdo.malloc_graph'` — `comfy-aimdo==0.5.3` is
+  pinned in master's `requirements.txt`; re-run the install against the branch you are actually on.
+* nova's checkout tracks **`master`**, which is *ahead* of this host's pin and already carries
+  `comfy_extras/nodes_ideogram4.py`. Do not pin it backwards to match vegaserv.
+
+Verify against the live catalogue rather than by eye, and assert the want-list is non-empty first —
+a typo returns zero nodes to check and then reports "missing: none", which reads exactly like a
+pass:
+
+```python
+want = sorted({n["class_type"] for n in ideogram4_package().api_workflow.values()})
+assert want
+have = set(json.load(urllib.request.urlopen("http://100.82.150.94:8188/object_info")))
+assert have
+print("missing:", [w for w in want if w not in have] or "none")  # 14 to check, 933 in the catalogue
+```
 
 ---
 

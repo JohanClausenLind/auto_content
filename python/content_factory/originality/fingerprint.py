@@ -1,7 +1,4 @@
-"""Originality and Policy Engine (2.10): multimodal fingerprints + typed, explainable decisions.
-
-Compared against the operator's OWN accounts/workspaces/content families (one tenant). A model can
-never override a blocking decision; thresholds are data, the comparison is deterministic."""
+"""Originality and Policy Engine (2.10): multimodal fingerprints + typed, explainable decisions."""
 
 from __future__ import annotations
 
@@ -70,8 +67,7 @@ _FRAME_WORDS = frozenset(
 
 
 def structural_shingles(text: str, n: int = 4) -> set[tuple[str, ...]]:
-    """Shingles over the sentence FRAME: content words collapse to a placeholder, so swapping
-    nouns ("Sweden"→"Norway", "wind"→"hydro") leaves the fingerprint intact."""
+    """Shingles over the sentence frame: content words collapse."""
     words = [w if w in _FRAME_WORDS or w in _STOP else "*" for w in _WORD.findall(text.lower())]
     if len(words) < n:
         return {tuple(words)} if words else set()

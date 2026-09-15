@@ -1,14 +1,4 @@
-"""Load the workflow definitions in ``workflows/*.yaml``.
-
-One reader for both front doors. The local runner asks for ``stage_order``, the web exporter asks
-for the whole template, and neither keeps its own copy of what a workflow is.
-
-Definitions are validated twice: once by the ``WorkflowTemplate`` contract, which checks the graph
-is coherent and the run order is a topological order of the wires, and once against the node
-catalogue in ``fixtures/schema/node_catalog.json``, which checks every widget value and wire slot
-actually exists on the node it is set on. Without the second check a typo'd key is silently
-swallowed by the stage's ``_param`` default and the workflow quietly does something else.
-"""
+"""Load the workflow definitions in ``workflows/*.yaml``."""
 
 from __future__ import annotations
 
@@ -72,9 +62,7 @@ def check_against_catalog(template: WorkflowTemplate, *, where: str = "") -> Non
                     f" it has {sorted(declared)}"
                 )
                 continue
-            # A combo widget accepts only the values it lists. Without this check a plausible
-            # wrong value - "animate" where the widget says "ltx" - validates and then silently
-            # does whatever the stage's fallback does.
+            # A combo widget accepts only the values it lists.
             allowed = options.get(key)
             if allowed and str(node.values[key]) not in {str(a) for a in allowed}:
                 problems.append(
@@ -109,12 +97,7 @@ def check_against_catalog(template: WorkflowTemplate, *, where: str = "") -> Non
                     f" produces {'/'.join(produced)} but that input accepts {'/'.join(accepted)}"
                 )
 
-    # Every required input of a runnable node must be fed. This used to be waived for any
-    # definition that carried a ``caveat``, which meant one sentence of prose excused any number
-    # of unwired inputs — and it did: four lanes opened on an empty required slot and explained it
-    # instead of fixing it, because the thing they were missing (the operator's own recording,
-    # clip or stills) had no node type to arrive through. It has one now
-    # (``input.audio``/``image``/``video``), so the waiver is gone and the rule is the rule.
+    # Every required input of a runnable node must be fed.
     fed = {(w.to_key, w.to_slot) for w in template.wires}
     unfed: list[str] = []
     for node in template.nodes:
@@ -125,8 +108,7 @@ def check_against_catalog(template: WorkflowTemplate, *, where: str = "") -> Non
             if (node.key, slot) not in fed:
                 unfed.append(f"{node.key}.{slot}")
         # A node that takes one thing in two shapes (a picture is a frame sequence or a clip)
-        # declares the alternatives instead of marking both required. None of them fed is the
-        # same defect as an unfed required input, and reads the same way in the message.
+        # declares the alternatives instead of marking both required.
         for group in spec.get("requires_one_of", ()):
             if not any((node.key, slot) in fed for slot in group):
                 unfed.append(f"{node.key}.{'|'.join(group)}")
@@ -182,16 +164,7 @@ def load_definitions() -> dict[str, WorkflowTemplate]:
 
 
 def load_definition(workflow_id: str) -> WorkflowTemplate:
-    """One lane, fully validated - and only that lane has to be right for it to run.
-
-    ``load_definitions`` reads every file and raises on the first bad one, so for a while a
-    single unreadable definition took down every lane. Measured on 2026-09-10 at 05:14: a note
-    in ``image-set.yaml`` was one sentence over the contract's 400-character limit, and fifteen
-    queued runs - twelve of them ``single-image``, which does not read that file - died one
-    second apart with the same validation error. The whole catalogue is still checked as a whole
-    by ``workflows validate``, by the web exporter and by the tests; a run only needs its own
-    definition, so fall back to reading it alone and say on stderr what else is broken.
-    """
+    """One lane, fully validated - and only that lane has to be right for it to run."""
     try:
         definitions = load_definitions()
     except WorkflowDefinitionError as exc:
@@ -218,20 +191,12 @@ def stage_order(workflow_id: str) -> tuple[tuple[str, Stage, dict], ...]:
 
 
 def params_by_node(workflow_id: str) -> dict[str, dict]:
-    """Widget values keyed by node key, which is how the runner freezes them onto a stage.
-
-    Keyed by node, not by stage, so a workflow that uses one stage twice keeps both sets of values
-    instead of collapsing them.
-    """
+    """Widget values keyed by node key, which is how the runner freezes them onto a stage."""
     return {key: values for key, _stage, values in stage_order(workflow_id) if values}
 
 
 def runnable_missing_executor(template: WorkflowTemplate) -> tuple[str, ...]:
-    """Stages in this definition that have no executor, so cannot run yet.
-
-    A definition with any of these must explain itself in ``caveat`` - the catalogue is allowed to
-    describe a lane that is not finished, but not to pretend it is.
-    """
+    """Stages in this definition that have no executor, so cannot run yet."""
     from content_factory.workflows.stages import STAGE_EXECUTORS
 
     return tuple(
@@ -242,23 +207,7 @@ def runnable_missing_executor(template: WorkflowTemplate) -> tuple[str, ...]:
 
 
 def to_workspace_graph(template: WorkflowTemplate) -> WorkspaceGraph:
-    """A definition as the canvas document, so it can be compiled offline the way a Run would.
-
-    Typed, and that is the change: this returned a bare `dict` in a shape that **was not**
-    `WorkspaceGraph`'s — `workflow_id` for `graph_id`, `edges` for `links`, `from`/`to` for
-    `from_node`/`to_node`. So the one adapter between the fifteen committed lane definitions and
-    the document the compiler actually executes was untyped *and* differently spelled, and none of
-    the contract's invariants applied to it: duplicate node ids, a link to a node that is not in
-    the graph, two links into one input slot, a node linked to itself. Every one of those is a
-    graph the canvas would refuse to load and this function would happily emit.
-
-    Returning the contract means the model validators run on every definition in the catalogue,
-    which is what makes `test_every_definition_compiles_to_a_canvas_graph` a real test rather than
-    a check that some dict has some keys.
-
-    Node ids are still derived from node keys rather than generated, so the same definition always
-    produces the same graph and a test can compare bytes.
-    """
+    """A definition as the canvas document, so it can be compiled offline the way a Run would."""
     depth = _layout_depth(template)
     nodes = tuple(
         WorkspaceNode(
@@ -307,12 +256,7 @@ def to_workspace_graph(template: WorkflowTemplate) -> WorkspaceGraph:
 
 
 def _node_id(workflow_id: str, key: str) -> str:
-    """Stable, and truncated to the contract's own 64-character limit rather than to 40.
-
-    The old 40 was a guess; `WorkspaceNode.id` allows 64. Truncating shorter than the contract
-    needs is how two long node keys in one lane collide into a duplicate id — which the contract
-    now refuses outright instead of emitting.
-    """
+    """Stable, and truncated to the contract's own 64-character limit rather than to 40."""
     return f"nd_{workflow_id}_{key}"[:64]
 
 

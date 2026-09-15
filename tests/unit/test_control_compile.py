@@ -106,8 +106,7 @@ def test_openpose_render_is_byte_identical_and_uses_limb_colours() -> None:
     assert img.size == (256, 512)
 
     def _colours_around(x: int, y: int, reach: int = 4) -> set[tuple[int, int, int]]:
-        """Colours in a small neighbourhood. The ink is now proportional to the figure's size, so
-        probing one exact pixel would assert a stroke width rather than a colour."""
+        """Colours in a small neighbourhood."""
         return {
             cast("tuple[int, int, int]", img.getpixel((x + dx, y + dy)))
             for dx in range(-reach, reach + 1)
@@ -116,9 +115,8 @@ def test_openpose_render_is_byte_identical_and_uses_limb_colours() -> None:
 
     # Joint 0 (nose) is drawn in the first palette colour, pure red.
     assert (255, 0, 0) in _colours_around(int(0.50 * 255 + 0.5), int(0.10 * 511 + 0.5))
-    # Limb 8 (r_knee -> r_ankle) is drawn in the ninth palette colour. Sampled in a small
-    # neighbourhood of the midpoint rather than one exact pixel: the stroke is now proportional to
-    # the figure's size, so a single-pixel probe tests the stroke width instead of the colour.
+    # Limb 8 (r_knee -> r_ankle) is the ninth palette colour. Sampled around the midpoint, not one
+    # pixel: the stroke scales with the figure, so a one-pixel probe tests width, not colour.
     assert (0, 255, 170) in _colours_around(int(0.45 * 255 + 0.5), int(0.80 * 511 + 0.5))
     assert len(OPENPOSE18) == 18 and len(OPENPOSE18_LIMBS) == 17
 

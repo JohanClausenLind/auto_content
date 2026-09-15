@@ -1,12 +1,4 @@
-"""Deterministic claim machinery (2.14, section 10): classification, numeric verification against
-evidence and datasets, evidence-requirement compilation, staleness. No model decides a pass.
-
-``independence_findings`` is the part that was computed and never read.
-``compile_requirements`` has set ``requires_independent_sources=2`` on high-stakes claims since it
-was written, and nothing enforced it — so a claim about a dosage or an election could be "supported"
-by two outlets that had both reprinted one press release, and the count said two. Independence is
-not "two source ids": it is two *publishers* that are not each other's syndication.
-"""
+"""Deterministic claim machinery: classification, numeric verification, requirements, staleness."""
 
 from __future__ import annotations
 
@@ -174,12 +166,7 @@ evidence. It is that counting it twice is counting one thing twice, which is exa
 
 
 def _publisher_key(source: SourceRecord) -> str:
-    """What counts as "the same publisher" for independence.
-
-    The publisher name when there is one, else the registrable part of the host. Both are needed:
-    a fixture source has a publisher and no meaningful URL, and a fetched page often has the
-    reverse.
-    """
+    """What counts as "the same publisher" for independence."""
     if source.publisher.strip():
         return source.publisher.strip().casefold()
     host = source.canonical_url.split("//", 1)[-1].split("/", 1)[0].casefold()
@@ -193,12 +180,7 @@ def independent_publishers(
     evidence: Sequence[EvidenceRecord],
     sources: Mapping[str, SourceRecord],
 ) -> tuple[str, ...]:
-    """The distinct publishers behind one claim's evidence, after syndication dedupe.
-
-    Two outlets reprinting one wire report collapse to the wire. An excerpt that credits a wire is
-    attributed to that wire rather than to the outlet that ran it, because that is whose reporting
-    it is.
-    """
+    """The distinct publishers behind one claim's evidence, after syndication dedupe."""
     by_id = {e.evidence_id: e for e in evidence}
     seen: dict[str, None] = {}
     for evidence_id in claim.evidence_ids:
@@ -220,14 +202,7 @@ def independence_findings(
     *,
     operator_assertions: tuple[str, ...] = (),
 ) -> list[Finding]:
-    """Enforce ``EvidenceRequirement.requires_independent_sources``, at last.
-
-    Only for claims the requirement compiler actually asks it of, and only for ones that came back
-    supported: an unsupported claim already fails on its own, and adding a second finding to it
-    would bury the first. A high-stakes claim supported by one publisher is a **blocker**; one
-    supported by two outlets that both credit the same wire is the same blocker, because the
-    dedupe has already decided they are one publisher.
-    """
+    """Enforce ``EvidenceRequirement.requires_independent_sources``, at last."""
     findings: list[Finding] = []
     supported = {VerificationStatus.supported, VerificationStatus.supported_with_caveat}
     for claim in claims:

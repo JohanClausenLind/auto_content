@@ -1,42 +1,4 @@
-"""Sample the card while it works, so the next Xid 79 is diagnosable instead of researched.
-
-On 2026-09-10 at 03:12 this host's RTX 3090 left the PCIe bus in the eighth hour of a continuous
-run (`AER: Uncorrectable ... TLP UnsupReq`, `Xid 79`, `Xid 154 Node Reboot Required`) and took the
-desktop with it. Working out *why* afterwards meant reading forum threads, because the machine had
-kept no record of its own state: no temperature, no power draw, no clocks, no throttle reasons, no
-PCIe error counters. Every published account of this failure was solved by a different cause —
-airflow in one, clock behaviour in another, a cable in a third — and the only thing they have in
-common is that each person had to observe their own machine to find out which.
-
-So this samples the handful of numbers that separate those explanations, at a cost of one
-`nvidia-smi` call per interval, and appends them to a CSV that survives a reboot. It is not a
-monitoring system; it is the log that should have existed on the night.
-
-What it deliberately records, and why each one earns its column:
-
-``temperature_c``, ``power_w``
-    The two the forum accounts most often land on. A 3090 that throttles or sags under sustained
-    load says so here long before it drops off the bus.
-``sm_mhz``, ``mem_mhz``, ``pstate``
-    Clock behaviour. One published fix for this exact failure was locking clocks
-    (``nvidia-smi -lgc``), on the theory that the boost algorithm's voltage transitions are what
-    the link cannot survive; without a clock trace that is untestable.
-``throttle``, ``hw_slowdown``, ``sw_power_cap``, ``hw_thermal``
-    The driver's own account of why it backed off, which is the difference between "hot" and
-    "power-limited" and is not inferable from temperature alone.
-``pcie_gen``
-    The link speed the driver negotiated. A link that trains down under load is a link in trouble.
-``aer_cor``, ``aer_nonfatal``, ``aer_fatal``
-    The root port's PCIe error counters, read straight from sysfs and needing no root. These are
-    the ones that saw the card leave: a single non-fatal was the whole event. Correctable errors
-    are retried in hardware and invisible everywhere else, so a rising count here is the earliest
-    warning this machine can give.
-
-Memory junction temperature is **not** here, and its absence is the known blind spot: the 3090
-puts GDDR6X on both sides of the board and it is the part that runs hottest, but this driver
-reports ``Memory Current Temp: N/A`` for consumer cards. docs/gpu-hosts.md says what to do about
-that.
-"""
+"""Sample the card while it works, so the next Xid 79 is diagnosable instead of researched."""
 
 from __future__ import annotations
 
@@ -130,11 +92,7 @@ def _as_int(text: str) -> int:
 
 
 def parse_sample(iso_time: str, smi_line: str, aer: dict[str, str]) -> Sample:
-    """One `nvidia-smi` CSV line plus the sysfs counters, as a row. Pure, and total.
-
-    Missing or unparsable fields become the empty string rather than raising: a sampler that dies
-    on one odd line is a sampler that is not running when it is needed.
-    """
+    """One `nvidia-smi` CSV line plus the sysfs counters, as a row."""
     parts = [p.strip() for p in smi_line.split(",")]
     parts += [""] * (len(QUERY_FIELDS) - len(parts))
     return Sample(

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// Render a timeline RenderBundle to an H.264 MP4 (yuv420p, bt709, muted).
-// usage: node scripts/render-timeline.mjs --bundle <path.json> --out <path.mp4> [--scene <scene_id>] [--concurrency N]
-// Prints one JSON line {"out","frames","fps","width","height","sha256"}; on error {"error"} to stderr, exit 1.
+// Render a timeline RenderBundle to an H.264 MP4 (yuv420p, bt709, muted): --bundle --out [--scene
+// <scene_id>] [--concurrency N].
 import { ensureBrowser, renderMedia, selectComposition } from "@remotion/renderer";
 import path from "node:path";
 

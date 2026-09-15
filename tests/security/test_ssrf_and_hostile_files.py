@@ -1,4 +1,4 @@
-"""SSRF, redirect, size, decompression-bomb, hostile-XML/PDF, and injection-scan tests (fail closed)."""  # noqa: E501
+"""SSRF, redirect, size, decompression-bomb, hostile-XML/PDF, and injection-scan tests."""
 
 from __future__ import annotations
 

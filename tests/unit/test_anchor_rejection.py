@@ -1,10 +1,4 @@
-"""A rejected anchor has to be redrawn, and has to come back different.
-
-The keyframe lanes have had this since 2026-09-10. The anchor lanes did not, and it was found the
-hard way on `amber-refix` 2026-09-12: three of six frames rejected with written reasons, the resume
-reported `cache_hits: 6` on generate_anchor, and the gate blocked again on the identical pictures.
-The verdict the gate exists to collect was the one thing the run could not act on.
-"""
+"""A rejected anchor has to be redrawn, and has to come back different."""
 
 from __future__ import annotations
 
@@ -28,8 +22,7 @@ def test_a_shot_frame_id_maps_to_its_picture(tmp_path: Path) -> None:
 
 
 def test_the_single_anchor_is_reachable_under_both_spellings(tmp_path: Path) -> None:
-    """`review_frames` now writes "anchor:0000", but verdicts already on disk say "None:0000"
-    because the manifest records `shot_id: None`. Both have to resolve or a live run breaks."""
+    """Old verdicts on disk say "None:0000", new ones "anchor:0000"; both must resolve."""
     for frame_id in ("anchor:0000", "None:0000", ":0000"):
         resolved = _anchor_frame_paths(tmp_path, frame_id)
         assert resolved is not None, frame_id
@@ -55,12 +48,7 @@ def test_no_rejections_means_no_offset(tmp_path: Path) -> None:
 
 
 def test_each_rejection_walks_the_seed_a_whole_run_further(tmp_path: Path) -> None:
-    """Eight per rejection, not one.
-
-    The three blocker retries inside a single run already walk the seed by 0, 1, 2. An offset of
-    one would land the redraw on the *second attempt of the run that was rejected* — a picture the
-    reviewer has, in effect, already seen and turned down.
-    """
+    """Eight per rejection, not one."""
     reject = tmp_path / "rejected"
     reject.mkdir()
     (reject / "shot_a_0000.reviewed1.png").write_bytes(b"")
@@ -75,8 +63,7 @@ def test_clearing_moves_the_picture_aside_rather_than_deleting_it(tmp_path: Path
     from content_factory.workflows.stages import _clear_rejected_anchors
 
     class _Ctx:
-        """Only what `_clear_rejected_anchors` touches: the deliverable dir, and the project dir
-        `_log_execution` writes its line into."""
+        """Only what `_clear_rejected_anchors` touches: the deliverable dir and the project dir."""
 
         def __init__(self, root: Path) -> None:
             self._root = root
@@ -136,15 +123,7 @@ def test_clearing_moves_the_picture_aside_rather_than_deleting_it(tmp_path: Path
 
 
 def test_a_rejection_that_exists_only_in_the_verdict_still_clears(tmp_path: Path) -> None:
-    """The bug this nearly shipped with.
-
-    `batch.json` is what the gate wrote when it last ran; `verdict.json` beside it is what the
-    operator answered *afterwards*. Reading only the first works the first time — the gate had
-    already merged the previous answer — and then silently stops. Measured on `amber-refix`
-    2026-09-12: a second rejection reported `cache_hits: 6` and redrew nothing, because at the
-    moment generate_anchor runs the gate's file still describes the previous round, in which that
-    frame was `unreviewed`.
-    """
+    """The bug this nearly shipped with."""
     from content_factory.workflows.stages import _clear_rejected_anchors
 
     class _Ctx:
@@ -206,12 +185,7 @@ def _batch(frames: list[tuple[str, str, str]]):
 
 
 def test_an_agent_need_not_re_decide_a_frame_that_was_not_redrawn() -> None:
-    """`image-set` promises "rejecting one drawing costs one drawing, not the film".
-
-    Until anchors could actually be redrawn this was untestable: the resume never produced a new
-    picture, so nobody reached the second review. Now the merged batch arrives with three accepts
-    carried forward and three redraws unreviewed, and only the three have to be named.
-    """
+    """`image-set` promises "rejecting one drawing costs one drawing, not the film"."""
     from content_factory.qc.verdict import decide
 
     merged = _batch(
@@ -244,8 +218,7 @@ def test_a_fresh_batch_still_needs_every_frame_named() -> None:
 
 
 def test_a_carried_rejection_keeps_its_reason() -> None:
-    """The reason is what `prompting propose` reads; dropping it on an unrelated verdict would
-    quietly lose the only account of what was wrong."""
+    """The reason is what `prompting propose` reads; an unrelated verdict must not drop it."""
     from content_factory.qc.verdict import decide
 
     merged = _batch([("shot_a:0000", "1" * 64, "reject"), ("shot_b:0000", "2" * 64, "unreviewed")])
@@ -267,11 +240,7 @@ def test_a_carried_rejection_keeps_its_reason() -> None:
 
 
 def test_a_correction_is_appended_as_a_description_not_a_negation() -> None:
-    """At guidance 0 a negation is a hint and a description is an instruction.
-
-    `sequences.styles` measured this and the contract asks the reviewer for the positive form, so
-    nothing here wraps the text in "avoid" or "not" — it joins the sentence list as written.
-    """
+    """At guidance 0 a negation is a hint and a description is an instruction."""
     from content_factory.workflows.stages import _with_redirects
 
     base = "photographic, fine grain. one piece of amber on plain ground."
@@ -327,13 +296,7 @@ def test_a_correction_is_not_repeated_if_the_reviewer_says_it_again(tmp_path: Pa
 
 
 def test_a_surviving_frame_keeps_exactly_what_it_was_drawn_with(tmp_path: Path) -> None:
-    """The stickiness that stops a silent revert.
-
-    A redirect read straight from the verdict vanishes the moment the frame is redrawn — the new
-    digest makes it `unreviewed` again — so the prompt would revert, the input hash with it, and
-    the frame would regenerate *without* the correction it had just been given. A frame whose
-    marker survived is not being corrected and keeps its own set.
-    """
+    """The stickiness that stops a silent revert."""
     from content_factory.workflows.stages import _applied_redirects
 
     marker = tmp_path / "0000.done.json"

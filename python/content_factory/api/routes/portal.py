@@ -1,6 +1,4 @@
-"""External request portal (phase 12). Editors mint expiring, revocable submit links; the public
-endpoint accepts ONLY a valid token + a valid brief and creates a PortalBrief + ActionItem — never
-a run, never any editor capability. Tokens are stored as hashes; plaintext is shown once."""
+"""External request portal (phase 12)."""
 
 from __future__ import annotations
 

@@ -1,31 +1,4 @@
-"""What a story pipeline needs from its 3D objects, scored from measurements.
-
-This is an opinionated rubric, and the opinions are the point. A sculpture and a shot plan can be
-technically valid — the mesh loads, the render succeeds, the contract validates — and still be
-useless for telling a story. These are the properties that decide whether a generated sequence
-reads as *the same two people doing something* rather than as a series of unrelated pictures, in
-the order they cost me GPU hours to learn:
-
-1. **Readability** — is the figure big enough in frame for its pose to be read at all? Below
-   roughly a fifth of the frame's short side the image model stops reading a skeleton as a pose.
-2. **Pose legibility** — does the skeleton project to a spread of distinct joints, or has the
-   camera angle collapsed it? A figure seen exactly end-on has a valid skeleton and no information.
-3. **Silhouette separation** — is the figure distinguishable from the ground it stands on? A
-   segmentation mask that barely differs from the background gives the model nothing to hold.
-4. **Identity distinctness** — are two characters in a scene distinguishable by silhouette alone?
-   If not, no amount of prompting will keep them straight across frames.
-5. **Anatomical plausibility** — are the authored joint rotations inside human range? An arm
-   rotated 140 degrees looks like a mistake in every frame it appears.
-6. **Camera variety** — do consecutive shots differ enough to read as different shots? Thirty
-   nearly identical cameras is a slideshow with extra steps.
-7. **Continuity of place** — does the environment persist across shots that should share it?
-8. **Frame discipline** — is the subject inside the frame with margin, rather than clipped by it?
-
-Scoring is deliberately not a judgement call: each criterion maps a measured quantity onto 0-10
-through a fixed curve, and the weights are fixed here. Raising a score means changing the asset or
-the staging, not the rubric — and :func:`score_report` records the rubric version so a score can
-never be quietly re-based against easier thresholds.
-"""
+"""What a story pipeline needs from its 3D objects, scored from measurements."""
 
 from __future__ import annotations
 
@@ -60,30 +33,26 @@ _WEIGHT_TOTAL = sum(c.weight for c in CRITERIA)
 
 
 def _ramp(value: float, floor: float, good: float) -> float:
-    """0 at or below ``floor``, 10 at or above ``good``, linear between. One fixed curve for every
-    criterion, so a score cannot be flattered by choosing a kinder shape."""
+    """0 at or below ``floor``, 10 at or above ``good``, linear between."""
     if good == floor:
         return 10.0 if value >= good else 0.0
     return round(max(0.0, min(1.0, (value - floor) / (good - floor))) * 10, 2)
 
 
 def _plateau(value: float, floor: float, good: float, ceiling: float) -> float:
-    """Ramps up, holds, then falls away again — for quantities where more is not better (a camera
-    that changes too much between shots is as unreadable as one that never changes)."""
+    """Ramp up, hold, then fall away: for quantities where more is not better."""
     if value <= good:
         return _ramp(value, floor, good)
     return _ramp(ceiling - value, 0.0, ceiling - good)
 
 
 def score_readability(body_fraction: float) -> float:
-    """Fraction of the frame's short side a body occupies. Measured floor: below ~0.20 the image
-    model draws OpenPose joint dots as objects instead of reading them as a pose."""
+    """Fraction of the frame's short side a body occupies."""
     return _ramp(body_fraction, 0.10, 0.45)
 
 
 def score_pose_legibility(joint_spread: float, visible_fraction: float) -> float:
-    """Spread of projected joints (normalised) times how many of them are visible. A figure seen
-    end-on scores near zero however valid its rig."""
+    """Spread of projected joints (normalised) times how many of them are visible."""
     return min(_ramp(joint_spread, 0.04, 0.22), _ramp(visible_fraction, 0.5, 1.0))
 
 
@@ -93,22 +62,19 @@ def score_silhouette_separation(contrast: float) -> float:
 
 
 def score_identity_distinctness(silhouette_delta: float, characters: int) -> float:
-    """How differently two characters occupy space. Meaningless with one character, so a solo
-    scene scores full marks rather than being penalised for a criterion that does not apply."""
+    """How differently two characters occupy space."""
     if characters < 2:
         return 10.0
     return _ramp(silhouette_delta, 0.02, 0.20)
 
 
 def score_anatomical_plausibility(worst_joint_deg: float) -> float:
-    """Largest authored rotation on any single bone. Human joints do not exceed ~120 degrees on
-    one axis; beyond that the figure reads as broken in every frame it appears in."""
+    """Largest authored rotation on any single bone."""
     return _ramp(120.0 - worst_joint_deg, 0.0, 40.0)
 
 
 def score_camera_variety(median_delta: float) -> float:
-    """Median camera movement between consecutive shots, in metres. Too little is a slideshow;
-    too much and nothing reads as one place."""
+    """Median camera movement between consecutive shots, in metres."""
     return _plateau(median_delta, 0.05, 1.2, 6.0)
 
 
@@ -131,17 +97,7 @@ class Score:
 
 
 def score_report(scores: list[Score], per_shot: dict[str, list[Score]] | None = None) -> dict:
-    """Weighted overall score plus what is holding it back. Records the rubric version so a score
-    is always attributable to the thresholds it was measured against.
-
-    ``per_shot`` is optional and answers a different question from the film's number. The film's
-    score takes each criterion on its worst shot, which is right for "is this shippable" and
-    useless for "did my last change work": a film whose worst readability belongs to an unstaged
-    shot does not move when the staged ones improve. Measured on the two-hander lane, one shot
-    went 5.45 to 6.10 across a change while the film sat at 4.65 and 4.71. Both numbers are true
-    and neither substitutes for the other, so the report carries both rather than leaving whoever
-    reads the aggregate to discover the difference.
-    """
+    """Weighted overall score plus what is holding it back."""
     if not scores:
         msg = "nothing to score"
         raise ValueError(msg)

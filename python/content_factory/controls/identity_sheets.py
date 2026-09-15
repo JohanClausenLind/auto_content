@@ -1,28 +1,4 @@
-"""Styled identity sheets: the same person, in the film's own style, clothed.
-
-The mesh is not a usable identity reference and that was measured rather than guessed. HiDream-O1's
-IP pipeline treats *every* reference as subject material, so:
-
-* the Blender clay render as an identity reference makes it draw clay people;
-* an untextured MPFB turnaround makes it draw a nude mannequin.
-
-Which is why ``ImageSequenceSettings.anchor_references`` says, in its own comment, to add
-``identity`` only once the character has a styled sheet — and until this module there was no way to
-make one, so the slot was unusable and identity was carried by nothing at all. Across one
-thirty-anchor run HiDream held one world in every frame and changed the character's outfit four
-times inside it (STATUS 1339, 1379-1381, 1627).
-
-A sheet is one image per character per style: front and three-quarter views of the same clothed
-figure on a plain ground, generated from the asset's **own** turnaround renders so it is the same
-body rather than a plausible stranger. It lives beside the asset it belongs to
-(``<assets>/characters/<asset>/sheets/<style>.png``) rather than inside a run, for the same reason
-the ``.blend`` approval does: it is a standing statement about that character, not a fact about one
-film. It is cached by ``(blend sha256, style, seed, backend, prompt version)`` and reviewed through
-``review_assets`` exactly like the mesh.
-
-Nothing here is a lane node. Building a sheet is an asset build step — one call per character per
-style, run when the asset is built or the film's style changes, not once per run.
-"""
+"""Styled identity sheets: the same person, in the film's own style, clothed."""
 
 from __future__ import annotations
 
@@ -53,11 +29,7 @@ class SheetError(RuntimeError):
 
 
 class TextToImage(Protocol):
-    """What a sheet builder needs from a backend: text plus reference images in, one PNG out.
-
-    Deliberately narrower than ``ReferenceEditBackend``: a sheet is not an edit of an anchor and it
-    is not part of a sequence, so nothing here should be able to reach the sequence engine.
-    """
+    """What a sheet builder needs from a backend: text plus reference images in, one PNG out."""
 
     name: str
 
@@ -65,12 +37,7 @@ class TextToImage(Protocol):
 
 
 def style_slug(style: str) -> str:
-    """A stable filename stem for a style prompt.
-
-    A preset name passes through as itself, which keeps the common case readable on disk
-    (``sheets/watercolour.png``). Anything longer — a style written out in full — becomes a digest
-    prefix, because a 200-character prompt is not a filename and truncating it would collide.
-    """
+    """A stable filename stem for a style prompt."""
     from content_factory.sequences.styles import STYLE_PRESETS
 
     cleaned = " ".join(style.split())
@@ -90,25 +57,14 @@ MARKER_SUFFIX = ".done.json"
 
 
 def sheet_paths(assets_root: Path | str, asset: str, style: str) -> tuple[Path, Path]:
-    """``(png, marker)`` for one asset's sheet in one style.
-
-    Built by name rather than with ``with_suffix``: a slug ending in a digest has no dot in it, but
-    ``Path("watercolour.done.json").with_suffix(".png")`` is ``watercolour.done.png``, which is how
-    the reverse lookup silently found nothing the first time this was written.
-    """
+    """``(png, marker)`` for one asset's sheet in one style."""
     base = sheets_dir(assets_root, asset)
     slug = style_slug(style)
     return base / f"{slug}.png", base / f"{slug}{MARKER_SUFFIX}"
 
 
 def sheet_prompt(*, style: str, appearance: str | None = None) -> str:
-    """What the sheet is asked for. The style leads, as it does for every anchor.
-
-    Position is not cosmetic: with the style clause behind the subject the image model returned its
-    default idiom for every art direction (STATUS, ``_anchor_prompt``). The rest is deliberately
-    dull — a reference image wants no drama, no camera move and no scene, because everything in it
-    that is not the person is something the anchor will inherit.
-    """
+    """What the sheet is asked for."""
     parts = [
         " ".join(style.split()),
         "character reference sheet of one person, two views side by side:"
@@ -138,12 +94,7 @@ def _asset_facts(asset_dir: Path) -> dict:
 
 
 def _view_pngs(asset_dir: Path, views: tuple[str, ...]) -> list[bytes]:
-    """The turnaround's own rough RGB renders for ``views``, in order.
-
-    The sheet is conditioned on the asset's renders so it is the same body. Missing a view is an
-    error rather than a silent drop: a sheet built from the front alone is a sheet the model had to
-    invent the depth of, and it would be indistinguishable on disk from one that had both.
-    """
+    """The turnaround's own rough RGB renders for ``views``, in order."""
     out: list[bytes] = []
     for view in views:
         png = asset_dir / "turnaround" / view / "rough_rgb" / "frames" / "0000.png"
@@ -167,12 +118,7 @@ def build_sheet(
     views: tuple[str, ...] = DEFAULT_VIEWS,
     size: tuple[int, int] = SHEET_SIZE,
 ) -> SheetBuild:
-    """Build (or return from cache) one asset's identity sheet in one style.
-
-    Cached by ``(blend sha256, style, seed, backend, views, prompt version)``: rebuilding the mesh
-    or changing the film's style rebuilds the sheet, and nothing else does. Idempotent and safe to
-    run twice, like every other cached step here.
-    """
+    """Build (or return from cache) one asset's identity sheet in one style."""
     from content_factory.sequences.engine import ControlConditioning
 
     facts = _asset_facts(asset_dir)
@@ -260,12 +206,7 @@ def sheets_on_disk(assets_root: Path | str, asset: str) -> tuple[IdentitySheet, 
 
 
 def load_sheet_by_sha(assets_root: Path | str, asset: str, sha256: str) -> bytes | None:
-    """The sheet bytes with this digest, or None.
-
-    Addressed by digest rather than by style so a ``ShotSpec`` names the exact image it was planned
-    against: a sheet rebuilt in the same style is a different picture and must not be served for a
-    plan that was made from the old one.
-    """
+    """The sheet bytes with this digest, or None."""
     for sheet in sheets_on_disk(assets_root, asset):
         if sheet.png_sha256 == sha256:
             png = sheets_dir(assets_root, asset) / f"{sheet.style_slug}.png"

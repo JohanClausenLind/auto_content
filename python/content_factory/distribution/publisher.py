@@ -1,7 +1,4 @@
-"""The idempotent publish service (22.4): intent → validate → policy recheck → publish once.
-
-State machine per intent: pending → published | ambiguous | blocked | failed. A retry first
-consults the stored intent, then the platform (find_existing); only proven absence publishes."""
+"""Idempotent publish service: a retry consults the intent, then the platform."""
 
 from __future__ import annotations
 

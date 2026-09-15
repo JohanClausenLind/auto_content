@@ -1,10 +1,4 @@
-"""Bake pose documents for the default MPFB rig (runs inside Blender with MPFB2 enabled):
-
-    assets_build/run_in_blender.sh assets_build/bake_poses.py <assets_root>
-
-Writes <assets_root>/poses/{idle,stand_relaxed,t_pose}.json (cf.pose.v1: bone -> quaternion) and
-<assets_root>/clips/walk_cycle.json (cf.clip.v1: per-frame bone quaternions) from MPFB's own data.
-"""
+"""Bake pose documents for the default MPFB rig (runs inside Blender with MPFB2 enabled)."""
 
 from __future__ import annotations
 

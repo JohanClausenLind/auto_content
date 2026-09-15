@@ -1,18 +1,4 @@
-/**
- * The vision model's second opinion, and the line it must not cross.
- *
- * `review_frames` stops because a measurement cannot see whether the subject is the same subject.
- * A vision model can, and it is the third reviewer the contract has expected since it was written
- * (`ReviewerKind` is `operator | agent | vlm`). What these tests pin is the boundary, because the
- * failure mode of a fluent model is a confident wrong answer applied automatically:
- *
- * * asking for a review records **no verdict**;
- * * "mark these" fills in the operator's own selection and still needs their reason and their
- *   button, and it never overwrites a decision they already made;
- * * a **stale** opinion — the frames were redrawn after it was written — is labelled;
- * * "cannot ask right now" and "asked and it failed" read differently, because one is fixed by
- *   waiting for a run to finish and the other by fixing the model stack.
- */
+/** The vision model's second opinion and the line it must not cross: no verdict recorded. */
 
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

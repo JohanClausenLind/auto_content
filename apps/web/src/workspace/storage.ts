@@ -1,8 +1,4 @@
-/**
- * Workspace graphs live in the browser for now (localStorage, strict-parsed on load). Server-side
- * persistence needs a Pydantic contract first; until that exists this module is the only owner of
- * the storage format so the swap stays local.
- */
+/** Workspace graphs in the browser (localStorage, strict-parsed on load). */
 
 import {
   applyOps,

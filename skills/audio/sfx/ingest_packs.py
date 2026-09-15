@@ -1,34 +1,4 @@
-"""Ingest a pack of individually licensed sound files into assets/sfx.
-
-    uv run --project skills/audio/sfx python skills/audio/sfx/ingest_packs.py \
-        --recipe skills/audio/sfx/mixkit.json [--only id,id] [--analyze] [--list]
-
-The third builder, after `build_library.py` (generated) and `ingest_recorded.py` (excerpts cut
-from the #GameAudioGDC bundle). All three write the same format to the same directory through the
-same index writer -- 44.1 kHz stereo 24-bit FLAC, the same two loudness targets, the same loop
-wrap, the same QC fields -- so a sound built here is indistinguishable in use from one built
-there.
-
-What differs is what has to be *chosen*. A generation picks between eight seeds of one prompt; an
-excerpt picks between every 30 s window of a 680 s recording. A pack file has already been chosen:
-a stock supplier cut it, trimmed it and named it, and second-guessing that with an event gate
-throws away the edit you are licensing. So the default mode here is `whole` -- take the file as
-delivered, trim the silence around it, high-pass, level -- and the only decision left is which of
-the two loudness families it belongs to.
-
-    whole                 one-shot target, measured on max-momentary
-    whole + bed:true      integrated target, for a long continuous texture that does not loop
-    whole + max_s: N      cap and fade at N seconds, for a delivered file that is a reel of takes
-    loop {length_s, ...}  bed target, and the same window sweep the recorded half uses -- a long
-                          ambience still has to be searched for the window that wraps cleanly
-
-Provenance is per pack, not per file: every sound in a pack shares one licence, which the recipe
-states and every entry repeats, because the licence is the first thing a reader of the manifest
-needs and the last thing that should require a second lookup.
-
-Rationale for every number: docs/research/2026-09-07-video-sfx-and-ambience-library.md
-Pack licences: docs/research/2026-09-09-mixkit-sfx-pack-licence.md
-"""
+"""Ingest a pack of individually licensed sound files into assets/sfx."""
 
 from __future__ import annotations
 
@@ -47,9 +17,7 @@ REPO_ROOT = sfx.REPO_ROOT
 OUT_ROOT = REPO_ROOT / "assets" / "sfx"
 
 # Advisory thresholds. Same contract as the other two builders: a flag names the sounds worth
-# listening to first, it does not fail the build. The set is the recorded one, for the same
-# reasons -- a commercial recording cannot fail the way a generation fails, and `truncated` and
-# `clipped` are how an already-cut file actually goes wrong.
+# listening to first, it does not fail the build.
 HARSH_RATIO_MAX = 0.35
 SEAM_RMS_MAX_DB = 3.0
 SILENT_DBFS = -40.0

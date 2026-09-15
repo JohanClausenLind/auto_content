@@ -1,11 +1,4 @@
-"""The Ideogram 4 backend refuses to pretend it can edit.
-
-The sequence engine is hub-and-spoke: every frame is composed against the anchor, and drift is
-measured against it. A backend that cannot see the anchor cannot participate in that, and the
-failure mode worth preventing is the quiet one -- accepting `edit`, ignoring the anchor, returning
-a fresh picture, and letting the drift gate call it a regression in the model rather than a
-missing capability.
-"""
+"""The Ideogram 4 backend refuses to pretend it can edit."""
 
 from __future__ import annotations
 

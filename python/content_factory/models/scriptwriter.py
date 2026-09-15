@@ -1,35 +1,4 @@
-"""One model call: beats and their typed scenes, from claim cards, datasets and a word budget.
-
-This is the largest genuine gap in the pipeline. `plan_story` loads a hand-written `StoryPlan`
-fixture or falls back to the demo's, so a topic an operator actually has becomes a film only if
-somebody writes the plan by hand — the twenty-one-kind scene grammar, the claim links and the beat
-timings included.
-
-**One call, not two.** The obvious shape is to ask for beats and then, separately, ask for the
-visuals. That resends every beat as context and pays for it twice, and worse, it lets the second
-call disagree with the first: a beat whose sentence says "three drivers" and whose scene turns out
-to be a big number. Here a beat and its scene are one object in one response.
-
-**The model chooses a kind and fills a flat payload; Python builds the SceneSpec.** A discriminated
-union of twenty-one branches is a schema a local 8-to-27B model does not reliably satisfy even
-under constrained decoding, and the typing decision is exactly the part that must not be
-approximated. So `DraftBeat` is flat, and `_build_scene` is deterministic code that either produces
-a valid `SceneSpec` or records a gap.
-
-**Nothing unsupported reaches generation.** Four validators run before a plan exists at all:
-
-* every ``claim_id`` is one of the cards that were shown (a model cannot cite a claim into being);
-* every number in a beat's text is in a dataset row or in a cited claim's verified value;
-* every ``scene_kind`` is one the renderer actually draws (`scenes.kinds.IMPLEMENTED_KINDS`);
-* every asset id, source id and dataset id was offered.
-
-A beat that fails any of them is dropped into ``story/gaps.json`` with the reason. The film is
-made of what survived, and the gaps are the operator's next task — not a silent omission, and not
-a scene naming a source that does not exist.
-
-Off by default (`execution.local_scriptwriter`), and it stays off until the evaluation pack in
-`models/evaluation.py` scores a build. A writer whose output nobody has scored is not a default.
-"""
+"""One model call: beats and their typed scenes, from claim cards, datasets and a word budget."""
 
 from __future__ import annotations
 
@@ -115,8 +84,7 @@ _SKILL = SkillManifest(
 
 
 class ClaimCard(BaseModel):
-    """One claim, as the writer sees it. Verdict included, because an unsupported claim is
-    something the writer must be able to decline rather than something hidden from it."""
+    """One claim, as the writer sees it."""
 
     claim_id: str
     statement: str
@@ -127,11 +95,7 @@ class ClaimCard(BaseModel):
 
 
 def claim_cards(claims: list[ClaimRecord], *, include_unsupported: bool = False) -> list[ClaimCard]:
-    """Cards for the claims a script may use.
-
-    Unsupported claims are excluded by default rather than shown-and-forbidden: a model given a
-    fact and told not to use it uses it. What it cannot see, it cannot cite.
-    """
+    """Cards for the claims a script may use."""
     usable = {VerificationStatus.supported, VerificationStatus.supported_with_caveat}
     out: list[ClaimCard] = []
     for claim in claims:
@@ -157,13 +121,7 @@ def claim_cards(claims: list[ClaimRecord], *, include_unsupported: bool = False)
 
 
 class DraftBeat(BaseModel):
-    """One beat and its scene, flat, so a local model can satisfy the schema.
-
-    Flat rather than a discriminated union on purpose: twenty-one branches is not a schema a local
-    model fills reliably, and the branch choice is the part that must not be approximated. The
-    fields below are a superset; ``_build_scene`` takes the ones the chosen kind needs and records
-    a gap when a required one is missing.
-    """
+    """One beat and its scene, flat, so a local model can satisfy the schema."""
 
     section: EpisodeSectionKind
     display_text: str = Field(min_length=1, max_length=1000)
@@ -200,11 +158,7 @@ class DraftPlan(BaseModel):
 
 @dataclass(frozen=True)
 class Gap:
-    """A beat the writer asked for and the validators refused, with the reason.
-
-    Kept and written to ``story/gaps.json`` rather than swallowed: "this film has no evidence for
-    the third driver" is the operator's next task, and a silently shorter film hides it.
-    """
+    """A beat the writer asked for and the validators refused, with the reason."""
 
     reason: str
     section: str = ""
@@ -241,11 +195,7 @@ def _dataset_values(datasets: dict[str, DatasetTable]) -> set[float]:
 def _number_is_supported(
     value: float, dataset_values: set[float], claim_values: set[float]
 ) -> bool:
-    """Is this figure in a dataset row, or in a claim the beat cites?
-
-    Within :data:`NUMBER_TOLERANCE`, because a script rounds. A year is not checked — ``2025`` is a
-    period, and ``parse_numbers`` already declines to treat a bare year as a quantity.
-    """
+    """Is this figure in a dataset row, or in a claim the beat cites?"""
     for known in dataset_values | claim_values:
         if known == value:
             return True
@@ -264,11 +214,7 @@ def validate_beat(
     asset_ids: set[str],
     allowed_kinds: set[str],
 ) -> str:
-    """The reason this beat cannot be used, or an empty string.
-
-    Order matters: the cheap structural checks first, so a beat naming an unimplemented kind is
-    reported as that rather than as a missing field of a scene nobody can draw.
-    """
+    """The reason this beat cannot be used, or an empty string."""
     if beat.scene_kind not in IMPLEMENTED_KINDS:
         return (
             f"scene kind {beat.scene_kind!r} has no renderer"
@@ -314,11 +260,7 @@ def _text(value: str, claim_ids: tuple[str, ...] = ()) -> sc.TextRef:
 
 
 def _build_scene(beat: DraftBeat, *, scene_id: str, beat_id: str) -> sc.SceneSpec:
-    """One `DraftBeat` into the typed scene its kind requires. Raises on a missing field.
-
-    Deterministic on purpose: the model picks the kind and supplies the words, and the shape of the
-    contract is decided here, where a validator can see it.
-    """
+    """One `DraftBeat` into the typed scene its kind requires."""
     # Annotated: every branch below spreads this into a different scene model, and without an
     # annotation the checker matches the spread against each one's `kind` Literal in turn.
     common: dict[str, Any] = {"scene_id": scene_id, "beat_id": beat_id}
@@ -393,9 +335,8 @@ def _build_scene(beat: DraftBeat, *, scene_id: str, beat_id: str) -> sc.SceneSpe
             **common,
             left=_text(beat.left),
             right=_text(beat.right),
-            # The two sides are two *rows* of one column — "2019 vs 2024", "gas vs wind" — so each
-            # side's own label is its row key. Reading the second side out of a second column
-            # instead would compare two different measures and call it a comparison.
+            # The two sides are two rows of one column ("gas vs wind"), keyed by each side's
+            # label; a second column would compare two different measures.
             left_value=(
                 sc.DataRef(
                     dataset_id=beat.dataset_id,
@@ -523,12 +464,7 @@ def draft_story_plan(
     visual_subject: str | None = None,
     gateway: ModelGateway | None = None,
 ) -> DraftResult:
-    """Beats and typed scenes for one deliverable, from evidence that already exists.
-
-    Returns a `DraftResult`: the plan built from the beats that survived validation, and a gap per
-    beat that did not. A run with no surviving beats gets ``plan=None`` and every gap, because a
-    one-beat film assembled from whatever passed is not a film — it is a failure that rendered.
-    """
+    """Beats and typed scenes for one deliverable, from evidence that already exists."""
     from content_factory.models.catalog import build_gateway
 
     datasets = datasets or {}

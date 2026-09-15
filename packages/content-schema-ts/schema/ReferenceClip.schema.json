@@ -187,7 +187,7 @@
     },
     "ReferenceJoint": {
       "additionalProperties": false,
-      "description": "One joint. ``x`` and ``y`` are normalised but deliberately NOT clamped.\n\nJoints leave the frame: 3.55 % of the Harmony4D joints and 13.75 % of the SBU joints fall\noutside it. Clamping would move them to the edge and invent a pose; dropping them at ingest\nwould throw away the fact that the capture saw them. They are kept as measured, and the\nconversion to a ``SkeletonPose`` is where the drop rule applies.",
+      "description": "One joint.",
       "properties": {
         "in_frame": {
           "default": true,

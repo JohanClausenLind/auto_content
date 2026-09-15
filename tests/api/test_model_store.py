@@ -1,10 +1,4 @@
-"""/v1/models/*: the browser's view of the weight store, and installing from it.
-
-The point of these endpoints is that an operator never has to leave the page to get a missing
-weight, so what is asserted here is exactly that: the catalog says what is missing and which
-workflows want it, one POST with a registry key starts the pinned install, and a key that is not
-in the registry is refused rather than turned into a download.
-"""
+"""/v1/models/*: the browser's view of the weight store, and installing from it."""
 
 from __future__ import annotations
 

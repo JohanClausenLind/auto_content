@@ -1,8 +1,4 @@
-"""Style explore/exploit (23.4): consistency first, exploration on purpose, statistics honest.
-
-Platform data is observational: no random assignment, topic/timing confound everything. ADOPT
-needs a minimum sample and a conservative sequential comparison; every conclusion is labeled
-observational; adopted winners are re-tested because audiences drift."""
+"""Style explore/exploit (23.4): consistency first, exploration on purpose, statistics honest."""
 
 from __future__ import annotations
 

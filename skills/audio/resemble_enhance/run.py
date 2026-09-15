@@ -1,24 +1,4 @@
-"""Resemble Enhance executor: restores one speech WAV (denoise + generative band repair).
-
-Run inside this skill's own environment:
-`uv run --project skills/audio/resemble_enhance python skills/audio/resemble_enhance/run.py
-    --in narration.wav --out restored.wav`.
-Not imported by the control plane. The inference code is the resemble-enhance checkout (MIT) at
-CF_RESEMBLE_ENHANCE_REPO (default <repo>/external/resemble-enhance); the weights (also MIT) are at
-CF_RESEMBLE_ENHANCE_MODEL_PATH (default <repo>/models/speech_restoration/ResembleEnhance).
-
-Two modes:
-  enhance  the full chain — UNet denoiser, then the latent CFM restorer and UnivNet vocoder that
-           rebuild the missing high band. This is what fixes metallic/muffled TTS speech.
-  denoise  the denoiser alone (cheaper, no generative step, no band repair).
-
-The model works at 44.1 kHz and `inference()` returns exactly as many samples as it was given
-(after resampling), so the duration in seconds is preserved and the caller's word timings stay
-valid. The caller checks that anyway — this script also refuses to write a file whose duration
-drifts more than --max-drift-ms from the input.
-
-Prints one JSON line: out path, sample rate, durations, timings, peak VRAM.
-"""
+"""Resemble Enhance executor: restores one speech WAV (denoise + generative band repair)."""
 
 from __future__ import annotations
 
@@ -97,8 +77,7 @@ def main() -> int:
     hp = HParams.load(run_dir)
     enhancer = Enhancer(hp)
     # The checkpoint is a DeepSpeed model-state file we downloaded ourselves from the pinned
-    # revision above, so it is trusted; weights_only=False is required because it also carries the
-    # training config next to the tensors.
+    # revision above, so it is trusted; weights_only=False is required.
     state = torch.load(
         run_dir / "ds" / "G" / "default" / "mp_rank_00_model_states.pt",
         map_location="cpu",

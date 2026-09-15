@@ -1,11 +1,4 @@
-"""Shot router for the hybrid workflow.
-
-Decides, per story beat, whether the deterministic renderer (Remotion: D3 / Vega-Lite / MapLibre /
-Manim asset scenes) or the generative chain (Blender controls -> HiDream anchor -> LTX-2.5) produces
-the pixels. A table keyed by scene kind plus explicit per-beat overrides; nothing here consults a
-model, so the same story and shot plan always route the same way. ``compose_video`` later assembles
-the two kinds of segment in beat order with FFmpeg.
-"""
+"""Shot router for the hybrid workflow."""
 
 from __future__ import annotations
 
@@ -33,12 +26,7 @@ def route_shots(
     generate_kinds: Sequence[str] = (),
     overrides: Mapping[str, Route] | None = None,
 ) -> ShotRouting:
-    """One ``BeatRoute`` per story beat, in story order.
-
-    A beat goes to the generative chain when an override says so or its scene kind is in
-    ``generate_kinds``; otherwise it takes ``default_route``. A beat routed ``generate`` must have a
-    shot in ``shots`` (the planner makes one per beat); without one it falls back to ``render`` and
-    says why, so the run still completes instead of failing at compose time."""
+    """One ``BeatRoute`` per story beat, in story order."""
     overrides = dict(overrides or {})
     shot_by_beat = {sh.beat_id: sh.shot_id for sh in shots.shots if sh.beat_id}
     routed: list[BeatRoute] = []

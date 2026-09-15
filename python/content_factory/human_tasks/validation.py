@@ -1,6 +1,4 @@
-"""Human task submission validation (14.3): probes + ASR-vs-script diff with a configurable
-tolerance. Improvisation within tolerance offers accept-as-performed; a mismatch shows the diff
-and never silently accepts. Takes are immutable; a rejected take never deletes prior takes."""
+"""Human take validation: probes plus an ASR-vs-script diff that never silently accepts."""
 
 from __future__ import annotations
 
@@ -72,19 +70,7 @@ def _same_run_resplit(script_run: list[str], heard_run: list[str]) -> bool:
 
 
 def _script_similarity(script: str, transcript: str) -> tuple[float, tuple[str, ...]]:
-    """How closely a transcript matches the script, with numbers compared as numbers.
-
-    Every run of digits or number words on **both** sides collapses to one sentinel first. Two
-    systems render a figure differently and neither is wrong: measured on this repo's own
-    fixtures, a script saying "40.8 terawatt-hours" transcribed as "40 8 terawatt hours" scored
-    0.73, and "twelve hundred"/"four fifty" came back as "1200"/"450" for the same 0.73. Both are
-    correct reads, and comparing the renderings measured the aligner's formatting rather than
-    whether the model said the script.
-
-    A beat that **drops** a figure still fails: the sentinel is per run, so a missing number is a
-    missing token in the sequence. What this no longer claims to check is *which* figure was
-    spoken — see `spoken_word_shape` for why an ASR transcript is not evidence of that.
-    """
+    """How closely a transcript matches the script, with numbers compared as numbers."""
     a, script_runs = spoken_word_shape(script)
     b, heard_runs = spoken_word_shape(transcript)
     matcher = difflib.SequenceMatcher(a=a, b=b, autojunk=False)
@@ -106,10 +92,8 @@ def _script_similarity(script: str, transcript: str) -> tuple[float, tuple[str, 
             diff.append(f"- {' '.join(a[i1:i2])}")
         if op in {"replace", "insert"} and j2 > j1:
             diff.append(f"+ {' '.join(b[j1:j2])}")
-    # A word the aligner spelled its own way is a word it heard, so it counts as said. Without
-    # this, one place name sank a whole beat: "Sources: Energimyndigheten, Svenska kraftnät."
-    # scored 0.44 against a 0.80 gate on a read that was word-perfect, because an English ASR
-    # cannot spell either name and this measured the spelling.
+    # A word the aligner spelled its own way is a word it heard, so it counts as said; an English
+    # ASR cannot spell "Energimyndigheten", and one place name sank a word-perfect beat (0.44).
     ratio = (2 * (matched + len(respelled)) / (len(a) + len(b))) if (a or b) else 1.0
     if respelled:
         pairs = ", ".join(f"{x}/{y}" for x, y in respelled[:4])

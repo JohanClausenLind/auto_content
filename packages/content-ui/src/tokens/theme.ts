@@ -1,6 +1,5 @@
-// The CONTENT design system (what viewers see), separate from the operator app theme.
-// One theme for now: "editorial" — restrained, high legibility, financial-journalism feel.
-// No gradients, no glow, no bounce. Brand tokens may override accent/paper/ink only.
+// The CONTENT design system (what viewers see), separate from the operator app theme. One theme:
+// "editorial" — no gradients, glow or bounce. Brand tokens may override accent/paper/ink only.
 import type { AspectRatio7 as AspectRatio, BrandTokens } from "@content-factory/content-schema-ts";
 
 import { contrastRatio, isDark, mix } from "./color";
@@ -173,9 +172,8 @@ export function applyBrand(theme: ContentTheme, brand: BrandTokens | null | unde
   const ink = brand.ink ?? theme.color.ink;
   const accent = brand.accent ?? theme.color.accent;
   const derived = brand.paper !== null || brand.ink !== null;
-  // A dark paper (a night-mode brand) flips the roles: `textColor` reads `isDark(paper)` and then
-  // takes the `onInk` colours, so those must be "on a dark ground" colours — light text, a light
-  // muted, the accent nudged towards the ink — not the paper colour itself, which would vanish.
+  // A dark paper flips the roles: `textColor` reads `isDark(paper)` and takes the `onInk` colours,
+  // so those must be "on a dark ground" colours, not the paper colour itself, which would vanish.
   const darkPaper = isDark(paper);
   const onDark = {
     text: ink,
@@ -207,8 +205,7 @@ export function applyBrand(theme: ContentTheme, brand: BrandTokens | null | unde
   };
 }
 
-/** Set the display roles (display, headline, number) in another pinned family. Sora carries an
- * 800 weight, so the figure and the display line step up to it; tracking tightens to match. */
+/** Set the display roles in another pinned family; Sora steps the figure and display line up to 800. */
 export function withDisplayFamily(theme: ContentTheme, family: "Inter" | "Sora"): ContentTheme {
   if (family === "Inter") return theme;
   const t = theme.type;

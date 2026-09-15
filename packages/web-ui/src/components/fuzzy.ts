@@ -1,7 +1,4 @@
-/**
- * Subsequence fuzzy match. Returns a score (higher is better) or null when `query`
- * is not a subsequence of `text`. Word-start and consecutive hits score more.
- */
+/** Subsequence fuzzy match. */
 export function fuzzyScore(query: string, text: string): number | null {
   const q = query.trim().toLowerCase();
   if (!q) return 0;

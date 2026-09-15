@@ -1,11 +1,4 @@
-"""Wrap the Blender skill's per-shot output directory as a ``ControlBundle``.
-
-The skill writes ``<kind>/frames/NNNN.{png,exr}`` + ``NNNN.done.json`` for the rendered passes,
-``skeleton/frames/NNNN.json`` and ``layout/frames/NNNN.json``, ``camera.json`` and
-``metadata.json``. This module verifies every recorded digest against the bytes on disk, renders
-the two derived tracks content-factory owns (``pose_skeleton`` PNGs from the skeleton JSON with the
-canonical OpenPose colours, ``layout_boxes`` PNGs from the layout JSON) and builds the bundle.
-"""
+"""Wrap the Blender skill's per-shot output directory as a ``ControlBundle``."""
 
 from __future__ import annotations
 
@@ -59,8 +52,7 @@ class BundleError(RuntimeError):
 
 
 def skeleton_frame_to_poses(doc: dict[str, Any]) -> dict[str, SkeletonPose]:
-    """Skill skeleton JSON -> one SkeletonPose per character. Joints outside the frame are dropped
-    (Point is constrained to [0, 1]); bones with a missing end go with them."""
+    """Skill skeleton JSON -> one SkeletonPose per character."""
     poses: dict[str, SkeletonPose] = {}
     for person in doc.get("people", []):
         joints = {

@@ -1,20 +1,4 @@
-"""The lanes with no voice in them, end to end on mocks — and the held cut nothing may smooth.
-
-Three lanes exist for films that carry no speech and none of them could finish a run:
-
-* `silent-video` declared a caveat saying so. `mix_audio` built its bed on a narration stem read
-  from per-beat segment files that only `voice_over` or `synthesize_narration` write, so a lane
-  with no voice stage died inside the mix with the music already chosen and the foley already
-  generated.
-* `photo-sequence-video` had no picture at all. Its frames are approved PNGs under
-  `sequence/frames`; there is no `generate_video` in it and no `interpolate` either, on purpose,
-  and `compose_video` reached `_silent_picture`, found no mp4 and raised.
-* `compose_video`'s plain path muxed `audio/narration-mastered.wav` unconditionally and then read
-  narration segments to size the speech QC — a check that means nothing for a music bed.
-
-And separately: `generate_video`'s `motion: hold` exists to guarantee that every frame on screen is
-a drawing a person approved. `interpolate` ran rife over it anyway and invented frames nobody drew.
-"""
+"""The lanes with no voice in them, end to end on mocks — and the held cut nothing may smooth."""
 
 from __future__ import annotations
 
@@ -45,11 +29,7 @@ def _offline(monkeypatch: pytest.MonkeyPatch):
 
 
 def _accept_every_frame(project_dir: Path, deliverable: str) -> int:
-    """What ``content-factory frames review --accept-all`` writes, without the CLI.
-
-    The gate is a real gate: a verdict binds to the digests of the exact images reviewed. A test
-    that wants to run past it has to record one, the same way a person does.
-    """
+    """What ``content-factory frames review --accept-all`` writes, without the CLI."""
     base = project_dir / "deliverables" / deliverable / "reviews" / "frames"
     batch = FrameReviewBatch.model_validate_json((base / "batch.json").read_text())
     decided = batch.model_copy(
@@ -107,8 +87,7 @@ def test_silent_video_runs_end_to_end_with_a_bed_and_no_voice(tmp_path: Path) ->
 
 
 def test_a_lane_with_no_sound_stages_at_all_writes_a_video_only_cut(tmp_path: Path) -> None:
-    """The other direction of "the sound is optional": drop the sound stages and the cut comes out
-    with no audio stream, rather than with a silent one for the delivery checks to measure."""
+    """The other direction of "the sound is optional": drop the sound stages."""
     from content_factory.qc.media import ffprobe
 
     project = tmp_path / "mute"
@@ -124,11 +103,6 @@ def test_a_lane_with_no_sound_stages_at_all_writes_a_video_only_cut(tmp_path: Pa
     assert report["passed"]
     ddir = project / "deliverables" / report["deliverable_id"]
     # The cut has not run, so nothing may be sitting at the deliverable's name yet.
-    # `exports/final.mp4` used to be where the post chain concatenated its clips as well, so a run
-    # that died before the cut left thirty seconds of silent, uncaptioned footage under the one
-    # filename every consumer reads — this audit took it for the film (`silent-video`,
-    # 2026-09-10). The post chain writes `postchain.mp4` now; with `engine: none` and no chain on
-    # disk it writes neither, which is also fine. What must not exist is `final.mp4`.
     assert not (ddir / "exports" / "final.mp4").exists()
     from content_factory.runners.local import make_context, run_stages
 
@@ -162,15 +136,7 @@ def test_photo_sequence_video_gets_a_picture_and_finishes(tmp_path: Path) -> Non
         )
     assert blocked.value.stage is Stage.review_frames
     deliverable = blocked.value.report["deliverable_id"]
-    # Two, not one: `review_frames` gates the frames its lane actually wired into it. This
-    # lane's `drift -> frames_gate` wire carries the keyframes under `sequence/frames`, which are
-    # also the compose_video cuts; the anchor manifest is the fallback for the Blender/scene
-    # lanes, whose per-shot anchors are their frames.
-    #
-    # Two because `love_story_reel` has two beats. The count used to be eight for every story ever
-    # given to this lane -- the frame count came from the builtin motion plan, and so did the edit
-    # instruction for each frame ("move hands to the plotted position"), so the lane drew the same
-    # eight pictures of the fixture's subject whatever it was asked for.
+    # Two, not one: `review_frames` gates the frames its lane actually wired into it.
     assert _accept_every_frame(project, deliverable) == len(_BEATS_IN_REEL)
 
     report = run_workflow(
@@ -193,9 +159,7 @@ def test_photo_sequence_video_gets_a_picture_and_finishes(tmp_path: Path) -> Non
 
     info = ffprobe(ddir / "exports" / "final.mp4")
     assert {s["codec_type"] for s in info["streams"]} == {"video"}
-    # One drawing per beat, each held for that beat's own planned length. It used to be cut at the
-    # flipbook rate instead — eight frames a second — so a five-beat story planned at eighteen
-    # seconds came out as a 0.6-second film.
+    # One drawing per beat, each held for that beat's own planned length.
     planned = sum(b["planned_duration_ms"] for b in _BEATS_IN_REEL) / 1000
     assert abs(float(info["format"]["duration"]) - planned) < 0.2
 
@@ -203,9 +167,7 @@ def test_photo_sequence_video_gets_a_picture_and_finishes(tmp_path: Path) -> Non
 def test_a_held_cut_is_never_interpolated_even_when_the_lane_asks_for_rife(
     tmp_path: Path,
 ) -> None:
-    """`motion: hold` guarantees every frame on screen is a drawing that was approved. rife over it
-    invents frames nobody drew and nobody reviewed — silently, because it runs happily on a concat
-    of stills. So the hold marker wins over the engine widget."""
+    """`motion: hold` guarantees every frame on screen is a drawing that was approved."""
     from content_factory.runners.local import make_context, run_stages
     from content_factory.workflows.stages import stage_interpolate
 

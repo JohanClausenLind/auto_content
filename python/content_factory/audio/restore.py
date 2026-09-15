@@ -1,32 +1,4 @@
-"""Speech restoration: the voice chain one narration beat travels before it is laid out.
-
-    TTS or a human take
-        v
-    artifact / noise detection            content_factory.audio.detect
-        v
-    ClearerVoice MossFormer2_SE_48K       optional cleanup (gated on the detection report)
-        v
-    ClearerVoice MossFormer2_SR_48K       optional 48 kHz band extension (same gate)
-        v
-    Resemble Enhance                      main restoration (denoise + generative band repair)
-        v
-    de-esser -> EQ -> light compression    one deterministic FFmpeg graph
-        v
-    <target rate> WAV, same length as the input
-
-The two model steps run in their own uv environments (``skills/audio/clearervoice`` and
-``skills/audio/resemble_enhance``) and are reached by subprocess, exactly like the TTS executors:
-their torch pins never touch the control plane.
-
-Length is sacred here. Every word timing measured at synthesis time keeps pointing at the same
-speech, so the chain ends by padding or trimming to the input's exact duration and the report
-records the drift each step introduced. A step that drifts past the spec's tolerance fails the
-beat instead of quietly moving the captions.
-
-The true-peak limiter and the EBU R128 normalization are *not* here: they belong to the programme
-master in :mod:`content_factory.audio.mix`, after the beats are laid out and the music bed and
-SFX are under the speech. Limiting each beat separately would flatten the mix twice.
-"""
+"""Speech restoration: the voice chain one narration beat travels before it is laid out."""
 
 from __future__ import annotations
 
@@ -61,16 +33,7 @@ class RestorationError(Exception):
 def voice_chain_filters(
     spec: VoiceChainSpec, *, sample_rate_hz: int, length_samples: int, de_ess: bool = True
 ) -> str:
-    """The FFmpeg filter chain for one beat, in the order the audio travels it.
-
-    ``length_samples`` is the output length at ``sample_rate_hz``: the chain pads a short result
-    and trims a long one, so the beat comes out exactly as long as it went in.
-
-    ``de_ess`` is the caller's measurement, ANDed with the spec's own switch. At an intensity that
-    actually reduces esses (see :class:`VoiceChainSpec`) the filter takes a third of the 5-9 kHz
-    band off material that never needed it, so it runs on the beats the detector flagged and not
-    on the rest — the same gate every model step in this chain already uses.
-    """
+    """The FFmpeg filter chain for one beat, in the order the audio travels it."""
     parts = [f"aresample={sample_rate_hz}", "aformat=channel_layouts=mono:sample_fmts=fltp"]
     if spec.de_ess and de_ess:
         parts.append(
@@ -258,11 +221,7 @@ def restore_beat(
     timeout_s: int = 3600,
     before: AudioArtifactReport | None = None,
 ) -> SpeechRestorationReport:
-    """Take one beat through the chain and write ``out_wav`` at ``spec.sample_rate_hz``.
-
-    ``before`` lets a caller pass a detection report it already has (the stage caches them);
-    otherwise the beat is measured here.
-    """
+    """Take one beat through the chain and write ``out_wav`` at ``spec.sample_rate_hz``."""
     if not in_wav.is_file():
         raise RestorationError(f"input not found: {in_wav}")
     workdir.mkdir(parents=True, exist_ok=True)

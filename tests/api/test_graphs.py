@@ -161,16 +161,7 @@ async def test_crud_validates_and_scopes(client, sessionmaker):
 
 
 def _with_server_defaults(doc: dict) -> dict:
-    """``doc`` as the contract returns it: the fields a node gets a default for, filled in.
-
-    The test already had one of these — a document written before folded groups existed comes back
-    with an empty ``groups`` list rather than being refused — and ``key`` is the second. A node's
-    ``key`` defaults to "", so a document that predates it (this one, and every graph already in a
-    browser's localStorage) round-trips with the field added rather than failing to load.
-
-    Written as a helper so the next defaulted field is one line here instead of two silent
-    round-trip failures.
-    """
+    """``doc`` as the contract returns it: the fields a node gets a default for, filled in."""
     return {
         **doc,
         "groups": doc.get("groups", []),
@@ -179,9 +170,7 @@ def _with_server_defaults(doc: dict) -> dict:
 
 
 async def test_a_folded_graph_round_trips_and_a_broken_group_is_refused(client, sessionmaker):
-    """A group is how the canvas draws a lane, and the canvas writes its document here on every
-    edit — so a document with folded groups has to survive the trip, and one whose group names a
-    node that is not in it has to be refused rather than stored for the editor to choke on."""
+    """A group is how the canvas draws a lane."""
     await seed(sessionmaker)
     await login(client)
     doc = graph_doc()

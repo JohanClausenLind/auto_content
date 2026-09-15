@@ -1,8 +1,4 @@
-"""ShotSpec loading + structural validation (pure Python; importable from Blender's interpreter).
-
-The Pydantic contract in ``python/content_factory/schemas/shots.py`` is the source of truth; this
-module re-checks the shape the skill depends on so a hand-written spec fails loudly and early.
-"""
+"""ShotSpec loading + structural validation (pure Python; importable from Blender's interpreter)."""
 
 from __future__ import annotations
 
@@ -180,8 +176,7 @@ def frames_to_render(spec: dict[str, Any]) -> list[int]:
 
 
 def seg_assignments(spec: dict[str, Any]) -> dict[str, int]:
-    """Deterministic segmentation ids: characters first, then ``seg: true`` props, explicit
-    ``seg_id`` values honoured, the rest filled with the next free id. 0 is background."""
+    """Deterministic segmentation ids: characters first, then ``seg: true`` props."""
     taken = {int(c["seg_id"]) for c in spec["characters"] if c.get("seg_id") is not None}
     taken |= {
         int(p["seg_id"]) for p in spec["props"] if p.get("seg") and p.get("seg_id") is not None

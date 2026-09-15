@@ -1,11 +1,4 @@
-"""The curated sound library reaches the mix, and the cue sheet says what it did and why.
-
-``assets/sfx`` has held 49 loudness-measured, provenance-tracked sounds since 2026-09-07 and
-nothing placed a single one of them: a chart drew itself in silence, a hard cut between two cards
-had nothing on it, and the fifteen `ui` sounds written for exactly those moments were files with a
-manifest entry and no caller. These tests cover the cutter (rules, deterministic), the renderer
-(one ffmpeg call, exact length) and the two ways a cue sheet can be wrong.
-"""
+"""The curated sound library reaches the mix, and the cue sheet says what it did and why."""
 
 from __future__ import annotations
 
@@ -70,8 +63,7 @@ def test_the_library_loads_and_every_sound_is_on_disk(library) -> None:
 
 
 def test_every_accent_names_a_sound_the_library_actually_has(library) -> None:
-    """The table is a hand-written mapping into another file's ids, which is exactly the kind of
-    list that goes stale silently — a missing id would simply place no sound."""
+    """The table is a hand-written mapping into another file's ids."""
     for kind, (sound_id, gain, reason) in ACCENTS.items():
         assert sound_id in library.sounds, f"{kind} -> {sound_id}"
         assert gain <= 0
@@ -80,8 +72,7 @@ def test_every_accent_names_a_sound_the_library_actually_has(library) -> None:
 
 
 def test_the_bed_is_chosen_by_tag_fraction_not_by_raw_count(library) -> None:
-    """A raw count tied three candidates on the demo plan and picked a *park* ambience for a
-    coastal wind farm, because `place` is scanned before `weather`."""
+    """A raw count tied three candidates on the demo plan."""
     plan = sample_story_plan()
     subject = plan.visual_subject or ""
     assert "wind farm" in subject
@@ -107,9 +98,7 @@ def test_use_tags_do_not_count_toward_a_match(library) -> None:
 
 
 def test_a_cue_sheet_is_cut_from_the_measured_beats_the_mix_already_has(library) -> None:
-    """The cutter takes spans, not a compiled timeline, because **mix_audio runs before
-    compile_timeline** — the timeline's durations are compiled from the mix's measurements. A
-    cutter needing a compiled timeline would have found none and placed nothing, on every run."""
+    """The cutter takes spans, not a compiled timeline."""
     plan = sample_story_plan()
     beats = [(b.beat_id, i * 4000, i * 4000 + 3800) for i, b in enumerate(plan.beats)]
     spans = spans_from_beats(plan, beats)
@@ -168,8 +157,7 @@ def test_a_scene_kind_with_no_unambiguous_sound_gets_no_accent(library) -> None:
 
 
 def test_a_beat_with_several_scenes_splits_its_span(library) -> None:
-    """The mix has no finer information than the beat, and dividing the beat is closer than
-    stacking every scene's accent on its first frame."""
+    """The mix has no finer information than the beat."""
     plan = sample_story_plan()
     beat_id = plan.scenes[0].beat_id
     doubled = plan.model_copy(
@@ -254,8 +242,7 @@ def test_a_cue_naming_a_sound_the_library_lacks_is_refused_by_name(library) -> N
 
 
 def test_a_non_loopable_sound_cannot_be_stretched_over_a_span(library) -> None:
-    """`thunder_distant` is 16.5 s and not a loop; running it as a 60 s bed would either
-    truncate it or splice it audibly, and both are decisions a cue sheet has to make explicitly."""
+    """`thunder_distant` is 16.5 s and not a loop."""
     from content_factory.schemas.audio import CueSheet, SoundCue
 
     sheet = CueSheet(

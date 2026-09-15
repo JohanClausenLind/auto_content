@@ -1,20 +1,4 @@
-"""Everyday words to the closed vocabulary: the words half of reference retrieval.
-
-The operator types a sentence, not a tag list. Retrieval only works if "she rests her head on his
-shoulder" becomes the tags a clip can actually carry, and if the caller can see what the sentence
-was understood to mean. So expansion is data, not code: the synonym table lives in
-``fixtures/reference/lexicon.v1.json``, is hashed into every answer as ``lexicon_sha256``, and is
-validated against the contract's enums when it loads. A phrase can never expand to a tag no clip
-can carry, because a term that is not a value of ``InteractionTag``, ``ContactTag`` or ``Posture``
-is a load error rather than a silent miss.
-
-Matching is longest phrase first at each position, and consuming. Once "head on shoulder" has
-matched, the bare word "head" cannot fire again from inside it, which is the difference between
-"head on shoulder" meaning ``head_on_shoulder`` and it meaning "any head contact at all".
-
-The six tags in ``ABSENT_INTERACTIONS`` are mapped on purpose even though nothing on disk carries
-them. A query for them is answered with the gap named instead of with a near miss.
-"""
+"""Everyday words to the closed vocabulary: the words half of reference retrieval."""
 
 from __future__ import annotations
 
@@ -60,14 +44,7 @@ class LexiconError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class Expansion:
-    """What a sentence was understood to mean, and what it was not.
-
-    ``terms`` are ``field:term`` pairs in ``FIELD_ORDER`` then alphabetical order, deduped.
-    ``unmatched_words`` are the words no phrase claimed and no stopword dropped; they are still
-    searched, in the caption column, because a dataset description often uses them verbatim.
-    ``absent_terms`` are the bare interaction values that are in ``ABSENT_INTERACTIONS``, so a
-    caller can tell "your words found nothing" from "the library has nothing like this".
-    """
+    """What a sentence was understood to mean, and what it was not."""
 
     text: str
     terms: tuple[str, ...] = ()
@@ -99,14 +76,7 @@ class Lexicon:
 
 
 def normalize(text: str) -> tuple[str, ...]:
-    """Words of a query, folded the same way the FTS5 tokenizer folds a document.
-
-    NFKD, then the combining marks NFKD split off are dropped, so "cafe\u0301" folds to one word
-    "cafe" exactly as ``remove_diacritics 2`` folds it on the index side rather than breaking it
-    in two. Apostrophes are deleted rather than split on, so "someone's" stays one word and
-    cannot leave a stray "s" behind. Underscores survive because a tag typed verbatim,
-    ``head_shoulder``, has to stay one word or it would match ``head_head``.
-    """
+    """Words of a query, folded the same way the FTS5 tokenizer folds a document."""
     decomposed = unicodedata.normalize("NFKD", text)
     folded = "".join(ch for ch in decomposed if not unicodedata.combining(ch)).casefold()
     folded = folded.replace("\u2019", "").replace("'", "")
@@ -146,13 +116,7 @@ def sort_terms(terms: set[str] | frozenset[str]) -> tuple[str, ...]:
 
 @lru_cache(maxsize=4)
 def load_lexicon(path: Path | None = None) -> Lexicon:
-    """Read, hash and validate the committed synonym table.
-
-    Guarantees: every term is a value of the contract's enums (or a bare word for ``setting``);
-    phrases are unique, sorted in the file and normalised to themselves, so the committed bytes
-    have exactly one spelling and a duplicate cannot hide; ``sha256`` is over the file bytes as
-    they are on disk. Raises ``LexiconError`` naming the phrase at fault when any of that fails.
-    """
+    """Read, hash and validate the committed synonym table."""
     lexicon_path = LEXICON_PATH if path is None else Path(path)
     try:
         raw = lexicon_path.read_bytes()
@@ -259,26 +223,13 @@ def _phrases_by_target(path: Path | None = None) -> dict[str, tuple[str, ...]]:
 
 
 def phrase_for(target: str, *, path: Path | None = None) -> str | None:
-    """The plainest everyday phrase that expands to ``target`` (``"interaction:hug"`` -> "hug").
-
-    The table is written the other way round, so this is a reverse lookup: it exists so a shot
-    staged from a retrieved clip can say in the prompt what the clip actually shows, in words, and
-    say it the same way every run. Ties break on word count, then length, then alphabetically, so
-    one target always yields one phrase. ``None`` when the table maps nothing to it.
-    """
+    """The plainest everyday phrase that expands to ``target`` (``"interaction:hug"`` -> "hug")."""
     found = _phrases_by_target(path).get(target)
     return found[0] if found else None
 
 
 def expand(text: str, *, path: Path | None = None) -> Expansion:
-    """Turn a sentence into ordered ``field:term`` pairs, leftover words and named gaps.
-
-    Guarantees: the same text always yields the same tuples, in FTS column order then
-    alphabetical order, deduped; matching is longest phrase first at each position and consuming,
-    so no word contributes twice and a word inside a matched phrase cannot fire on its own; every
-    term is one the contract allows; ``unmatched_words`` holds the survivors after stopwords and
-    words shorter than ``min_word_length`` are dropped, sorted and deduped.
-    """
+    """Turn a sentence into ordered ``field:term`` pairs, leftover words and named gaps."""
     lexicon = load_lexicon(path)
     words = normalize(text)
     terms: set[str] = set()

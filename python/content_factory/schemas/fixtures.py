@@ -221,10 +221,7 @@ def sample_campaign() -> content.ContentCampaign:
 
 
 def sample_ltx_i2v_package() -> comfyui.ComfyWorkflowPackage:
-    """Image-to-video on the local LTX-2.5 22B distilled GGUF stack (the operator's chosen video
-    generator, 2026-09-05); mirrors the graph proven by projects/showcase/bin/showcase_i2v.py.
-    Every tunable is a bound parameter. Text-to-video is deliberately absent: this GGUF packaging
-    ships no gemma tokenizer, so the first frame must come from the image stack."""
+    """Image-to-video on the local LTX-2.5 22B distilled GGUF stack."""
     return comfyui.ComfyWorkflowPackage(
         package_id="ltx-2.5.i2v",
         version="0.1.0",
@@ -478,8 +475,7 @@ def sample_shot_plan() -> shots.ShotPlan:
 
 
 def sample_shot_routing() -> shots.ShotRouting:
-    """The hybrid workflow's routing for the sample story: the title beat is generated (Blender ->
-    HiDream -> LTX), the data beats are rendered by Remotion."""
+    """The hybrid workflow's routing for the sample story: the title beat is generated."""
     story = sample_story_plan()
     plan = sample_shot_plan()
     kinds = {sc.beat_id: sc.kind for sc in story.scenes}
@@ -565,14 +561,7 @@ def sample_control_bundle() -> shots.ControlBundle:
 
 
 def sample_story_lexicon() -> tuple[audio.PronunciationEntry, ...]:
-    """How to say the two proper nouns in :func:`sample_story_plan`'s last beat.
-
-    They are Swedish, the narrator is English, and both halves of the chain fail on them: the
-    text-to-speech guesses ("enner's aminahin sventzka craftnet") and the aligner cannot spell what
-    it hears either, so the script gate refused the beat at 0.22 and the demo film could not be
-    narrated at all. A respelling fixes the audio and, because it is deliberately not orthographic,
-    also tells the gate to skip that beat rather than measure the aligner's vocabulary.
-    """
+    """How to say the two proper nouns in :func:`sample_story_plan`'s last beat."""
     return (
         audio.PronunciationEntry(
             term="Energimyndigheten",
@@ -666,14 +655,7 @@ def sample_story_plan() -> scenes.StoryPlan:
 
 
 def sample_new_kinds_plan() -> scenes.StoryPlan:
-    """A plan exercising the scene kinds and fields that were contract-only until now.
-
-    A second StoryPlan fixture rather than an extension of :func:`sample_story_plan`, which the
-    offline demo renders and asserts against beat by beat. What this one is for is the validators:
-    every generated Ajv validator sees it, so `image`, `comparison`, `flow_diagram`, the `step`
-    chart kind, `ChartScene.source_ids` and `background_asset_id` all have a valid instance to be
-    checked against instead of only a schema.
-    """
+    """A plan exercising the scene kinds and fields that were contract-only until now."""
     table = scenes.DataRef(dataset_id="ds_wind00000001", column="share_pct")
     beats = tuple(
         scenes.VisualBeat(
@@ -1065,9 +1047,8 @@ def invalid_fixtures() -> dict[str, list[dict[str, Any]]]:
             bad_asset_id,
         ],
         "ControlBundle": [{**sample_control_bundle().model_dump(mode="json"), "compiler": "hand"}],
-        # A generate-routed beat with no shot_id is rejected by BeatRoute's model_validator, not
-        # by the JSON Schema: it is a cross-field rule, which JSON Schema cannot express. It lives
-        # in tests/unit/test_shot_router.py, where the Pydantic validator is the thing under test.
+        # A generate-routed beat with no shot_id is rejected by BeatRoute's model_validator, not by
+        # the JSON Schema: it is a cross-field rule, which JSON Schema cannot express.
         "ShotRouting": [
             {**sample_shot_routing().model_dump(mode="json"), "unexpected": 1},
             bad_route,

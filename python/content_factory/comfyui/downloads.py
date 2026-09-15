@@ -1,13 +1,4 @@
-"""One-click model downloads through comfy-cli.
-
-The only thing this module ever executes is the allowlisted `comfy model download` command
-(https URLs on approved hosts, safe filenames, destination pinned inside the workspace's
-models/ tree — the same rules as models/install.py). Transfers run detached in comfy-cli's own
-background worker (`--background`); state is refreshed by polling `comfy model download-status`
-when jobs are read, so this process holds no threads. Everything is idempotent per destination:
-starting the same file twice returns the same job, and a file already on disk is reported
-`already_installed` without touching the network.
-"""
+"""One-click model downloads through comfy-cli."""
 
 from __future__ import annotations
 
@@ -235,9 +226,8 @@ class DownloadManager:
             ]
             for job in to_poll:
                 job.last_polled_at = now
-        # Refresh OUTSIDE the lock: each poll can shell out to comfy-cli (up to its timeout),
-        # and holding the lock across that would park start() — and every other reader —
-        # behind a hung status call.
+        # Refresh outside the lock: a poll can shell out to comfy-cli for up to its timeout, and
+        # holding the lock would park start() and every reader behind a hung status call.
         for job in to_poll:
             self._refresh(job)
         with self._lock:

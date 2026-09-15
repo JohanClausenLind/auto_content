@@ -1,20 +1,4 @@
-"""Apply a ``cf.clip.v2`` motion clip to an armature, inside Blender.
-
-Thin by design: reading the rest matrices off the armature and writing quaternions back is the only
-part that needs ``bpy``. The solve itself is in ``mocap/segments.py``, which is why the
-cross-character correctness test runs in plain pytest.
-
-Root motion is applied as a DISPLACEMENT from the clip's own origin, not as the capture's absolute
-position: the shot's staging decides where the pair stands, the clip decides how they move and how
-far apart they are. Without it a planted foot slides - measured at 1.87 m over 1.9 s on a walking
-trial.
-
-The displacement is a world vector, and the root bone's local axes do not line up with the world
-(on the MPFB default rig its local +Y is world ``(0, -0.991, 0.134)``), so a world vector written
-straight into ``pose.bones[0].location`` would be wrong on Y and Z. This converts through the
-bone's rest basis first, and writes the location after the rotations so a rotated root cannot
-rotate its own translation.
-"""
+"""Apply a ``cf.clip.v2`` motion clip to an armature, inside Blender."""
 
 from __future__ import annotations
 
@@ -26,11 +10,7 @@ from mocap.segments import bone_target_map, solve_aim
 
 
 def rest_bones(rig: Any) -> list[dict[str, Any]]:
-    """Rest matrices in armature space, parents before children.
-
-    ``rig.data.bones`` is already in creation order, which MPFB emits parent-first, but the solve
-    depends on that so it is enforced rather than assumed.
-    """
+    """Rest matrices in armature space, parents before children."""
     by_name = {b.name: b for b in rig.data.bones}
     out: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -59,7 +39,7 @@ def apply_segments(
     directions: dict[str, tuple[float, float, float]],
     root_translation: tuple[float, float, float] | None = None,
 ) -> dict[str, Any]:
-    """Aim every mapped bone along its captured direction. Returns a small report for the summary."""
+    """Aim every mapped bone along its captured direction."""
     for pb in rig.pose.bones:
         pb.rotation_mode = "QUATERNION"
         pb.rotation_quaternion = Quaternion((1.0, 0.0, 0.0, 0.0))

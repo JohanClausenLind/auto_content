@@ -1,10 +1,4 @@
-"""FLUX.2-dev reference package: the ReferenceLatent chain, its cap, and the turbo/full presets.
-
-`image_sequences.backend` can be set to `flux2`, so this package is a production path. What makes
-it different from the LTX and Wan packages next door is that conditioning is *chained*: every
-reference wraps the previous one, and FluxGuidance has to end up after the whole chain rather than
-on the bare text, or the composed references are guided as if they were not there.
-"""
+"""FLUX.2-dev reference package: the ReferenceLatent chain, its cap, and the turbo/full presets."""
 
 from __future__ import annotations
 

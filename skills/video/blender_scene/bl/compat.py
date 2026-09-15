@@ -37,7 +37,7 @@ def set_if_has(obj: Any, name: str, value: Any) -> bool:
 
 
 def light_direction(azimuth_deg: float, elevation_deg: float) -> tuple[float, float, float]:
-    """Direction the key light travels (Workbench ``light_direction`` semantics: towards the scene)."""
+    """Direction the key light travels."""
     az, el = math.radians(azimuth_deg), math.radians(elevation_deg)
     x = math.cos(el) * math.sin(az)
     y = -math.cos(el) * math.cos(az)
@@ -46,8 +46,7 @@ def light_direction(azimuth_deg: float, elevation_deg: float) -> tuple[float, fl
 
 
 def read_multilayer_exr(path: Path) -> dict[str, np.ndarray]:
-    """Read every channel of a (multi-part) OpenEXR file into float32 arrays keyed by
-    ``<layer>.<pass>.<channel>`` as Blender names them (e.g. ``ViewLayer.Depth.Z``)."""
+    """Read every channel of a (multi-part) OpenEXR file into float32 arrays keyed by."""
     import OpenImageIO as oiio  # type: ignore[import-not-found]  # bundled with Blender
 
     inp = oiio.ImageInput.open(str(path))
@@ -101,7 +100,8 @@ def write_single_channel_exr(path: Path, data: np.ndarray) -> None:
     try:
         if not out.open(str(path), spec):
             raise RuntimeError(f"OpenImageIO open failed: {out.geterror()}")
-        # OIIO expects (height, width, channels); a bare 2-D array crashes contiguize() at some sizes.
+        # OIIO expects (height, width, channels); a bare 2-D array crashes contiguize() at some
+        # sizes.
         out.write_image(np.ascontiguousarray(data.astype(np.float32)).reshape(h, w, 1))
     finally:
         out.close()

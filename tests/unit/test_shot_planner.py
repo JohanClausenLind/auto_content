@@ -50,9 +50,7 @@ def test_one_shot_per_beat_in_order_and_deterministic() -> None:
 
 
 def test_frame_counts_are_ltx_lengths_and_anchors_land_on_legible_frames() -> None:
-    """Anchors used to sit at both ends unconditionally. They still do wherever the last frame is
-    a frame worth generating, and a push-in's is not: it ends nearer than a whole figure fits, so
-    its second anchor moves back to where the body is still in frame."""
+    """Anchors used to sit at both ends unconditionally."""
     plan = plan_shots_from_story(sample_story_plan(), width=1024, height=576, fps=24)
     for shot in plan.shots:
         assert (shot.frame_count - 1) % 8 == 0
@@ -113,18 +111,14 @@ def test_fixture_file_matches_the_fixture_builder() -> None:
 
 
 def test_sixteen_by_nine_is_the_calibration_aspect_and_does_not_move() -> None:
-    """The preset distances were chosen by eye on 16:9, so correcting other aspects must leave
-    that one untouched. A default call and an explicit 16:9 call have to agree exactly, or every
-    plan hash in the repo shifts for no reason."""
+    """The preset distances were chosen by eye on 16:9."""
     for preset in CameraPreset:
         assert camera_keyframes(preset, 33) == camera_keyframes(preset, 33, width=1024, height=576)
     assert aspect_scale(1024, 576) == pytest.approx(1.0)
 
 
 def test_a_narrower_frame_brings_the_camera_in() -> None:
-    """A 35 mm lens sees far more vertically in a portrait frame, so the same distance leaves the
-    figure at a fraction of the height it had in widescreen. Measured on a rendered vertical film,
-    every preset shot opened at 0.216 of frame height, under the 0.33 cliff."""
+    """A 35 mm lens sees far more vertically in a portrait frame."""
     assert aspect_scale(576, 1024) == pytest.approx(0.3164, abs=1e-4)
     assert aspect_scale(1024, 1024) == pytest.approx(0.5625, abs=1e-4)
     wide = camera_keyframes(CameraPreset.static, 33)[0]
@@ -134,9 +128,7 @@ def test_a_narrower_frame_brings_the_camera_in() -> None:
 
 
 def test_scaling_about_the_look_at_point_preserves_every_angle() -> None:
-    """This is what keeps a preset a preset. Scaling the ground distance alone would steepen the
-    camera as it came in and turn a crane's arc into a different arc; scaling the whole offset
-    holds elevation and azimuth exactly and changes only how far away the move happens."""
+    """This is what keeps a preset a preset."""
     for preset in CameraPreset:
         wide = camera_keyframes(preset, 33)
         tall = camera_keyframes(preset, 33, width=576, height=1024)
@@ -162,10 +154,7 @@ def test_a_frame_with_no_area_is_refused() -> None:
 
 
 def test_a_push_in_does_not_anchor_the_frame_it_crops() -> None:
-    """The move ends nearer than a whole figure fits, so the last frame is the wrong one to hand
-    the image model: a cropped body gives the pose skeleton fewer joints to place. Measured off
-    rendered layout boxes, the figure stops fitting at 0.36 of the move in 16:9 and 0.32 in 9:16.
-    """
+    """The move ends nearer than a whole figure fits."""
     anchors = anchor_frames_for(CameraPreset.slow_push_in, 145)
     assert anchors[0] == 0
     assert anchors[-1] < 144, "anchoring the last frame is the bug"
@@ -173,8 +162,7 @@ def test_a_push_in_does_not_anchor_the_frame_it_crops() -> None:
 
 
 def test_every_other_preset_still_anchors_the_last_frame() -> None:
-    """Only a move that ends closer than it starts has this problem, and pulling anchors in for
-    the rest would cost temporal coverage for nothing."""
+    """Only a move that ends closer than it starts has this problem."""
     for preset in CameraPreset:
         if preset is CameraPreset.slow_push_in:
             continue
@@ -182,9 +170,7 @@ def test_every_other_preset_still_anchors_the_last_frame() -> None:
 
 
 def test_a_pull_out_is_deliberately_left_alone() -> None:
-    """Its close end is frame 0, which ShotSpec requires to be an anchor, so no choice of anchors
-    can avoid the crop. That one needs a camera change or nothing, and pretending otherwise by
-    moving the *other* anchor would hide it."""
+    """Its close end is frame 0, which ShotSpec requires to be an anchor."""
     assert anchor_frames_for(CameraPreset.slow_pull_out, 145) == (0, 144)
 
 

@@ -1,22 +1,4 @@
-"""Cut the recorded half of assets/sfx out of the local #GameAudioGDC bundle.
-
-    uv run --project skills/audio/sfx python skills/audio/sfx/ingest_recorded.py [--only id,id] [--analyze]
-
-Companion to build_library.py, which generates the other half with Stable Audio 3 Small-SFX. The
-two write the same format to the same directory through the same index writer, and a sound built
-here is indistinguishable in use from one generated there: 44.1 kHz stereo 24-bit FLAC, the same
-two loudness targets, the same loop wrap, the same QC fields in the manifest.
-
-What differs is only where the audio comes from and therefore what has to be chosen. A generation
-picks between eight seeds of the same prompt; an excerpt picks between every 30 s window of a
-680 s recording, or between the sixty ticks in a minute of clock. Both are decided by measurement
-and both record what they picked, so `just` can rebuild either half byte-for-byte.
-
-`--analyze` runs the whole selection and prints what it would write without touching the library:
-use it to check a pick before committing 40 MB of FLAC to it.
-
-Rationale for every number: docs/research/2026-09-07-video-sfx-and-ambience-library.md
-"""
+"""Cut the recorded half of assets/sfx out of the local #GameAudioGDC bundle."""
 
 from __future__ import annotations
 
@@ -35,22 +17,8 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = sfx.REPO_ROOT
 OUT_ROOT = REPO_ROOT / "assets" / "sfx"
 
-# Advisory thresholds, same contract as the generated half: a flag names the sounds worth
-# listening to first, it does not fail the build. The set is not the same set, because the two
-# halves cannot fail the same way.
-#
-# Dropped: `noise_like`. On the generated side high spectral flatness with a rising HF tilt is the
-# signature of a take that came back as broadband hiss instead of a designed sound. A commercial
-# recording cannot fail that way, and the measurement says so plainly -- a bright UI pop measures
-# +35 dB of tilt and a corrupted-data glitch 0.78 flatness, and both are exactly the sound their
-# supplier named. Flatness and tilt are still recorded in the manifest as description; they are
-# just not evidence of anything here. Keeping the flag would have meant ten per-entry overrides
-# to say "this one is allowed to be what it is", which is a check that has stopped checking.
-#
-# Added: `truncated` and `clipped`, which are how an *excerpt* actually goes wrong. `truncated`
-# catches a max_s that ends a sound while it is still audible -- the mistake that would otherwise
-# have shipped a 16 s horn braam cut off before its peak. `clipped` catches a source mastered into
-# the ceiling, where the excerpt has no headroom to level from.
+# Advisory thresholds, same contract as the generated half: a flag names the sounds worth listening
+# to first, it does not fail the build.
 HARSH_RATIO_MAX = 0.35
 SEAM_RMS_MAX_DB = 3.0
 SILENT_DBFS = -40.0
@@ -98,9 +66,7 @@ def build_one(spec: dict, lib: dict, root: Path, credits: dict, analyze: bool) -
             x, _b, after = sfx.normalize(x, sr, "integrated_lufs", t["value"], t["true_peak_dbtp"])
             qc = {**sfx.tone_qc(x, sr), **sfx.loop_qc(x, sr)}
     elif "whole" in spec:
-        # The supplier already cut this file. `recorded.cut_whole` takes it as delivered and the
-        # only decision left is which loudness family it belongs to -- see ingest_packs.py, which
-        # uses the same helper for the same reason.
+        # The supplier already cut this file.
         whole = spec["whole"]
         x, cut = recorded.cut_whole(src_path, sr, hp, whole.get("max_s"), whole.get("trim", True))
         qc = sfx.tone_qc(x, sr)

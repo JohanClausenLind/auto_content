@@ -1,29 +1,4 @@
-"""Every run this machine has made, and what came out of it.
-
-A run leaves everything it produced on disk under ``output/<project>/`` — the film, the narration,
-the anchor drawings, the control maps, the captions — and a ``run.json`` saying what it did. There
-were **225 of those reports and 34 films** sitting there with no way to look at any of it except
-by knowing the path: the web app's run list reads the ``production_runs`` table, and a local run
-(``content-factory make``) never writes a row to it. So the day's actual work was invisible to the
-product that made it.
-
-This module is the reader. It is deliberately not a new source of truth:
-
-* **The packages manifest wins.** A run that reached ``compile_destination_packages`` wrote
-  ``destination-packages/packages.json`` naming every deliverable file with its role, byte count
-  and content type. Where that exists it *is* the answer, because it is what the run itself
-  decided it had produced.
-* **A run that never got that far still has outputs**, and they are the ones most worth seeing:
-  most runs here block at ``review_frames`` — six of seven overnight image sets did — with the
-  drawings on disk and no package. Those are found by scanning, and the path says what each file
-  is (``anchors/`` a drawing, ``controls/`` a debug map, ``exports/`` a film).
-* **Nothing is written, moved or deleted.** Read-only, so it cannot cost a run anything.
-
-Kept out of ``services/runs.py`` on purpose: that module is the durable Temporal runs, keyed by
-database row and workspace. These are local runs keyed by a directory, and the two have different
-identities, different lifetimes and no join. See also :mod:`content_factory.services.durations`,
-which reads the same reports for their timings.
-"""
+"""Every run this machine has made, and what came out of it."""
 
 from __future__ import annotations
 
@@ -90,14 +65,7 @@ _ROLE_BY_PATH: tuple[tuple[str, str], ...] = (
     ("artifacts/", "render"),
 )
 
-# Files the runner writes so a stage can be re-run safely, not files a run produced. Measured on
-# a finished picture story: **85 of its 125 JSON files** were `<frame>.done.json` markers, which
-# would have made the "text and data" list of a six-picture story 130 rows of bookkeeping.
-#
-# `pins.json` and `run.json` join them because they are the run's own paperwork: the report is
-# what this module is *reading*, and listing it among the run's outputs put the bookkeeping in
-# the review panel next to the film. `controls/<shot>/run.json` is caught by the same name and
-# that is the right answer too — it is the control compiler's marker, not a deliverable.
+# Files the runner writes so a stage can be re-run safely, not files a run produced.
 _MARKER_NAMES = frozenset(
     {"manifest.json", "chain.json", "job.json", "bundle.json", "pins.json", "run.json"}
 )
@@ -108,9 +76,7 @@ def _is_marker(relative: str) -> bool:
     return name.endswith(".done.json") or name in _MARKER_NAMES
 
 
-# Debug and intermediate output. Kept and labelled rather than hidden — a control map is exactly
-# what you want when a drawing came out wrong — but the UI can fold it away, and it must never
-# outrank the film when picking one image to show.
+# Debug and intermediate output.
 DEBUG_ROLES = frozenset({"control", "anchor-upscaled", "render", "input", "marker"})
 
 MAX_OUTPUTS = 400
@@ -179,8 +145,7 @@ class RunRecord:
 
     @property
     def film(self) -> str | None:
-        """The finished film, if there is one. `exports/final.mp4` is the run's own answer to
-        "which of these videos is the deliverable"; anything else is an intermediate."""
+        """The finished film, if there is one."""
         videos = [o for o in self.outputs if o.kind == "video"]
         if not videos:
             return None
@@ -189,21 +154,13 @@ class RunRecord:
 
     @property
     def poster(self) -> str | None:
-        """One image to represent the run. Never a control map or an upscale intermediate: those
-        are debug output, and a history row showing a pose skeleton is a row nobody recognises."""
+        """One image to represent the run."""
         images = [o for o in self.outputs if o.kind == "image" and o.role not in DEBUG_ROLES]
         return images[0].path if images else None
 
     @property
     def unattributed(self) -> int:
-        """Files no step claimed. Reported rather than hidden: on the 241 runs that predate
-        per-node recording it is the difference between "this node made nothing" and "nobody
-        wrote down which node made this", and a panel that conflated the two would send somebody
-        looking for a fault at the wrong step.
-
-        Markers are not counted. A `.done.json` or the run's own `run.json` having no node is not
-        information about the run, and counting them would put a floor of a dozen under every
-        row — which is exactly how a number meant to be noticed stops being noticed."""
+        """Files no step claimed."""
         return sum(1 for o in self.outputs if o.node is None and o.role != "marker")
 
     def as_dict(self) -> dict[str, Any]:
@@ -218,28 +175,17 @@ class RunRecord:
 
 
 def history_root() -> Path:
-    """Where runs live. Anchored to the repo, not the process's working directory: the API is
-    started from wherever, and a relative root would make the history depend on that."""
+    """Where runs live."""
     return REPO_ROOT / "output"
 
 
 def encode_run_id(run_dir: Path, root: Path) -> str:
-    """A run's id is its directory, with ``/`` written ``~``.
-
-    Readable on purpose — ``overnight~ps1c-pinecone`` is greppable and says which run it is, where
-    an opaque hash would need a lookup table to debug. ``~`` because it survives a URL path
-    segment unescaped and cannot appear in the directory names the runner makes.
-    """
+    """A run's id is its directory, with ``/`` written ``~``."""
     return run_dir.resolve().relative_to(root.resolve()).as_posix().replace("/", "~")
 
 
 def decode_run_id(run_id: str, root: Path) -> Path | None:
-    """The directory an id names, or None when it names something outside the output root.
-
-    Both halves of the check matter: ``~`` cannot smuggle a ``..`` past `relative_to`, but a
-    *symlink* inside the output tree could point anywhere, and only resolving both sides catches
-    that.
-    """
+    """The directory an id names, or None when it names something outside the output root."""
     if not run_id or run_id.startswith(("~", ".")) or "/" in run_id or "\\" in run_id:
         return None
     root = root.resolve()
@@ -350,16 +296,7 @@ def run_outputs(
     report: dict[str, Any] | None = None,
     workflow: str | None = None,
 ) -> tuple[list[RunOutput], int]:
-    """What a run produced, and how many files that is before truncation.
-
-    The manifest is used where it exists **and** the scan is still run, because a manifest lists
-    the *deliverable* — the film, the narration, the captions — and says nothing about the six
-    anchor drawings, which for a run blocked at review are the only thing there is to look at.
-
-    Given the ``report``, every file also carries the step that made it. That attribution is done
-    over the whole set before truncation, so which files get a node does not depend on where the
-    cap fell.
-    """
+    """What a run produced, and how many files that is before truncation."""
     found: dict[str, RunOutput] = {}
     for deliverable in sorted((run_dir / "deliverables").glob("*")):
         if deliverable.is_dir():
@@ -376,14 +313,7 @@ def run_outputs(
 
 
 def live_project_dirs() -> frozenset[Path]:
-    """The project directories of runs whose process is alive right now.
-
-    Read once per listing and passed down, not per row: it is a directory of small JSON files and
-    a history of 241 rows should not stat all of them 241 times.
-
-    ``prune=False`` matters. The pruning form deletes the registry files of dead runs, and this
-    module promises to write nothing — a page refresh must not be able to clean up after a run.
-    """
+    """The project directories of runs whose process is alive right now."""
     from content_factory.runners.registry import active_runs
 
     try:
@@ -394,17 +324,7 @@ def live_project_dirs() -> frozenset[Path]:
 
 
 def _outcome(report: dict, stages: list[dict], *, running: bool = False) -> Outcome:
-    """What happened, in the words that want different responses.
-
-    A human review gate records neither `blocked` nor `blocked_at` — it raises like any other
-    stage failure — so without this check the six picture stories and six image sets parked at
-    `review_frames` with their drawings finished all read as **failed**. They are waiting for
-    somebody to look, which is the opposite of a defect.
-
-    ``running`` comes from the run registry, and it is checked after the three terminal fields
-    but before the stage records: a run still registered has by definition not written `passed`,
-    and reading its half-finished report the usual way calls a working run failed.
-    """
+    """What happened, in the words that want different responses."""
     if report.get("passed"):
         return "complete"
     if report.get("stopped"):
@@ -453,10 +373,8 @@ def _record(
     nodes: list[run_nodes.NodeRecord] = []
     if with_outputs:
         outputs, total = run_outputs(run_dir, report=report, workflow=workflow)
-        # Each node's list is drawn from the outputs, not from the report's recorded paths: a
-        # path the run wrote and something later cleared away would otherwise become a link the
-        # panel offers and the file route 404s. `outputs_total` keeps the run's own count, so a
-        # node that wrote 2,904 files still says so while showing the ones that are there.
+        # Each node's list is drawn from the outputs, not from the report's recorded paths: a path
+        # the run wrote.
         by_node: dict[str, list[str]] = {}
         for output in outputs:
             if output.node is not None:
@@ -495,12 +413,7 @@ def _record(
 
 
 def list_runs(*, root: Path | None = None, limit: int = 100) -> list[RunRecord]:
-    """Every run on disk, newest first. Cheap: no output scanning, one stat per report.
-
-    Scanning outputs for every run would mean walking the whole output tree — 213 directories and
-    tens of thousands of files — to draw a list. The list carries counts and the detail view pays
-    for the files of the one run somebody actually opened.
-    """
+    """Every run on disk, newest first."""
     root = (root or history_root()).resolve()
     if not root.is_dir():
         return []

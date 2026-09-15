@@ -1,5 +1,4 @@
-"""Citation exports and the script-claim gate (section 10): research/{sources,evidence,claims}.json,
-final/sources.md, final/citations.json; a critical statement without supporting claims blocks."""
+"""Citation exports (sources, evidence, claims, citations) and the blocking script-claim gate."""
 
 from __future__ import annotations
 
@@ -93,8 +92,7 @@ def citations_json(
 
 
 def script_claim_gate(plan: StoryPlan, claims: list[ClaimRecord]) -> QCResult:
-    """Contract QC (blocking): every claim-linked statement resolves to a healthy claim; every
-    critical verifiable claim used by the plan is supported; unsupported claims may not appear."""
+    """Blocking QC: every claim-linked statement resolves to a healthy, supported claim."""
     findings: list[Finding] = []
     by_id = {c.claim_id: c for c in claims}
     referenced: set[str] = set()

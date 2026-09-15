@@ -1,8 +1,4 @@
-"""Kokoro executor: reads text on stdin, prints one JSON line (wav path + token timestamps).
-
-Run inside this skill's own environment: `uv run --project skills/audio/kokoro python run.py`.
-Not imported by the control plane. Requires the model download on first use (~330 MB).
-"""
+"""Kokoro executor: reads text on stdin, prints one JSON line (wav path + token timestamps)."""
 
 from __future__ import annotations
 
@@ -11,11 +7,7 @@ import json
 import sys
 import tempfile
 
-# Locale -> Kokoro lang code, mirroring content_factory/audio/languages.py. Explicit, because the
-# line this replaces was `"a" if lang.startswith("en") else "b"` — and "b" is British English, so
-# every non-English locale silently produced a British voice reading foreign words as English.
-# Kokoro's own LANG_CODES (read from the installed package, 2026-09-08): a American English,
-# b British English, e es, f fr-fr, h hi, i it, p pt-br, j Japanese, z Mandarin Chinese.
+# Locale -> Kokoro lang code, mirroring content_factory/audio/languages.py.
 LANG_CODES = {
     "en": "a",
     "en-gb": "b",
@@ -30,11 +22,7 @@ LANG_CODES = {
 
 
 def lang_code(lang: str) -> str:
-    """Kokoro's code for a locale, or the code itself if one was passed. Refuses anything else.
-
-    A locale Kokoro cannot speak is an error here and not a fallback: a fallback is what produced
-    a whole film narrated in the wrong language with nothing in the run reporting it.
-    """
+    """Kokoro's code for a locale, or the code itself if one was passed."""
     value = lang.strip().lower()
     if value in set(LANG_CODES.values()):
         return value

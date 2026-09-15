@@ -1,8 +1,4 @@
-"""OPT-IN live test (never in core CI): publishes ONE post to the operator's designated test
-Bluesky account, exactly once under a forced retry, then verifies via reconciliation.
-
-Run explicitly: BLUESKY_HANDLE=... BLUESKY_APP_PASSWORD=... uv run pytest -m live tests/live -q
-The account named here must be a test account the operator designated for this purpose."""
+"""OPT-IN live test (never in core CI)."""
 
 from __future__ import annotations
 

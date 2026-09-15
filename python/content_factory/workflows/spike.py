@@ -1,11 +1,4 @@
-"""Phase-0 Temporal spike: a durable workflow with activities, a signal wait (the pattern human
-task slots use — parked, consuming no worker), and replay-safe determinism.
-
-Production workflows (phase 6) follow the same rules demonstrated here:
-* activities carry typed IO and an idempotency key;
-* no wall-clock, randomness, or I/O inside workflow code except via Temporal APIs;
-* waiting states are ``workflow.wait_condition`` on signals — they hold no worker slot.
-"""
+"""Phase-0 Temporal spike: a durable workflow with activities, a signal wait."""
 
 from __future__ import annotations
 

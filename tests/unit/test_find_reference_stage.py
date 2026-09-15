@@ -1,11 +1,4 @@
-"""The retrieval stage and the shot planner that consumes it.
-
-Two properties matter more than the happy path. A machine with no reference library must still run
-every lane, because the library is 19 GB of host-specific data and a missing one is a normal state,
-not an error. And a beat with no usable match must fall back to preset staging rather than have a
-two-person staging invented for it, because inventing one is what produced the interpenetrating
-hands the whole mocap path exists to avoid.
-"""
+"""The retrieval stage and the shot planner that consumes it."""
 
 from __future__ import annotations
 
@@ -122,8 +115,7 @@ def test_the_planner_falls_back_with_no_selection() -> None:
 
 
 def test_the_planner_ignores_a_match_whose_clip_is_not_on_disk() -> None:
-    """A retrieved clip that cannot drive a rig must not be staged from. Half the library is
-    footage and skeletons that no rig can be aimed by."""
+    """A retrieved clip that cannot drive a rig must not be staged from."""
     story = sample_story_plan()
     plan = plan_shots_from_reference(
         story,
@@ -137,8 +129,7 @@ def test_the_planner_ignores_a_match_whose_clip_is_not_on_disk() -> None:
 
 @baked
 def test_a_matched_mocap_clip_stages_both_actors() -> None:
-    """The point of the whole path: two characters on one captured take, so the contact on screen
-    is the contact that was recorded."""
+    """Two characters on one captured take, so the contact on screen is the contact recorded."""
     story = sample_story_plan()
     beat = story.beats[0].beat_id
     plan = plan_shots_from_reference(story, _selection(beat, BAKED), width=1024, height=576, fps=24)
@@ -165,11 +156,7 @@ def test_a_matched_mocap_clip_stages_both_actors() -> None:
 
 @solo
 def test_a_solo_clip_stages_one_character_and_not_a_phantom_second() -> None:
-    """A one-actor clip can answer for actor "a" and nothing else.
-
-    The cast is two characters, so the tempting thing is to give the second one actor "b" - which
-    the clip does not carry, and which fails inside Blender at render time instead of here.
-    """
+    """A one-actor clip can answer for actor "a" and nothing else."""
     story = sample_story_plan()
     beat = story.beats[0].beat_id
     plan = plan_shots_from_reference(story, _selection(beat, SOLO), width=1024, height=576, fps=24)
@@ -216,10 +203,7 @@ def test_an_unsupported_fps_is_refused() -> None:
 
 @walking
 def test_a_narrow_frame_gets_a_tracking_camera_and_a_wide_one_does_not() -> None:
-    """The measured reason this branch exists: no clip in the library needs tracking in 16:9, and
-    30 of 57 do in 9:16, because a portrait frame is too narrow to hold two bodies apart and the
-    width push-back retreats the camera under the cliff where the pose skeleton stops being read.
-    """
+    """Measured: no library clip needs tracking in 16:9, and 30 of 57 do in 9:16 (too narrow)."""
     story = sample_story_plan()
     beat = story.beats[0].beat_id
     sel = _selection(beat, WALKING)
@@ -242,9 +226,7 @@ def test_a_narrow_frame_gets_a_tracking_camera_and_a_wide_one_does_not() -> None
 
 @walking
 def test_tracking_keyframes_land_on_the_frames_the_image_model_sees() -> None:
-    """The anchors are the frames handed to the image model, so they are the ones that must be
-    legible. The ends are included too, or a static camera holds while the bodies walk into the
-    near plane - the NaN that framing exists to prevent."""
+    """The anchors are the frames the image model sees, ends included; those must be legible."""
     story = sample_story_plan()
     beat = story.beats[0].beat_id
     plan = plan_shots_from_reference(
@@ -282,8 +264,7 @@ def test_the_whole_cast_is_tracked_not_half_of_a_pair() -> None:
 
 @baked
 def test_what_the_plan_claims_is_what_the_verifier_measures() -> None:
-    """A plan that reports a legible shot and stages an illegible one is the failure mode here, so
-    the description and the stage fact come from one measurement of the finished camera."""
+    """The description and the stage fact come from one measurement of the finished camera."""
     story = sample_story_plan()
     beat = story.beats[0].beat_id
     for width, height in ((1024, 576), (576, 1024), (768, 768)):
@@ -311,9 +292,7 @@ def test_the_planner_is_pure_with_a_tracking_camera_too() -> None:
 
 
 def test_a_plan_with_no_staged_shots_is_still_checked_and_comes_back_clean() -> None:
-    """A lane on a host with no clip library must not grow a warning it cannot act on, and must
-    not escape the check either. With nothing staged every shot is measured the clip-free way, and
-    since the preset cameras are aspect-corrected that comes back clean on every aspect."""
+    """No clip library must mean neither a warning nobody can act on nor a skipped check."""
     story = sample_story_plan()
     for width, height in ((1024, 576), (576, 1024), (1024, 1024)):
         plan = plan_shots_from_reference(story, {}, width=width, height=height, fps=24)
@@ -321,10 +300,7 @@ def test_a_plan_with_no_staged_shots_is_still_checked_and_comes_back_clean() -> 
 
 
 def test_the_plan_shots_stage_reports_underframing(tmp_path: Path, monkeypatch) -> None:
-    """The fact exists even with nothing to report, so an operator can tell "checked, fine" from
-    "never looked". A shot under the cliff renders its control passes and then has them ignored by
-    the image model, and the fix - a wider frame, or a clip whose cast stands closer - is a choice
-    the planner should surface rather than make."""
+    """The fact exists even when empty, so "checked, fine" is distinct from "never looked"."""
     monkeypatch.setenv("CF__REFERENCE__INDEX_PATH", str(tmp_path / "nope.sqlite"))
     from content_factory.config import get_settings
 
@@ -349,9 +325,7 @@ def test_the_plan_shots_stage_reports_underframing(tmp_path: Path, monkeypatch) 
 
 
 def test_the_cliff_is_tested_with_the_estimate_s_own_bias_added() -> None:
-    """The estimate models a hip plus a standing head; the render measures the mesh's bounding
-    box, and came in 0.016 and 0.022 lower on the two shots checked frame by frame. Testing the
-    raw cliff would call a shot estimated at 0.34 legible when it renders at 0.318."""
+    """The render measures the mesh box, 0.016-0.022 under the estimate; 0.34 renders at 0.318."""
     from content_factory.shots.planner import _under_cliff
 
     assert ESTIMATE_OPTIMISM > 0.0
@@ -362,11 +336,7 @@ def test_the_cliff_is_tested_with_the_estimate_s_own_bias_added() -> None:
 
 
 def test_preset_shots_are_checked_too_and_the_check_has_teeth() -> None:
-    """A shot with a ``LibraryPose`` has no clip to read a hip height out of, and used to be
-    skipped entirely, so the one defect nobody could see was the preset planner's own: before the
-    cameras were aspect-corrected every preset shot in a vertical film opened at a measured 0.216
-    of frame height. The corrected presets are clean, so this also pulls a camera back by hand to
-    prove the check is measuring rather than agreeing."""
+    """Preset shots used to be skipped; a camera pulled back by hand proves the check has teeth."""
     from content_factory.shots import plan_shots_from_story
 
     story = sample_story_plan()

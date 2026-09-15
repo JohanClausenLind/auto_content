@@ -1,5 +1,4 @@
-"""Cost ledger (18.7): estimate → reserve → settle against operator caps. Spend safety only —
-no plans, credits-as-product, or invoices. UsageEvents are immutable and append-only."""
+"""Cost ledger (18.7): estimate → reserve → settle against operator caps."""
 
 from __future__ import annotations
 
@@ -16,8 +15,7 @@ class BudgetError(Exception):
 
 
 class BudgetExceededError(BudgetError):
-    """Raised on reservation that would break a hard cap. Never raised on settlement of an
-    already-reserved amount (the reservation bounded it)."""
+    """Raised on reservation that would break a hard cap."""
 
 
 class Scope(StrEnum):

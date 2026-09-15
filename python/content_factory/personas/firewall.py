@@ -1,9 +1,4 @@
-"""PersonaFirewall (24.5): IMMUTABLE safety policy, code not config.
-
-No persona configuration, archetype, prompt, or Revision Box request can weaken these rules:
-real-person protection, minor safety, crisis escalation, exploitation limits, and the disclosure
-floor (no autonomous reply ever affirmatively claims to be a human being). Every decision is
-logged with evidence; a firewall hit blocks the send and opens an ActionItem."""
+"""PersonaFirewall (24.5): IMMUTABLE safety policy, code not config."""
 
 from __future__ import annotations
 

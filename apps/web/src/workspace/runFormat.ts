@@ -1,10 +1,4 @@
-/**
- * How a run reads in the workspace: its name, what it cost, when it stopped, how it ended.
- *
- * Shared by the run list on the left and the pane it opens, because the two are one thought —
- * you pick a run by its row and then look at it, and the row must say the same words as the
- * header it opens.
- */
+/** How a run reads in the workspace, shared by the run list and the pane it opens. */
 
 import type { HistoryRun } from "../api/types";
 
@@ -19,9 +13,8 @@ export const OUTCOME_LABEL: Record<string, string> = {
 
 /** A gate and a defect want different responses, so they must not look the same. */
 export const OUTCOME_TONE: Record<string, string> = {
-  // A run in progress is not a result at all. It shared the `failed` red until the registry was
-  // consulted, so the first thing an operator saw when they watched their own run from the
-  // workspace was their working lane marked as broken.
+  // A run in progress is not a result at all; it must not share the `failed` red, or a working
+  // lane reads as broken while the operator watches it.
   running: "busy",
   complete: "ok",
   review: "wait",
@@ -55,14 +48,7 @@ export function formatWhen(epochSeconds: number): string {
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-/**
- * The full date and time, for a header rather than a row.
- *
- * `formatWhen` is built for scanning a list and deliberately drops information — "14:32" for
- * today, "Wed 14:32" this week, and a bare "Sep 3" for anything older, which loses the time
- * entirely. A header has room for the whole thing, and "when exactly was this made" is a question
- * about one run rather than about the list.
- */
+/** The full date and time for a header; `formatWhen` is built for scanning a list. */
 export function formatExact(epochSeconds: number): string {
   const date = new Date(epochSeconds * 1000);
   if (Number.isNaN(date.getTime())) return "";
@@ -75,13 +61,7 @@ export function formatExact(epochSeconds: number): string {
   });
 }
 
-/**
- * The day a run belongs to, as a list heading: "Today", "Yesterday", else the date.
- *
- * The history is scanned by when: 241 runs over three weeks, and "what did last night make" is
- * the question it is opened with. Grouping the rows under a day answers that in the list itself
- * rather than making somebody read 241 timestamps.
- */
+/** The day a run belongs to, as a list heading: "Today", "Yesterday", else the date. */
 export function formatDay(epochSeconds: number): string {
   const date = new Date(epochSeconds * 1000);
   if (Number.isNaN(date.getTime())) return "Unknown date";

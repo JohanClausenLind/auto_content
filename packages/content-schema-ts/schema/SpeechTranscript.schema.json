@@ -41,7 +41,7 @@
   "$id": "https://content-factory.local/schema/SpeechTranscript.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "What a recording says, with per-word timings: the input side of the narration contracts.\n\n:class:`NarrationSegment` describes speech this factory *produced* from a script it already\nhad. This describes speech that arrived without one — an interview, a lecture, a voice memo —\nso the words are the transcriber's reading of the audio rather than a script the audio was\nchecked against. That difference is the whole reason it is a separate contract and not a\nsegment with an empty script: nothing downstream may treat these words as authored.\n\n``words`` is the load-bearing field. A story planned from a transcript cuts it into beats at\nword boundaries, so every beat knows exactly which milliseconds of the recording it owns, and\nthe picture for that beat is on screen for exactly as long as those words are spoken. Without\ntimings the transcript is only text, which is why ``timing_source`` says how they were got.",
+  "description": "What a recording says, with per-word timings: the input side of the narration contracts.",
   "properties": {
     "audio_sha256": {
       "pattern": "^[a-f0-9]{64}$",

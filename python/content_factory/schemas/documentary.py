@@ -1,11 +1,4 @@
-"""Documentary episode contracts: editorial arc, derived shorts, publish metadata.
-
-The documentary lane turns one brief into a long-form 16:9 episode plus N vertical shorts.
-The long form follows a fixed editorial arc (mystery → model → test → failure → synthesis);
-each short is an independently re-edited excerpt — a self-contained 20-60 s argument with its
-own hook and a fresh vertical StoryPlan — never a centre-crop of the long timeline.
-Word budgets are planning aids only; the synthesized narration remains the clock (2.2).
-"""
+"""Documentary episode contracts: editorial arc, derived shorts, publish metadata."""
 
 from __future__ import annotations
 
@@ -76,12 +69,7 @@ class EpisodeOutline(VersionedModel):
 
 
 class ShortExcerpt(SchemaModel):
-    """One derived short: a contiguous, self-contained run of long-form beats plus its hook.
-
-    ``hook_text`` equal to the first beat's display text means "verbatim" — the claims on that
-    beat survive into the short. A rewritten hook is a new statement: the derived plan drops the
-    claim links on that beat rather than pretending the citation still holds.
-    """
+    """One derived short: a contiguous, self-contained run of long-form beats plus its hook."""
 
     short_deliverable_id: OpaqueId
     source_beat_ids: tuple[OpaqueId, ...] = Field(min_length=1)
@@ -110,8 +98,7 @@ class ChapterMarker(SchemaModel):
 
 
 class EpisodeMetadata(VersionedModel):
-    """Publishing metadata for a long-form episode. Generating this never publishes anything:
-    upload stays behind the existing distribution gates and explicit operator approval."""
+    """Publishing metadata for a long-form episode."""
 
     deliverable_id: OpaqueId
     title_candidates: tuple[str, ...] = Field(min_length=1, max_length=5)

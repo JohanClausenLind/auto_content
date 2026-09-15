@@ -1,12 +1,4 @@
-"""Render a character's turnaround (structure references for HiDream subject conditioning).
-
-    uv run --project skills/video/blender_scene python skills/video/blender_scene/assets_build/render_turnaround.py \
-        <character_name> [--assets ROOT] [--size 768x768]
-
-Nine one-frame shots (front, left45, left90, back, right45, right90, closeup_face, wide_full,
-t_pose) rendered
-with the normal skill runner into <assets>/characters/<name>/turnaround/<view>/, plus index.json.
-"""
+"""Render a character's turnaround (structure references for HiDream subject conditioning)."""
 
 from __future__ import annotations
 
@@ -49,10 +41,7 @@ def _views(height: float) -> dict[str, dict]:
         "left90": {"camera": cam(-90, d_full, eye, 50), "pose": "stand_relaxed"},
         "back": {"camera": cam(180, d_full, eye, 50), "pose": "stand_relaxed"},
         "right45": {"camera": cam(45, d_full, eye, 50), "pose": "stand_relaxed"},
-        # Both profiles, not one. With only left90 the asset review's profile_coverage check fails
-        # by design: half the body is never looked at, and an asymmetry on the unseen side - a
-        # collapsed shoulder, a foot rotated the wrong way - passes a bilateral-symmetry test done
-        # on the t-pose's keypoints while being plainly visible in a render nobody made.
+        # Both profiles, not one.
         "right90": {"camera": cam(90, d_full, eye, 50), "pose": "stand_relaxed"},
         "closeup_face": {
             "camera": cam(0, d_close, 0.9 * height, 85, (0.0, 0.0, 0.9 * height)),

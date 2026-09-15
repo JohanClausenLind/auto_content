@@ -1,22 +1,4 @@
-"""Score a rendered set of control passes against the staging rubric.
-
-    uv run python scripts/score_staging.py <controls_dir> [--clip cmu_35_18] [--json report.json]
-
-    # e.g. after `run-local ... --until controls`
-    uv run python scripts/score_staging.py \
-        output/local-runs/runner-mocap/deliverables/dlv_short0000001/controls
-
-Every criterion is read off what Blender actually rendered, never off the shot plan's intentions:
-the layout pass for how big the figure came out and how close it got to the frame edge, the
-skeleton pass for whether the pose projects to anything, the segmentation mask against the rough
-RGB for whether the figure separates from its ground, and camera.json for whether consecutive
-shots are different shots. That distinction is the whole point - a plan that asks for a 0.82 body
-fraction and delivers 0.65 scores the 0.65.
-
-``content_factory.controls.rubric`` owns the curves, the weights and the 8.5 bar, and pins its own
-version into the report, so a score is always attributable to the thresholds it was measured
-against and cannot be quietly re-based by editing this script.
-"""
+"""Score a rendered set of control passes against the staging rubric."""
 
 from __future__ import annotations
 
@@ -46,19 +28,7 @@ def _angle(a: list[float], b: list[float]) -> float:
 
 
 def worst_authored_rotation(plan_path: Path) -> tuple[float, int]:
-    """``(largest authored bone rotation in degrees, how many bones were authored)``.
-
-    This is the quantity the rubric's anatomical-plausibility criterion actually names: a rotation
-    somebody *typed*, where 140 degrees on one axis is a typo that shows in every frame. A
-    ``segments`` or ``clip`` pose authors nothing - the angles come from a capture - so a
-    mocap-staged plan has no authored rotation to judge and the criterion does not apply, the same
-    way identity distinctness does not apply to a solo scene.
-
-    Feeding captured joint flexion in here instead was wrong and scored 0.9/10 for a sprint whose
-    knees reach 116 degrees, which is what a running knee does. What can go wrong with a captured
-    pose is the retarget landing it on the wrong rig angles, and that is measured separately by
-    :func:`retarget_fidelity`, so the 10 here is not a free pass.
-    """
+    """``(largest authored bone rotation in degrees, how many bones were authored)``."""
     if not plan_path.is_file():
         return 0.0, 0
     plan = rubric.load_json(plan_path)
@@ -77,26 +47,12 @@ def worst_authored_rotation(plan_path: Path) -> tuple[float, int]:
 
 
 def retarget_fidelity(controls_dir: Path, clip_name: str) -> float:
-    """Worst disagreement, in degrees, between a rendered elbow's bend and the capture's own.
-
-    Not a rubric criterion - evidence for one. A ``cf.clip.v2`` stores world segment directions, so
-    the angle between ``lhumerus`` and ``lradius`` is the elbow, with no rig involved; the rendered
-    skeleton's shoulder/elbow/wrist unproject to camera space through camera.json and give the same
-    angle. If the aim solve were dropping a twist, these would not agree.
-
-    Read the magnitude against how bent the joint is. An included angle is ill-conditioned near
-    straight: on ``cmu_35_18``, a sprint whose elbows sit at 92-116 degrees, this measures 2.9
-    degrees worst; on ``cmu_18_19_01``, a handshake whose elbows are at 25-30, it measures 12.5
-    from the same code, because a millimetre of projected elbow error swings the angle much
-    further when the arm is nearly straight. A large number on a near-straight limb is this
-    measurement's precision, not the retarget's error.
-    """
+    """Worst disagreement, in degrees, between a rendered elbow's bend and the capture's own."""
     if not clip_name:
         return 0.0
     clip = rubric.load_json(CLIPS / f"{clip_name}.json")
-    # Per actor, not actors[0]. Comparing a character playing actor "b" against actor "a"'s frames
-    # measured a two-person shot at 29.7 degrees of disagreement where the retarget was fine; the
-    # solo runner hid the bug because it has one actor.
+    # Per actor, not actors[0]: comparing actor "b" against actor "a"'s frames measured 29.7
+    # degrees of disagreement on a two-person shot where the retarget was fine.
     by_actor = {str(a["actor_id"]): a["frames"] for a in clip["actors"]}
     worst = 0.0
     for shot in sorted(d for d in controls_dir.iterdir() if d.is_dir()):
@@ -104,10 +60,8 @@ def retarget_fidelity(controls_dir: Path, clip_name: str) -> float:
         camera_doc = rubric.load_json(shot / "camera.json")
         intrinsics = camera_doc["frames"][0]["intrinsics"]
         size = (camera_doc["width"], camera_doc["height"])
-        # One entry per entity *per rendered frame*, so it has to be keyed on both. Keying on the
-        # entity alone kept the last entry and compared the frame-0 skeleton against clip frame
-        # 60, which reported a 32-degree retarget error where there was none. The solo runner hid
-        # it by rendering a single frame.
+        # One entry per entity *per rendered frame*, so key on both: keying on the entity alone
+        # compared the frame-0 skeleton against clip frame 60 and reported a 32-degree error.
         poses = {
             (p["entity"], int(p.get("frame", 0))): p
             for p in rubric.load_json(shot / "metadata.json").get("poses", [])
@@ -155,12 +109,7 @@ def _unit(v: list[float]) -> list[float]:
 
 
 def _silhouette(seg_png: Path, seg_id: int, grid: int = 64) -> NDArray[np.float32] | None:
-    """One character's silhouette, cropped to its own bounding box and resized to a fixed grid.
-
-    Cropping is what makes this a shape comparison rather than a position one: two identical
-    mannequins standing a metre apart differ enormously as masks and not at all as bodies, and the
-    criterion asks whether a viewer could tell them apart, not where they stand.
-    """
+    """One character's silhouette, cropped to its own bounding box and resized to a fixed grid."""
     seg = np.asarray(Image.open(seg_png))
     mask = seg == seg_id
     if not mask.any():
@@ -174,21 +123,7 @@ def _silhouette(seg_png: Path, seg_id: int, grid: int = 64) -> NDArray[np.float3
 
 
 def _silhouette_delta(seg_png: Path, seg_ids: list[int]) -> float | None:
-    """How differently two characters occupy space, 0 (identical shapes) to 1.
-
-    ``None`` when there is nobody to compare against, which the caller reports as unmeasured
-    rather than as zero. Reporting zero was wrong in a way that mattered: it scored every
-    two-character film 0.00 on a criterion nothing had measured, and dragged the aggregate below
-    what the staging deserved. Measured on the real shots it comes back at 0.19 for man_01 against
-    woman_01, which is nearly full marks.
-
-    Read it for what it is: in-scene distinguishability, which is the criterion's stated purpose -
-    whether a viewer can keep these two straight from frame to frame. It is not a measure of
-    identity on its own, because two characters doing different things differ in silhouette however
-    identical their meshes. The stricter test compares the same two assets in the *same* pose, off
-    their t-pose turnarounds, and would be the one to reach for before trusting a cast of
-    look-alikes.
-    """
+    """How differently two characters occupy space, 0 (identical shapes) to 1."""
     if len(seg_ids) < 2:
         return None
     first, second = (_silhouette(seg_png, i) for i in seg_ids[:2])
@@ -253,13 +188,7 @@ def measure_shot(shot: Path) -> dict | None:
 
 
 def measure(controls_dir: Path, plan_path: Path, clip_name: str) -> dict:
-    """The film's measurements, plus each shot's own.
-
-    The film takes each criterion on its *worst* shot rather than its average, because one
-    unreadable frame in thirty is a frame that gets regenerated. That is the right aggregate for
-    "is this shippable" and the wrong one for "did my last change work", so the per-shot rows are
-    kept alongside it rather than collapsed away.
-    """
+    """The film's measurements, plus each shot's own."""
     shots = sorted(d for d in controls_dir.iterdir() if d.is_dir())
     if not shots:
         raise SystemExit(f"no shot directories under {controls_dir}")

@@ -1,27 +1,4 @@
-"""Hand the card to a higher-priority tenant, and give the render back afterwards.
-
-The flashcards agent (`~/.openclaw/workspace/flashcards-agent`) shares this machine's single 24 GB
-card. Its session LLM asks for `OLLAMA_VRAM_GB` plus a 1.5 GB margin -- 17.5 GB by default -- and a
-Krea2 anchor render is ~17.4 GB resident, so the two can never be co-resident. Its own
-`backend/vram.py` knows only how to unload Ollama models, so when a render holds the card it runs
-out of things to free and the study session degrades.
-
-This is the other half: a claim the render side honours.
-
-**Demand, not a clock.** The agent's cron entries at 06:15 and 20:30 send a Web Push nudge; they
-touch no GPU. The demand arrives when somebody opens the app. Parking a six-hour film on a
-schedule nobody consulted is how the film never finishes, so nothing here is timed -- `yield_gpu`
-is called at the moment the VRAM is actually wanted, and returns immediately when there is already
-enough free.
-
-**Parking is a stop the run already knows how to survive.** `content-factory stop --runs
---after-stage` writes `stop_requested` into the registration; the runner reads it at the next step
-boundary and raises `RunStopped` with its report written and every finished stage left on disk.
-The registration's own `step` field is the node it was on, and `run-local --from` takes a node key,
-so the resume point needs no parsing of anything. A stage in flight can hold the card for ten
-minutes, though, so a deadline escalates to the signalling stop -- still resumable, from the stage
-that was interrupted rather than the one after it.
-"""
+"""Hand the card to a higher-priority tenant, and give the render back afterwards."""
 
 from __future__ import annotations
 
@@ -83,12 +60,7 @@ class ParkedRun:
     parked_at: float
 
     def resume_command(self) -> list[str]:
-        """The original command with its resume point replaced, not a reconstruction of it.
-
-        A run carries options that decide what it draws -- ``--story``, ``--style``, ``--subject``,
-        ``--quality`` -- and a stage after the parking point reads them. Rebuilding the command
-        from the workflow name alone would resume a different film.
-        """
+        """The original command with its resume point replaced, not a reconstruction of it."""
         argv = list(self.argv) or ["content-factory", "run-local", self.workflow]
         kept: list[str] = []
         drop_value = False
@@ -200,11 +172,7 @@ def yield_gpu(
     now: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
 ) -> YieldOutcome:
-    """Make room for ``need_gib``, parking the active local run only if that is what it takes.
-
-    Always leaves a claim behind, even when nothing had to move: the claim is also what tells a
-    run that is about to start that somebody else is using the card.
-    """
+    """Make room for ``need_gib``, parking the active local run only if that is what it takes."""
     free = FREE_VRAM_GIB()
     started = now()
 
@@ -307,17 +275,7 @@ def resume_gpu(
     stale_after_s: float = 0.0,
     now: Callable[[], float] = time.time,
 ) -> ResumeOutcome:
-    """Put back whatever ``yield_gpu`` parked, and drop the claim.
-
-    Idempotent: with no claim, or a claim that parked nothing, this does nothing and says so. Safe
-    to call from the flashcards side's own end-of-session hook and from a timer, because the second
-    caller finds nothing left to do.
-
-    ``stale_after_s`` is what makes a timer safe to point at this. The end-of-session hook passes 0
-    -- it knows the session is over. A cron safety net for the case where that hook never ran
-    (the tenant crashed) passes something longer than a session, so it cannot take the card back
-    from somebody who is still studying.
-    """
+    """Put back whatever ``yield_gpu`` parked, and drop the claim."""
     claim = read_claim()
     if claim is None:
         return ResumeOutcome([], [], "no claim; nothing to resume")
@@ -345,12 +303,7 @@ def resume_gpu(
 
 
 def blocking_claim(*, max_hold_s: float, now: Callable[[], float] = time.time) -> Claim | None:
-    """The claim a starting run should respect, or None.
-
-    A claim older than ``max_hold_s`` is treated as abandoned rather than binding: the tenant that
-    took the card is a separate program and can crash, and a stale file must not keep this machine
-    from ever rendering again.
-    """
+    """The claim a starting run should respect, or None."""
     claim = read_claim()
     if claim is None:
         return None

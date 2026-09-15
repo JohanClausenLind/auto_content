@@ -1,8 +1,4 @@
-"""WebAuthn / passkeys via py_webauthn (registration + authentication ceremonies).
-
-The server keeps: credential id, COSE public key, sign count, transports. Challenges are single-use
-and bound to the pending ceremony; callers store them server-side (session/DB), never in cookies.
-"""
+"""WebAuthn / passkeys via py_webauthn (registration + authentication ceremonies)."""
 
 from __future__ import annotations
 

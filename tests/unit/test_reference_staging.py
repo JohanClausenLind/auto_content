@@ -1,9 +1,4 @@
-"""Whether retrieval can change a film, and whether the run says so either way.
-
-The reference library was queried three times on this host and recorded ``selected: 0`` every
-time. That one number covers three unrelated situations and distinguishes none of them, which is
-why 19 GB of assembled data spent five days looking broken when it was working correctly.
-"""
+"""Whether retrieval can change a film, and whether the run says so either way."""
 
 from __future__ import annotations
 
@@ -18,11 +13,7 @@ class _Match:
 
 
 def test_only_a_retargeted_clip_is_stageable(tmp_path: Path, monkeypatch) -> None:
-    """An SBU sequence is a skeleton to look at; a baked CMU take can drive a rig.
-
-    Only 58 of the index's 15789 clips are retargeted, so "matched well" and "can be staged" come
-    apart constantly — and before this they were reported by the same number.
-    """
+    """An SBU sequence is a skeleton to look at; a baked CMU take can drive a rig."""
     clips = tmp_path / "clips"
     clips.mkdir()
     (clips / "cmu_22_23_08.json").write_text("{}")
@@ -36,8 +27,7 @@ def test_only_a_retargeted_clip_is_stageable(tmp_path: Path, monkeypatch) -> Non
 
 
 def test_the_planner_and_the_stage_apply_the_same_predicate(tmp_path: Path, monkeypatch) -> None:
-    """``plan_shots_from_reference`` picks a clip with its own copy of this test; if the two
-    disagree, the selection file promises a staging the planner will not perform."""
+    """``plan_shots_from_reference`` picks a clip with its own copy of this test."""
     from content_factory.shots import planner
 
     clips = tmp_path / "clips"

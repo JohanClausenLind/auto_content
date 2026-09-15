@@ -1,12 +1,6 @@
 import { vi } from "vitest";
 
-/**
- * Installs the jsdom gaps that React Aria, React Flow and the theme engine touch.
- *
- * Every shim is guarded, so this is safe to call from any suite and in any order: a real
- * implementation (or an earlier call) is never overwritten. One copy here replaces the block
- * that was pasted verbatim into three test/setup.ts files.
- */
+/** Installs the jsdom gaps that React Aria, React Flow and the theme engine touch. */
 export function installJsdomShims(): void {
   if (typeof window.matchMedia !== "function") {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({

@@ -1,5 +1,4 @@
-"""BrandNode hierarchy (phase 12): parent brand → child brand/location. Locked templates and
-policies inherit downward and cannot be overridden locally; unlocked values may be."""
+"""BrandNode hierarchy (phase 12): parent brand → child brand/location."""
 
 from __future__ import annotations
 

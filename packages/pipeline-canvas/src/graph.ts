@@ -25,12 +25,7 @@ export interface ProvidedEdge {
   target: string;
 }
 
-/**
- * Build the graph. When the API provides real edges (compiled workspace graphs), they are the
- * truth; otherwise fall back to the implicit chains campaign runs follow:
- * shared nodes form one chain in array order; each deliverable's nodes form a
- * chain in array order that hangs off the last shared node.
- */
+/** Build the graph. */
 export function buildGraph(nodes: readonly RunNode[], provided?: readonly ProvidedEdge[] | null): RunGraph {
   // A provided-but-empty edge list is a real answer (an all-parallel DAG), not "unknown":
   // only null/undefined — the compiled dag.json was unavailable — falls back to guessing.
@@ -93,11 +88,7 @@ export function formatDuration(ms: number | null | undefined): string {
   return `${minutes} m ${String(seconds).padStart(2, "0")} s`;
 }
 
-/**
- * An estimate, phrased as one. "~30 s", "~4 min", "~1.2 h" — coarse on purpose, because the
- * spread behind these medians is real and a figure like "3 m 47 s" reads as a promise. Empty
- * string for no estimate, so a caller can `&&` it into place like `formatDuration`.
- */
+/** An estimate, phrased as one. */
 export function formatEta(seconds: number | null | undefined): string {
   if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return "";
   if (seconds < 1) return "~any moment";

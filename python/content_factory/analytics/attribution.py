@@ -1,5 +1,4 @@
-"""Analytics & revenue attribution (23): raw observations stay raw; joins are by UTM identity;
-every conclusion is labeled correlation. Nothing here mutates the Channel Brain."""
+"""Revenue attribution: raw observations stay raw, joins are by UTM identity, nothing is causal."""
 
 from __future__ import annotations
 
@@ -32,8 +31,7 @@ def build_utm_url(
     variant: str = "a",
     policy: UTMPolicy | None = None,
 ) -> str:
-    """Governed UTM builder: parameters derive from destination/campaign/deliverable/variant IDs
-    deterministically — never hand-typed, never dropped."""
+    """Derive UTM parameters deterministically from the IDs; never hand-typed, never dropped."""
     policy = policy or UTMPolicy()
     parsed = urlparse(url)
     existing = {k: v[0] for k, v in parse_qs(parsed.query).items() if not k.startswith("utm_")}
@@ -142,8 +140,7 @@ def map_retention_to_timeline(
     fps: int,
     scenes: list[tuple[str, int, int]],  # (scene_id, start_frame, duration_frames)
 ) -> list[dict[str, Any]]:
-    """Map an audience-retention curve onto exact scenes/time ranges. Output is descriptive only:
-    drops are located, never explained."""
+    """Map an audience-retention curve onto exact scenes/time ranges."""
     out: list[dict[str, Any]] = []
     for scene_id, start, duration in scenes:
         s_frac = start / total_frames

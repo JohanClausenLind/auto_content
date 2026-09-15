@@ -1,26 +1,4 @@
-/**
- * The frame-review gate, answered where the pictures are.
- *
- * `review_frames` is where this machine's work actually stops: it draws every frame, measures
- * what can be measured, writes a contact sheet, and then blocks on a person looking — because the
- * faults that got through were two characters standing back to back, four figures where two were
- * staged, "honey-coloured" drawn as jars of honey. None of that is measurable; all of it is
- * obvious in the picture.
- *
- * Until now the only way to answer was `content-factory frames review` with the run's path on
- * disk, so 25 runs are parked at the gate with their drawings finished. This panel is the same
- * decision with the images in front of you: accept the batch, or reject the ones that are wrong
- * and say why — the reason is what the redraw and the prompt-guidance proposals read.
- *
- * Two things it does not pretend. A verdict unblocks the gate and makes nothing, so the command
- * that continues the run is shown next to the result; and a frame whose file no longer matches
- * what the gate measured is labelled, because approving it would approve a picture nobody saw.
- *
- * The vision model's opinion (`AiReview`) sits under the pictures, not over them. It is the third
- * reviewer and the only one that can answer "is this the same subject" without a person, and it
- * is still only an opinion: its "mark these" fills in the selection below and records nothing.
- * The operator's button is the only thing that writes a verdict.
- */
+/** The frame-review gate answered where the pictures are; a verdict unblocks the gate. */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -84,9 +62,7 @@ function FrameCard({
   runId: string;
   frame: ReviewFrame;
   mark: Mark | undefined;
-  /** What the vision model said about this one, when it has been asked. On the card rather than
-   *  only in the list below, because "it says this is a different object" belongs beside the
-   *  picture it is about. */
+  /** What the vision model said about this one, when asked; on the card. */
   opinion?: { shows: string; severity: string; matches_intent: boolean } | undefined;
   onMark(mark: Mark | undefined): void;
 }) {
@@ -200,14 +176,7 @@ export function FrameReview({
       return next;
     });
 
-  /**
-   * Take the model's flagged frames into the operator's own selection.
-   *
-   * Only frames this batch actually has, and only ones the operator has not already decided
-   * about: a model's opinion must not silently overwrite a judgement a person already made on
-   * the same picture. The reason stays empty — the reason is what the redraw is told, and it has
-   * to be in the reviewer's own words.
-   */
+  /** Take the model's flagged frames into the selection. */
   const markFlagged = (frameIds: readonly string[]) => {
     const known = new Set(review.frames.map((f) => f.frame_id));
     setMarks((current) => {

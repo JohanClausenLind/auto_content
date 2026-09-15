@@ -39,7 +39,7 @@
     },
     "CameraFrame": {
       "additionalProperties": false,
-      "description": "Camera state for one frame. Rotation is a Blender camera quaternion (looks down local -Z,\n+Y up); ``intrinsics`` is (fx, fy, cx, cy) in pixels; ``world_to_camera`` is row-major 4x4.",
+      "description": "Camera state for one frame.",
       "properties": {
         "frame_index": {
           "minimum": 0,
@@ -163,7 +163,7 @@
     },
     "ControlAsset": {
       "additionalProperties": false,
-      "description": "One compiled per-frame control image plus provenance (deterministic: same plan, same bytes).",
+      "description": "One compiled per-frame control image plus provenance.",
       "properties": {
         "compiler": {
           "default": "motion_plan",
@@ -247,7 +247,7 @@
       "type": "string"
     },
     "ControlKind": {
-      "description": "Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest\nare rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec.",
+      "description": "Per-frame control signals.",
       "enum": [
         "pose_skeleton",
         "layout_boxes",
@@ -414,7 +414,7 @@
   "$id": "https://content-factory.local/schema/ControlBundle.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Everything compiled for one shot (or one MotionPlan sequence): per-kind frame tracks,\nper-subject layout/pose tracks and, for 3D compilers, the camera per frame.",
+  "description": "Everything compiled for one shot (or one MotionPlan sequence): per-kind frame tracks.",
   "properties": {
     "anchor_frames": {
       "default": [

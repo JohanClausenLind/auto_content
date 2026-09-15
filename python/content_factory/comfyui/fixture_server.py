@@ -1,8 +1,4 @@
-"""A deterministic ComfyUI look-alike for tests (HTTP + WS), covering the routes our adapter uses.
-
-It implements a tiny node set (EmptyImage, SaveImage, SlowNode) with real image output so tests can
-assert provenance hashes. It is NOT ComfyUI and never pretends to be in production.
-"""
+"""Deterministic ComfyUI look-alike for tests (HTTP + WS) with real image output."""
 
 from __future__ import annotations
 

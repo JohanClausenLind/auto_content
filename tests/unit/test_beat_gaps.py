@@ -1,12 +1,4 @@
-"""Where a beat boundary falls in a continuous recording.
-
-Reported by the operator as "the voices cut off at the end instead of being smooth when they start
-talking at the next timestamp", and that is exactly what the old spans did: a beat ran from its
-first word's start to its last word's ``end_ms``, so the pause between sentences was discarded and
-every clip was truncated at a nominal word edge rather than where the sound stopped.
-
-Measured on `ps2b-amber`: six beats, five gaps of 520-1140 ms, **4.24 s of breath dropped**.
-"""
+"""Where a beat boundary falls in a continuous recording."""
 
 from __future__ import annotations
 
@@ -46,8 +38,7 @@ def test_the_four_seconds_of_breath_come_back() -> None:
 
 
 def test_each_beat_keeps_a_run_up_and_the_gap_remainder_stays_behind() -> None:
-    """A long pause must not be front-loaded onto the next line: it delays the delivery and holds
-    the previous picture past the point the eye is done with it."""
+    """A long pause front-loaded onto the next line holds the previous picture too long."""
     spans = _close_the_gaps(AMBER, _order(6), 42_000)
     for beat_id, (original_start, _) in AMBER.items():
         if beat_id == "beat_1":
@@ -71,16 +62,14 @@ def test_the_last_beat_keeps_its_decay_but_not_past_the_recording() -> None:
 
 
 def test_a_gap_shorter_than_the_lead_is_split_at_the_next_first_word() -> None:
-    """With only 80 ms between sentences the next beat cannot have 220, and taking it anyway
-    would eat the previous beat's final consonant."""
+    """With 80 ms between sentences the next beat cannot take 220 without eating a consonant."""
     spans = _close_the_gaps({"beat_1": (0, 1000), "beat_2": (1080, 2000)}, _order(2), 3000)
     assert spans["beat_1"][1] == spans["beat_2"][0] == 1000
     assert spans["beat_1"][1] >= 1000, "never cuts into the earlier beat's words"
 
 
 def test_overlapping_spans_are_left_alone_rather_than_reordered() -> None:
-    """A beat matched out of order is a different fault, reported by its caller. Silently
-    resolving it here would hide it."""
+    """A beat matched out of order is a different fault, reported by its caller."""
     overlapping = {"beat_1": (0, 5000), "beat_2": (3000, 6000)}
     spans = _close_the_gaps(overlapping, _order(2), 7000)
     assert spans["beat_1"][1] == 5000  # untouched
@@ -92,14 +81,7 @@ def test_an_empty_plan_is_not_an_error() -> None:
 
 
 def test_the_cut_beats_reconstruct_the_recording(tmp_path) -> None:
-    """The decisive property, and the one the operator actually hears.
-
-    Edge levels are a proxy. If consecutive clips abut sample-for-sample then the mix has no
-    discontinuity at any boundary *regardless* of how loud the audio is there — the waveform simply
-    continues, which is what "smooth into the next line" means. Verified on the real ps2b-amber
-    recording (2026-09-12): concatenating the re-cut beats is byte-identical to the source span,
-    where the old spans lost 4.64 s and were not.
-    """
+    """The decisive property, and the one the operator actually hears."""
     import struct
     import wave
 

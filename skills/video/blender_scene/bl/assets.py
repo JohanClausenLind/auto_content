@@ -182,8 +182,7 @@ def build_props(scene: Any, spec: dict[str, Any]) -> list[Entity]:
 
 
 def append_character(scene: Any, spec_char: dict[str, Any], assets_root: Path) -> Entity:
-    """Append ``<assets>/characters/<asset>/<asset>.blend`` collection ``CH_<asset>`` and rename
-    its objects ``<id>:<role>`` so two instances of one asset never collide."""
+    """Append ``<assets>/characters/<asset>/<asset>.blend`` collection ``CH_<asset>``."""
     asset = spec_char["asset"]
     cid = spec_char["id"]
     blend = assets_root / "characters" / asset / f"{asset}.blend"

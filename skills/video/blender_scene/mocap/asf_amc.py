@@ -1,29 +1,4 @@
-"""Read CMU ASF skeletons and AMC motion, and run forward kinematics on them.
-
-Pure Python and numpy, no ``bpy``: the point is that the format and the kinematics can be tested in
-the normal pytest run rather than only inside Blender. The retarget onto a Blender rig lives in
-``bl/retarget.py`` and consumes what this module produces.
-
-The kinematics convention, which is the part that is easy to get wrong:
-
-    M(bone)       = C @ Rxyz(theta) @ C.T          C = Rz(az) @ Ry(ay) @ Rx(ax) from ``axis``
-    R_global(b)   = R_global(parent) @ M(b)
-    head(b)       = tail(parent)
-    tail(b)       = head(b) + R_global(b) @ (direction * length * SCALE)
-
-``theta`` is filled from the AMC value list **in the order the bone's own ``dof`` line gives**, and
-is zero on the axes that bone does not have. A parser that assumes three angles per bone
-desynchronises the whole frame: root carries six values, ``rclavicle`` two, ``rradius`` one.
-
-``SCALE`` converts ASF length units to metres. The ASF declares ``length 0.45``, meaning 0.45
-inches per unit, so a unit is ``(1 / 0.45) * 0.0254`` m. Two independent checks say this is right:
-femur and tibia come out at 0.42 m and 0.43 m for an adult subject, and over the 17.4 s of trial
-18_08 the minimum ankle height holds at 0.0879 m with a standard deviation of 2.9 mm. A wrong
-convention drifts or explodes instead of standing still on the floor.
-
-CMU is Y-up. Blender is Z-up. This module stays in CMU's frame and ``to_blender`` does the one
-conversion, so nothing downstream has to guess which frame it is holding.
-"""
+"""Read CMU ASF skeletons and AMC motion, and run forward kinematics on them."""
 
 from __future__ import annotations
 

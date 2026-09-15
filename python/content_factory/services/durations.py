@@ -1,24 +1,4 @@
-"""How long a stage takes, learned from the runs that already happened.
-
-A run's own report already records `seconds` for every stage it executed, and 240 of them were
-sitting on disk carrying 1,161 timed stages before anything read them. So the estimate is not a
-guess or a hand-written table: it is the median of what this machine actually did.
-
-**Median, not mean, and the sample count travels with it.** The spread is enormous and legitimate:
-`generate_anchor` has a median of 31.6 s over 149 samples and a maximum of 1,528 s, because a lane
-that draws one anchor and a lane that draws six both write the same stage name. One 1,528 s
-outlier would drag a mean into uselessness; the median ignores it, and `n` lets a caller say "about
-a minute" versus "about a minute, from one sample".
-
-**Keyed on (workflow, stage) first.** The same reason: `generate_anchor` on `image-set` is one
-picture at ~31 s and on `audio-picture-story` it is six at ~608 s, and calling both "generate an
-anchor" makes the estimate wrong for both. A workflow with no history for a stage falls back to
-that stage across all workflows, and a stage never seen at all returns nothing rather than a
-number somebody might believe.
-
-Read-only and cached. Nothing here writes, and a cold read is a glob over the reports directory,
-so it is done once per process and refreshed when the caller asks.
-"""
+"""How long a stage takes, learned from the runs that already happened."""
 
 from __future__ import annotations
 
@@ -60,11 +40,7 @@ class Estimate:
 
 @lru_cache(maxsize=1)
 def _lane_orders() -> tuple[tuple[str, tuple[str, ...]], ...]:
-    """Every lane's stage order, for attributing a report written before the `workflow` field.
-
-    A lane that cannot be loaded is skipped rather than raising: a broken YAML must cost its own
-    lane's estimates, not every lane's.
-    """
+    """Every lane's stage order, for attributing a report written before the `workflow` field."""
     from content_factory.runners.local import workflow_steps
     from content_factory.workflows.catalog import workflow_ids
 
@@ -78,18 +54,7 @@ def _lane_orders() -> tuple[tuple[str, tuple[str, ...]], ...]:
 
 
 def infer_workflow(stages: Sequence[str]) -> str | None:
-    """Which lane ran these stages, in this order — when exactly one lane could have.
-
-    225 reports were on disk before `run_plan` recorded the lane it was running, representing
-    weeks of GPU time, and throwing them away would have meant estimating `audio-picture-story`
-    (18 stages, six anchors, half an hour) from the median of 107 `single-image` runs: it read as
-    "2m left" on a run that takes thirty. A run executes a contiguous slice of its lane's stage
-    order, so that sequence attributes 181 of the 225 to one lane each.
-
-    Only ever *one* lane: a short slice like `transcribe_audio, plan_story` is the opening of
-    several lanes, and guessing between them would put a picture story's numbers on an image set.
-    Those 44 fall back to the all-lanes median, which is the right answer to an ambiguous question.
-    """
+    """Which lane ran these stages, in this order — when exactly one lane could have."""
     want = list(stages)
     if not want:
         return None
@@ -178,10 +143,8 @@ def _build(root: str) -> Table:
     """One pass over every report. ~410 ms here, 376 ms of it loading the lane definitions."""
     samples: dict[tuple[str | None, str], list[float]] = {}
     for workflow, stage, seconds in _reports(Path(root)):
-        # The all-workflows bucket always; the per-workflow one only when there is a workflow to
-        # key on. Adding to both unconditionally counted every report from before `run_plan`
-        # recorded a workflow *twice* — 149 real `generate_anchor` samples came back as 298, which
-        # is how this was noticed: the number was implausible rather than merely wrong.
+        # The all-workflows bucket always; the per-workflow one only when there is a workflow to key
+        # on.
         samples.setdefault((None, stage), []).append(seconds)
         if workflow is not None:
             samples.setdefault((workflow, stage), []).append(seconds)
@@ -208,43 +171,27 @@ def is_warm(*, root: Path | None = None) -> bool:
 
 
 def is_stale(*, root: Path | None = None, max_age_s: float = STALE_AFTER_S) -> bool:
-    """Whether a warm table is old enough to rebuild. False when it is not built at all: that is
-    `is_warm`'s question, and answering "stale" would send a caller down the wrong path."""
+    """Whether a warm table is old enough to rebuild."""
     entry = _TABLES.get(str(root or reports_root()))
     return entry is not None and (time.time() - entry[0]) > max_age_s
 
 
 def rebuild(*, root: Path | None = None) -> None:
-    """Read the history again and swap the result in, with no window where there is no answer.
-
-    Built first, assigned second: the old table keeps answering for the ~410 ms this takes.
-    """
+    """Read the history again and swap the result in, with no window where there is no answer."""
     key = str(root or reports_root())
     table = _build(key)
     _TABLES[key] = (time.time(), table)
 
 
 def warm(*, root: Path | None = None) -> None:
-    """Build the table now, so the caller that needs it next does not pay for it.
-
-    The first read costs **~410 ms**, and only 12 ms of that is finding the reports and 5 ms is
-    parsing them: **376 ms is loading the 16 lane definitions** that `infer_workflow` needs to
-    attribute a report written before the lane was recorded. Once per process, and still far too
-    much to spend inside a view something polls, so an async caller warms this in a thread and
-    checks `is_warm` before reading.
-    """
+    """Build the table now, so the caller that needs it next does not pay for it."""
     _table(str(root or reports_root()))
 
 
 def estimate_stage(
     stage: str, workflow: str | None = None, *, root: Path | None = None
 ) -> Estimate | None:
-    """The best estimate for one stage: this workflow's own history, then the stage's, then none.
-
-    A workflow's own median wins as soon as two runs are behind it. Below that the all-workflows
-    median is the better bet — but only as a bet, so a lone same-lane sample is still returned when
-    there is nothing else at all: "31 s, from one run of this lane" beats declining to answer.
-    """
+    """The best estimate for one stage: this workflow's own history, then the stage's, then none."""
     table = _table(str(root or reports_root()))
     own = table.get((workflow, stage)) if workflow is not None else None
     if own is not None and own.samples >= 2:
@@ -255,12 +202,7 @@ def estimate_stage(
 def estimate_remaining(
     stages: Iterable[str], workflow: str | None = None, *, root: Path | None = None
 ) -> Estimate:
-    """Seconds for a list of stages still to run.
-
-    `samples` is the *smallest* sample count behind any stage in the sum, because a total is only
-    as trustworthy as its weakest term, and stages with no history at all are counted as zero and
-    reported by `unknown_stages` rather than guessed at.
-    """
+    """Seconds for a list of stages still to run."""
     total = 0.0
     counts: list[int] = []
     for stage in stages:
@@ -281,13 +223,7 @@ def unknown_stages(
 
 @dataclass(frozen=True)
 class Forecast:
-    """When the work that is left will be finished.
-
-    `remaining_seconds` counts the stages not yet started plus whatever is left of the one in
-    flight. `samples` is the weakest term's evidence, `unknown` names the stages history cannot
-    speak for, and `overdue` says the running stage has already outlasted its own median — which
-    is the honest reading of "0 seconds left" and stops the UI promising a finish that has passed.
-    """
+    """When the work that is left will be finished."""
 
     remaining_seconds: float
     samples: int
@@ -319,13 +255,7 @@ def forecast(
     running: tuple[str, float] | None = None,
     root: Path | None = None,
 ) -> Forecast:
-    """Seconds until a run in progress is done.
-
-    `running` is `(stage, seconds it has been running)` and is charged only for the part of its
-    median it has not used up, floored at zero: a stage that has already run twice its median has
-    nothing left to promise, and saying "-40s" or silently re-adding the whole median would both
-    be worse than saying it is overdue.
-    """
+    """Seconds until a run in progress is done."""
     stages = list(remaining)
     total = estimate_remaining(stages, workflow, root=root)
     seconds = total.seconds

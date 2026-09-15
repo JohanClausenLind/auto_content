@@ -1,28 +1,4 @@
-"""TV Human Interactions ingest: 300 broadcast clips, the only kissing and the only stated angles.
-
-Every number comes from ``_index/measured/tvhi.json``, which already counted each clip's
-annotation file: the per-frame interaction labels, the per-person head orientations, and how many
-boxes each frame carries. The ``.annotations`` files are opened here only to digest them, so this
-module cannot disagree with the measured index about what they contain.
-
-Three decisions are worth reading.
-
-**Head orientation becomes ``camera_angles``.** This is the one source on disk that states which
-way each head faces, and that is exactly the angle information the rest of the library lacks. The
-dataset's own five values are kept verbatim rather than bucketed into ``front`` or ``side``,
-because bucketing would be this module's invention and the raw values are more specific. They are
-ordered most-annotated first, with ties broken by name so the order is stable.
-
-**The 100 negative clips are emitted.** A clip with nothing but ``no_interaction`` gets
-``interaction_tags = ("no_contact",)`` and no contact tags, which the contract allows. A negative
-example is worth having: it is two people in one broadcast frame not touching, which is the
-staging either side of every interaction.
-
-**``people_count`` is the largest ``num_bbxs`` any frame of the clip carries.** A frame with fewer
-boxes means somebody walked out of shot, not that the cast shrank, and 53 clips would otherwise be
-recorded as one-person clips because the pair is only both in frame for part of the take. The
-modal, smallest and largest counts are all kept in ``measured``.
-"""
+"""TV Human Interactions ingest: 300 broadcast clips, the only kissing."""
 
 from __future__ import annotations
 
@@ -57,9 +33,8 @@ _CLIP_RE = re.compile(r"^(?P<name>[A-Za-z]+)_(?P<number>\d{4})$")
 NO_INTERACTION = "no_interaction"
 """The dataset's own name for a frame where the annotated people are not interacting."""
 
-# Real broadcast footage of real people, and unlike Harmony4D nothing stands between the lens and
-# the subjects, so the pixels are usable as a visual reference. The resolution is the limit, and it
-# is carried by width and height rather than by a usage class.
+# Nothing stands between the lens and the subjects, so the pixels are a usable visual reference;
+# resolution is the limit and is carried by width and height, not by a usage class.
 SETTING = "broadcast television"
 USAGE = UsageClass.pixels_usable
 
@@ -97,14 +72,7 @@ _CLASS_WORDS = {
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every TV-HI clip this source contributes, plus one line per thing skipped and why.
-
-    Guarantees: clips are sorted by ``clip_id``; the same ``root`` and ``ingested_at`` produce
-    byte-identical clips, because every count comes from the measured index and every digest from
-    the file itself; every interaction and orientation value is checked against
-    ``class_maps.json`` before it is used, so an unknown value is reported rather than mapped onto
-    a near-miss tag; and a clip is emitted only when its video is on disk.
-    """
+    """Every TV-HI clip this source contributes, plus one line per thing skipped and why."""
     index, failure = _load_index(root / "_index" / "measured")
     if index is None:
         return [], [failure or "tvhi: the measured index could not be read"]
@@ -124,11 +92,7 @@ def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[s
 
 
 def _load_index(measured: Path) -> tuple[dict[str, Any] | None, str | None]:
-    """The measured JSON this ingester reads, or a reason it could not be read.
-
-    A host without ``/mnt/fast/reference`` is a normal condition for this repo, so a missing index
-    is one readable line in the library manifest rather than a traceback in the build driver.
-    """
+    """The measured JSON this ingester reads, or a reason it could not be read."""
     out: dict[str, Any] = {}
     for name in _INDEX_FILES:
         path = measured / name
@@ -260,9 +224,8 @@ def _clip(
         affection=affection,
         interaction_tags=tags,
         contact_tags=contact,
-        # The dataset annotates boxes, interaction and head orientation, and no posture at all.
-        # Standing is the assumption for a shot-length broadcast two-person interaction, and the
-        # caption says it was assumed so a consumer is not misled into trusting it.
+        # The dataset annotates no posture; standing is the assumption for a shot-length broadcast
+        # interaction, and the caption says it was assumed.
         postures=(Posture.standing,),
         setting=SETTING,
         camera_angles=_angles(orientations),

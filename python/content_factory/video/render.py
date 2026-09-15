@@ -1,5 +1,4 @@
-"""RenderBackend: local_process (ADR 0003). Calls the Node renderer with argument arrays, never
-shell strings; stores outputs in the ArtifactStore with QC facts and a provenance record."""
+"""RenderBackend: local_process (ADR 0003)."""
 
 from __future__ import annotations
 
@@ -72,10 +71,7 @@ every webpack bundle from then on."""
 
 
 def stage_assets(bundle: RenderBundle) -> RenderBundle:
-    """Copy `bundle.assets` into the renderer's public directory, returning a bundle that names
-    the staged copies. A path that is already a URL is left alone; a missing file is left alone
-    too, because the scenes draw a labelled card for an asset they cannot resolve and that is a
-    better failure than refusing to render the rest of the film."""
+    """Copy `bundle.assets` into the renderer's public directory."""
     if not bundle.assets:
         return bundle
     staged: dict[str, str] = {}
@@ -121,11 +117,7 @@ def render_artboard(
     timeout_s: int = 600,
     scale: int = 1,
 ) -> RenderOutcome:
-    """``scale`` renders at a multiple of the artboard's pixel size (a retina export).
-
-    The QC is told the scaled size rather than the artboard's, so a 2x render is checked against
-    what was asked for instead of failing its own dimensions.
-    """
+    """``scale`` renders at a multiple of the artboard's pixel size (a retina export)."""
     if bundle.kind != "artboard" or bundle.artboard is None:
         raise RenderError("bundle is not an artboard bundle")
     if scale < 1:

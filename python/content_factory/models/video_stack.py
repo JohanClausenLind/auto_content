@@ -1,29 +1,4 @@
-"""The local AI-video model stack: tiers, fallbacks, and an honest on-disk verifier.
-
-Mirrors the ``scripts/download_ai_video_stack.sh`` layout, which since 2026-09-05 is the
-repository itself (ComfyUI-style flat dirs): upstream code checkouts in ``<root>/external/``,
-weights in a separate store such as ``/mnt/fast/models`` (pass ``models_root``; ``<root>/models/``
-is only the category-sorted symlink index into that store), generated media in ``<root>/output/``.
-``root`` is ``$AI_VIDEO_ROOT`` or the repo root (see :func:`default_stack_root`).
-
-Reports what is actually usable RIGHT NOW on this machine — per entry: ready / downloading / gated /
-repo-without-weights / not downloaded / needs a manual step / known-incompatible. Facts verified
-against the Hugging Face + GitHub APIs on 2026-09-05 (revisions pinned in
-scripts/download_video_stack_extras.sh):
-
-* LTX-2.3 IC-LoRAs do NOT apply to the LTX-2.5 22B *distilled* GGUF transformer this stack
-  downloads, and that is upstream's own statement rather than a reading of a ``base_model``
-  field: ``external/LTX-2`` (1.3.0, 2026-08-25) says "a LoRA only works with the model it was
-  trained on" and "pair them with an LTX-2.3 checkpoint". The only LTX-2.5 IC-LoRA Lightricks
-  publishes is Pixel-Spatial-Upscaler (detailing) — no depth, canny, pose, union or motion-track
-  adapter for 2.5 exists to download. Re-checked 2026-09-09.
-* Wan-Animate-2 official weights are BF16 14B only (no fp8/quant in the repo) — not a
-  comfortable native fit for 24 GB; community GGUF quants exist (pinned, flagged as community).
-* Practical-RIFE publishes weights via Google Drive; the HF mirrors are untrusted junk — the
-  entry stays a documented manual step rather than pretending a scriptable source exists.
-* LivePortrait's official weights moved to KlingTeam/LivePortrait.
-* facebook/sam3.1 is manually gated: request access, then rerun the downloader.
-"""
+"""The local AI-video model stack: tiers, fallbacks, and an honest on-disk verifier."""
 
 from __future__ import annotations
 
@@ -555,11 +530,7 @@ def verify_video_stack(
     entries: tuple[StackEntry, ...] = VIDEO_STACK,
     which: Callable[[str], str | None] = shutil.which,
 ) -> VideoStackReport:
-    """Pure filesystem/PATH inspection — no network, no model loads, safe while downloads run.
-
-    ``models_root`` overrides ``root/models`` when the weight store lives elsewhere (the
-    operator moved it to ``/mnt/fast/models`` on 2026-09-05; ``<repo>/models/<category>/<Name>``
-    is only a human-readable symlink index and is not scanned)."""
+    """Pure filesystem/PATH inspection — no network, no model loads, safe while downloads run."""
     models = models_root if models_root is not None else root / "models"
     repos = root / EXTERNAL_DIR
     reports: list[EntryReport] = []
@@ -620,12 +591,7 @@ EXTERNAL_DIR = "external"  # upstream model-code checkouts (+ their .venv), git-
 
 
 def default_stack_root() -> Path:
-    """``$AI_VIDEO_ROOT`` when set, else the repository root.
-
-    Since 2026-09-05 the local stack is laid out ComfyUI-style inside the repo, all git-ignored:
-    ``external/`` (upstream checkouts, formerly ``~/ai-video-stack/repos``), ``models/`` (the
-    category-sorted symlink index into the weight store, formerly ``~/models``), ``output/``
-    (generated media and eval runs) and ``.venvs/`` (the hf download and scenedetect tool venvs)."""
+    """``$AI_VIDEO_ROOT`` when set, else the repository root."""
     configured = os.environ.get("AI_VIDEO_ROOT", "")
     if configured:
         return Path(configured).expanduser()
@@ -638,10 +604,7 @@ def resolve_models_root(
     explicit: str = "",
     configured_roots: tuple[str, ...] = (),
 ) -> Path:
-    """Where the weights are: an explicit path (flag/env) wins; else the first existing
-    configured inventory root (``CF__COMFYUI__EXTRA_MODEL_ROOTS`` points at the same store the
-    Models panel scans); else ``root/models``. The configured store must beat ``root/models``
-    because on this layout ``<repo>/models/`` exists but holds only the symlink index."""
+    """Where the weights are: explicit path, then a configured root, then ``root/models``."""
     if explicit:
         return Path(explicit).expanduser()
     for candidate in configured_roots:
@@ -652,10 +615,7 @@ def resolve_models_root(
 
 
 def index_store_root(index: Path) -> Path | None:
-    """The weight store a ``<repo>/models/<category>/<Name>`` symlink index points into, or None
-    when ``index`` is not such an index. Every link in the index resolves to ``<store>/<short>``,
-    so the store is the common parent of the resolved targets; the index itself holds no weights,
-    and scanning it made the report claim NO WEIGHTS for a complete stack (2026-09-06)."""
+    """The store a ``<repo>/models/<category>/<Name>`` symlink index points into."""
     if not index.is_dir():
         return None
     parents: set[Path] = set()

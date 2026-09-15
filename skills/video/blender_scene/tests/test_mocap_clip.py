@@ -1,10 +1,4 @@
-"""Baking CMU trials into cf.clip.v2 documents.
-
-The properties that matter are the ones a broken bake would violate silently: both actors of a
-two-person trial stay frame-aligned and on one floor, directions stay unit length, the document is
-byte-deterministic so a rebake is a no-op, and a contact trial still shows contact after
-decimation.
-"""
+"""Baking CMU trials into cf.clip.v2 documents."""
 
 from __future__ import annotations
 
@@ -88,8 +82,7 @@ def test_one_ground_offset_for_the_whole_clip_and_it_is_small(hold_hands) -> Non
 
 @cmu
 def test_contact_survives_decimation(hold_hands) -> None:
-    """Holding hands means the wrists come close. If decimation lost the contact frame, this
-    catches it."""
+    """Holding hands means the wrists come close."""
     gaps = contact_gap(hold_hands, "a", "b", "rwrist", "lwrist")
     other = contact_gap(hold_hands, "a", "b", "lwrist", "rwrist")
     assert len(gaps) == hold_hands["frame_count"]

@@ -1,15 +1,4 @@
-"""Build the video SFX + ambience library from library.json into assets/sfx/.
-
-    uv run --project skills/audio/sfx python skills/audio/sfx/build_library.py [--only id,id] [--device cpu]
-
-Deterministic: every sound carries a fixed seed, so the whole library is reproducible from
-library.json alone. Writes 24-bit FLAC at 44.1 kHz stereo through index.py, which re-renders the
-sha256-pinned manifest.json and the browsable README.md over the whole library -- including the
-recorded half that ingest_recorded.py cuts from a licensed bundle. Running this builder does not
-disturb those entries and does not require the bundle to be present.
-
-Rationale for every number here: docs/research/2026-09-07-video-sfx-and-ambience-library.md
-"""
+"""Build the video SFX + ambience library from library.json into assets/sfx/."""
 
 from __future__ import annotations
 
@@ -39,18 +28,12 @@ TILT_MAX_DB = 0.0  # HF-rising spectrum: the other half of the same hiss signatu
 EVENT_PROMINENCE_MAX_DB = 10.0
 
 # Never ask small-sfx for less than this, however short the finished sound is. Measured over three
-# prompts x eight seeds: 0/8 takes usable at 0.8 s, 7/8 at 1.5 s, 8/8 at 2.5 s, 8/8 at 4.0 s. Short
-# requests are out of distribution and come back as broadband hiss. The requested duration is a
-# generation parameter; the length of the finished file is set by trimming to the event.
+# prompts x eight seeds: 0/8 takes usable at 0.8 s, 7/8 at 1.5 s, 8/8 at 2.5 s, 8/8 at 4.0 s.
 MIN_GEN_S = 3.0
 
 
 def make_candidate(model, spec: dict, defaults: dict, steps: int, seed: int):
-    """Generate one take and run all the DSP, but not the levelling. Returns (audio, qc).
-
-    Levelling is deliberately left out: it costs an ffmpeg round-trip per measurement, and every
-    metric used to choose between takes is scale-invariant, so only the winner needs it.
-    """
+    """Generate one take and run all the DSP, but not the levelling."""
     sr = sfx.SAMPLE_RATE
     loop = spec.get("loop")
     hp = spec.get("highpass_hz", defaults["highpass_hz"])
@@ -86,16 +69,7 @@ def make_candidate(model, spec: dict, defaults: dict, steps: int, seed: int):
 
 
 def score(spec: dict, qc: dict) -> float:
-    """Lower is better. Two different questions for the two families.
-
-    One-shot: is it a designed sound at all (flatness, HF tilt), and is it the sound that was asked
-    for (energy in the intended band)? Both matter -- a flawless sub rumble scored as an "airy
-    whoosh" is still the wrong file.
-
-    Bed: will it survive being repeated? A distinct event dominates that judgement, a level
-    mismatch across the wrap pumps once per cycle, and harshness above the threshold is penalised
-    because a bed is on screen for minutes at a time.
-    """
+    """Lower is better."""
     if spec.get("loop"):
         return (
             qc["event_prominence_db"]
@@ -153,9 +127,8 @@ def build_one(
         if qc["event_prominence_db"] > EVENT_PROMINENCE_MAX_DB:
             flags.append("distinct_event")
     else:
-        # A handful of one-shots have a genuinely broadband source -- paper rustle, a glass
-        # shimmer -- and read as "hiss" under the blanket threshold. Those entries carry their own
-        # limits in library.json rather than switching the check off.
+        # A handful of one-shots have a genuinely broadband source -- paper rustle, a glass shimmer
+        # -- and read as "hiss" under the blanket threshold.
         if qc["spectral_flatness"] > spec.get("max_flatness", FLATNESS_MAX) or qc[
             "hf_tilt_db"
         ] > spec.get("max_tilt_db", TILT_MAX_DB):

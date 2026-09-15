@@ -1,15 +1,4 @@
-"""One master frame rate, from the story to the finished mux.
-
-Every wind short v1 to v5 shipped 24 fps footage inside a 30 fps film. Nothing was broken and
-nothing reported it: `fixtures/story/wind_2024.json` is 30 fps, `ShotSettings.fps` is 24, and
-`plan_shots` took the setting as its default because no code compared the two. `compose_video` then
-conformed each generated clip with ffmpeg's `fps` filter, which reaches a higher rate by
-DUPLICATING frames — one frame in five shown twice, for the whole film, invisibly.
-
-So there are three separate guarantees here and they are tested separately: the story's rate is
-what `plan_shots` plans at; a mismatch is refused rather than conformed; and when a conform does
-fire (a hand-authored plan, a re-used clip) it is written into `compose.json`.
-"""
+"""One master frame rate, from the story to the finished mux."""
 
 from __future__ import annotations
 
@@ -74,8 +63,7 @@ def test_a_thirty_fps_story_plans_thirty_fps_shots(ctx: StageContext) -> None:
 
 
 def test_the_widget_cannot_disagree_with_the_story_either(ctx: StageContext) -> None:
-    """Setting the widget is not a way round the check. Delivering at a rate the story was not
-    written at means retiming the whole film, which is a decision, not a widget value."""
+    """Setting the widget is not a way round the check."""
     _write_story(ctx, StoryPlan.model_validate_json(WIND_STORY.read_text()))
     object.__setattr__(ctx, "params", {"fps": "25"})
     with pytest.raises(RuntimeError, match="25 fps"):

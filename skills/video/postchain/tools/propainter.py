@@ -1,6 +1,4 @@
-"""ProPainter: inpaint the masked region of every frame (nonzero mask = repaint).
-params: {"mask_dir": path (one PNG per frame or a single PNG), "mask_dilation": 4, "fp16": true,
-         "timeout_s": 3600}. S-Lab License 1.0 — non-commercial (operator-accepted for local use)."""
+"""ProPainter: inpaint the masked region of every frame (nonzero mask = repaint)."""
 
 from __future__ import annotations
 

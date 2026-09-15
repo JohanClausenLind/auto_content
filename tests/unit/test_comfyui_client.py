@@ -1,5 +1,4 @@
-"""Phase-0 spike: a pinned API-format workflow validated, executed against the fixture server,
-cancelled, and outputs imported with provenance. No GPU, no network, no real ComfyUI."""
+"""Phase-0 spike against the fixture ComfyUI server: validate, execute, cancel, import outputs."""
 
 from __future__ import annotations
 

@@ -1,8 +1,4 @@
-/**
- * Nodes are rendered by React Flow, which owns their props. Rather than threading a dozen
- * callbacks through node data (and re-rendering every node whenever one of them changes), the
- * editor hands itself down through context and nodes read what they need.
- */
+/** The editor reaches nodes through context; callbacks in node data would re-render every node. */
 
 import { createContext, useContext } from "react";
 import type { GraphEditor } from "./useGraphEditor";

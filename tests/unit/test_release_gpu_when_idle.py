@@ -1,13 +1,4 @@
-"""The model servers come down when no run is left to use them.
-
-A server keeps its weights loaded so the next request does not pay the ~72 s load. Right while
-work is queued, wrong once the queue is empty: measured 2026-09-10, an idle HiDream held
-**18,936 MiB** and `gpu status` reported 3.2 GiB free, so the other GPU tenant on this machine
-could not have used the card. Releasing it took free VRAM back to 21.9 GiB.
-
-Not an energy saving, and the tests say so rather than implying it: idle draw was 34.11 W with the
-model resident and 34.09 W without, both at P8.
-"""
+"""The model servers come down when no run is left to use them."""
 
 from __future__ import annotations
 
@@ -69,8 +60,7 @@ def test_the_setting_can_hold_the_weights_open(freed, monkeypatch) -> None:
 
 
 def test_ollama_is_left_alone(freed, monkeypatch) -> None:
-    """`free_the_gpu` evicts the text models too by default. Releasing our own weights is ours to
-    decide; a neighbour's are not, and nothing here loaded them."""
+    """`free_the_gpu` evicts the text models too by default."""
     from content_factory.runners import registry
 
     monkeypatch.setattr(registry, "active_runs", lambda **_kw: [])
@@ -79,8 +69,7 @@ def test_ollama_is_left_alone(freed, monkeypatch) -> None:
 
 
 def test_a_failed_run_still_releases_the_card(tmp_path: Path, monkeypatch) -> None:
-    """A crash is exactly when a forgotten 19 GB is least likely to be noticed, so the release
-    sits in a `finally` rather than on the success path."""
+    """A crash is exactly when a forgotten 19 GB is least likely to be noticed."""
     seen: list[str] = []
     monkeypatch.setattr(runner, "_release_gpu_if_idle", lambda _log=print: seen.append("released"))
     monkeypatch.setattr(runner, "_refuse_while_gpu_claimed", lambda: None)

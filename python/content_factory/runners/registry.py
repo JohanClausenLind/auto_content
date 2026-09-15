@@ -1,20 +1,4 @@
-"""Which local runs are executing right now, recorded on disk so another terminal can stop one.
-
-A local run (``content-factory make``, ``run-local``) is one long foreground process that holds
-the GPU for minutes at a time, and nothing outside its own terminal knew it existed: stopping it
-meant finding the pid by hand and hoping the skill subprocess it had spawned died with it. Every
-run now writes ``<repo>/.services/runs/<run key>.json`` while it executes — pid, workflow, project
-dir, the step it is on — and removes the file when it ends.
-
-``content-factory stop`` reads that directory and writes ``stop_requested`` into the file. The
-runner reads it back at the next step boundary and raises :class:`RunStopped`, so the run stops
-between stages with its report written and its artifacts intact, and ``--from`` resumes there.
-Stopping *now* (the default) also signals the process tree, because a single video stage can hold
-the card for ten minutes and "stop" has to mean stop.
-
-Registrations are advisory. A run that is killed outright cannot delete its own file, so a file
-whose pid is gone is stale: readers ignore it and prune it.
-"""
+"""Which local runs are executing right now, recorded on disk so another terminal can stop one."""
 
 from __future__ import annotations
 
@@ -36,8 +20,7 @@ _SAFE = re.compile(r"[^a-z0-9]+")
 
 
 def _pid_alive(pid: int) -> bool:
-    """Signal 0 asks the kernel about a pid without touching it. ``PermissionError`` means the
-    process exists and belongs to somebody else, which is still alive."""
+    """Signal 0 asks the kernel about a pid without touching it."""
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -52,11 +35,7 @@ PID_ALIVE: Callable[[int], bool] = _pid_alive
 
 
 class RunStopped(RuntimeError):  # noqa: N818 - an operator decision, not an error
-    """A run ended because somebody asked it to, not because anything failed.
-
-    Kept apart from ``LocalRunError`` so callers can tell an operator's decision from a defect:
-    a stopped run is resumable and prints no traceback; a failed one is a bug or a bad input.
-    """
+    """A run ended because somebody asked it to, not because anything failed."""
 
     def __init__(self, reason: str, *, at: str, report: dict | None = None) -> None:
         super().__init__(f"stopped at {at}: {reason}" if at else f"stopped: {reason}")
@@ -147,9 +126,7 @@ def _as_active(path: Path, data: dict) -> ActiveRun | None:
 
 
 def active_runs(*, prune: bool = True) -> list[ActiveRun]:
-    """Every run whose process is still alive, oldest first. Stale files are deleted on the way
-    past: a killed run cannot clean up after itself, and a stop command that reported a run which
-    died yesterday would be lying."""
+    """Every run whose process is still alive, oldest first."""
     found: list[ActiveRun] = []
     directory = runs_dir()
     if not directory.is_dir():
@@ -184,8 +161,7 @@ class RunHandle:
         self.step = ""
 
     def note(self, **fields: object) -> None:
-        """Record what the run is doing now (the step name). Best effort: a run must not fail
-        because its own bookkeeping file went missing."""
+        """Record what the run is doing now (the step name)."""
         data = _read(self.path)
         if data is None:
             return
@@ -195,8 +171,7 @@ class RunHandle:
         _atomic_write(self.path, data)
 
     def stop_reason(self) -> str | None:
-        """The reason somebody gave, or None. Read from disk every time — the request arrives
-        from another process, so a cached answer is no answer."""
+        """The reason somebody gave, or None."""
         data = _read(self.path)
         stop = (data or {}).get("stop_requested")
         if not isinstance(stop, dict):
@@ -209,14 +184,7 @@ class RunHandle:
 
 @contextmanager
 def _sigterm_stops_the_run(handle: RunHandle) -> Iterator[None]:
-    """Turn the SIGTERM a stop sends into :class:`RunStopped` inside the run.
-
-    Python's default action for SIGTERM is to die on the spot, which loses the report and tells
-    the operator nothing about why the run ended. Raising instead lets the runner write "stopped"
-    into ``run.json`` and exit with a sentence. Only ever installed on the main thread of the main
-    interpreter — ``signal.signal`` raises anywhere else, and a worker thread must not steal the
-    process's signal handling from whoever owns it.
-    """
+    """Turn the SIGTERM a stop sends into :class:`RunStopped` inside the run."""
     if threading.current_thread() is not threading.main_thread():
         yield
         return
@@ -244,11 +212,7 @@ def register_run(
     catch_sigterm: bool = True,
     argv: Sequence[str] | None = None,
 ) -> Iterator[RunHandle]:
-    """Publish this run for the length of the block, and take the registration down after.
-
-    ``argv`` defaults to this process's own command line, which is what makes a parked run
-    resumable as the run it actually was rather than as its workflow's defaults.
-    """
+    """Publish this run for the length of the block, and take the registration down after."""
     pid = pid if pid is not None else os.getpid()
     key = run_key(workflow, pid)
     path = runs_dir() / f"{key}.json"

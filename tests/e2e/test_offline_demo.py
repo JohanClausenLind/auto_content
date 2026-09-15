@@ -1,5 +1,4 @@
-"""Phase-3 gate: the offline narrated demo renders with synchronized narration and captions,
-passing alignment and loudness checks. Needs the headless browser (downloaded by setup.sh)."""
+"""Phase-3 gate: the offline narrated demo renders with synchronized narration and captions."""
 
 from __future__ import annotations
 

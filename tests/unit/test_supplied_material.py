@@ -1,15 +1,4 @@
-"""Material the operator supplies, and the one place every lane looks for it.
-
-Four lanes in this catalogue work on something the operator already has: a recording to repair, a
-clip to finish, a folder of stills to enlarge, a picture to move. Each of them used to say so only
-in prose, and each expected the file in a different directory — one of them inside a deliverable
-folder named after a generated id, which meant the documented way to run that lane was to run a
-different lane first.
-
-There is one rule now: **the material goes in ``<project>/uploads``**, put there by
-``--input``, by a file dropped on the canvas, or by hand. These tests pin the rule at both ends —
-the staging that puts files there, and the stages that pick them up.
-"""
+"""Material the operator supplies, and the one place every lane looks for it."""
 
 from __future__ import annotations
 
@@ -103,8 +92,7 @@ def test_a_second_identical_stage_does_not_copy_again(tmp_path: Path) -> None:
 
 
 def test_the_wrong_kind_of_file_for_the_lane_is_refused_by_name(tmp_path: Path) -> None:
-    """`_mp4` writes a real picture, which is the point: the exception below it is for a video
-    container with nothing in it, and a check that cannot still say no is not a check."""
+    """`_mp4` writes a real picture, which is the point."""
     clip = _mp4(tmp_path / "holiday.mp4")
     with pytest.raises(ValueError, match=r"holiday\.mp4 is video, and this lane takes audio"):
         stage_inputs(tmp_path / "prj", [clip], wanted=["audio"], log=lambda _m: None)
@@ -128,10 +116,7 @@ def _recording_in_an_mp4(path: Path, *, seconds: float = 3.0) -> Path:
 
 
 def test_a_recording_that_arrived_in_an_mp4_is_staged_for_an_audio_lane(tmp_path: Path) -> None:
-    """The mismatch that is not a mistake. `video/mp4` is what a phone, a voice-memo app and a
-    meeting recorder all write, so an audio lane that refuses every one of them sends an operator
-    to ffmpeg for a file it can already read. The record says audio while the MIME says video,
-    and carries the measurement that settled the disagreement."""
+    """The mismatch that is not a mistake."""
     source = _recording_in_an_mp4(tmp_path / "elsewhere" / "voice-memo.mp4")
     project = tmp_path / "prj"
 
@@ -213,9 +198,7 @@ def test_the_post_chain_with_nothing_at_all_says_how_to_give_it_something(tmp_pa
 
 
 def test_the_anchor_can_be_a_picture_the_operator_supplied(tmp_path: Path) -> None:
-    """`image-to-video`'s caveat used to say a supplied still was not expressible in the graph.
-    This is the behaviour that replaced the caveat: no model runs, and the manifest is the one a
-    generated anchor would have written, so Generate Video cannot tell the difference."""
+    """`image-to-video`'s caveat used to say a supplied still was not expressible in the graph."""
     ctx = make_context(project_dir=tmp_path / "prj")
     _png(ctx.project_dir / "uploads" / "photo.png", size=(128, 96))
     out = _anchor_from_upload(ctx)
@@ -254,13 +237,7 @@ def test_two_pictures_for_one_anchor_is_a_refusal(tmp_path: Path) -> None:
 
 
 def test_material_already_in_the_run_satisfies_the_input_requirement(tmp_path: Path) -> None:
-    """A `--from` resume must not argue about an input the earlier stages staged themselves.
-
-    Measured on `audio-picture-story --from finish` (2026-09-10): refused with "this lane works
-    on material you supply", nine stages past the one that reads the recording, about a file
-    sitting in the run's own uploads folder. The refusal pointed at `--force`, which is the wrong
-    instrument — it also waves through absent weights and unrunnable stages.
-    """
+    """A `--from` resume must not argue about an input the earlier stages staged themselves."""
     from typer.testing import CliRunner
 
     from content_factory.cli.main import app
@@ -286,10 +263,7 @@ def test_material_already_in_the_run_satisfies_the_input_requirement(tmp_path: P
 
 
 def test_a_story_of_pictures_is_refused_by_a_lane_that_draws_none(tmp_path: Path) -> None:
-    """Five `narrated-video` runs delivered films that are five "PLACEHOLDER · IMAGE / missing
-    asset" cards end to end, with narration over them and an mp4 in the delivery package
-    (measured 2026-09-10). `qc_deliverable` catches it now, but only after the render; this is
-    the same fact, knowable in the first second."""
+    """Five `narrated-video` runs delivered films of placeholder cards end to end (2026-09-10)."""
     import json
 
     from content_factory.cli.workflows_cmd import _story_wants_pictures_the_lane_cannot_make

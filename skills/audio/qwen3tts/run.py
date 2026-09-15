@@ -1,21 +1,4 @@
-"""Qwen3-TTS executor: text on stdin, one JSON line out (wav path, duration, model revision).
-
-Run inside this skill's own environment:
-    echo "The last train leaves at eleven." | \
-      uv run --project skills/audio/qwen3tts python skills/audio/qwen3tts/run.py \
-      --speaker Ryan --language English
-
-Three modes, matching what the two downloaded models can actually do:
-
-* ``--speaker NAME``            CustomVoice, one of the nine built-in timbres
-* ``--speaker NAME --instruct`` CustomVoice with natural-language style control
-* ``--ref-audio W --ref-text T`` Base, cloning the voice in ``W`` (Base has no built-in voices)
-
-``--list`` prints the speakers and languages the chosen weights actually declare, and exits.
-Shaped like skills/audio/kokoro/run.py: the control plane would talk to this over stdin/stdout
-and never import it. Qwen3-TTS gives no word timestamps, so ``tokens`` is always empty — a
-narrated timeline still needs faster-whisper/WhisperX alignment (ADR-0004).
-"""
+"""Qwen3-TTS executor: text on stdin, one JSON line out (wav path, duration, model revision)."""
 
 from __future__ import annotations
 
@@ -29,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 MODELS = {
     "custom_voice": REPO_ROOT / "models" / "speech" / "Qwen3-TTS-12Hz-1.7B-CustomVoice",
     "base": REPO_ROOT / "models" / "speech" / "Qwen3-TTS-12Hz-1.7B-Base",
+    "voice_design": REPO_ROOT / "models" / "speech" / "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
 }
 
 
@@ -38,6 +22,11 @@ def main() -> int:
     ap.add_argument("--speaker", default="", help="CustomVoice timbre, e.g. Ryan")
     ap.add_argument("--language", default="Auto", help="Auto | English | Chinese | Japanese | ...")
     ap.add_argument("--instruct", default="", help='style control, e.g. "Very happy."')
+    ap.add_argument(
+        "--describe",
+        default="",
+        help="VoiceDesign: build a voice from this description instead of picking a timbre",
+    )
     ap.add_argument("--ref-audio", default="", help="Base voice clone: reference wav/URL")
     ap.add_argument("--ref-text", default="", help="Base voice clone: transcript of --ref-audio")
     ap.add_argument("--x-vector-only", action="store_true", help="clone without a transcript")
@@ -54,16 +43,20 @@ def main() -> int:
     args = ap.parse_args()
 
     clone = bool(args.ref_audio)
-    model_path = args.model or str(MODELS["base"] if clone else MODELS["custom_voice"])
+    design = bool(args.describe) and not clone
+    if design:
+        mode_default = MODELS["voice_design"]
+    elif clone:
+        mode_default = MODELS["base"]
+    else:
+        mode_default = MODELS["custom_voice"]
+    model_path = args.model or str(mode_default)
 
     import torch
     from qwen_tts import Qwen3TTSModel
 
-    # Seeded before the model is built, so weight-init and generation both see it. Qwen3-TTS
-    # samples, so two runs of the same text differ in timing by tens of milliseconds and in
-    # delivery audibly — which makes a cache key over (voice, text) a lie and makes "run it again,
-    # that take was odd" an untraceable change. With a seed the take is a fact about the inputs,
-    # and a retake is an explicit different seed rather than a dice roll.
+    # Before the model is built, so weight-init and generation both see it. Qwen3-TTS samples, so
+    # without a seed a cache key over (voice, text) is a lie (journal 2026-09-07).
     if args.seed is not None:
         torch.manual_seed(args.seed)
         if torch.cuda.is_available():
@@ -91,7 +84,13 @@ def main() -> int:
         print("no text on stdin", file=sys.stderr)
         return 2
 
-    if clone:
+    if design:
+        # VoiceDesign has no built-in timbres: the description IS the voice, prepended to the
+        # sequence as a control signal (paper 2601.15621, sec. "instruction following").
+        wavs, sr = model.generate_voice_design(
+            text=text, instruct=args.describe, language=args.language
+        )
+    elif clone:
         if not args.ref_text and not args.x_vector_only:
             print("--ref-text is required unless --x-vector-only", file=sys.stderr)
             return 2
@@ -124,8 +123,9 @@ def main() -> int:
                 "sample_rate": sr,
                 "duration_ms": int(len(wavs[0]) * 1000 / sr),
                 "tokens": [],  # Qwen3-TTS returns no word timings; align separately (ADR-0004)
-                "mode": "voice_clone" if clone else "custom_voice",
+                "mode": "voice_design" if design else ("voice_clone" if clone else "custom_voice"),
                 "speaker": args.speaker or None,
+                "describe": args.describe or None,
                 "model_revision": Path(model_path).name,
                 "seed": args.seed,
             },

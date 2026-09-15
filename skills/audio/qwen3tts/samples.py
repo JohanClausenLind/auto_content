@@ -1,26 +1,5 @@
-"""Generate one sample per built-in Qwen3-TTS voice, then the same line cloned by the Base model.
+"""Generate one sample per built-in Qwen3-TTS voice, then the same line cloned by the Base model."""
 
-    uv run --project skills/audio/qwen3tts python skills/audio/qwen3tts/samples.py
-
-Two models, two different things — this is the distinction the model card makes and it is worth
-stating plainly, because only one of them has voices at all:
-
-* **CustomVoice** carries the nine built-in timbres (``config.talker_config.spk_id``). Each one is
-  addressed by name, optionally steered by a natural-language ``instruct`` string.
-* **Base** has ``spk_id == {}``: no built-in voices whatsoever. It clones a voice from three
-  seconds of reference audio plus that audio's transcript. So "every voice, through Base" means
-  cloning each CustomVoice timbre and re-speaking the shared line with it.
-
-For every speaker this writes:
-  1. ``<speaker>.native.wav``   — a line in the speaker's own language (the card's quality advice)
-  2. ``<speaker>.shared_en.wav`` — one shared English line, so the nine are directly comparable
-  3. ``<speaker>.clone_en.wav``  — Base cloning (1) and re-speaking the shared English line
-
-plus ``manifest.json`` with durations, digests, timings and the exact text used.
-Not imported by the control plane.
-"""
-
-# ruff: noqa: RUF001 — the sample lines are real CJK text; fullwidth punctuation is correct there.
 from __future__ import annotations
 
 import argparse

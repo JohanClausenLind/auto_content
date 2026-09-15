@@ -1,20 +1,4 @@
-"""Which rig bones each mocap segment aims, and the pure-maths half of the aim solve.
-
-Kept out of ``bl/`` so it can be unit-tested without Blender: everything here works on plain 4x4
-matrices, and ``bl/retarget.py`` is the thin layer that reads them off an armature and writes the
-quaternions back.
-
-Why aim instead of copying joint angles. MPFB fits its rig to each character mesh, so the rest
-orientation of a given bone differs from body to body. A quaternion solved on one character is
-therefore wrong on another - measured at a mean of 11.4 degrees and a maximum of 22.6 degrees,
-with a whole leg 18-21 degrees out. A world direction is a property of the motion rather than of
-the performer, so aiming each bone along the captured direction is correct on every rig by
-construction.
-
-MPFB splits limbs where CMU does not: one femur becomes ``upperleg01`` plus ``upperleg02``. Both
-halves are aimed along the same segment direction, which keeps the limb straight and its length
-intact.
-"""
+"""Which rig bones each mocap segment aims, and the pure-maths half of the aim solve."""
 
 from __future__ import annotations
 
@@ -73,12 +57,7 @@ def bone_target_map(directions: dict[str, list[float]]) -> dict[str, np.ndarray]
 
 
 def minimal_rotation(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """Smallest rotation taking unit vector ``a`` onto unit vector ``b``.
-
-    Zero twist about the bone axis by construction, which is why forearm and palm roll are not
-    reproduced. The elbow bend *plane* is still right, because the forearm is aimed on its own
-    rather than inherited from the upper arm.
-    """
+    """Smallest rotation taking unit vector ``a`` onto unit vector ``b``."""
     c = float(np.clip(np.dot(a, b), -1.0, 1.0))
     axis = np.cross(a, b)
     n = float(np.linalg.norm(axis))
@@ -141,13 +120,7 @@ def solve_aim(
     bones: list[dict],
     targets: dict[str, np.ndarray],
 ) -> dict[str, tuple[float, float, float, float]]:
-    """Top-down aim solve over a rest-pose bone list.
-
-    ``bones`` is ordered parents-before-children, each entry ``{"name", "parent", "matrix_local"}``
-    with ``matrix_local`` a 4x4 rest matrix in armature space (Blender's ``Bone.matrix_local``).
-    Returns one basis quaternion per bone; bones with no target get identity but still propagate
-    their parent's solved rotation, which is what keeps a chain consistent.
-    """
+    """Top-down aim solve over a rest-pose bone list."""
     parent_world: dict[str, np.ndarray] = {}
     rest: dict[str, np.ndarray] = {
         b["name"]: np.asarray(b["matrix_local"], dtype=float) for b in bones

@@ -1,11 +1,4 @@
-""" "When will it be done" — answered from what this machine has already measured.
-
-A run's own report records `seconds` for every stage it executed, and 240 of them were on disk
-carrying 1,161 timed stages before anything read them. These tests pin the two properties that
-make an estimate worth showing: it is keyed on the lane (`generate_anchor` is one picture on
-`image-set` and six on `audio-picture-story`, ~20x apart), and it never promises a finish it has
-already missed.
-"""
+""" "When will it be done" — answered from what this machine has already measured."""
 
 from __future__ import annotations
 
@@ -49,8 +42,7 @@ def history(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
 
 
 def test_a_lane_with_its_own_history_is_not_told_the_average_of_every_lane(history: Path) -> None:
-    """The whole point. Eight `generate_anchor` samples span 31 s to 601 s because the stage name
-    says nothing about how many pictures it draws; a single median over them is wrong for both."""
+    """The whole point."""
     one = durations.estimate_stage("generate_anchor", "image-set")
     six = durations.estimate_stage("generate_anchor", "audio-picture-story")
     assert one is not None and six is not None
@@ -60,9 +52,7 @@ def test_a_lane_with_its_own_history_is_not_told_the_average_of_every_lane(histo
 
 
 def test_every_report_is_counted_once(history: Path) -> None:
-    """Adding each sample to both its lane's bucket and the all-lanes bucket, unconditionally,
-    double-counted the reports that carried a lane name. It read as 298 samples where 149 existed,
-    which is how it was noticed: the number was implausible, not merely wrong."""
+    """Adding each sample to both its lane's bucket and the all-lanes bucket, unconditionally."""
     every = durations.estimate_stage("generate_anchor")
     assert every is not None
     assert every.samples == 8  # 4 image-set + 3 picture-story + 1 with no lane recorded
@@ -110,9 +100,7 @@ def test_the_finish_time_is_aware_so_a_browser_can_localise_it(history: Path) ->
 
 
 def test_a_report_is_attributed_to_the_only_lane_that_could_have_produced_it() -> None:
-    """225 reports were on disk before the lane was recorded, and a run executes a contiguous
-    slice of its lane's stage order, so that sequence names the lane. Measured on the real
-    directory: 181 of the 225 attributed, 0 unmatched."""
+    """225 reports were on disk before the lane was recorded."""
     assert (
         durations.infer_workflow(["transcribe_audio", "restore_speech", "align_words"]) is None
         or True
@@ -126,8 +114,7 @@ def test_a_report_is_attributed_to_the_only_lane_that_could_have_produced_it() -
 
 
 def test_a_slice_several_lanes_share_is_left_unattributed_rather_than_guessed() -> None:
-    """Putting a picture story's numbers on an image set because they open the same way would be
-    worse than the all-lanes median, which is the right answer to an ambiguous question."""
+    """Putting a picture story's numbers on an image set."""
     assert durations.infer_workflow([]) is None
     assert durations.infer_workflow(["plan_story"]) is None  # nearly every lane starts here
     assert durations.infer_workflow(["not_a_stage", "plan_story"]) is None
@@ -144,8 +131,7 @@ def test_out_of_order_stages_match_nothing() -> None:
 def test_history_without_a_recorded_lane_is_still_keyed_to_one(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The end-to-end point of the backfill: an old report, no `workflow` key, and the lane's own
-    median comes back anyway."""
+    """The end-to-end point of the backfill: an old report, no `workflow` key."""
     from content_factory.runners.local import workflow_steps
 
     order = [stage.value for _k, stage, _p in workflow_steps("single-image")]
@@ -198,8 +184,7 @@ def test_a_queued_node_gets_its_lane_median_and_a_running_one_gets_the_remainder
 
 
 def test_the_run_total_treats_branches_in_flight_as_concurrent_not_serial(history: Path) -> None:
-    """Two stages running at once do not take the sum of their times, and the run is waiting on
-    whichever has the most left. Summing them would over-promise the finish on every DAG."""
+    """Two stages running at once do not take the sum of their times."""
     now = datetime.now(UTC)
     eta = runs._run_forecast(
         [
@@ -221,8 +206,7 @@ def test_the_run_total_treats_branches_in_flight_as_concurrent_not_serial(histor
 
 
 def test_a_blocked_node_is_waiting_for_a_person_not_for_seconds(history: Path) -> None:
-    """It has already run: it generated, checked its own output and gave up for someone to look
-    at. Its remaining cost is a human decision, so "~31 s" is the one answer certainly wrong."""
+    """It has already run: it generated, checked its own output."""
     stuck = node("generate_anchor", NodeState.blocked)
     assert runs._node_eta(stuck, "image-set", datetime.now(UTC))["eta_seconds"] is None
     # And a run in which everything is blocked is not finishing on its own, so it promises nothing.
@@ -257,8 +241,7 @@ def test_the_lane_comes_from_the_report_and_a_run_without_one_still_gets_numbers
 
 
 def test_a_naive_timestamp_from_sqlite_is_read_as_utc_not_as_local_time(history: Path) -> None:
-    """SQLite stores what it was given without a zone. Reading it as local time made a node in a
-    +02:00 summer look two hours old, which is an ETA of zero on everything."""
+    """SQLite stores what it was given without a zone."""
     now = datetime.now(UTC)
     naive = RunNode(node_id="a", stage="generate_anchor", state=NodeState.running)
     naive.updated_at = now.replace(tzinfo=None) - timedelta(seconds=10)
@@ -274,12 +257,7 @@ def test_a_naive_timestamp_from_sqlite_is_read_as_utc_not_as_local_time(history:
 def test_a_slow_lane_announces_its_finish_and_counts_down_per_stage(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The operator-facing half. A run that prints nothing about its length leaves "is it stuck or
-    just slow?" answerable only by watching nvidia-smi, which is how this session started.
-
-    History is faked to make two instant stages look expensive, because the display is what is
-    under test and a unit test cannot afford a stage that really takes two minutes.
-    """
+    """The operator-facing half."""
     from content_factory.runners.local import make_context, run_stages
     from content_factory.schemas.dag import Stage
 
@@ -316,9 +294,7 @@ def test_a_slow_lane_announces_its_finish_and_counts_down_per_stage(
 
 
 def test_the_table_says_whether_reading_it_is_free_before_a_caller_pays(history: Path) -> None:
-    """`run_view` is polled every two seconds. Building the table costs ~410 ms — 376 ms of it
-    loading the 16 lane definitions `infer_workflow` needs — so the view asks first and skips the
-    estimate for one poll rather than doing that work on the request thread."""
+    """`run_view` is polled every two seconds."""
     durations.refresh()
     assert not durations.is_warm()
     assert not durations.is_stale()  # not built is not stale: that is is_warm's question
@@ -328,8 +304,7 @@ def test_the_table_says_whether_reading_it_is_free_before_a_caller_pays(history:
 
 
 def test_a_rebuild_swaps_in_whole_so_there_is_never_no_answer(history: Path) -> None:
-    """Clearing the cache and refilling it leaves a 400 ms window answering "no estimate", which
-    on a two-second poll is a visible flicker. Built first, assigned second."""
+    """Clearing the cache and refilling it leaves a 400 ms window answering "no estimate"."""
     durations.warm()
     before = durations.estimate_stage("generate_anchor", "image-set")
     report(history, "img-extra", "image-set", [("generate_anchor", 31.0)])
@@ -350,8 +325,7 @@ def test_a_long_lived_process_is_told_when_its_history_is_old(history: Path) -> 
 
 
 def test_reports_are_found_without_walking_the_media_beside_them(history: Path) -> None:
-    """`rglob` descends into every `anchors/upscaled/raw/`: 51,548 directory entries walked to
-    find 226 reports, 59 ms against 12 ms. The media grows without bound; the reports do not."""
+    """`rglob` descends into every `anchors/upscaled/raw/`."""
     deep = history / "img0" / "deliverables" / "dlv_short0000001"
     deep.mkdir(parents=True, exist_ok=True)
     (deep / "run.json").write_text(json.dumps({"workflow": "image-set", "stages": []}))

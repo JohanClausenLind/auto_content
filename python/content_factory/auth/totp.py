@@ -20,8 +20,7 @@ def provisioning_uri(secret: str, account_name: str) -> str:
 
 
 def verify_totp(secret: str, code: str, *, last_used_counter: int | None = None) -> int | None:
-    """Return the accepted time-step counter, or None. Callers must persist the counter to refuse
-    replays of the same code (``last_used_counter``)."""
+    """Return the accepted time-step counter, or None."""
     totp = pyotp.TOTP(secret)
     if not totp.verify(code, valid_window=1):
         return None

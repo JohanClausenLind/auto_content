@@ -1,39 +1,4 @@
-"""MotionHub: SMPL-H motion with hierarchical text captions, one body at a time.
-
-Three subsets of ``ZeyuLing/MotionHub`` are on disk under ``MotionHub/raw``: EgoBody and GRAB are
-complete, HumanML3D_AMASS is a partial download. None of them is two-person interaction data, which
-is worth stating plainly because the repository's own name suggests otherwise.
-
-**Why every clip here declares ``people_count`` 1.** EgoBody is a two-person recording, so a pair of
-``body_idx_0`` / ``body_idx_1`` files looks like one two-person clip. It is not. MotionHub's
-conversion re-origins each body independently: in ``recording_20210929_S15_S11_03/000`` both bodies
-start at exactly ``transl`` x=0, z=0, giving a frame-0 horizontal separation of 0.000 m, which no
-real pair of adults can occupy. Their tracks then wander apart to 2.208 m in segment 000 and stay
-within 0.416 m for all 501 frames of segment 001, and each body carries its own
-``conversion_y_shift`` (-0.1527 against -0.1435 for that recording), so the two are not even in a
-common vertical frame. The pairing survives in ``source_ref``, which keeps the recording name and
-the body index, but the geometry between two bodies is not recoverable and must not be indexed as
-contact.
-
-**Why the captions are the payload.** These are single-body motions, so the closed interaction
-vocabulary has almost nothing true to say about them. The hierarchical captions do: an action
-phrase plus macro, meso and micro sentences written for the motion. They go in ``caption`` with
-``caption_source`` "dataset", and that is what makes these clips findable at all.
-
-**Postures come from the caption text, with the geometry as a fallback and a cross-check.** The
-obvious route is the root height in ``transl``, and it separates the extremes in HumanML3D_AMASS,
-where motions whose text says "lie" read a median root height of 0.61 m, and a median per-clip
-minimum of 0.40 m, against 1.13 m for the ones that say "stand". The gap is smaller than it looks:
-a motion captioned "lie down" starts upright, so the median over its frames sits between the two
-postures rather than at the floor. Height alone does
-not work for EgoBody: over its 963 captioned motions, the ones whose text says "sit" read a median
-1.148 m against 1.176 m for the ones that say "stand", a 3 cm gap, so height would call a seated
-person standing. The captions say it outright, so posture is read from their word tokens, which
-covers 79 % of EgoBody and 84 % of HumanML3D_AMASS. The fallback is the measured root height and
-horizontal path speed, and it carries almost all of GRAB, whose captions describe the object being
-picked up and never the posture. Either way the numbers behind the decision go into ``measured``, so
-a clip whose posture disagrees with its geometry can be found later.
-"""
+"""MotionHub: SMPL-H motion with hierarchical text captions, one body at a time."""
 
 from __future__ import annotations
 
@@ -234,14 +199,7 @@ class _Caption:
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every MotionHub motion that has both its ``.npz`` and its caption, plus what was left out.
-
-    Guarantees: clips are sorted by ``clip_id`` and the skipped lines are sorted, so two runs over
-    an unchanged tree return identical bytes; every ``ReferenceFile.path`` is relative to ``root``
-    and its ``sha256`` is the real digest of the file; a subset whose files are missing contributes
-    skipped lines naming the gap rather than clips; and an absent ``MotionHub/raw`` yields no clips
-    and one skipped line rather than an exception.
-    """
+    """Every MotionHub motion that has both its ``.npz`` and its caption, plus what was left out."""
     base = root / MOTIONHUB_ROOT
     if not base.is_dir():
         return [], [f"motionhub: {MOTIONHUB_ROOT} is not on disk, no MotionHub clip was ingested"]
@@ -317,12 +275,7 @@ def _ingest_subset(
 
 
 def _walk_stems(base: Path, dir_depth: int, suffix: str) -> list[str]:
-    """Sorted POSIX-relative stems of every ``suffix`` file exactly ``dir_depth`` levels down.
-
-    Explicit levels rather than ``rglob`` for two reasons: the layout is a fixed depth, so a file
-    at the wrong depth is a surprise worth ignoring rather than silently ingesting, and sorting at
-    each level makes the walk order a property of the names instead of the filesystem.
-    """
+    """Sorted POSIX-relative stems of every ``suffix`` file exactly ``dir_depth`` levels down."""
     if not base.is_dir():
         return []
     level: list[tuple[Path, str]] = [(base, "")]
@@ -344,12 +297,7 @@ def _walk_stems(base: Path, dir_depth: int, suffix: str) -> list[str]:
 def _absence_lines(
     *, label: str, missing: list[str], total: int, noun: str, reason: str
 ) -> list[str]:
-    """One line per directory that is short of files, naming the files when there are few.
-
-    Grouped by directory because HumanML3D_AMASS is short tens of thousands of files and a line
-    each would bury the manifest. Both counts are always present, so the size of the gap is never
-    hidden.
-    """
+    """One line per directory that is short of files, naming the files when there are few."""
     if not missing:
         return []
     groups: dict[str, list[str]] = {}
@@ -433,9 +381,7 @@ def _build_clip(
             # One body per file, in its own world frame. See the module docstring for the numbers.
             people_count=1,
             affection=_affection(caption.category),
-            # A single body has nobody to interact with. Tagging these with a two-person verb would
-            # make a search for a hug return a person hugging the air, so the honest tag is
-            # no_contact and the caption carries what the body is actually doing.
+            # A single body has nobody to interact with.
             interaction_tags=(InteractionTag.no_contact,),
             contact_tags=subset.contact_tags,
             postures=_postures(caption.text, motion),
@@ -472,11 +418,7 @@ def _clip_id(subset: _Subset, stem: str) -> str:
 
 
 def _read_motion(path: Path) -> tuple[_Motion | None, str | None]:
-    """Frame count, frame rate and the root-trajectory numbers, or None and why not.
-
-    A truncated or half-written ``.npz`` is expected here rather than exceptional, because
-    HumanML3D_AMASS is still downloading, so every read failure becomes a reason string.
-    """
+    """Frame count, frame rate and the root-trajectory numbers, or None and why not."""
     try:
         with np.load(path, allow_pickle=False) as data:
             transl = np.asarray(data["transl"], dtype=np.float64)
@@ -531,11 +473,7 @@ def _read_caption(path: Path) -> tuple[_Caption | None, str | None]:
 
 
 def _caption_text(document: dict[str, Any]) -> str:
-    """The action phrase then the first macro, meso and micro sentence, capped at 600 characters.
-
-    Greedy from the coarsest level down, and a part that would overflow the cap is dropped whole,
-    so a caption is never cut mid-word and the same document always yields the same string.
-    """
+    """The action phrase then the first macro, meso and micro sentence, capped at 600 characters."""
     candidates: list[str] = []
     action = document.get("action")
     if isinstance(action, str) and action.strip():
@@ -557,23 +495,14 @@ def _caption_text(document: dict[str, Any]) -> str:
 
 
 def _affection(category: str) -> Affection:
-    """Aggression for the combat category, neutral for everything else.
-
-    Never ``affection``: one body on its own has no partner to be affectionate with, so claiming it
-    would put solo motion in front of a query for tenderness.
-    """
+    """Aggression for the combat category, neutral for everything else."""
     if category == _AGGRESSION_CATEGORY:
         return Affection.aggression
     return Affection.neutral
 
 
 def _postures(caption: str, motion: _Motion) -> tuple[Posture, ...]:
-    """Postures for one clip, sorted by value the way the contract requires.
-
-    The caption's own words first, because the dataset states the posture and the root height does
-    not separate sitting from standing in EgoBody. Only when no posture word appears does the
-    measured geometry decide, which is what happens for nearly every GRAB take.
-    """
+    """Postures for one clip, sorted by value the way the contract requires."""
     tokens = set(_WORD.findall(caption.lower()))
     named = {posture for posture, words in _POSTURE_TOKENS if tokens & words}
     if named:

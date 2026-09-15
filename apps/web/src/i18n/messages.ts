@@ -1,5 +1,4 @@
-/** Message catalogs. `en` is the source of truth; other locales must cover the same keys
- * (the Locale type enforces it) and fall back to English at runtime if a key is missing. */
+/** Message catalogs; `en` is the source of truth, other locales must cover the same keys. */
 
 export const en = {
   "common.loading": "Loading…",

@@ -1,24 +1,4 @@
-"""UT-Interaction ingest: 120 segmented clips plus the 20 uncut sequences they were cut from.
-
-Everything this module needs was already measured into ``_index/measured``, so nothing here
-decodes video or opens the spreadsheet: ``ut_segmented.json``, ``ut_sequences.json`` and
-``ut_labels.json`` carry the container numbers and the 146 annotation rows, and
-``class_maps.json`` carries the class map that was verified by looking at a frame per class. Only
-the mapping from a verified dataset label onto the contract's closed tag vocabulary lives in code,
-and it is cross-checked against ``class_maps.json`` so the two can never drift apart silently.
-
-Two decisions are worth reading.
-
-**The uncut sequences are emitted, not skipped.** They are content supersets of the segmented
-clips, so they duplicate material, but they are the only footage on disk that shows two people
-walking into position, acting, and leaving again, and the spreadsheet's frame ranges are only
-meaningful against them. They carry ``affection = aggression`` because each one contains a punch, a
-kick and a push, which keeps a query for tenderness from being answered with a whole take that has
-a shove in the middle.
-
-**The bbox is a point.** The spreadsheet gives one X/Y coordinate and a main actor per action, not
-a rectangle, so the coordinate is recorded in ``measured`` and no key pose is invented from it.
-"""
+"""UT-Interaction ingest: 120 segmented clips plus the 20 uncut sequences they were cut from."""
 
 from __future__ import annotations
 
@@ -51,9 +31,8 @@ _INDEX_FILES = ("class_maps.json", "ut_segmented.json", "ut_sequences.json", "ut
 
 _SEQUENCE_RE = re.compile(r"^seq(\d{1,2})$")
 
-# Verified by the contact sheet, not by a paper: sheets/ut_classes.png shows a fixed high-angle
-# camera on a concrete parking lot, two men in everyday clothes, bright daylight. Nothing stands
-# between the lens and the subjects, so the pixels are usable as a visual reference.
+# Verified by sheets/ut_classes.png, not a paper: a fixed high-angle camera on a parking lot with
+# nothing between the lens and the subjects, so the pixels are a usable visual reference.
 SETTING = "outdoor concrete parking lot, daylight"
 CAMERA_ANGLES = ("high_angle",)
 USAGE = UsageClass.pixels_usable
@@ -74,9 +53,8 @@ class _Class(NamedTuple):
     spec: _ClassSpec
 
 
-# Keyed by the label in class_maps.json. The four non-affectionate UT classes are all in the
-# contract's aggression block, point included: in this footage pointing is a staged confrontation,
-# which is why class_maps.json records it as not affectionate.
+# Keyed by the label in class_maps.json. All four non-affectionate classes sit in the aggression
+# block, point included: in this footage pointing is a staged confrontation.
 _SPECS: dict[str, _ClassSpec] = {
     "hand_shake": _ClassSpec(InteractionTag.handshake, (ContactTag.hands,), Affection.affection),
     "hug": _ClassSpec(InteractionTag.hug, (ContactTag.back, ContactTag.torso), Affection.affection),
@@ -96,14 +74,7 @@ _ACTOR_WORDS = {-1: "both", 0: "the left person", 1: "the right person"}
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every UT-Interaction clip this source contributes, plus one line per thing skipped and why.
-
-    Guarantees: clips are sorted by ``clip_id``; the same ``root`` and ``ingested_at`` produce
-    byte-identical clips, because every number comes from the measured index and every digest from
-    the file itself; no clip is emitted whose tags disagree with ``class_maps.json``; and a
-    segmented clip with no spreadsheet row is still emitted, with ``pose_format = "none"`` and a
-    line in the skipped list saying its annotation is the thing that is missing.
-    """
+    """Every UT-Interaction clip this source contributes, plus one line per thing skipped."""
     index, failure = _load_index(root / "_index" / "measured")
     if index is None:
         return [], [failure or "ut: the measured index could not be read"]
@@ -131,11 +102,7 @@ def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[s
 
 
 def _load_index(measured: Path) -> tuple[dict[str, Any] | None, str | None]:
-    """The measured JSON this ingester reads, or a reason it could not be read.
-
-    A host without ``/mnt/fast/reference`` is a normal condition for this repo, so a missing index
-    is one readable line in the library manifest rather than a traceback in the build driver.
-    """
+    """The measured JSON this ingester reads, or a reason it could not be read."""
     out: dict[str, Any] = {}
     for name in _INDEX_FILES:
         path = measured / name
@@ -147,12 +114,7 @@ def _load_index(measured: Path) -> tuple[dict[str, Any] | None, str | None]:
 
 
 def _verified_classes(class_maps: Any) -> tuple[dict[int, _Class], list[str]]:
-    """The class-id to tag map, taken from ``class_maps.json`` and checked against ``_SPECS``.
-
-    Guarantees a class id is used only when the verified label is one this module knows and the
-    verified affection flag agrees with the tag table. Anything else is dropped with a reason,
-    because a wrong entry here answers a search for a hug with a shove.
-    """
+    """The class-id to tag map, taken from ``class_maps.json`` and checked against ``_SPECS``."""
     classes = class_maps.get("ut_interaction", {}).get("classes", {})
     verified: dict[int, _Class] = {}
     notes: list[str] = []
@@ -177,13 +139,7 @@ def _verified_classes(class_maps: Any) -> tuple[dict[int, _Class], list[str]]:
 
 
 def _split_label_rows(labels: Any) -> tuple[dict[int, list[Any]], dict[int, int]]:
-    """The spreadsheet split at its own ``others:`` marker row.
-
-    Rows above the marker are the 119 primary annotations, one per segmented clip in file order.
-    Rows below it are 26 further action instances in the continuous sequences that were never cut
-    into a segmented clip. Returns the primary rows grouped by sequence number in listed order,
-    and a count of the extra rows per sequence.
-    """
+    """The spreadsheet split at its own ``others:`` marker row."""
     primary: dict[int, list[Any]] = {}
     others: dict[int, int] = {}
     after_marker = False
@@ -221,13 +177,7 @@ def _as_int(value: Any) -> int | None:
 
 
 def _paired_rows(clips: list[Any], rows: list[Any]) -> list[Any | None]:
-    """One spreadsheet row per segmented clip, paired by position and checked by class id.
-
-    The spreadsheet lists a sequence's actions in the same order as that sequence's segmented
-    clips, and the segmented clips carry their class in the filename, so the pairing is verifiable:
-    it stops at the first position where the two class ids disagree rather than sliding every
-    later row onto the wrong clip.
-    """
+    """One spreadsheet row per segmented clip, paired by position and checked by class id."""
     paired: list[Any | None] = []
     aligned = True
     for position, clip in enumerate(clips):
@@ -390,9 +340,8 @@ def _sequence_clips(
                 affection=affection,
                 interaction_tags=tags,
                 contact_tags=contact,
-                # The annotated actions are separated by unannotated gaps at changing coordinates,
-                # which is the pair walking into position: that gap is why the uncut take is worth
-                # keeping at all.
+                # The unannotated gaps between actions, at changing coordinates, are the pair
+                # walking into position: that gap is why the uncut take is worth keeping.
                 postures=(Posture.standing, Posture.walking),
                 setting=SETTING,
                 camera_angles=CAMERA_ANGLES,

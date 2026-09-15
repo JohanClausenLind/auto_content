@@ -1,5 +1,4 @@
-"""Gateway policy semantics: local_only zero cloud calls; schema retry; budget settle; egress-less
-skills never see cloud candidates; pause raises with the full ExecutionDecision."""
+"""Gateway policy semantics: local_only zero cloud calls; schema retry; budget settle."""
 
 from __future__ import annotations
 
@@ -219,10 +218,7 @@ def test_schema_retry_then_exhaustion() -> None:
 
 
 def test_a_capable_endpoint_gets_the_schema_as_a_constraint_and_a_plain_one_as_prose() -> None:
-    """Three of these five settings were never sent at all, and the fourth was undone after the
-    fact: the schema went in as text, `<think>` blocks were stripped out of the answer once it had
-    already cost tokens to produce, and nothing ever set a context size — so Ollama used its own
-    4096 whatever the model declared, and a long prompt was silently truncated."""
+    """Three of these five settings were never sent at all."""
     from content_factory.models.gateway import EndpointConfig, GatewayOptions
 
     calls: list[dict] = []

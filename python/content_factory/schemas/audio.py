@@ -73,19 +73,7 @@ class NarrationSegment(VersionedModel):
 
 
 class SpeechTranscript(VersionedModel):
-    """What a recording says, with per-word timings: the input side of the narration contracts.
-
-    :class:`NarrationSegment` describes speech this factory *produced* from a script it already
-    had. This describes speech that arrived without one — an interview, a lecture, a voice memo —
-    so the words are the transcriber's reading of the audio rather than a script the audio was
-    checked against. That difference is the whole reason it is a separate contract and not a
-    segment with an empty script: nothing downstream may treat these words as authored.
-
-    ``words`` is the load-bearing field. A story planned from a transcript cuts it into beats at
-    word boundaries, so every beat knows exactly which milliseconds of the recording it owns, and
-    the picture for that beat is on screen for exactly as long as those words are spoken. Without
-    timings the transcript is only text, which is why ``timing_source`` says how they were got.
-    """
+    """What a recording says, with per-word timings: the input side of the narration contracts."""
 
     transcript_id: OpaqueId
     audio_sha256: Sha256Hex
@@ -177,15 +165,7 @@ class LoudnessReport(SchemaModel):
 
     @property
     def peak_limited(self) -> bool:
-        """Quieter than the target because the true-peak ceiling would not allow any more gain.
-
-        Not a miss. Measured on a 2.84 s single-clip narration: the stem was -23.97 LUFS with a
-        true peak of -9.48 dBTP, so reaching -14 LUFS needs +9.97 dB and would put the peak at
-        +0.49 dBTP — 1.49 dB over the ceiling. The two-pass master applied +8.66 dB, landed the
-        peak on exactly -1.0 and the programme at -15.31, which is the loudest that material can
-        legally be. The alternative is to compress, and this chain deliberately does not: "which
-        is what keeps the dynamics intact instead of riding gain".
-        """
+        """Quieter than the target because the true-peak ceiling would not allow any more gain."""
         return (
             self.integrated_lufs < self.target_lufs
             and self.true_peak_dbtp >= self.target_true_peak_dbtp - 0.1
@@ -201,8 +181,7 @@ class LoudnessReport(SchemaModel):
 
 
 class MusicTrack(SchemaModel):
-    """One track in the local music library (fixtures/music by default). Attribution is part of
-    the record, not an afterthought: it travels into destination packages with the mix."""
+    """One track in the local music library (fixtures/music by default)."""
 
     track_id: str = Field(pattern=r"^[a-z0-9][a-z0-9_-]{1,63}$")
     filename: str = Field(min_length=1, max_length=255)
@@ -226,17 +205,7 @@ class SoundCueRole(StrEnum):
 
 
 class SoundCue(SchemaModel):
-    """One sound from the curated library, at one place, for one stated reason.
-
-    ``assets/sfx`` has held 49 curated, loudness-measured, provenance-tracked sounds since
-    2026-09-07 and **nothing placed any of them**: the only non-speech audio a film could get was
-    a generated MMAudio bed, so a chart drawing itself on screen was silent and a hard cut between
-    two cards had nothing on it. This is the contract that says where a sound goes.
-
-    ``reason`` is required and is not decoration. A cue sheet is the one part of the mix a person
-    reads rather than hears, and "chart_reveal at 12.4 s because scn_chart000001 is a chart" is
-    reviewable where a bare id and a timestamp are not.
-    """
+    """One sound from the curated library, at one place, for one stated reason."""
 
     cue_id: OpaqueId
     sound_id: str = Field(pattern=r"^[a-z0-9][a-z0-9_-]{1,63}$")
@@ -270,12 +239,7 @@ class SoundCue(SchemaModel):
 
 
 class CueSheet(VersionedModel):
-    """Every library sound in one deliverable's mix, in time order.
-
-    Tied to the library it was cut against by ``library_sha256``: a cue names a sound by id, and an
-    id that resolves to different bytes than the sheet was reviewed with is a different mix. The
-    renderer refuses a sheet whose library has moved rather than quietly using the new sound.
-    """
+    """Every library sound in one deliverable's mix, in time order."""
 
     deliverable_id: OpaqueId
     library_sha256: Sha256Hex
@@ -311,13 +275,7 @@ class AudioMixSpec(SchemaModel):
 
 
 class AudioProfile(StrEnum):
-    """What kind of material this is, which decides what counts as a defect.
-
-    The same numbers mean different things: a flat spectrum is hiss in a narration take and it is
-    the entire point of a rain bed. Nothing here is cosmetic — the profile selects which checks run
-    and at what limits, and (in :mod:`content_factory.audio.condition`) which processing is even
-    allowed to touch the audio.
-    """
+    """What kind of material this is, which decides what counts as a defect."""
 
     speech = "speech"
     sound_effect = "sound_effect"
@@ -342,12 +300,7 @@ class AudioArtifactFinding(SchemaModel):
 
 
 class AudioArtifactThresholds(SchemaModel):
-    """Where "this asset has a problem" begins. One place, so the detector, the QC gate and the
-    processing chains all agree on the same numbers.
-
-    Use :meth:`for_profile` rather than the bare defaults: the defaults are the speech ones, and
-    applying them to a sound effect would flag rain as hiss and a whoosh as harsh.
-    """
+    """Where "this asset has a problem" begins."""
 
     # Above this the noise between words is audible under a music bed.
     noise_floor_dbfs_max: float = Field(default=-55.0, le=0)
@@ -368,10 +321,6 @@ class AudioArtifactThresholds(SchemaModel):
         if profile is AudioProfile.speech:
             return cls()
         # Non-speech: the level and integrity checks still apply, the voice-shaped ones do not.
-        # A designed sound may legitimately be broadband (rain, hiss, a paper rustle) and may
-        # legitimately stop at 8 kHz (a sub drop), so those two stop being defects and the 5-9 kHz
-        # measure becomes a harshness limit instead of a sibilance one, at a looser threshold
-        # because a cymbal or a riser lives up there on purpose.
         return cls(
             noise_floor_dbfs_max=0.0,  # disabled: a bed IS its noise floor
             spectral_flatness_max=1.0,  # disabled: broadband is a design choice here
@@ -384,14 +333,7 @@ class AudioArtifactThresholds(SchemaModel):
 
 
 class AudioArtifactReport(VersionedModel):
-    """What one audio asset measurably *is*, before anything is done to it.
-
-    The "artifact / noise detection" step shared by every generated-audio chain in this repo. For a
-    narration beat it decides whether the optional cleanup and band-extension passes are worth
-    running, rather than denoising takes that were already clean. For a generated sound effect it
-    decides whether anything needs repairing at all — and the measurements are what keep the
-    speech models away from material they would destroy.
-    """
+    """What one audio asset measurably *is*, before anything is done to it."""
 
     profile: AudioProfile = AudioProfile.speech
     # What this describes: a narration beat id, "sfx", a library entry id. Deliberately looser
@@ -438,28 +380,10 @@ class AudioArtifactReport(VersionedModel):
 
 
 class VoiceChainSpec(SchemaModel):
-    """The deterministic tail of the voice chain: de-esser → EQ → light compression.
+    """The deterministic tail of the voice chain: de-esser → EQ → light compression."""
 
-    One FFmpeg filter graph, no model, no randomness: the same input always produces the same
-    bytes, which is what lets the restoration stage cache per beat.
-    """
-
-    # FFmpeg's `deesser` takes normalized controls, not Hz/dB, so this exposes its actual
-    # parameters instead of inventing units that would have to be guessed back.
-    #
-    # 0.45, not the 0.25 this shipped with, because 0.25 does nothing at all. Swept on three real
-    # narration beats (2026-09-10), measuring `sibilance_ratio` — 5-9 kHz energy over the 300 Hz
-    # to 5 kHz speech band, limit 0.12 — before and after:
-    #
-    #     intensity   hot beat 0.1431   mid beat 0.0269   clean beat 0.0072
-    #     0.25          -0.1 %            -0.0 %            -0.0 %
-    #     0.35          -3.8 %            -1.7 %            -0.1 %
-    #     0.45         -27.5 %           -15.6 %            -1.7 %
-    #     0.60         -73.2 %           -63.0 %            -4.7 %
-    #
-    # 0.45 brings the beat that was over the limit under it (0.1431 -> 0.1036) and leaves a clean
-    # beat alone, which is what program-dependent means. `f` barely matters — 0.9 % across its
-    # whole range on this material — so it is left where it was rather than churned.
+    # FFmpeg's `deesser` takes normalized controls, not Hz/dB, so this exposes its actual parameters
+    # instead of inventing units that would have to be guessed back.
     de_ess: bool = True
     de_ess_intensity: float = Field(default=0.45, ge=0, le=1)
     de_ess_max_reduction: float = Field(default=0.5, ge=0, le=1)
@@ -482,15 +406,7 @@ class VoiceChainSpec(SchemaModel):
 
 
 class SpeechRestorationSpec(SchemaModel):
-    """One beat's trip through the voice chain, in the order the audio travels it:
-
-    detection → cleanup (ClearerVoice SE) → band extension (ClearerVoice SR) →
-    restoration (Resemble Enhance) → de-esser → EQ → light compression.
-
-    The neural steps default to ``off``: like every other model backend in this repo the mocks
-    are the default and ``.env`` turns the real thing on. The FFmpeg tail needs nothing but
-    FFmpeg, so it runs everywhere.
-    """
+    """One beat's trip through the voice chain, in the order the audio travels it."""
 
     cleanup: Literal["off", "clearervoice"] = "off"
     band_extension: Literal["off", "clearervoice_sr"] = "off"
@@ -559,21 +475,7 @@ class MasterChainSpec(SchemaModel):
 
 
 class SoundConditionSpec(SchemaModel):
-    """How a *generated non-speech* asset is conditioned before it reaches the mix.
-
-    Same shape as the speech chain — measure, repair only what is broken, normalise, cap the true
-    peak, land at the delivery rate, same length out as in — and deliberately none of its models.
-    Measured on this host 2026-09-07, on sounds from ``assets/sfx``:
-
-    * ClearerVoice ``MossFormer2_SE_48K`` (speech enhancement) left **0.5-1.0 %** of the energy of
-      a whoosh, a rain bed and an impact. To a speech enhancer a sound effect *is* the noise.
-    * Resemble Enhance took a 2 s whoosh from -24.0 to -73.4 dBFS with a waveform correlation of
-      **0.002** against its input — it did not restore the sound, it replaced it with unrelated
-      sub-200 Hz rumble.
-
-    So there is no field here for either of them, and there will not be one. What non-speech
-    material actually needs is damage repair and a predictable level, which is what this does.
-    """
+    """How a *generated non-speech* asset is conditioned before it reaches the mix."""
 
     profile: AudioProfile = AudioProfile.sound_effect
     # Repairs, each applied only when the measurements ask for it.
@@ -588,9 +490,8 @@ class SoundConditionSpec(SchemaModel):
     # ends eat headroom the limiter would otherwise give to the sound itself. 0 disables.
     high_pass_hz: int = Field(default=25, ge=0, le=200)
     low_pass_hz: int = Field(default=0, ge=0, le=24000)
-    # Level. `integrated` suits a bed that runs under a whole scene; `max_momentary` suits a
-    # one-shot, whose integrated loudness is meaningless because it is mostly silence. The
-    # defaults match assets/sfx/library.json so the runtime path and the curated library agree.
+    # Level. `integrated` suits a bed that runs under a whole scene; `max_momentary` suits a one-
+    # shot, whose integrated loudness is meaningless because it is mostly silence.
     loudness_metric: Literal["integrated", "max_momentary", "off"] = "integrated"
     target_lufs: float = Field(default=-23.0, ge=-40, le=0)
     target_true_peak_dbtp: float = Field(default=-1.0, ge=-12, le=0)

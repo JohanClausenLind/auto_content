@@ -1,26 +1,4 @@
-"""The sqlite side of the reference library: one file, built once, queried in words.
-
-The index is two tables and a manifest row. ``clip`` holds one row per clip with the columns a
-query filters on plus the clip's own canonical JSON, so a match can be turned back into a
-``ReferenceClip`` without going near the dataset. ``clip_fts`` is the FTS5 mirror of the five
-searchable columns.
-
-Three things here are decisions rather than detail.
-
-**The tokenizer keeps underscores.** The vocabulary is ``head_shoulder``, ``hold_hands_walk``,
-``pull_by_elbow``. With the default unicode61 tokenizer those split, and a query for ``head`` would
-hit every ``head_shoulder`` clip while a query for the tag itself would be a phrase search. Adding
-``_`` to ``tokenchars`` makes each tag exactly one token, so a tag matches itself and nothing else.
-
-**The FTS text comes from the contract.** ``insert_clip`` takes the five column values from
-``ReferenceClip.search_text()`` rather than reassembling them, so the builder cannot drift from the
-schema it is indexing.
-
-**The manifest digest is over the documents, not the file.** sqlite bytes depend on the host's
-libsqlite3 build, page layout and VACUUM behaviour, none of which is pinnable, so two honest builds
-of the same clips can differ byte for byte. ``manifest_sha256`` is therefore taken over the ordered
-clip documents, which are ours and are reproducible.
-"""
+"""The sqlite side of the reference library: one file, built once, queried in words."""
 
 from __future__ import annotations
 
@@ -96,12 +74,7 @@ CREATE TABLE library (
 
 
 def schema_matches(path: str | os.PathLike[str]) -> bool:
-    """True when the index at ``path`` was built with the DDL this module currently declares.
-
-    The manifest digest is over the clip documents, so it cannot notice a schema change: edit the
-    tokenizer and every document still hashes the same, and a rebuild would be skipped while the
-    index kept the old tokenizer. This is what the build driver checks so that does not happen.
-    """
+    """True when the index at ``path`` was built with the DDL this module currently declares."""
     target = Path(path)
     if not target.exists():
         return False
@@ -129,11 +102,7 @@ class IndexUnavailableError(RuntimeError):
 
 
 def fts5_available() -> bool:
-    """True when this interpreter's sqlite3 can create an FTS5 table.
-
-    Checked by creating one in memory rather than by reading compile options, because that is the
-    thing we actually need to work.
-    """
+    """True when this interpreter's sqlite3 can create an FTS5 table."""
     conn = sqlite3.connect(":memory:")
     try:
         conn.execute("CREATE VIRTUAL TABLE probe USING fts5(x)")
@@ -145,13 +114,7 @@ def fts5_available() -> bool:
 
 
 def create(path: str | os.PathLike[str]) -> sqlite3.Connection:
-    """A fresh index at ``path`` with the schema applied, returned open for writing.
-
-    Guarantees: any existing file at ``path`` is replaced, so the schema is applied to an empty
-    database; ``page_size`` is 4096, ``journal_mode`` is delete and ``auto_vacuum`` is none, which
-    are set before the first table so no later build inherits a different layout; and
-    ``IndexUnavailableError`` is raised, rather than a bare sqlite error, when FTS5 is missing.
-    """
+    """A fresh index at ``path`` with the schema applied, returned open for writing."""
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.unlink(missing_ok=True)
@@ -175,13 +138,7 @@ def create(path: str | os.PathLike[str]) -> sqlite3.Connection:
 
 
 def closest_contact_m(measured: dict[str, float | list[float]]) -> float | None:
-    """The one number worth a column: how close the two people actually got, in metres.
-
-    ``closest_wrists_m`` is the baker's measurement and is preferred. Failing that the first
-    element of ``root_gap_m``, which is the minimum root separation over the clip, is a coarser
-    stand-in. A clip with neither stays None: no measurement is not the same as a contact at zero
-    metres, and writing 0.0 would make every unmeasured clip the closest thing in the library.
-    """
+    """The one number worth a column: how close the two people actually got, in metres."""
     wrists = measured.get("closest_wrists_m")
     if isinstance(wrists, int | float) and not isinstance(wrists, bool):
         return float(wrists)
@@ -194,13 +151,7 @@ def closest_contact_m(measured: dict[str, float | list[float]]) -> float | None:
 
 
 def insert_clip(conn: sqlite3.Connection, clip: ReferenceClip, order: int) -> None:
-    """Write one clip as row ``order`` of ``clip`` and the matching row of ``clip_fts``.
-
-    Guarantees: the two rows share the rowid ``order``, so a query joins them on it without a
-    second lookup; the FTS text is exactly ``clip.search_text()``; ``doc`` is the clip's canonical
-    JSON and ``doc_sha256`` its sha256, so a row can be checked against the document it came from;
-    and ``closest_contact_m`` follows ``closest_contact_m()`` above, NULL when unmeasured.
-    """
+    """Write one clip as row ``order`` of ``clip`` and the matching row of ``clip_fts``."""
     if order < 0:
         msg = f"order must be non-negative, got {order}"
         raise ValueError(msg)
@@ -271,11 +222,7 @@ def insert_clip(conn: sqlite3.Connection, clip: ReferenceClip, order: int) -> No
 
 
 def manifest_sha256(clips: Sequence[ReferenceClip]) -> str:
-    """The digest of an ordered run of clips: sha256 over their canonical JSON, newline separated.
-
-    Over the documents on purpose. See the module docstring: the sqlite file is not reproducible
-    across libsqlite3 builds, the documents are.
-    """
+    """sha256 over the clips' canonical JSON: the documents are reproducible."""
     digest = hashlib.sha256()
     for clip in clips:
         digest.update(clip.canonical_json().encode("utf-8"))
@@ -303,20 +250,7 @@ def build(
     library_id: str | None = None,
     root: str | None = None,
 ) -> ReferenceLibrary:
-    """Build the whole index at ``path`` and return its manifest.
-
-    Guarantees: clips go in sorted by ``clip_id``, ascending, whatever order they arrived in, so
-    rowids and the manifest digest do not depend on the caller's iteration order; a repeated
-    ``clip_id`` is a ValueError rather than a silently dropped clip; the database is VACUUMed and
-    then moved into place with ``os.replace``, so a reader either sees the previous index or the
-    new one and never a half-written file; ``built_at`` is the caller's timestamp because nothing
-    here is allowed to read the clock; and ``manifest_sha256`` is over the ordered documents.
-
-    ``library_id`` defaults to the file's stem and ``root`` to its parent directory, both of which
-    the contract needs and neither of which the build itself has an opinion about. A stem the
-    contract would reject, too short or too long, is prefixed or trimmed rather than raised: the
-    caller can always pass ``library_id`` when the name matters.
-    """
+    """Build the whole index at ``path`` and return its manifest."""
     ordered = sorted(clips, key=lambda clip: clip.clip_id)
     seen: set[str] = set()
     for clip in ordered:
@@ -355,11 +289,7 @@ def build(
 
 
 def open_index(path: str | os.PathLike[str]) -> sqlite3.Connection:
-    """Open an existing index read-only, so a query cannot alter what it is reading.
-
-    Rows come back as ``sqlite3.Row`` for name access. Raises FileNotFoundError when the file is
-    missing, instead of sqlite's habit of creating an empty database.
-    """
+    """Open an existing index read-only, so a query cannot alter what it is reading."""
     target = Path(path)
     if not target.is_file():
         msg = f"no reference index at {target}"
@@ -370,11 +300,7 @@ def open_index(path: str | os.PathLike[str]) -> sqlite3.Connection:
 
 
 def read_library(conn: sqlite3.Connection) -> ReferenceLibrary:
-    """The manifest stored in the index, validated back into the contract.
-
-    Raises IndexUnavailableError when the row is missing, which means the file was written by
-    something other than ``build`` or a build that did not finish.
-    """
+    """The manifest stored in the index, validated back into the contract."""
     row = conn.execute("SELECT doc FROM library WHERE id = 1").fetchone()
     if row is None:
         msg = "this index has no library row, it was not written by build()"

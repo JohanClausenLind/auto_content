@@ -8,8 +8,7 @@ from bl.assets import Entity
 
 
 def assign(entities: list[Entity], seg_ids: dict[str, int]) -> dict[str, int]:
-    """Apply the control-plane's deterministic assignment; environment pieces stay 0 unless
-    flagged ``seg``. Returns ``{entity_id: seg_id}`` for everything that renders."""
+    """Apply the control-plane's deterministic assignment; environment pieces stay 0."""
     out: dict[str, int] = {}
     next_free = max(seg_ids.values(), default=0) + 1
     for ent in entities:

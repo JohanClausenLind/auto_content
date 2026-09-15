@@ -1,11 +1,4 @@
-"""The log that should have existed on the night the card left the bus.
-
-2026-09-10 03:12: `AER: Uncorrectable ... TLP UnsupReq`, `Xid 79`, and no record anywhere of what
-the GPU had been doing. Every published account of this failure was solved by a different cause,
-so the only thing that shortens the next one is having sampled the machine. These tests hold the
-sampler to being pure, total and honest about missing data — a sampler that raises on an odd line
-is a sampler that is not running when it matters.
-"""
+"""The log that should have existed on the night the card left the bus."""
 
 from __future__ import annotations
 
@@ -35,9 +28,7 @@ def test_a_sample_carries_the_columns_that_separate_the_explanations() -> None:
 
 
 def test_one_non_fatal_pcie_error_is_the_whole_event() -> None:
-    """The night's own numbers: a single uncorrectable non-fatal error and the card was gone.
-    Correctable errors are retried in hardware and are invisible everywhere else, so they are
-    recorded but do not by themselves mean the link has failed."""
+    """The night's own numbers: a single uncorrectable non-fatal error and the card was gone."""
     faulted = tel.parse_sample("t", SMI_LINE, {**CLEAN_AER, "aer_rootport_total_err_nonfatal": "1"})
     assert faulted.faulted
     fatal = tel.parse_sample("t", SMI_LINE, {**CLEAN_AER, "aer_rootport_total_err_fatal": "2"})

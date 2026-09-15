@@ -1,7 +1,4 @@
-"""`content-factory doctor`: re-check services, runtimes, GPU, configuration; explain plainly.
-
-Every check returns a typed result with a remediation sentence. No check needs the internet.
-"""
+"""`content-factory doctor`: re-check services, runtimes, GPU, configuration; explain plainly."""
 
 from __future__ import annotations
 
@@ -268,11 +265,7 @@ def run_doctor() -> DoctorReport:
 
 
 def _gpu_root_port() -> Path | None:
-    """The PCIe bridge the NVIDIA display GPU hangs off, or None when there is no such GPU.
-
-    Resolved rather than hardcoded: `/sys/bus/pci/devices/<bdf>` is a symlink into the real
-    device tree, so the parent of the resolved path is the port the card is plugged into.
-    """
+    """The PCIe bridge the NVIDIA display GPU hangs off, or None when there is no such GPU."""
     devices = Path("/sys/bus/pci/devices")
     if not devices.is_dir():
         return None
@@ -290,19 +283,7 @@ def _gpu_root_port() -> Path | None:
 
 
 def _gpu_dropout_checks(ctx: _Ctx) -> None:
-    """Three checks against one failure: the GPU leaving the PCIe bus under load.
-
-    Measured on this host 2026-09-10 03:12, in the eighth hour of a continuous run: an
-    uncorrectable AER error (TLP UnsupReq) on the card's root port, then `Xid 79, GPU has fallen
-    off the bus` and `Xid 154 ... Node Reboot Required`. Xorg then spun inside the dead driver
-    holding the `nvidia_modeset` semaphore and the desktop never came back, so it presented as a
-    frozen machine even though everything else kept running for three more hours. See
-    "When a card falls off the bus" in docs/gpu-hosts.md.
-
-    Nothing in software can promise it will not happen again — it is a link/power event. What
-    these do is make the two standard mitigations verifiable instead of remembered, and surface
-    a link that is degrading *before* it drops the card.
-    """
+    """Three checks against one failure: the GPU leaving the PCIe bus under load."""
     port = _gpu_root_port()
     if port is None:
         ctx.add("gpu_pcie_health", Status.skip, "no NVIDIA display GPU on a PCIe root port")

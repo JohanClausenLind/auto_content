@@ -1,8 +1,4 @@
-"""Post-render deterministic QC (section 17): ffprobe/PIL assertions, only the relevant checks.
-
-Static outputs never fail for having no FPS; video outputs are checked for codec, dimensions,
-fps, duration/frame count, pixel format, fast start, black/frozen frames.
-"""
+"""Post-render deterministic QC (section 17): ffprobe/PIL assertions, only the relevant checks."""
 
 from __future__ import annotations
 
@@ -36,7 +32,7 @@ class QCResult:
 
 
 def ffprobe(path: Path) -> dict:
-    out = subprocess.run(  # noqa: S603
+    out = subprocess.run(
         [
             "ffprobe",
             "-v",
@@ -123,7 +119,7 @@ def _black_or_frozen(path: Path, fps: int, frames: int) -> list[Finding]:
     sample_idx = sorted({0, frames // 4, frames // 2, (3 * frames) // 4, frames - 1})
     hashes: list[bytes] = []
     for idx in sample_idx:
-        out = subprocess.run(  # noqa: S603
+        out = subprocess.run(
             [
                 "ffmpeg",
                 "-v",

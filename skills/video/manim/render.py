@@ -1,12 +1,4 @@
-"""Render an AnimationSpec with Manim (opt-in skill; the builtin Pillow renderer needs nothing).
-
-Usage:
-    uv run --project skills/video/manim python skills/video/manim/render.py <spec.json> <out_dir>
-
-Writes the same frames/0000.png… layout as the builtin renderer, so downstream packaging is
-identical whichever renderer produced the frames. Equations use MathTex when LaTeX is installed
-and fall back to Text otherwise.
-"""
+"""Render an AnimationSpec with Manim (opt-in skill; the builtin Pillow renderer needs nothing)."""
 
 from __future__ import annotations
 
@@ -70,7 +62,7 @@ def main() -> int:
     frames = out_dir / "frames"
     frames.mkdir(parents=True, exist_ok=True)
     movie = next((out_dir / "manim-media").rglob("animation.mp4"))
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         # -start_number 0: the builtin renderer writes frames/0000.png…, and the two layouts
         # must stay indistinguishable downstream (ffmpeg would otherwise start at 0001.png).
         ["ffmpeg", "-y", "-i", str(movie), "-start_number", "0", str(frames / "%04d.png")],

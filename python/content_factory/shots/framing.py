@@ -1,21 +1,4 @@
-"""Place a camera so the subject is legible, from the clip's own geometry.
-
-There is a measured cliff behind this module. The image model honours the pose skeleton when the
-figures are large in frame and ignored it at 33 % body height, where it invented its own scene
-instead. So framing is solved rather than guessed: read how far the pair travels and how tall they
-stand, then put the camera at the distance where they fill a target fraction of the frame.
-
-It also fixes a failure the preset planner cannot avoid. Its cameras are solved for one subject
-standing at the origin. A mocap clip moves the pair - "link arms, walk" travels 2.2 m - so a
-character walks past the near plane, the depth pass degenerates, and postprocess dies on a NaN.
-That is not a rendering bug, it is a camera that was never told what it was looking at.
-
-Two lessons are baked in as constants rather than comments, because both cost a render to learn:
-aim at the middle of the subject's vertical extent, not at chest height, or a camera solved for a
-0.78 body fraction delivers 0.50 and crops the feet; and take the vertical extent from the highest
-hip the clip reaches plus a standing head, so a kneeling clip does not get framed for a height
-nobody occupies.
-"""
+"""Place a camera so the subject is legible, from the clip's own geometry."""
 
 from __future__ import annotations
 
@@ -48,11 +31,7 @@ class Framing:
 
 
 def clip_extent(clip: dict[str, Any]) -> tuple[tuple[float, float], float, float]:
-    """``(centre_xy, radius, subject_top_z)`` of everything the actors do, in clip-offset space.
-
-    ``radius`` is how far from the centre any root gets, so a walking clip reports the whole path
-    rather than its first frame.
-    """
+    """``(centre_xy, radius, subject_top_z)`` of everything the actors do, in clip-offset space."""
     origin = clip.get("origin") or [0.0, 0.0, 0.0]
     ground = float(clip.get("ground_offset", 0.0))
     xs: list[float] = []
@@ -75,15 +54,7 @@ def clip_extent(clip: dict[str, Any]) -> tuple[tuple[float, float], float, float
 def group_extent_at(
     clip: dict[str, Any], frame: int, *, actor_ids: tuple[str, ...] | None = None
 ) -> tuple[tuple[float, float], float, float]:
-    """``(centre_xy, radius, subject_top_z)`` of some actors at one clip frame, in offset space.
-
-    Same shape as :func:`clip_extent`, one instant instead of the whole take. ``radius`` is how far
-    the named actors stand from their shared centre, so a pair keeps both bodies in frame without
-    paying for where they walk to later.
-
-    The frame index is clamped rather than wrapped: a camera solved past the end of a clip should
-    hold on the last pose, not jump back to the first.
-    """
+    """``(centre_xy, radius, subject_top_z)`` of some actors at one clip frame, in offset space."""
     origin = clip.get("origin") or [0.0, 0.0, 0.0]
     ground = float(clip.get("ground_offset", 0.0))
     actors = {str(a.get("actor_id")): a for a in clip.get("actors", [])}
@@ -121,21 +92,13 @@ def _place(
     azimuth_deg: float,
     elevation_deg: float,
 ) -> Framing:
-    """Solve the camera distance for a subject ``top`` tall and ``radius`` wide, and place it.
-
-    A subject of apparent height ``h`` at distance ``d`` through focal length ``f`` on a sensor of
-    height ``sensor_h`` covers ``f * h / (d * sensor_h)`` of the frame. That is solved for ``d``,
-    then the camera is pushed back if the subject is wider than the frame at that distance.
-    """
+    """Solve the camera distance for a subject ``top`` tall and ``radius`` wide, and place it."""
     cx, cy = centre
     sensor_h = sensor_width_mm * height / width
     az = math.radians(azimuth_deg)
     el = math.radians(elevation_deg)
     # A standing figure seen from above is shorter in frame than it is in the world: its height
-    # projects as top * cos(elevation). Solving the distance from the true height instead put the
-    # camera too far back on every raised shot - measured across thirty runner stills, the four at
-    # 38 degrees came back 0.13 to 0.17 of frame height under target while the near-level ones
-    # landed within 0.03. So the solve targets the apparent height, which is what a frame shows.
+    # projects as top * cos(elevation).
     apparent = top * math.cos(el)
     distance = lens_mm * apparent / (max(body_fraction, 0.05) * sensor_h)
     half_width_at_d = distance * (sensor_width_mm / 2.0) / lens_mm
@@ -169,8 +132,7 @@ def solve_framing(
     azimuth_deg: float = 35.0,
     elevation_deg: float = 6.0,
 ) -> Framing:
-    """Where to put one fixed camera so this clip's actors fill ``body_fraction`` of the frame,
-    whole, for every frame of it: the whole travelled path has to fit, not just one pose."""
+    """Where to put one fixed camera so this clip's actors fill ``body_fraction`` of the frame."""
     centre, radius, top = clip_extent(clip)
     return _place(
         centre,
@@ -199,24 +161,7 @@ def solve_framing_tracking(
     azimuth_deg: float = 35.0,
     elevation_deg: float = 6.0,
 ) -> tuple[Framing, ...]:
-    """One framing per clip frame in ``frames``, each solved on where the actors are at that frame.
-
-    A camera keyframed from these tracks the subject: same azimuth throughout, so the shot keeps
-    one look, but the distance and the aim follow the bodies instead of covering everywhere they
-    ever go. That matters most in a tall frame. Measured over the 57-clip library at 0.62 target
-    body height: in 16:9 no clip needs this, and in 9:16 thirty-one of them solve under
-    ``POSE_CLIFF_FRACTION`` with one path-covering camera, because a portrait frame is narrow
-    enough that holding two bodies apart pushes the camera back on its own - ``cmu_33_34_01``
-    travels 1.54 m and still lands at 0.197. Tracking the pair recovers those.
-
-    A single-frame call - ``frames=(i,)`` - is also how a plan of one still per clip frame gets a
-    camera per still. On ``cmu_35_18``, a 4.45 m sprint at a 0.62 target, one path-covering camera
-    predicts 0.577 in 16:9, 0.325 in 1:1 and 0.182 in 9:16, all from the same 7.71 m: covering
-    4.45 m of travel is what costs the height, and a narrow frame is where it stops being legible.
-
-    ``frames`` are clip frames, not shot frames; the caller owns that mapping because it owns the
-    clip's speed and offset.
-    """
+    """One framing per clip frame in ``frames``, each solved on."""
     if not frames:
         msg = "solve_framing_tracking needs at least one frame"
         raise ValueError(msg)
@@ -250,14 +195,7 @@ def body_fraction_for(
     height: int,
     sensor_width_mm: float = 36.0,
 ) -> float:
-    """How much of the frame height a subject ``top`` tall at ``centre`` fills, for a camera at
-    ``camera_position``.
-
-    Position is all it needs. Distance and elevation both fall out of where the camera stands
-    relative to the subject's own aim point, so nothing here depends on how a plan chose to express
-    orientation, or on ``focus_distance`` meaning what it says. A camera not actually pointed at
-    the subject is a different failure than a subject too small; this answers the size question.
-    """
+    """How much of the frame height a subject ``top`` tall at ``centre`` fills."""
     aim = (centre[0], centre[1], top / 2.0)
     dx, dy, dz = (camera_position[i] - aim[i] for i in range(3))
     distance = math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -280,8 +218,7 @@ def achieved_body_fraction(
     height: int,
     sensor_width_mm: float = 36.0,
 ) -> float:
-    """The inverse of the solve for a mocap-staged shot: read the camera off a finished plan and
-    measure the clip's cast against it."""
+    """The inverse of the solve for a mocap-staged shot."""
     centre, _radius, top = group_extent_at(clip, frame, actor_ids=actor_ids)
     return body_fraction_for(
         centre,
@@ -297,13 +234,7 @@ def achieved_body_fraction(
 def standing_extent(
     positions: tuple[tuple[float, float, float], ...],
 ) -> tuple[tuple[float, float], float, float]:
-    """``(centre_xy, radius, top)`` for figures standing at ``positions``, in world space.
-
-    The clip-free case. A shot planned from a preset has no ``cf.clip.v2`` document to read a hip
-    height out of, only characters placed on the floor, so the figure is modelled as its full
-    standing height above wherever it was put. That is enough to answer whether the camera is far
-    enough away to make the pose unreadable, which is the only question being asked.
-    """
+    """``(centre_xy, radius, top)`` for figures standing at ``positions``, in world space."""
     if not positions:
         return (0.0, 0.0), 0.0, FIGURE_HEIGHT_M
     xs = [p[0] for p in positions]

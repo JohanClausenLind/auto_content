@@ -126,8 +126,7 @@ async def stop(
     p: Principal = Depends(EDITOR),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    """Stop a run that is executing. Editor, like starting one: this destroys no artifact — the
-    stages already finished keep their cache entries, so a later run reuses them."""
+    """Stop a run that is executing."""
     view = await svc.run_view(db, p.workspace_id, run_id)
     if view is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")

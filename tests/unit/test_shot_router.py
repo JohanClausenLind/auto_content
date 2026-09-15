@@ -120,9 +120,7 @@ def test_stage_writes_routing_and_honours_settings(ctx: StageContext, env) -> No
     routing = ShotRouting.model_validate_json((ctx.ddir() / "shots" / "routing.json").read_text())
     assert out.outputs_hash == routing.content_hash()
     # Nothing, and that is correct: the default generate_kinds is ("image",) and the demo fixture
-    # has no image scene. Its four beats are a title, a big number, a bullet list and a source
-    # card — all text, all typeset. This used to route the title beat to the image model, which is
-    # how the wind shorts got drawn typography where a title belonged.
+    # has no image scene.
     assert out.facts == {
         "beats": 4,
         "generate": 0,
@@ -138,8 +136,7 @@ def test_stage_writes_routing_and_honours_settings(ctx: StageContext, env) -> No
 
 
 def test_the_node_widgets_decide_the_routing_not_only_the_settings(ctx: StageContext, env) -> None:
-    """Both were declared on the canvas and read by nothing, so a lane could not differ from the
-    host's settings. hybrid-video.yaml now states generate_kinds: [image] in the definition."""
+    """Both were declared on the canvas and read by nothing."""
     stage_plan_shots(ctx)
     object.__setattr__(ctx, "params", {"generate_kinds": "[title, source_card]"})
     out = stage_route_shots(ctx)
@@ -155,16 +152,14 @@ def test_the_node_widgets_decide_the_routing_not_only_the_settings(ctx: StageCon
 
 
 def test_the_committed_default_is_the_one_kind_with_no_text_in_it() -> None:
-    """Recorded as a test because it is a documented decision (ADR-0012, 2026-09-08 amendment),
-    not a tuning value: every other scene kind's content is words a card renderer typesets."""
+    """Recorded as a test because it is a documented decision (ADR-0012, 2026-09-08 amendment)."""
     from content_factory.config import get_settings
 
     assert get_settings().routing.generate_kinds == ("image",)
 
 
 def test_generate_routed_beat_must_name_its_shot() -> None:
-    """The cross-field rule the JSON Schema cannot express: a beat sent to the generative branch
-    without a shot_id would leave compose_video with nothing to splice."""
+    """The cross-field rule the JSON Schema cannot express."""
     routing = sample_shot_routing().model_dump(mode="json")
     routing["beats"][0]["route"] = "generate"
     routing["beats"][0]["shot_id"] = None

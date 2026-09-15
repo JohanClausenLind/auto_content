@@ -45,6 +45,7 @@ jobs:
       - name: lint
         run: |
           uv run ruff check .
+          uv run python scripts/style_check.py
           pnpm run lint
       - name: type checks
         run: |

@@ -1685,7 +1685,9 @@
     "speaker",
     "instruct",
     "aligner",
-    "speed"
+    "speed",
+    "describe",
+    "continuous_take"
    ],
    "widget_options": {
     "voice": [

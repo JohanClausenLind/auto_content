@@ -1,10 +1,4 @@
-"""Turn Blender's raw outputs into the final pass directories (venv side: numpy, Pillow, OpenCV).
-
-Final layout under <out_dir>:
-    <kind>/frames/NNNN.png (+ .exr for depth_exr) + NNNN.done.json
-    skeleton/frames/NNNN.json + .done.json, layout/frames/NNNN.json + .done.json
-    camera.json, metadata.json, spec.json
-"""
+"""Turn Blender's raw outputs into the final pass directories (venv side: numpy, Pillow, OpenCV)."""
 
 from __future__ import annotations
 
@@ -113,8 +107,7 @@ def index_to_palette_image(index: np.ndarray) -> Image.Image:
 
 
 def canny_edges(rgb: np.ndarray, low: int, high: int) -> np.ndarray:
-    """Canny on a contrast-stretched grey image. The clay render is deliberately low contrast, so
-    thresholds are applied after stretching the grey range to 0..255 (deterministic, integer)."""
+    """Canny on a contrast-stretched grey image."""
     import cv2
 
     gray = cv2.cvtColor(np.ascontiguousarray(rgb), cv2.COLOR_RGB2GRAY)
@@ -262,9 +255,7 @@ def finalize(
                 "characters",
             )
         },
-        # One row per posed character per frame. For a cf.clip.v2 clip it names the clip, the
-        # actor and how many bones the aim solve actually aimed, which is the difference between
-        # a retarget that ran and one that silently did nothing.
+        # One row per posed character per frame.
         "poses": manifest.get("poses", []),
         "depth": {
             **manifest["depth"],

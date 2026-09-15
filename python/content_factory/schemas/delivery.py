@@ -1,19 +1,4 @@
-"""What actually ships to one destination, file by file, with a digest for each.
-
-`compile_destination_packages` used to write this:
-
-    {"destination": "youtube", "visibility": "private", "deliverable_id": "...",
-     "status": "packaged"}
-
-`"packaged"` as a *string*, and not one word about **what** was packaged. So the last stage before
-a destination — the one whose whole job is to say "these are the bytes that go out" — recorded
-neither the files nor their digests, and a package for a film that had failed to render looked
-exactly like a package for one that had.
-
-A digest per file is the point, not decoration. It is what lets a later publish confirm it is
-sending the bytes that passed QC rather than whatever is at that path now, and it is what makes
-two packages of the same deliverable comparable at all.
-"""
+"""What actually ships to one destination, file by file, with a digest for each."""
 
 from __future__ import annotations
 

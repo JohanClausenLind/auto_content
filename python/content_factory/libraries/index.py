@@ -1,12 +1,4 @@
-"""Build and verify the ``datasets/<category>/<Name>`` symlink tree.
-
-The only thing allowed to act on :data:`content_factory.libraries.LIBRARIES`, the way
-``weight_install`` is the only thing allowed to act on the weight registry.
-
-Idempotent by construction: a link that already points where it should is left alone, a link that
-points somewhere else is repointed, and a real directory sitting where a link belongs is refused
-rather than replaced — that is data, and this module does not delete data.
-"""
+"""Build and verify the ``datasets/<category>/<Name>`` symlink tree."""
 
 from __future__ import annotations
 
@@ -46,9 +38,8 @@ def _plan_one(library: DataLibrary, store: str | Path, repo_root: Path) -> LinkO
     link = library.link(repo_root)
     present = library.present(store)
     if not present:
-        # An absent library is not an error. Every lane runs without any of these — the reference
-        # library says so in its own settings docstring — so a machine that has not fetched one
-        # gets a report, not a failure.
+        # An absent library is not an error: every lane runs without any of these, so a machine
+        # that has not fetched one gets a report, not a failure.
         return LinkOutcome(
             library.key, link, target, "absent", False, f"no {library.probe} under {target}"
         )

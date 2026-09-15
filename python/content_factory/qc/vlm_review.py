@@ -1,35 +1,4 @@
-"""Asking a vision model to look at the pictures — with the story, and at all of them at once.
-
-The frame-review gate has had two reviewers: the deterministic checks in
-:mod:`content_factory.qc.frame_review`, which measure tone, colour, edges and palette distance,
-and a person. The gap between them is written down in both modules, in almost the same words,
-because it is the failure this machine actually produces:
-
-    *What it cannot judge, and the reason a reviewer still looks: whether the subject is the same
-    subject. Two drawings of different objects in the same palette and light score as consistent,
-    which is precisely the failure this machine produced when "honey-coloured" drew jars of honey.*
-
-A vision model can answer that, and the contract has expected one since it was written —
-``ReviewerKind`` is ``operator | agent | vlm``. This module is the ``vlm``. It gathers the story
-the frames are for, the per-frame intent, and every frame *in one call* — because the question
-that matters is about the set, and a model shown one picture at a time cannot answer it — and asks
-for a structured opinion.
-
-Three things it deliberately does not do:
-
-* **It does not decide.** The result is a :class:`SetReview` stored beside the batch. Nothing here
-  can accept or reject a frame; :func:`content_factory.qc.verdict.decide` is the only path to a
-  verdict and it takes a reviewer who is an operator or an agent that named every frame. A model
-  that mistakes what it is looking at does so fluently, which is exactly why its output is an
-  opinion shown next to the picture rather than a gate that opens.
-* **It does not take the GPU from a run.** The vision tier is 17.8 GB on a 24 GB card, so it
-  cannot share with HiDream or LTX. A review asked for while a run is executing is refused with
-  the run named, rather than evicting the weights that run is using. ``keep_alive=0`` hands the
-  card back the moment the answer arrives.
-* **It does not claim to be current.** The review binds to the digests of the pictures it saw, so
-  a regenerated frame is not covered by an opinion about the frame it replaced — the same rule
-  :func:`content_factory.qc.verdict.merge_verdict` enforces for a human verdict.
-"""
+"""Asking a vision model to look at the pictures — with the story, and at all of them at once."""
 
 from __future__ import annotations
 
@@ -100,12 +69,7 @@ large file is the one part of this that can hurt the machine rather than the rev
 
 
 class VlmReviewUnavailableError(RuntimeError):
-    """The review cannot be asked for, and the message says what to do about it.
-
-    Its own type because every caller turns it into the same thing — a sentence for the operator
-    and no state change — and none of them should have to tell it apart from a real failure of the
-    model call by reading the string.
-    """
+    """The review cannot be asked for, and the message says what to do about it."""
 
 
 _SKILL = SkillManifest(
@@ -119,9 +83,8 @@ _SKILL = SkillManifest(
     implementation_ref="content_factory.qc.vlm_review:review_batch",
     permitted_locations=(ExecutionLocation.local_gpu,),
     required_models=(VISION_ALIAS,),
-    # No egress, so the gateway drops every cloud candidate whatever the policy says. The frames
-    # are unpublished work and several of them are the ones that came out wrong; none of that
-    # leaves the machine to be judged.
+    # No egress, so the gateway drops every cloud candidate whatever the policy says: unpublished
+    # frames never leave the machine to be judged.
     permissions=SkillPermissions(network_egress=False),
     license_evidence="Qwen3 derivative (Apache-2.0 upstream); DavidAU fine-tune, licence unstated",
     cost=CostEstimator(kind="per_token", usd=0),
@@ -147,13 +110,7 @@ _OPTIONS = GatewayOptions(
 
 
 class _Answer(BaseModel):
-    """Exactly the judgement, and nothing that would be a claim about provenance.
-
-    A private model rather than :class:`SetReview` itself: the stored contract carries provenance
-    the model must not be able to write — which weights answered, what they were shown, how long
-    it took, and the digests the opinion binds to. A model allowed to fill those in could hand
-    back a review that says it is about pictures it never saw.
-    """
+    """Exactly the judgement, and nothing that would be a claim about provenance."""
 
     frames: list[FrameOpinion] = Field(min_length=1, max_length=MAX_FRAMES)
     set: SetOpinion
@@ -164,12 +121,7 @@ def review_path(deliverable_dir: Path) -> Path:
 
 
 def load_review(deliverable_dir: Path) -> SetReview | None:
-    """The stored opinion, or None when there is none or it no longer parses.
-
-    An unreadable file is None rather than an error: it is an opinion, the run does not depend on
-    it, and a panel must not fail to draw the pictures because a cached judgement went stale in a
-    way the contract cannot read.
-    """
+    """The stored opinion, or None when there is none or it no longer parses."""
     try:
         return SetReview.model_validate_json(review_path(deliverable_dir).read_text())
     except (OSError, ValueError):
@@ -185,12 +137,7 @@ def digests_of(batch: FrameReviewBatch) -> dict[str, str]:
 
 
 def _story_text(run_dir: Path, deliverable_dir: Path) -> str:
-    """The story these frames are for, in the words the run itself recorded.
-
-    Read from the plan on disk rather than rebuilt from the campaign, because the plan is what the
-    picture stages were actually given: a run resumed with a different brief would otherwise be
-    reviewed against a story it never drew.
-    """
+    """The story these frames are for, in the words the run itself recorded."""
     lines: list[str] = []
     try:
         plan = json.loads((run_dir / "story" / "plan.json").read_text())
@@ -222,13 +169,7 @@ def _story_text(run_dir: Path, deliverable_dir: Path) -> str:
 
 
 def _frame_intent(deliverable_dir: Path) -> dict[str, str]:
-    """What each frame was asked to show, by frame id, from the shot plan.
-
-    Best-effort on purpose: several lanes have no per-frame prompt at all — an image set's frames
-    are edits of one anchor under a lock, and what each shows is the control plan's business, not
-    a written instruction. A frame with no recorded intent is described in the prompt as having
-    none, which is honest and still lets `shows` do its work.
-    """
+    """What each frame was asked to show, by frame id, from the shot plan."""
     out: dict[str, str] = {}
     try:
         plan = json.loads((deliverable_dir / "shots" / "plan.json").read_text())
@@ -248,36 +189,13 @@ def _frame_intent(deliverable_dir: Path) -> dict[str, str]:
 
 
 def _intent_for(frame_id: str, intents: dict[str, str]) -> str:
-    """The intent recorded for a frame, matched on the shot half of its id.
-
-    ``shot_ab54…:0000`` is one frame of a shot and ``frame:0007`` is one keyframe of a sequence,
-    so the lookup is on the part before the colon and falls back to the whole id.
-    """
+    """The intent recorded for a frame, matched on the shot half of its id."""
     head, _, _tail = frame_id.rpartition(":")
     return intents.get(head) or intents.get(frame_id) or "(no per-frame instruction recorded)"
 
 
 def _image_part(path: Path) -> dict[str, Any]:
-    """One frame, downscaled, as litellm's image content part.
-
-    A data URI rather than a file path or a URL: the provider is loopback Ollama, ``ollama_chat``
-    extracts base64 from exactly this shape, and there is no HTTP server in the loop that would
-    have to be allowed to read the run directory.
-
-    The downscale is not a nicety, it is what makes the call possible. Measured on this machine
-    against the running Ollama (2026-09-11), one upscaled frame of ``w-iceberg`` at its native
-    2560x1440 costs **3,618 prompt tokens**, so a six-frame set came to 22,494 and was refused
-    outright. The same frame at :data:`REVIEW_LONG_EDGE`:
-
-        native  2560x1440   3,618 tokens
-        768      768x432      354
-        512      512x288      162
-        384      384x216      102
-
-    768 buys a twelve-frame review for about 4,200 tokens. It is also enough to judge what is
-    being asked: ``qc.frame_review`` measures tone, colour and palette distance at 640x360, and
-    "is this the same subject in the same world" does not need more pixels than that.
-    """
+    """One frame, downscaled, as litellm's image content part."""
     if path.stat().st_size > MAX_IMAGE_BYTES:
         size = path.stat().st_size
         msg = f"{path.name} is {size / 1e6:.1f} MB; over the {MAX_IMAGE_BYTES / 1e6:.0f} MB cap"
@@ -291,21 +209,15 @@ def _image_part(path: Path) -> dict[str, Any]:
             (round(width * scale), round(height * scale)), Image.Resampling.LANCZOS
         )
     buffer = io.BytesIO()
-    # JPEG at 90 rather than PNG: a lossless 768px frame is four times the bytes for a judgement
-    # about subject and staging, and the artefacts at this quality are well below the faults the
-    # reviewer is being asked about.
+    # JPEG at 90, not PNG: a lossless 768px frame is four times the bytes, and the artefacts at
+    # this quality sit well below the faults the reviewer is asked about.
     image.save(buffer, format="JPEG", quality=90)
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
     return {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded}"}}
 
 
 def _refuse_while_a_run_holds_the_card() -> None:
-    """Refuse rather than evict. The vision tier does not share a 24 GB card with HiDream.
-
-    ``services.local._release_gpu_if_idle`` makes the same check the other way round, for the same
-    reason: on this machine an idle HiDream held 18,936 MiB and left 3.2 GiB free, so a review
-    started mid-run would either OOM or take the weights the run is using.
-    """
+    """Refuse rather than evict."""
     from content_factory.runners.registry import active_runs
 
     running = active_runs()
@@ -321,11 +233,7 @@ def _refuse_while_a_run_holds_the_card() -> None:
 
 
 def _model_id_of(alias: str) -> str:
-    """The weight the alias resolved to, as the provider spells it.
-
-    Recorded on the review rather than the alias alone: "the local vision model" is three
-    different models over a year, and an opinion is worth what the model that gave it is worth.
-    """
+    """The weight the alias resolved to, as the provider spells it."""
     from content_factory.models.catalog import default_catalog
 
     return next((m.model_id for m in default_catalog() if m.alias == alias), alias)
@@ -345,12 +253,7 @@ def _gateway_for(gateway: ModelGateway | None) -> ModelGateway:
 def build_messages(
     run_dir: Path, deliverable_dir: Path, batch: FrameReviewBatch
 ) -> tuple[list[Message], str, list[str]]:
-    """The one call: the story, each frame's intent, and the pictures themselves.
-
-    Returns the messages, the intent text exactly as the model will see it (stored on the review,
-    so a reader can tell whether a "does not match" is about the picture or about a brief that
-    never arrived), and the frame ids that were actually attached.
-    """
+    """The one call: the story, each frame's intent, and the pictures themselves."""
     intents = _frame_intent(deliverable_dir)
     attached: list[str] = []
     parts: list[dict[str, Any]] = []
@@ -390,13 +293,7 @@ def review_batch(
     now: dt.datetime | None = None,
     check_gpu: bool = True,
 ) -> SetReview:
-    """Ask the vision model about this deliverable's frames, and write the answer beside them.
-
-    Raises :class:`VlmReviewUnavailableError` when the review cannot be asked for at all — no
-    batch, no frame files on disk, a run holding the card — and lets a genuine model failure (no
-    server, no weights, OOM, an answer that will not validate) propagate as itself, because those
-    want different responses and a single error type would hide which one happened.
-    """
+    """Ask the vision model about this deliverable's frames, and write the answer beside them."""
     batch = frame_reviews.current_batch(deliverable_dir)
     if batch is None:
         msg = f"no frame-review batch under {deliverable_dir}"
@@ -416,16 +313,13 @@ def review_batch(
     )
     answer = result.value
     assert isinstance(answer, _Answer)
-    # Every frame id the model returns is checked against the ones actually attached, and
-    # anything else is dropped. A model that volunteered an opinion about a picture it was not
-    # shown has said something about nothing, and storing it would put that sentence next to a
-    # real image in the panel — or, for a drifting id, put a mark on a frame that does not exist.
+    # Drop opinions about frames that were not attached: storing one would put a sentence about
+    # nothing next to a real image, or a mark on a frame that does not exist.
     seen = set(attached)
     opinions = tuple(f for f in answer.frames if f.frame_id in seen)
     if not opinions:
-        # It answered about none of the pictures it was given, which is a model that did not do
-        # the task rather than a review with nothing in it. The caller turns this into "the
-        # reviewer did not answer", which is the right thing to fix.
+        # Answering about none of the given pictures is a model that did not do the task, not a
+        # review with nothing in it.
         named = ", ".join(f.frame_id for f in answer.frames[:4]) or "nothing"
         msg = (
             f"the reviewer described frames that were not in this set ({named}) and none of the"
@@ -454,12 +348,7 @@ def review_batch(
 
 
 def current_review(run_dir: Path, deliverable_dir: Path) -> tuple[SetReview | None, bool]:
-    """The stored review and whether it is about the pictures now on disk.
-
-    Two values rather than discarding a stale one, because "the model looked at the frames you
-    replaced" is worth showing — labelled — while "there is no review" is a different sentence
-    with a different button under it.
-    """
+    """The stored review and whether it is about the pictures now on disk."""
     del run_dir  # the batch is per deliverable; the run directory is the caller's addressing
     review = load_review(deliverable_dir)
     if review is None:

@@ -1,7 +1,4 @@
-"""/v1/sequences: review surface for image-sequence runs (anchor, frames, drift, packaged video).
-
-Read-only. Files are served ONLY from inside the configured output root, with the resolved path
-checked against traversal and an extension allowlist — never arbitrary filesystem access."""
+"""/v1/sequences: review surface for image-sequence runs (anchor, frames, drift, packaged video)."""
 
 from __future__ import annotations
 

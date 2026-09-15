@@ -1,17 +1,4 @@
-/**
- * Folded groups: a view over the flat graph.
- *
- * Two properties carry the whole feature, and they are what these tests pin.
- *
- * The first is that a group changes nothing about the graph. Fold five nodes and the nodes, the
- * links, the execution order and the validation results are identical — which is why the
- * compiler, the runner and every existing test never had to learn what a group is.
- *
- * The second is that folding cannot hide anything. A folded group's ports are derived from the
- * links every time they are asked for, so a required input nobody connected still shows on the
- * folded node, and a member rewired from outside changes the folded node's slots immediately.
- * A view that could hide a hole in the graph would be worse than no view.
- */
+/** Folded groups: a view over the flat graph. */
 
 import { describe, expect, it } from "vitest";
 import {

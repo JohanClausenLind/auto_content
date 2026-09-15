@@ -1,6 +1,4 @@
-"""Perf pass at realistic scale: hundreds of runs in the API, thousands of pieces in the
-content memory. Budgets are deliberately generous — these catch O(n²) regressions and missing
-indexes, not micro-variance."""
+"""Perf pass at realistic scale: hundreds of runs in the API."""
 
 from __future__ import annotations
 

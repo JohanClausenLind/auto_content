@@ -1,10 +1,4 @@
-/**
- * The graph and every edit to it.
- *
- * Edits are typed operations applied by pure functions that also return the exact inverse, the
- * same discipline EditorCore uses for project revisions: undo is replaying inverses, never a
- * snapshot diff. Nothing here touches React or the DOM, so all of it is testable in isolation.
- */
+/** The graph and every edit to it. */
 
 import {
   findSlot,
@@ -22,15 +16,7 @@ export interface GraphNode {
   readonly id: string;
   /** A type in the catalogue. Unknown types still render, flagged as a problem. */
   readonly type: string;
-  /**
-   * The lane's own name for this step — `anchor`, `spokes`, `frames_gate` — when the node came
-   * from a workflow in `workflows/*.yaml`. Empty for a hand-built node.
-   *
-   * It is how a graph joins to a run. `run.json` records what each step produced under exactly
-   * this name, and `id` is generated per graph, so without it "what did this node make?" could
-   * only be answered by matching on stage type — ambiguous in every lane that runs one stage
-   * twice, which are the lanes where the question matters most.
-   */
+  /** The lane's own name for this step — `anchor`, `spokes`, `frames_gate`. */
   readonly key: string;
   /** Operator-renamed title, or null to use the definition's. */
   readonly title: string | null;
@@ -53,21 +39,7 @@ export interface GraphLink {
   readonly to_slot: string;
 }
 
-/**
- * A named set of nodes that can be shown as one.
- *
- * The problem it solves: half of every lane in this catalogue is the same three or four steps —
- * clean up the voice, finish the picture, check it and package it — and an operator opening a
- * graph to change one prompt had to read all of them every time. A group is how a lane says
- * "these five nodes are one idea called Clean up voice". Collapsed, the canvas draws one node
- * with the group's own boundary slots; opened, it draws the members inside a frame, and every
- * widget is there to change.
- *
- * It is a **view**, not a container. The nodes and links stay exactly where they were in the flat
- * graph, so the compiler, the runner, validation, execution order and every existing test see the
- * same graph they always did — which is the whole reason this can exist without a second graph
- * format, a nested compiler and a subgraph contract.
- */
+/** A named set of nodes that can be shown as one. */
 export interface GraphGroup {
   readonly id: string;
   /** What it is called when folded. */
@@ -167,14 +139,7 @@ export interface GroupPort {
   readonly label: string;
 }
 
-/**
- * The slots a folded group shows: every member input fed from outside, every member output read
- * from outside, plus the unconnected required inputs — so folding can never hide the fact that
- * something still has to be connected.
- *
- * Derived, never stored. A group whose members are rewired shows different ports the moment the
- * links change, which is the only way a folded view can stay honest.
- */
+/** The slots a folded group shows: every member input fed from outside. */
 export function groupPorts(
   graph: WorkspaceGraph,
   catalog: NodeCatalog,
@@ -269,10 +234,7 @@ function withGroup(graph: WorkspaceGraph, next: GraphGroup): WorkspaceGraph {
   return { ...graph, groups: graph.groups.map((g) => (g.id === next.id ? next : g)) };
 }
 
-/**
- * Node and link order carries no meaning, so it is kept canonical (sorted by id). That makes an
- * inverse restore the previous graph exactly and the serialised form independent of edit order.
- */
+/** Node and link order carries no meaning, so it is kept canonical (sorted by id). */
 function byId<T extends { readonly id: string }>(items: readonly T[]): T[] {
   return [...items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
@@ -540,10 +502,7 @@ export function groupNodesOps(
   ];
 }
 
-/**
- * Connecting replaces whatever occupied the input, which is what a graph editor is expected to
- * do when you drop a second link on the same input.
- */
+/** Connecting replaces whatever occupied the input. */
 export function connectOps(
   graph: WorkspaceGraph,
   from: { node: string; slot: string },
@@ -590,10 +549,7 @@ export function duplicateOps(
 
 export type ConnectVerdict = { readonly ok: true } | { readonly ok: false; readonly reason: string };
 
-/**
- * Whether a link may be drawn. Refusals carry a reason the UI can show verbatim, because a
- * connection that silently does nothing is the most confusing thing a graph editor can do.
- */
+/** Whether a link may be drawn. */
 export function canConnect(
   graph: WorkspaceGraph,
   catalog: NodeCatalog,
@@ -793,8 +749,7 @@ function rejectUnknown(value: Record<string, unknown>, allowed: readonly string[
   }
 }
 
-/** Length bounds mirror the Pydantic contract (schemas/workspace_graph.py): a document this
- * parser accepts must also be accepted by PUT /v1/graphs, or the write-behind save 422s. */
+/** Length bounds mirror the Pydantic contract (schemas/workspace_graph.py). */
 function str(value: unknown, where: string, bounds?: { min?: number; max?: number }): string {
   if (typeof value !== "string") throw new GraphParseError(`${where}: expected a string`);
   if (bounds?.min !== undefined && value.length < bounds.min) {
@@ -858,9 +813,8 @@ export function parseGraph(value: unknown): WorkspaceGraph {
     return {
       id: str(node.id, `${where}.id`, ID64),
       type: str(node.type, `${where}.type`, ID64),
-      // Absent on every graph saved before the field existed, and those graphs stay valid: an
-      // empty key means "this node is not from a lane", which is the honest reading of a
-      // document that never had one.
+      // Absent on every graph saved before the field existed, and those graphs stay valid: an empty
+      // key means "this node is not from a lane".
       key: node.key === undefined ? "" : str(node.key, `${where}.key`, { max: 64 }),
       title: node.title === null ? null : str(node.title, `${where}.title`, { max: 200 }),
       x: num(node.x, `${where}.x`),

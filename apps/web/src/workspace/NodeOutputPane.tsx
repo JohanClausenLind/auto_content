@@ -1,27 +1,11 @@
-/**
- * One node's output, at a size you can actually judge it at.
- *
- * The canvas draws four thumbnails and a count on the node; this is what the count opens. It is
- * per *node* rather than per run, which is the whole point: a run's files grouped by file type
- * answer "what came out of this", and the question in front of a bad drawing is "which step made
- * this, and what else did that step make" — with the step's own facts beside it, because
- * "3 attempts, backend hidream-o1, drift 0.849" is the first thing to know about a frame that
- * came out wrong.
- *
- * Everything plays here rather than downloading. The session is a cookie, so `<img src>`,
- * `<video src>` and `<audio src>` authenticate themselves and the browser does the streaming and
- * the caching — no blob URLs, no JS holding a 6 MB film in memory. Voice lines are a list of
- * players and not one merged track, because a bad take is one line, and the line is what gets
- * re-recorded.
- */
+/** One node's output at judging size, with the step's own facts; media plays via plain `src`. */
 
 import { useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { OutputKind, RunOutput, RunStep } from "../api/types";
 import { formatBytes } from "./runFormat";
 
-/** Intermediate output: kept, because a control map is exactly what you want when a drawing came
- *  out wrong, and folded, so it cannot bury the six pictures that are the actual result. */
+/** Intermediate output: kept, since a control map is what you want. */
 const DEBUG_ROLES = new Set(["control", "anchor-upscaled", "render", "input", "marker"]);
 
 const KIND_TITLE: Record<OutputKind, string> = {
@@ -32,9 +16,7 @@ const KIND_TITLE: Record<OutputKind, string> = {
   data: "Data",
 };
 
-/** The stage's own numbers, as a row of pills. Rendered from whatever the stage recorded rather
- *  than from a known list: every stage's facts are its own, and a panel that only knew about the
- *  four it was written against would silently drop the one that mattered. */
+/** The stage's own numbers as a row of pills, rendered from whatever it recorded. */
 function Facts({ facts }: { facts: Record<string, unknown> }) {
   const entries = Object.entries(facts).filter(([, value]) => value !== null && value !== "");
   if (entries.length === 0) return null;

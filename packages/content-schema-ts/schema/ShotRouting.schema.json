@@ -61,7 +61,7 @@
   "$id": "https://content-factory.local/schema/ShotRouting.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Owned by the shot router; consumed by ``compile_controls`` (renders only generate-routed\nshots) and ``compose_video`` (interleaves Remotion segments and generated clips).",
+  "description": "Owned by the shot router; consumed by ``compile_controls``.",
   "properties": {
     "beats": {
       "items": {

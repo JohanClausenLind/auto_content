@@ -1,11 +1,4 @@
-"""The channel's default editorial style kit and the prompt builders that enforce it.
-
-``image_prompt`` appends the fixed style suffix so generated stills composite cleanly under
-deterministic overlays. ``video_prompt`` assembles the one-paragraph chronological
-cinematography description generative video models expect, and refuses prompts that omit a
-component or exceed the length the models handle well. Charts, equations, maps and factual
-diagrams are never requested from an image model — those stay data-driven renders.
-"""
+"""The channel's default editorial style kit and the prompt builders that enforce it."""
 
 from __future__ import annotations
 

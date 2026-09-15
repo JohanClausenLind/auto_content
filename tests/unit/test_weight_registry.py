@@ -1,10 +1,4 @@
-"""The installable weight registry: every declared requirement resolves, and nothing is invented.
-
-The whole point of models/weights.py is that a requirement the canvas shows as missing can be
-installed from the browser. These tests are what keeps that true as workflows are added: a new
-``models:`` entry in a workflow YAML with no registry source fails here rather than shipping a
-card whose only advice is to read a README.
-"""
+"""The installable weight registry: every declared requirement resolves, and nothing is invented."""
 
 from __future__ import annotations
 
@@ -94,8 +88,7 @@ def test_a_package_declares_a_source_or_says_why_it_cannot() -> None:
 
 
 def test_manual_families_are_the_documented_two() -> None:
-    """A new un-installable family is a decision, not an accident: RIFE's weights are on Google
-    Drive and SAM 3.1 needs Meta's approval, and both say so in the UI."""
+    """A new un-installable family is a decision, not an accident."""
     assert {p.key for p in WEIGHT_PACKAGES if p.manual} == {"rife"}
     assert package_by_key("sam-3.1") is not None
     assert package_by_key("sam-3.1").gating == "manual"  # type: ignore[union-attr]

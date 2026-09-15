@@ -76,8 +76,7 @@ def test_two_frame_drift_is_within_tolerance() -> None:
 
 
 def test_long_narration_does_not_accumulate_rounding_drift() -> None:
-    """Regression: 40 beats of 1234 ms (never frame-aligned at 30 fps). Per-span round-up used
-    to push the cues ~1 frame late per beat; absolute placement keeps every probe within 1."""
+    """Regression: 40 beats of 1234 ms (never frame-aligned at 30 fps)."""
     n, span = 40, 1234
     beats = tuple(
         scenes.VisualBeat(

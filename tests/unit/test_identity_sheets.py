@@ -1,15 +1,4 @@
-"""Styled identity sheets: the reference the identity slot could not previously be given.
-
-`ImageSequenceSettings.anchor_references` has said, in its own comment, to add `identity` only once
-a character has a *styled* sheet rather than a clay turnaround — and there was no way to make one,
-so the slot was unusable and identity was carried by nothing at all. Both failures behind that
-comment were measured, not guessed: HiDream-O1's IP pipeline treats every reference as subject
-material, so the Blender clay render made it draw clay people and the untextured MPFB turnaround
-made it draw a nude mannequin (STATUS 1339, 1379-1381). Across one thirty-anchor run it held one
-world in every frame and changed the character's outfit four times inside it (STATUS 1627).
-
-`_identity_reference` was sending exactly that clay front view.
-"""
+"""Styled identity sheets: the reference the identity slot could not previously be given."""
 
 from __future__ import annotations
 
@@ -62,11 +51,7 @@ class FakeImageModel:
 
 @pytest.fixture
 def asset(tmp_path: Path) -> Path:
-    """A built asset that passes the mesh review, so the sheet gate is the thing under test.
-
-    The same shape ``test_reviews`` builds: every required turnaround view with its layout and
-    skeleton sidecars, plus the ``right45`` three-quarter the sheet is conditioned on.
-    """
+    """A built asset that passes the mesh review, so the sheet gate is the thing under test."""
     from content_factory.controls.asset_review import REQUIRED_VIEWS
     from tests.unit.test_reviews import JOINTS
 
@@ -158,8 +143,7 @@ def test_a_sheet_is_built_from_the_assets_own_views_and_cached_by_the_mesh(asset
 
 
 def test_a_missing_turnaround_view_is_named_rather_than_dropped(asset: Path) -> None:
-    """A sheet built from the front alone is one the model had to invent the depth of, and it
-    would be indistinguishable on disk from one that had both views."""
+    """A sheet built from the front alone is indistinguishable on disk from one with both views."""
     import shutil
 
     shutil.rmtree(asset / "turnaround" / "right45")
@@ -215,8 +199,7 @@ def test_the_anchor_sends_the_sheet_and_never_the_clay_turnaround(
 def test_plan_shots_names_the_sheet_and_review_assets_gates_it(
     asset: Path, tmp_path: Path, monkeypatch
 ) -> None:
-    """The two ends of the same guarantee: the plan says which image, and the gate refuses a run
-    that asks for an identity slot nothing approved can fill."""
+    """The plan says which image, and the gate refuses a slot nothing approved can fill."""
     import datetime as dt
 
     from content_factory.runners.local import make_context

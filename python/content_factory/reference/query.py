@@ -1,23 +1,4 @@
-"""Ask the index in words: FTS5 MATCH for the sentence, SQL WHERE for everything else.
-
-Two rules decide the whole module.
-
-**Words go to FTS5, numbers go to SQL.** The sentence becomes one MATCH expression of
-``field:"term"`` clauses joined with ``OR``, so a clip that carries three of the terms outranks a
-clip that carries one. People count, affection, usage, source, pose format and duration are
-``WHERE`` on the ``clip`` table instead. Putting a constraint in the MATCH would let bm25 trade it
-away, and "two people" is not a preference.
-
-**No embeddings.** ``pyproject.toml`` pins no torch, the corpus is a few thousand rows, and bm25
-lets a test assert an exact number. The weights ``(0.0, 8.0, 6.0, 2.0, 1.0, 1.5)`` follow the FTS
-column order: the tag columns decide the ranking, the caption is a tiebreaker, and the
-unindexed id column is weighted zero. Ties break on source then clip id, so the same index and the
-same query always return the same rows in the same order.
-
-An index that is missing, empty or not yet built is not an error. It answers with an empty match
-set that still carries the match expression and the expanded terms, because "the library has
-nothing" is a useful answer and every lane has to keep running without it.
-"""
+"""Ask the index in words: FTS5 MATCH for the sentence, SQL WHERE for everything else."""
 
 from __future__ import annotations
 
@@ -61,12 +42,7 @@ def fts_string(value: str) -> str:
 
 
 def build_match_expression(expansion: Expansion) -> str:
-    """The literal FTS5 MATCH string for one expansion, or "" when it asks for nothing.
-
-    Guarantees: clauses are ``column:"string"`` joined with ``OR``, in the expansion's own order
-    (FTS column order, then alphabetical), with one ``caption:"word"`` clause per surviving
-    unmatched word. Every value is quoted, so a word can never be read as FTS5 syntax.
-    """
+    """The literal FTS5 MATCH string for one expansion, or "" when it asks for nothing."""
     clauses = [
         f"{term.partition(':')[0]}:{fts_string(term.partition(':')[2])}" for term in expansion.terms
     ]
@@ -88,10 +64,8 @@ def _scalar_clauses(query: ReferenceQuery) -> tuple[list[str], list[object]]:
         clauses.append("clip.usage = ?")
         params.append(query.require_usage.value)
     if query.require_pose:
-        # The indexed column, whose definition lives in the builder: 1 when a rig can actually be
-        # aimed by this clip. A bounding box says where a person was, not how they were standing,
-        # so bbox_only does not qualify. Admitting it made a search for drivable material return
-        # television clips whose only geometry is a rectangle.
+        # 1 when a rig can be aimed by this clip; bbox_only does not qualify, or a search for
+        # drivable material returns television clips whose only geometry is a rectangle.
         clauses.append("clip.has_pose = 1")
     if query.sources:
         placeholders = ", ".join("?" for _ in query.sources)
@@ -103,9 +77,8 @@ def _scalar_clauses(query: ReferenceQuery) -> tuple[list[str], list[object]]:
     if query.max_duration_s is not None:
         clauses.append("clip.duration_s <= ?")
         params.append(query.max_duration_s)
-    # Required tags are a filter, not a preference, so they are checked against the stored tag
-    # text with a padded substring test rather than added to the MATCH where bm25 could trade
-    # them away. The padding is what makes it a whole-token test: ' hands ' cannot hit 'hands_on'.
+    # A filter, not a preference: a padded whole-token test (' hands ' cannot hit 'hands_on') on
+    # the stored tag text, kept out of the MATCH where bm25 could trade the tags away.
     for column, required in (
         ("interaction", query.require_interaction),
         ("contact", query.require_contact),
@@ -142,12 +115,7 @@ def _empty_result(
 
 
 def _library_id(conn: sqlite3.Connection) -> str:
-    """The library's id, however the builder chose to store it.
-
-    Two shapes exist and both are reasonable: one row holding the whole ``ReferenceLibrary``
-    document, which keeps the contract intact, or key-value rows. Reading either keeps the query
-    side from depending on that choice, which is not its business.
-    """
+    """The library's id, however the builder chose to store it."""
     columns = {row[1] for row in conn.execute("PRAGMA table_info(library)")}
     if "doc" in columns:
         row = conn.execute("SELECT doc FROM library LIMIT 1").fetchone()
@@ -169,16 +137,7 @@ def search(
     *,
     lexicon_path: Path | None = None,
 ) -> ReferenceMatchSet:
-    """Answer one ``ReferenceQuery`` from a built index.
-
-    Guarantees: the index is opened read-only and never written; the words are searched with FTS5
-    and ranked by bm25, the scalar constraints are SQL on the ``clip`` table; at most
-    ``query.limit`` matches come back, ranked by score then source then clip id, so the same index
-    and query always give the same answer; the returned set carries the match expression, the
-    expanded terms, the unmatched words and the absent terms, so the caller can see what the
-    sentence was understood to mean. A missing, unbuilt or empty index returns an empty match set
-    rather than raising, and so does a sentence that expands to nothing searchable.
-    """
+    """Answer one ``ReferenceQuery`` from a built index."""
     expansion = expand(query.text, path=lexicon_path)
     expression = build_match_expression(expansion)
     lexicon_digest = load_lexicon(lexicon_path).sha256

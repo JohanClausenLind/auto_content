@@ -1,10 +1,4 @@
-"""Technical/mathematical animation specs (rendered by the builtin renderer or the Manim skill).
-
-An AnimationSpec is content, not code: a typed description of a short explanatory animation that
-a deterministic renderer turns into a frame sequence. The builtin renderer (Pillow) covers the
-common cases offline; the opt-in Manim skill (skills/video/manim) renders the same spec with
-full mathematical typesetting when the operator has set it up.
-"""
+"""Technical/mathematical animation specs (rendered by the builtin renderer or the Manim skill)."""
 
 from __future__ import annotations
 

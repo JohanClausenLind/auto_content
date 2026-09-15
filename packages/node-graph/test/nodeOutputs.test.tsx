@@ -1,11 +1,4 @@
-/**
- * What a node produced, drawn on the node.
- *
- * The editor is given the answer, not the question: the host application owns the join from a
- * lane's key to a canvas node id, and hands `outputs` keyed by node id. What is worth pinning
- * here is what the strip says and what it refuses to say — a count that is not a promise, a
- * guessed attribution that admits it, and nothing at all on a node that made nothing.
- */
+/** What a node produced, drawn on the node. */
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

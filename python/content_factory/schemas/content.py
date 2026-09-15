@@ -205,14 +205,7 @@ class DeliverableRelationship(SchemaModel):
 
 
 class StagedUpload(SchemaModel):
-    """A file the operator dropped into the workspace, already sniffed and stored.
-
-    It is carried on the campaign rather than fetched by the browser at run time because the
-    project directory does not exist until the run's first activity makes it: the run materialises
-    each of these into ``<project>/uploads/``, which is where the ``ingest`` stage looks. The
-    ``asset_id`` is the content-addressed artifact key — the bytes cannot change under it, and
-    nothing here is a path the caller chose.
-    """
+    """A file the operator dropped into the workspace, already sniffed and stored."""
 
     asset_id: str = Field(min_length=1, max_length=300)
     filename: str = Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9][A-Za-z0-9._ -]*$")

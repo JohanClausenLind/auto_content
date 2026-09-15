@@ -1,18 +1,4 @@
-"""Deterministic checks over a built character asset's own turnaround renders.
-
-A character asset is generated, and nothing downstream can tell a good one from a broken one. The
-turnaround the build already renders carries everything needed to catch the faults that matter,
-because those renders include the layout boxes and the projected OpenPose joints, not just RGB:
-
-* the required views exist at all
-* the figure fits inside its own turnaround frame, fully visible
-* all eighteen keypoints projected — a collapsed keypoint proxy silently ruins every skeleton
-* the t-pose is bilaterally symmetric, which is how a mirrored or broken rig announces itself
-* the mesh is a plausible human height
-
-None of that judges whether the sculpture *looks* like a person. That is what the contact sheet
-and an approval are for; see :mod:`content_factory.schemas.assets`.
-"""
+"""Deterministic checks over a built character asset's own turnaround renders."""
 
 from __future__ import annotations
 
@@ -134,8 +120,7 @@ PAIRS = (
 
 
 def check_bilateral_symmetry(asset_dir: Path) -> AssetCheck:
-    """In a t-pose the left and right of a body mirror about its own centre. A rig whose sides are
-    swapped, or whose weights are broken on one side, fails here and nowhere else."""
+    """In a t-pose the left and right of a body mirror about its own centre."""
     skeleton = _view_dir(asset_dir, "t_pose") / "skeleton" / "frames" / "0000.json"
     if not skeleton.exists():
         return AssetCheck(
@@ -184,8 +169,7 @@ def check_bilateral_symmetry(asset_dir: Path) -> AssetCheck:
 
 
 def check_profile_coverage(asset_dir: Path) -> AssetCheck:
-    """Both sides of the body, or only one? An identity reference drawn from one-sided profiles
-    gives the image model nothing about the other side of a face or a coat."""
+    """Both sides of the body, or only one?"""
     missing = [
         right
         for left, right in MIRRORED_VIEWS
@@ -244,14 +228,7 @@ def asset_contact_sheet(asset_dir: Path, dest: Path, *, tile_width: int = 420) -
 
 
 def check_identity_sheets(asset_dir: Path, sheets) -> AssetCheck:
-    """Are this asset's styled sheets still the ones its current mesh was drawn from?
-
-    Advisory, not a blocker, and the distinction is deliberate. A film whose ``anchor_references``
-    does not include ``identity`` needs no sheet at all, so "none built" cannot fail an asset. What
-    *would* be wrong is a sheet drawn from a mesh that has since been rebuilt: the reference would
-    be a different body from the one the shot stages. ``stage_review_assets`` is where a lane that
-    actually asks for an identity slot turns the absence into a block.
-    """
+    """Are this asset's styled sheets still the ones its current mesh was drawn from?"""
     built = _read_json(next(asset_dir.glob("*.asset.json")))
     stale = sorted(s.style_slug for s in sheets if s.blend_sha256 != built["blend_sha256"])
     return AssetCheck(

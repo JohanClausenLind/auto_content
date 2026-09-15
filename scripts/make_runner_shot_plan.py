@@ -1,36 +1,4 @@
-"""Build a ShotPlan of one runner, thirty stills, a different camera on every one.
-
-    uv run python scripts/make_runner_shot_plan.py [--clip cmu_35_18] [--shots 30]
-
-Two decisions here are measurements rather than taste.
-
-The motion is captured, not authored. The hand-written stride poses this replaces put a figure in
-a plausible-looking pose per frame and nothing connected them, so the legs read as a mannequin
-being posed. ``cmu_35_18`` is a CMU sprint trial baked to ``cf.clip.v2``: 35 frames sustaining
-3.18 m/s, which is the only kind of run in the library - the two-person contact set's fastest
-"running" clip is a 1.8 m/s scramble for a chair, measured, and looks like one.
-
-The camera tracks the body instead of covering its path. One camera that must keep the whole 4.45 m
-route in shot sits 7.71 m out and predicts 0.577 of frame height in 16:9 - legible, but far short of
-the 0.82-0.86 the rubric's pose-legibility criterion asks for, and it falls to 0.182 in 9:16, under
-the 0.33 where HiDream was measured to stop honouring the pose skeleton and invent its own scene. So
-every shot solves its camera against where the runner actually is on the frame it samples, through
-``content_factory.shots.framing``, which is the same solver the reference planner uses rather than a
-second copy of the arithmetic.
-
-The camera walks the circle in even steps rather than jumping across it. Azimuth by the golden
-angle covered thirty directions beautifully and scored 0.0 on the rubric's camera-variety
-criterion: consecutive cameras were a median 13.1 m apart, past the 6 m where the criterion says
-nothing reads as one place any more. Even coverage of a circle and continuity between neighbours
-are in tension, and continuity wins - thirty views of one place beats thirty places. A 12-degree
-step still comes all the way round in thirty shots.
-
-Framing is solved twice. The first pass places each camera analytically; the second reads the
-body fraction Blender actually delivered from the layout pass and corrects the distance by the
-ratio. One pass is not enough because the solve models a standing figure while a sprinter throws
-its limbs out, and the residual ran to +0.12 of frame height - enough to clip a head at the top of
-the range and to cost the pose-legibility score at the bottom.
-"""
+"""Build a ShotPlan of one runner, thirty stills, a different camera on every one."""
 
 from __future__ import annotations
 
@@ -155,11 +123,8 @@ def build(clip_name: str, count: int, *, actor: str, asset: str, beat_id: str) -
                     "background_color": [0.07, 0.08, 0.11],
                     "ground": {
                         "enabled": True,
-                        # Much darker than the two-hander's 0.30 grey, because a raised camera
-                        # fills the frame with floor: at 38 degrees elevation the 0.30 ground came
-                        # back within 6 luma of the body and the figure stopped separating from
-                        # it. 0.16 lifted the worst separation to 25 luma and 0.09 to over 45,
-                        # which is where the rubric's silhouette criterion stops docking marks.
+                        # Darker than the two-hander's 0.30 grey: a raised camera fills the frame
+                        # with floor, and 0.30 sat within 6 luma of the body; 0.09 gives over 45.
                         "color": [0.09, 0.1, 0.12],
                         "size": 60.0,
                         "seg": False,
@@ -167,11 +132,8 @@ def build(clip_name: str, count: int, *, actor: str, asset: str, beat_id: str) -
                     "walls": None,
                 },
                 "lighting": {
-                    # A control pass has one job: show the body. A dusk key 140 degrees off the
-                    # camera put five of the thirty stills in near-silhouette, which throws away
-                    # the pose signal the whole Blender layer exists to provide. So the key sits
-                    # over the camera's shoulder on every shot and the dusk comes from the prompt,
-                    # where a look belongs, instead of from the geometry.
+                    # The key sits over the camera's shoulder; the dusk comes from the prompt. A key
+                    # 140 degrees off camera put five of thirty stills in near-silhouette.
                     "preset": "studio",
                     "key_azimuth_deg": round((azimuth + 35.0) % 360.0, 1),
                     "key_elevation_deg": 42.0,
@@ -213,24 +175,7 @@ def build(clip_name: str, count: int, *, actor: str, asset: str, beat_id: str) -
 
 
 def correct(plan: dict, controls_dir: Path) -> tuple[dict, dict]:
-    """Second framing pass: pull each camera in or out by the ratio Blender actually delivered.
-
-    Two things get corrected, and both are measured rather than modelled.
-
-    *Size.* ``predicted_body_fraction`` assumes a standing figure of known height; a sprinter's
-    limbs change its projected extent by up to 0.15 of frame height either way. Body fraction is
-    inversely proportional to distance, so the correction is exactly ``distance * measured /
-    target`` - one multiplication, no search.
-
-    *Height in frame.* The solve aims at half the subject's standing height, which put every
-    runner high in the frame: top margins of 0.000 to 0.025 against bottom margins near 0.10, and
-    one head actually clipped. A body in flight is not centred on half its standing height. So the
-    aim is shifted by however far the measured box centre sits from the middle of the frame,
-    converted to metres through the frame's own vertical coverage - and the camera moves with it,
-    so the shot keeps its angle.
-
-    Anything the layout pass did not measure keeps its analytic camera.
-    """
+    """Second framing pass: pull each camera in or out by the ratio Blender actually delivered."""
     stats = {"corrected": 0, "unmeasured": 0, "worst_before": 0.0, "worst_after": 0.0}
     for shot in plan["shots"]:
         layout = controls_dir / shot["shot_id"] / "layout" / "frames" / "0000.json"
@@ -254,9 +199,8 @@ def correct(plan: dict, controls_dir: Path) -> tuple[dict, dict]:
         position = [
             round(look[k] + (keyframe["position"][k] - look[k]) * scale, 4) for k in range(3)
         ]
-        # The frame covers subject_height / measured_fraction metres vertically, and the solve put
-        # look_at at half the subject's height, so 2 * look_at.z recovers that height. Image y runs
-        # down, so a box centred above the middle needs the aim raised to bring it down.
+        # The frame spans 2 * look_at.z / measured metres vertically (look_at sits at half the
+        # subject's height); image y runs down, so a box above centre needs the aim raised.
         centre_y = float(box["y"]) + measured / 2.0
         rise = (0.5 - centre_y) * (2.0 * look[2]) / max(measured, 1e-6)
         stats["worst_before"] = max(stats["worst_before"], abs(measured - target))

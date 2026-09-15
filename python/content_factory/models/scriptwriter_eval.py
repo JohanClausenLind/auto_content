@@ -1,20 +1,4 @@
-"""Deterministic scorers for the script writer, and the pack a build has to pass to be a default.
-
-The writer is off by default and the reason is here: a writer whose output nobody has scored is not
-a default. This is what scoring means for it.
-
-**The scorers grade the model, not the validators.** `draft_story_plan`'s validators already drop
-every beat that invents a number or cites a claim into being, so scoring the surviving plan would
-report a perfect "no invented numbers" by construction — the beats that invented one are exactly
-the beats that are no longer there. Every scorer below reads `DraftResult.raw`, which is what the
-model actually returned.
-
-**Every scorer is arithmetic.** No model grades another model's script. `grounded` counts figures
-against dataset rows; `usable` counts beats that survived; `arc` counts sections covered;
-`budget` compares word counts against the outline's own budgets; `spoken` counts beats that
-supplied a spoken line where the display line states a quantity. A rubric a model applies would
-make the floor a matter of opinion, and a quality floor has to be a number.
-"""
+"""Deterministic scorers for the script writer, and the pack a build has to pass to be a default."""
 
 from __future__ import annotations
 
@@ -42,13 +26,7 @@ length, which is what pushes a ten-minute episode to seventeen."""
 
 
 def _needs_a_spoken_line(text: str) -> bool:
-    """Does this display line contain a figure a narrator would mispronounce?
-
-    Not "does it contain a digit". A bare year does — and "2018" is read "twenty eighteen" by any
-    TTS without help, so counting it made the first live measurement score 0.0 on this axis for a
-    beat that needed nothing. ``parse_numbers`` already declines to treat a bare year as a
-    quantity, and that is exactly the distinction wanted here.
-    """
+    """Does this display line contain a figure a narrator would mispronounce?"""
     return bool(parse_numbers(text))
 
 
@@ -86,12 +64,7 @@ class WriterScores:
 
     @property
     def overall(self) -> float:
-        """The metric a quality floor is set against.
-
-        The minimum, not the mean. A draft that is perfectly grounded and names no drawable scene
-        is not two-thirds of a script — averaging would let a total failure on one axis hide behind
-        successes on the others, which is the whole reason a floor exists.
-        """
+        """The metric a quality floor is set against."""
         return round(min(self.as_dict().values()), 4)
 
 
@@ -106,11 +79,7 @@ def score_draft(
     datasets: dict[str, DatasetTable] | None = None,
     cards: Sequence[ClaimCard] = (),
 ) -> WriterScores:
-    """Score what the model returned. Arithmetic only.
-
-    ``cards`` are the claims the writer was shown — both what it was allowed to cite and where a
-    figure is allowed to come from, so the scorer needs the statements and not only the ids.
-    """
+    """Score what the model returned."""
     raw = result.raw
     if raw is None or not raw.beats:
         return WriterScores(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
@@ -134,9 +103,8 @@ def score_draft(
             for text in (beat.display_text, beat.headline, beat.secondary, *beat.bullets)
             for n in parse_numbers(text)
         ]
-        # A figure is grounded if it is in a dataset row or in a claim this beat cites. Citing a
-        # claim that was never offered is a separate failure, measured by `cited` — counting it
-        # here as well would charge one mistake twice.
+        # Grounded means in a dataset row or a cited claim; citing an unoffered claim is `cited`'s
+        # failure and must not be charged twice here.
         claim_values = {
             float(n.value)
             for cid in beat.claim_ids

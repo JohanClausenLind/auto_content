@@ -1,10 +1,4 @@
-"""Builtin animation renderer: deterministic Pillow frames from an AnimationSpec.
-
-Covers the explainer basics offline — a counting number, an equation revealed line by line, a
-diagram built box by box — with zero dependencies beyond Pillow. The opt-in Manim skill
-(skills/video/manim) renders the same contract with real mathematical typesetting; both write
-identical frame layouts (frames/0000.png…) so downstream packaging cannot tell them apart.
-"""
+"""Builtin animation renderer: deterministic Pillow frames from an AnimationSpec."""
 
 from __future__ import annotations
 

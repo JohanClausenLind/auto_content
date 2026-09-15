@@ -1,11 +1,4 @@
-"""Solving a camera from a clip's own geometry.
-
-This module exists because of two failures that each cost a render. Aiming at chest height instead
-of the middle of the subject delivered a measured 0.50 body fraction where 0.78 was solved for, and
-cropped the feet. Inheriting the preset planner's camera for a mocap-staged pair let a walking
-character pass the near plane, which degenerated the depth pass and killed postprocess on a NaN.
-Both are properties, so both are tests.
-"""
+"""Solving a camera from a clip's own geometry."""
 
 from __future__ import annotations
 
@@ -110,8 +103,7 @@ def test_a_wide_pair_pushes_the_camera_back_instead_of_cropping() -> None:
 
 
 def test_the_camera_aims_at_the_middle_of_the_subject() -> None:
-    """Not at chest height. Aiming at 1.05 m needs 2.1 m of coverage to keep a 1.76 m figure
-    whole, so the same distance that predicts 0.78 delivers 0.50 and crops the feet."""
+    """Not at chest height."""
     clip = _clip([[(0.0, 0.0, 1.0)]])
     f = solve_framing(clip, width=1024, height=576, elevation_deg=0.0)
     assert f.look_at[2] == pytest.approx(f.subject_height_m / 2.0, abs=1e-4)
@@ -155,8 +147,7 @@ def test_a_real_walking_clip_is_framed_further_back_than_a_still_one() -> None:
 
 @clips
 def test_no_real_clip_puts_the_camera_inside_the_action() -> None:
-    """The NaN this module was written for: a character passing the near plane. The camera has to
-    stand outside the radius the actors cover, with room to spare."""
+    """The NaN this module was written for: a character passing the near plane."""
     for path in sorted(CLIPS.glob("cmu_*.json")):
         clip = json.loads(path.read_text())
         (cx, cy), radius, _top = clip_extent(clip)
@@ -192,8 +183,7 @@ def test_group_extent_at_can_be_narrowed_to_one_actor() -> None:
 
 
 def test_one_actor_needs_no_width_of_their_own() -> None:
-    """The invariant a tracking camera rests on: framing one body is a distance problem only, so
-    the width push-back must not fire on a solo clip and pull the camera back for nothing."""
+    """The invariant a tracking camera rests on: framing one body is a distance problem only."""
     clip = _clip([[(0.0, 0.0, 1.0), (1.0, 2.0, 1.1)], [(3.0, 0.0, 0.9)]])
     for frame in (0, 1, 9):
         centre, radius, top = group_extent_at(clip, frame, actor_ids=("a",))

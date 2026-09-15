@@ -1,5 +1,4 @@
-"""Content Opportunity Radar (10): authorized sources only → typed RadarSignals with evidence.
-Signals feed topic scouting; they never auto-create public posts."""
+"""Content Opportunity Radar (10): authorized sources only → typed RadarSignals with evidence."""
 
 from __future__ import annotations
 

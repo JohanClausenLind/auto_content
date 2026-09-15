@@ -1,10 +1,4 @@
-"""Spreading independent GPU items over more than one model server.
-
-The gate here is not "it went faster" -- a unit test cannot prove that -- but the three properties
-that make going faster safe: a pool of one behaves exactly like the serial loop it replaced, two
-workers really do run at the same time, and the pictures a pooled run produces are byte-identical
-to the ones the serial run produced.
-"""
+"""Spreading independent GPU items over more than one model server."""
 
 from __future__ import annotations
 
@@ -68,12 +62,7 @@ class _NamedMock(MockReferenceEditBackend):
 
 
 class _PairedMock(_NamedMock):
-    """A mock that refuses to finish a frame alone.
-
-    Every call waits on a two-party barrier, so the frame can only complete while another worker is
-    inside its own call. Against a serial loop the first wait times out and the test fails -- which
-    is the point: this is the assertion that the fan-out is real and not just plumbed.
-    """
+    """A mock that refuses to finish a frame alone."""
 
     def __init__(self, endpoint: str, barrier: threading.Barrier) -> None:
         super().__init__(endpoint)
@@ -221,12 +210,7 @@ def test_every_host_failing_still_raises() -> None:
 
 
 def test_a_frame_written_before_the_run_stopped_is_not_drawn_again(tmp_path: Path) -> None:
-    """Frames reach disk as they finish, so an interrupted sequence resumes where it stopped.
-
-    They used to be written only after the whole pool came back, so an interruption threw away
-    every finished drawing -- hours of GPU time on a long sequence -- and the marker each frame
-    carries for exactly this purpose was never there to be read.
-    """
+    """Frames reach disk as they finish, so an interrupted sequence resumes where it stopped."""
     plan = six_keyframe_plan()
     workdir = tmp_path / "seq"
 

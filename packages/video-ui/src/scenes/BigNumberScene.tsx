@@ -21,9 +21,7 @@ export function countUpValue(final: number, t: number): number {
   return Math.round(scaled * factor) / factor;
 }
 
-/** The headline figure: label above, the number counting up, an accent rule drawing under it
- * as the count completes, context below. Portrait centres everything and gives the context a
- * larger role so a phone reads it without leaning in. */
+/** The headline figure: label above, the number counting up. */
 export function BigNumberScene({ scene }: SceneProps<Spec>): ReactElement {
   const frame = useCurrentFrame();
   const { bundle } = useSceneEnv();

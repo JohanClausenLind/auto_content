@@ -25,8 +25,7 @@ function Bullet({ text, from, marker, gap, width }: { text: string; from: number
   );
 }
 
-/** A heading and its points, revealed one at a time on a fixed cadence. Portrait keeps the
- * points left-aligned inside a centred column so the accent markers line up. */
+/** A heading and its points, revealed one at a time on a fixed cadence. */
 export function BulletSequenceScene({ scene }: SceneProps<Spec>): ReactElement {
   const frame = useCurrentFrame();
   const { theme, safe, scale, fps, durationInFrames, portrait, align } = useSceneGeometry();

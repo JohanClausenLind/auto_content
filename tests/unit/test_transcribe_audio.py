@@ -1,19 +1,4 @@
-"""A recording becomes a film: the transcript, the beats cut out of it, and the voice.
-
-These are the pieces that let a lane start from sound instead of from something written, so what
-they pin is the chain of claims each one makes to the next:
-
-* the transcript says where every word is in the audio;
-* the story's beats are spans of those words, and each beat's duration is measured, not planned;
-* the per-beat narration is cut out of the one recording at those word boundaries, so the same
-  contracts the synthesized path produces come out the other end — which is what lets the
-  restoration chain, the captions, the mix and the mux stay exactly as they were.
-
-The transcriber under test is ``fixture``: it takes a transcript the operator already has and
-apportions it across the recording. No model is downloaded, nothing leaves the machine, and the
-run is identical every time — the properties a core-suite test needs. What faster-whisper adds is
-measured word boundaries, and it is exercised by hand (see STATUS), not here.
-"""
+"""A recording becomes a film: the transcript, the beats cut out of it, and the voice."""
 
 from __future__ import annotations
 
@@ -52,11 +37,7 @@ TALK = (
 
 
 def _recording(path: Path, *, seconds: float = 12.0, rate: int = 24000) -> Path:
-    """A PCM WAV of the right length. What it sounds like does not matter to the fixture path.
-
-    Not silence: a file of zeros is a legitimate thing for a QC stage to complain about later, and
-    a low tone keeps this test about transcription rather than about the artifact detector.
-    """
+    """A PCM WAV of the right length."""
     import math
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -107,9 +88,7 @@ def test_sentences_come_from_the_punctuation_the_transcriber_emitted() -> None:
 
 
 def test_beats_are_divided_by_where_the_speech_is_not_by_sentence_count() -> None:
-    """Three beats over six evenly spaced sentences is two sentences each — and the test that
-    matters is the *durations*, because a picture that holds for a twenty-second digression and one
-    that holds for a three-word aside are the same amount of drawing."""
+    """Three beats over six evenly spaced sentences is two sentences each."""
     transcript = _transcript()
     spans = split_beats(transcript, beats=3)
     assert len(spans) == 3
@@ -158,8 +137,7 @@ def test_beat_spans_locate_each_beat_in_the_recording() -> None:
 
 
 def test_a_beat_whose_words_were_tidied_up_still_finds_its_audio() -> None:
-    """An editor who rewrites one word must not cost the beat its audio: the walk skips a word it
-    cannot match instead of giving up on the beat."""
+    """An editor who rewrites one word must not cost the beat its audio."""
     transcript = _transcript()
     plan = story_plan_from_transcript(transcript, deliverable_id="dlv_test00000001", beats=3)
     edited = plan.model_copy(
@@ -252,9 +230,7 @@ def test_a_lane_with_no_recording_says_where_to_put_one(tmp_path: Path) -> None:
 
 
 def _recording_in_an_mp4(path: Path, *, seconds: float = 12.0, moving: bool = False) -> Path:
-    """Sound in a video container: what a phone, a voice-memo app or a meeting tool hands over.
-
-    ``moving`` makes it an actual film instead — the same container, and the other answer."""
+    """Sound in a video container: what a phone, a voice-memo app or a meeting tool hands over."""
     import subprocess
 
     picture = (
@@ -277,9 +253,7 @@ def _recording_in_an_mp4(path: Path, *, seconds: float = 12.0, moving: bool = Fa
 
 
 def test_a_recording_that_arrived_as_an_mp4_is_read_rather_than_refused(tmp_path: Path) -> None:
-    """The operator's file is an MP4 because their recorder writes MP4, and the picture in it is
-    an hour of black. Refusing it for its container was the pipeline declining to read a file it
-    reads perfectly well — and the folder is where they were told to put a recording."""
+    """The operator's file is an MP4 because their recorder writes MP4."""
     from dataclasses import replace
 
     ctx = make_context(project_dir=tmp_path / "prj")
@@ -295,8 +269,7 @@ def test_a_recording_that_arrived_as_an_mp4_is_read_rather_than_refused(tmp_path
 
 
 def test_a_film_in_the_uploads_folder_is_still_passed_over_and_said_so(tmp_path: Path) -> None:
-    """The container is not the licence — the picture is. A clip with something in it is not this
-    lane's material, and throwing its picture away silently would be the worse answer."""
+    """The container is not the licence — the picture is."""
     from dataclasses import replace
 
     ctx = make_context(project_dir=tmp_path / "prj")
@@ -309,8 +282,7 @@ def test_a_film_in_the_uploads_folder_is_still_passed_over_and_said_so(tmp_path:
 def test_a_plain_recording_beside_a_clip_wins_without_the_clip_being_probed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A folder holding an interview and a clip is not ambiguous, and decoding the clip to find
-    that out is work done to learn nothing."""
+    """A folder holding an interview and a clip is not ambiguous."""
     from dataclasses import replace
 
     from content_factory.workflows import stages
@@ -351,8 +323,7 @@ def test_plan_story_plans_the_film_out_of_what_was_said(tmp_path: Path) -> None:
 
 
 def test_a_named_story_fixture_still_wins_over_a_transcript(tmp_path: Path) -> None:
-    """Precedence, stated: an operator who names a plan means it. The transcript only wins over
-    the *fallbacks* — the script writer and the demo fixture."""
+    """Precedence, stated: an operator who names a plan means it."""
     from dataclasses import replace
 
     ctx, _out = _run_to_transcript(tmp_path)
@@ -363,8 +334,7 @@ def test_a_named_story_fixture_still_wins_over_a_transcript(tmp_path: Path) -> N
 
 
 def test_the_voice_is_cut_out_of_the_one_recording(tmp_path: Path) -> None:
-    """The whole point: no aligner runs twice, and what lands on disk is the same per-beat layout
-    the recorded-take path writes, so everything downstream cannot tell the difference."""
+    """The whole point: no aligner runs twice."""
     from dataclasses import replace
 
     ctx, _out = _run_to_transcript(tmp_path)
@@ -388,8 +358,7 @@ def test_the_voice_is_cut_out_of_the_one_recording(tmp_path: Path) -> None:
 
 
 def test_the_captions_of_a_transcribed_recording_pass_their_own_alignment(tmp_path: Path) -> None:
-    """The check that would fail if a beat's words overlapped or disagreed with its script — the
-    two ways a transcript-driven segment could be wrong and still exist."""
+    """The check that would fail if a beat's words overlapped or disagreed with its script."""
     from dataclasses import replace
 
     ctx, _out = _run_to_transcript(tmp_path)

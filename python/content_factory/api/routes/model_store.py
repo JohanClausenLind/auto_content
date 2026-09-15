@@ -1,12 +1,4 @@
-"""/v1/models/*: the model store, as the browser sees it.
-
-One place answers "what does this machine need, what has it got, and what will one click do about
-it": the declared requirements of every workflow, resolved against the pinned registry
-(:mod:`content_factory.models.weights`) and against what is actually on disk, plus the install and
-relink calls that change it. Reads are viewer-level; installing is editor-level and never accepts
-a URL — the caller names a registry key and the pinned source is looked up here, so nothing a
-browser (or a model) sends can redirect a download somewhere else.
-"""
+"""/v1/models/*: the model store, as the browser sees it."""
 
 from __future__ import annotations
 
@@ -64,8 +56,7 @@ async def _hf_account(db: AsyncSession, workspace_id: str) -> ConnectedAccount |
 
 
 async def _hf_token(db: AsyncSession, workspace_id: str) -> str | None:
-    """The stored token, opened for exactly one install. Absent is normal: only gated
-    repositories need it, and this host may have none of them."""
+    """The stored token, opened for exactly one install."""
     from content_factory.security.vault import Sealed, TokenVault, VaultError
 
     account = await _hf_account(db, workspace_id)
@@ -84,11 +75,7 @@ async def _hf_token(db: AsyncSession, workspace_id: str) -> str | None:
 
 @lru_cache(maxsize=1)
 def _demand() -> dict[str, dict[str, Any]]:
-    """Which workflows want each registry key, and whether any of them treats it as required.
-
-    Cached: the workflow definitions are files on disk that only change when the operator edits
-    them and reruns `just schemas`, and this endpoint is polled by an open browser tab.
-    """
+    """Which workflows want each registry key, and whether any of them treats it as required."""
     demand: dict[str, dict[str, Any]] = {}
     for template in load_definitions().values():
         for req in template.models:
@@ -187,12 +174,7 @@ async def put_hf_access(
     p: Principal = Depends(require_owner),
     db: AsyncSession = Depends(get_db),
 ) -> None:
-    """Store (or replace) the token gated repositories need. Owner only: it is a credential.
-
-    Kept in the same sealed columns as every other connected credential, with the same
-    workspace-bound AAD, so it cannot be read by another workspace or decrypted out of a
-    database dump alone.
-    """
+    """Store (or replace) the token gated repositories need."""
     from content_factory.security.vault import TokenVault
 
     sealed = TokenVault().seal(body.token.strip(), aad=f"{p.workspace_id}|{HF_PLATFORM}|{HF_AAD}")

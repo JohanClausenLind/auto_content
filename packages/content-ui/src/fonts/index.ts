@@ -1,6 +1,5 @@
-// Pinned local fonts via @fontsource (SIL OFL 1.1). Never loaded from the network.
-//   Inter — the body face everywhere (labels, body, captions, sources, sub-heads).
-//   Sora  — an optional display face (display, headline, number) a brand can opt into.
+// Pinned local fonts via @fontsource (SIL OFL 1.1), never loaded from the network: Inter is the
+// body face everywhere; Sora is an optional display face a brand can opt into.
 import { INTER_WEIGHTS, type InterWeight } from "./inter-widths";
 import { SORA_WEIGHTS, type SoraWeight } from "./sora-widths";
 
@@ -12,19 +11,7 @@ export type FontWeight = InterWeight | SoraWeight;
 
 export const INTER_FAMILY = "Inter";
 export const SORA_FAMILY = "Sora";
-/**
- * The house face first, the pinned faces behind it.
- *
- * `HelveticaNeue Condensed` is the operator's chosen face (2026-09-12) and is installed on the
- * host, not vendored: it is licensed, and `docs/licensing.md` bars redistributing licensed media —
- * a repo is redistribution. So it is named here and resolved by the system, exactly as the burn-in
- * captions resolve it through fontconfig.
- *
- * Inter and Sora stay pinned and stay in the stack, and that is the guarantee rather than the
- * fallback: a machine without Helvetica renders in Inter instead of rendering in nothing, and
- * `loadFont` still waits on the pinned faces before drawing. A stack whose first entry is absent
- * costs nothing at render time.
- */
+/** The licensed house face, resolved by the host, then the pinned faces that guarantee a render. */
 const HOUSE_FAMILY = `"HelveticaNeue Condensed"`;
 export const FONT_STACK = `${HOUSE_FAMILY}, ${INTER_FAMILY}, "Helvetica Neue", Arial, sans-serif`;
 export const DISPLAY_FONT_STACK = `${HOUSE_FAMILY}, ${SORA_FAMILY}, ${INTER_FAMILY}, "Helvetica Neue", Arial, sans-serif`;
@@ -63,10 +50,7 @@ export const SORA_FACES: readonly FontFace[] = SORA_WEIGHTS.map((weight) => ({
 }));
 export const FONT_FACES: readonly FontFace[] = [...INTER_FACES, ...SORA_FACES];
 
-/**
- * `@font-face` CSS for the pinned faces. `urlFor` maps a file name to a URL the renderer can
- * serve (e.g. Remotion's `staticFile("fonts/" + file)`), so the CSS never references a CDN.
- */
+/** `@font-face` CSS for the pinned faces; `urlFor` maps a file to a servable URL, never a CDN. */
 export function fontFaceCss(urlFor: (file: string) => string, faces: readonly FontFace[] = FONT_FACES): string {
   return faces
     .map(

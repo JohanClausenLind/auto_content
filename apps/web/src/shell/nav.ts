@@ -5,10 +5,7 @@ export interface NavArea {
   icon: string;
   /** Extra words the palette should match. */
   keywords?: string;
-  /**
-   * Second chord of this area's `g` sequence. Every area needs one and they must be unique —
-   * `nav.test.ts` fails otherwise, so a new area cannot quietly ship without a shortcut.
-   */
+  /** Second chord of this area's `g` sequence; required and unique, which `nav.test.ts` enforces. */
   key: string;
   ownerOnly?: boolean;
   section: "work" | "library" | "system";

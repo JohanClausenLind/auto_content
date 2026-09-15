@@ -1,5 +1,4 @@
-"""Revision Box acceptance fixtures (16.5): complaint -> FixPlan on the right unit; ambiguity ->
-question; policy-violating request -> refusal; factual change -> gate."""
+"""Revision Box acceptance fixtures (16.5): FixPlan, question, refusal or gate per complaint."""
 
 from __future__ import annotations
 

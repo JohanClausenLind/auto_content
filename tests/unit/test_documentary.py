@@ -214,13 +214,7 @@ def test_outline_json_roundtrip(tmp_path: Path) -> None:
 
 
 def test_each_short_narrates_its_own_plan_not_the_episode(tmp_path: Path) -> None:
-    """STATUS 528 called this "the lane's next smallest task", and it was a resolution bug.
-
-    ``plan_story`` has written a derived per-short plan since 2026-09-04 — a re-edit, never a crop,
-    with the measured timings reset and a rewritten hook. Nothing consumed them: every
-    per-deliverable stage resolved ``story/plan.json``, so all N shorts locked the LONG script and
-    came out as N copies of the same film at a different aspect ratio.
-    """
+    """STATUS 528 called this "the lane's next smallest task", and it was a resolution bug."""
     from content_factory.workflows.stages import _load_story_plan, stage_lock_script
 
     campaign = documentary_campaign(workspace_id=WS, topic=TOPIC, minutes=10, shorts=3)
@@ -234,9 +228,8 @@ def test_each_short_narrates_its_own_plan_not_the_episode(tmp_path: Path) -> Non
         quality="smoke",
         dep_outputs={},
     )
-    # A real episode script, so plan_shorts picks three genuinely different windows. On the demo
-    # fixture (17 s, four beats) it falls back to the whole plan for every short, which would make
-    # "each short has its own script" true and untestable.
+    # A real episode script: on the demo fixture (17 s, four beats) plan_shorts falls back to the
+    # whole plan for every short, which makes "each short has its own script" true and untestable.
     object.__setattr__(shared, "params", {"story": "fixtures/story/wind_2024.json"})
     stage_plan_story(shared)
     shorts = ShortsPlan.model_validate_json((tmp_path / "story" / "shorts.json").read_text())
@@ -274,7 +267,6 @@ def test_each_short_narrates_its_own_plan_not_the_episode(tmp_path: Path) -> Non
         assert script["sentences"][0] == excerpt.hook_text
         locked[excerpt.short_deliverable_id] = tuple(script["sentences"])
 
-    # Three shorts, three different scripts, each locked from its own derived plan. (One short's
-    # window happens to cover the whole episode, so its sentences coincide with the episode's —
-    # what matters is that it locked them from ITS plan, at 1080x1920, under its own hook.)
+    # Three shorts, three scripts, each locked from its own derived plan. One window covers the
+    # whole episode, so its sentences match the episode's; it still locked them from ITS plan.
     assert len(locked) == 3 and len(set(locked.values())) == 3

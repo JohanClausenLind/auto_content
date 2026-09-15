@@ -1,16 +1,4 @@
-/**
- * A folded group: several nodes drawn as one.
- *
- * What it has to communicate, in one node: that it stands for more than itself, what is inside,
- * and what it takes and gives at its boundary. So the header carries a stacked-plates mark and
- * the member count, the boundary slots are the real slots of the real members (derived from the
- * links, never stored), and the body lists what is inside in order — the steps, legible without
- * opening it. Open is one click on the header, and it shows the members exactly as they are, with
- * every widget available: there is no second copy of the graph to edit.
- *
- * A group with an unconnected required input shows that slot too. Folding must never be a way to
- * hide a hole in the graph.
- */
+/** A folded group as one node; boundary slots derive from the links, so folding cannot hide a hole. */
 
 import { Handle, Position, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useState, type KeyboardEvent } from "react";

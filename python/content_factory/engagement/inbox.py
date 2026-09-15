@@ -1,5 +1,4 @@
-"""Engagement inbox (24.1): normalized inbound messages, deterministic classification, and the
-answer-everything ledger. Reply governance/firewall live in content_factory.personas."""
+"""Engagement inbox: normalized inbound messages, deterministic classification."""
 
 from __future__ import annotations
 

@@ -142,10 +142,7 @@ export const api = {
     downloads: () => request<DownloadJob[]>("GET", "/comfy/models/downloads").then((r) => r.data),
   },
   uploads: {
-    /**
-     * One file, multipart. The server sniffs it, stores it and answers with the node to spawn —
-     * the browser never decides what a file is (a name is not evidence) and never picks a path.
-     */
+    /** One file, multipart; the server sniffs, stores and answers with the node to spawn. */
     create: async (file: File): Promise<UploadedDrop> => {
       const body = new FormData();
       body.append("file", file, file.name);
@@ -240,19 +237,11 @@ export const api = {
       url(`/run-history/${encodeURIComponent(runId)}/files/${file.split("/").map(encodeURIComponent).join("/")}`),
     review: (runId: string) =>
       request<RunReviewPage>("GET", `/run-history/${encodeURIComponent(runId)}/review`).then((r) => r.data),
-    // A refusal comes back as a 422 whose detail says which rule and which frames; `isApiError`
-    // carries it, so the panel can point at the three frames nobody decided rather than at a
-    // sentence about them.
+    // A refusal is a 422 whose detail names the rule and the frames; `isApiError` carries it so the
+    // panel can point at the undecided frames rather than at a sentence about them.
     recordVerdict: (runId: string, body: VerdictBody) =>
       request<RunReviewPage>("POST", `/run-history/${encodeURIComponent(runId)}/review`, body).then((r) => r.data),
-    /**
-     * Ask the local vision model to look at a gate's pictures. Forty-odd seconds of GPU, and it
-     * decides nothing: the opinion comes back on the same review page the gate arrives on.
-     *
-     * 409 means it cannot be asked for right now (a run holds the card, no frames on disk) and
-     * 502 that it was asked and did not answer — the caller shows the two differently, because
-     * one is fixed by waiting and the other by fixing the model stack.
-     */
+    /** Ask the local vision model about a gate's pictures; 409 = cannot be asked now. */
     aiReview: (runId: string, deliverable?: string) =>
       request<RunReviewPage>(
         "POST",

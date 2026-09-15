@@ -1,4 +1,4 @@
-"""/v1/workspaces, /v1/prefs, /v1/brand-kits (workspace-scoped sample resource for isolation tests)."""  # noqa: E501
+"""/v1/workspaces, /v1/prefs, /v1/brand-kits."""
 
 from __future__ import annotations
 

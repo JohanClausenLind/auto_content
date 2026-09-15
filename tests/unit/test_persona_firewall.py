@@ -1,6 +1,4 @@
-"""Phase-11 safety gates (fail closed): real-fact leaks, PII, injection via fan messages, minor
-safety always escalates, crisis always escalates, no autonomous reply claims to be human,
-variation pressure, schedule-gated release, answer-everything skip reasons."""
+"""Phase-11 safety gates (fail closed): real-fact leaks, PII, injection via fan messages."""
 
 from __future__ import annotations
 

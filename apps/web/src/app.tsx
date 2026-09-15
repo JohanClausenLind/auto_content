@@ -22,10 +22,7 @@ export function createAppQueryClient(): QueryClient {
   });
 }
 
-/**
- * Syncs the theme and preferences with the server only while signed in; local storage always
- * works. The keymap provider lives inside the shell, where the actions it dispatches exist.
- */
+/** Syncs theme and preferences with the server only while signed in. */
 function ThemedRouter({ router, initialTheme, initialPrefs }: { router: AppRouter; initialTheme?: ThemeState; initialPrefs?: AppPrefs }) {
   const { data: session } = useSession();
   const accountId = session?.account.id;

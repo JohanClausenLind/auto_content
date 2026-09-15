@@ -1,16 +1,4 @@
-"""LTX-2.5 image-to-video workflow packages (ComfyUI API graphs as typed ``ComfyWorkflowPackage``).
-
-``ltx_i2v_package`` is the production twin of the ``sample_ltx_i2v_package`` fixture: the 16-node
-graph proven by ``projects/showcase/bin/showcase_i2v.py`` (GGUF transformer + gemma GGUF text
-encoder, ``LTXVImgToVideo`` from the first frame, the official 8-step distilled sigma schedule).
-
-``ltx_i2v_guided_package`` adds keyframe guidance: for each guide a ``LoadImage`` +
-``LTXVAddGuide`` pair is chained after ``LTXVImgToVideo`` (node signature verified in ComfyUI
-0.33.0 ``comfy_extras/nodes_lt.py``: positive, negative, vae, latent, image, frame_idx, strength)
-and the last guide feeds ``CFGGuider`` and ``SamplerCustomAdvanced``. This is how the Blender
-scene-control layer pins the shot's camera move: HiDream anchors rendered at Blender-chosen frame
-indices become guides, and LTX interpolates the motion between them. No control LoRA is needed.
-"""
+"""LTX-2.5 image-to-video workflow packages."""
 
 from __future__ import annotations
 
@@ -50,9 +38,7 @@ def _base_workflow(
     clip_name: str = TEXT_ENCODER,
     vae_name: str = VAE,
 ) -> dict[str, dict[str, Any]]:
-    """The 16-node graph. The three weight names are arguments because the ``generate_video`` node
-    declares them as widgets: a machine with a different quantisation on disk must be able to name
-    it without editing this module. They default to the pins the showcase lane was proven on."""
+    """The 16-node graph."""
     return {
         N_UNET: {"class_type": "UnetLoaderGGUF", "inputs": {"unet_name": unet_name}},
         N_CLIP: {
@@ -166,8 +152,7 @@ def _base_parameters() -> tuple[comfyui.ParameterBinding, ...]:
 def _required_models(
     *, unet_name: str = TRANSFORMER, clip_name: str = TEXT_ENCODER, vae_name: str = VAE
 ) -> tuple[comfyui.RequiredModel, ...]:
-    """What the graph loads, so a doctor check looks for the files this package actually names
-    rather than for the module's default pins."""
+    """What the graph loads, so a doctor check looks for the files this package names."""
     return (
         comfyui.RequiredModel(
             filename=unet_name,
@@ -254,9 +239,7 @@ def ltx_i2v_guided_package(
     clip_name: str = TEXT_ENCODER,
     vae_name: str = VAE,
 ) -> comfyui.ComfyWorkflowPackage:
-    """The i2v graph plus ``guides`` keyframe guides (1..4). Guide i is a ``LoadImage`` +
-    ``LTXVAddGuide`` pair; the chain runs LTXVImgToVideo -> guide_1 -> ... -> guide_n, and the
-    last guide's positive/negative/latent feed CFGGuider and SamplerCustomAdvanced."""
+    """The i2v graph plus ``guides`` keyframe guides (1..4)."""
     if not 1 <= guides <= 4:
         msg = "guides must be between 1 and 4"
         raise ValueError(msg)

@@ -1,14 +1,4 @@
-"""/v1/run-history: the runs this machine has made, and the files they produced.
-
-Read-only, and the counterpart to ``/v1/runs``: that route reads the ``production_runs`` table and
-sees durable Temporal runs, which on this machine were mostly started by the integration suite.
-Everything actually produced here — every film in ``videos/``, every anchor drawing, every
-narration — came from a local run (``content-factory make``) that writes no database row at all,
-so none of the day's work was reachable from the product that made it.
-
-Files are served only from inside the output root, resolved and extension-checked by
-``api/files.contained_file`` — the same rule ``/v1/sequences`` uses, in one place.
-"""
+"""/v1/run-history: the runs this machine has made, and the files they produced."""
 
 from __future__ import annotations
 
@@ -32,12 +22,7 @@ _FILE_TYPES = {ext: media for ext, (_kind, media) in history.MEDIA_TYPES.items()
 async def list_history(
     limit: int = Query(default=100, ge=1, le=500), p: Principal = Depends(VIEWER)
 ) -> list[dict[str, Any]]:
-    """Newest first, without outputs.
-
-    Scanning outputs for every run means walking the whole tree — 226 runs, tens of thousands of
-    files — to draw one list, so a row carries its counts and the detail view pays for the files
-    of the run somebody opened.
-    """
+    """Newest first, without outputs."""
     return [
         {
             k: v

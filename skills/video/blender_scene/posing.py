@@ -25,8 +25,7 @@ def sample_clip(
     offset_frames: int = 0,
     loop: bool = True,
 ) -> dict[str, Quat]:
-    """Pose at ``frame`` for a clip authored at ``clip['fps']`` with per-frame bone rotations.
-    Slerps between neighbouring clip frames; loops or holds the last frame."""
+    """Pose at ``frame`` for a clip authored at ``clip['fps']`` with per-frame bone rotations."""
     frames = clip["frames"]
     n = len(frames)
     if n == 0:

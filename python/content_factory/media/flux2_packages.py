@@ -1,27 +1,4 @@
-"""FLUX.2-dev multi-reference image workflow packages (ComfyUI API graphs).
-
-This is the compositor half of the image stack. HiDream-O1 makes the initial reference assets and
-holds a *world*: measured over thirty staged runner anchors it kept one track across every frame,
-consecutive-frame churn 9.6 to 19.8 against a threshold of 42. What it does not hold is a
-*character* — across the same thirty the outfit changed between four combinations, race bibs came
-and went with different numbers, and two frames read as a different person. One reference is a
-pose hint and nothing more, so identity has to come from a model that composes several references
-at once. That is what FLUX.2-dev is here for.
-
-The mechanism is ``ReferenceLatent``, and the important property is that it **chains**: every
-reference is VAE-encoded to a latent and stacked onto the same conditioning, so character,
-clothing, scene, style and pose arrive together rather than one winning. Node signatures were read
-from a running ComfyUI 0.33.0 ``/object_info`` rather than from memory —
-``ReferenceLatent(conditioning, latent?) -> CONDITIONING``, ``EmptyFlux2LatentImage(width, height,
-batch_size)``, ``Flux2Scheduler(steps, width, height)``, and ``CLIPLoader`` with ``type: "flux2"``
-for the Mistral-Small-3.2 text encoder.
-
-Two things about this model shape the graph. The transformer is a Q4_K_M GGUF at 18.7 GB and the
-text encoder is 16.8 GB in fp8, so 35.5 GB of weights face a 24 GB card: ComfyUI has to load them
-in sequence, and the text encoder is pinned to the CPU here so the transformer gets the card to
-itself. And the Turbo LoRA exists to cut the step count, which is what makes a 4 MP frame on a
-3090 a question of minutes rather than tens of them.
-"""
+"""FLUX.2-dev multi-reference image workflow packages (ComfyUI API graphs)."""
 
 from __future__ import annotations
 
@@ -185,9 +162,8 @@ def _base_parameters(*, width: int, height: int) -> list[comfyui.ParameterBindin
             minimum=0.0,
             maximum=20.0,
         ),
-        # The scheduler shifts its sigmas by resolution, so its width and height have to move with
-        # the latent's. Bound separately because they are separate node inputs, and a caller that
-        # sets one without the other gets a schedule solved for a size it is not rendering.
+        # The scheduler shifts its sigmas by resolution: bind width and height alongside the
+        # latent's, or the schedule is solved for a size the graph is not rendering.
         comfyui.ParameterBinding(
             name="sigma_width",
             node_id=N_SIGMAS,
@@ -263,14 +239,7 @@ def flux2_reference_package(
     steps: int | None = None,
     guidance: float | None = None,
 ) -> comfyui.ComfyWorkflowPackage:
-    """Text plus ``references`` reference images to one composed frame.
-
-    ``references=0`` is plain text-to-image, which is how a character sheet gets made in the first
-    place. Above that, each reference is a ``LoadImage`` + ``VAEEncode`` + ``ReferenceLatent``
-    triple chained onto the conditioning, in the order the caller uploads them, and ``FluxGuidance``
-    is rewired to sit after the chain so it applies to the composed conditioning rather than to the
-    bare text.
-    """
+    """Text plus ``references`` reference images to one composed frame."""
     if not 0 <= references <= MAX_REFERENCES:
         msg = f"references must be between 0 and {MAX_REFERENCES}, got {references}"
         raise ValueError(msg)
@@ -316,9 +285,8 @@ def flux2_reference_package(
         comfyui.CapabilityFlag.deterministic_seed,
     ]
     if references:
-        # Every reference arrives the same way, through ReferenceLatent, so the graph cannot say
-        # which one carries a pose and which an identity — the caller's ordering does. These flags
-        # advertise what the package *can* be conditioned on, not what any one call passed.
+        # Every reference goes through ReferenceLatent, so the caller's ordering, not the graph,
+        # says which is pose and which identity; these flags advertise what can be conditioned on.
         capabilities += [
             comfyui.CapabilityFlag.reference_image_edit,
             comfyui.CapabilityFlag.control_pose,

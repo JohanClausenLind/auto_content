@@ -1,5 +1,4 @@
-"""Renders the cube-dolly fixture through the real Blender twice: byte-identical outputs, correct
-depth ordering, segmentation ids, growing layout box, camera math matching Blender's own."""
+"""Renders the cube-dolly fixture through the real Blender twice: byte-identical outputs."""
 
 from __future__ import annotations
 
@@ -107,8 +106,7 @@ def test_cube_dolly_renders_deterministically(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(_blender() is None, reason="Blender is not installed")
 def test_control_bundle_from_live_render(tmp_path: Path) -> None:
-    """The control plane's runner + bundle builder against the real skill, on a prop-only shot at
-    the fixture plan's size, two frames only."""
+    """The control plane's runner + bundle builder against the real skill."""
     from content_factory.controls import build_control_bundle, run_blender_scene
     from content_factory.schemas.fixtures import sample_shot_plan
     from content_factory.schemas.sequences import ControlKind
@@ -143,9 +141,7 @@ ASSETS = Path(os.environ.get("CF_BLENDER_ASSETS", "/mnt/fast/models/blender-asse
     reason="Blender or the man_01 character asset is not available",
 )
 def test_character_skeleton_export(tmp_path: Path) -> None:
-    """A rigged MPFB character renders with all 18 OpenPose joints in frame, mirrored the way
-    OpenPose expects (the person's right side on the viewer's left when facing the camera), and the
-    bundle carries per-frame poses for it."""
+    """A rigged MPFB character renders with all 18 OpenPose joints in frame."""
     from content_factory.controls import build_control_bundle, run_blender_scene
     from content_factory.schemas.fixtures import sample_shot_plan
 

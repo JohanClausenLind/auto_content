@@ -1,5 +1,4 @@
-"""Extraction: trafilatura for articles, pypdf for PDFs, defusedxml for feeds. Hostile inputs are
-converted to safe internal text; scripts/styles never survive; excerpts carry locators."""
+"""Extraction: trafilatura for articles, pypdf for PDFs, defusedxml for feeds."""
 
 from __future__ import annotations
 

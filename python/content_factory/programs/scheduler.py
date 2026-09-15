@@ -1,8 +1,4 @@
-"""ContentProgram scheduling on Temporal Schedules (section 7, phase 9).
-
-Ticks are idempotent (the tick id folds the scheduled time), overlap policy SKIP prevents pile-ups,
-and catch-up after downtime is explicit: 'skip' (default, zero catch-up window), 'run_latest'
-(one catch-up), or 'bounded_backfill' (a capped window). Overdue content is never burst out."""
+"""ContentProgram scheduling on Temporal Schedules (section 7, phase 9)."""
 
 from __future__ import annotations
 
@@ -34,8 +30,7 @@ class ProgramTickInput:
 
 @workflow.defn
 class ProgramTickWorkflow:
-    """One program tick: budget/health check → start a production run. Grows per phase; the
-    tick itself must stay idempotent (the schedule provides a unique workflow id per fire)."""
+    """One program tick: budget/health check → start a production run."""
 
     @workflow.run
     async def run(self, inp: ProgramTickInput) -> dict:

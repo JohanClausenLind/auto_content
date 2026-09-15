@@ -26,7 +26,7 @@
   "$id": "https://content-factory.local/schema/EpisodeMetadata.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Publishing metadata for a long-form episode. Generating this never publishes anything:\nupload stays behind the existing distribution gates and explicit operator approval.",
+  "description": "Publishing metadata for a long-form episode.",
   "properties": {
     "attribution": {
       "default": [],

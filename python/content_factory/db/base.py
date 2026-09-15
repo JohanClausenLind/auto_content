@@ -1,8 +1,4 @@
-"""SQLAlchemy declarative base, id generation, and shared mixins.
-
-Every domain row carries ``workspace_id`` (mixin :class:`WorkspaceScoped`). IDs are opaque
-strings ``<prefix>_<22 base62 chars>`` matching ``schemas.base.OpaqueId``.
-"""
+"""SQLAlchemy declarative base, id generation, and shared mixins."""
 
 from __future__ import annotations
 

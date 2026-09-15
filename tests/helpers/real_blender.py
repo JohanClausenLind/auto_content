@@ -1,16 +1,4 @@
-"""Finding a Blender that can actually run the scene skill.
-
-The skill reads its data passes back out of multilayer EXR with Blender's **bundled**
-OpenImageIO. The upstream builds carry it (the skill was verified against 5.2.1); a distro
-package does not — Ubuntu's 4.0.2 has no ``OpenImageIO`` module at all — and
-``controls.blender_bin`` defaults to the bare name ``blender``, so PATH decides which one a test
-gets. On a host with both installed that makes a test's result depend on the order of two
-directories, which is not a property of the code under test.
-
-So a test that runs the real skill asks here for a Blender that can do the job, and skips when
-the host has none. The probe launches Blender once per candidate and the answer is cached for the
-session, because two seconds per test file is not worth paying twice.
-"""
+"""Finding a Blender that can actually run the scene skill."""
 
 from __future__ import annotations
 

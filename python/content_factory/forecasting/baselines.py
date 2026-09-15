@@ -1,16 +1,4 @@
-"""Forecasting baselines and the adapter roster.
-
-Forecasts are DISPLAY-ONLY inputs: they are shown next to real measurements and never override
-a hard spend limit, memory limit, license restriction, or current allocation fact. Foundation
-models (TimesFM 3.0 — weight license allows specified noncommercial/nonproduction uses as noted
-by the operator on 2026-09-05, re-verify at adoption; TimesFM 2.5; Chronos-2 — model card claims
-Apache-2.0, verify the exact artifact) are optional adapters to be added with pinned revisions
-from a registry/research pass, never from memory. Every candidate must beat these baselines in
-a rolling-origin backtest before it earns a place in any scheduling loop.
-
-Metrics: WAPE (Σ|error| / Σ|actual|) and MAE — chosen because sparse, zero-containing series
-make MAPE meaningless.
-"""
+"""Forecasting baselines and the adapter roster."""
 
 from __future__ import annotations
 

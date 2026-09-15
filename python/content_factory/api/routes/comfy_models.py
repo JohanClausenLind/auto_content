@@ -1,10 +1,4 @@
-"""/v1/comfy/*: local model inventory and one-click downloads.
-
-The inventory answers "which checkpoints/loras/VAEs/text encoders are already on this machine";
-downloads run only through the allowlisted `comfy model download` path (https + approved hosts,
-destination pinned inside the workspace models/ tree) in comfy-cli's background worker. Inventory
-roots are configuration-derived; download requests carry a URL and a models/<kind> folder, never
-an arbitrary path."""
+"""/v1/comfy/*: local model inventory and one-click downloads."""
 
 from __future__ import annotations
 

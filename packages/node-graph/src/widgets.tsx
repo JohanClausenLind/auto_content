@@ -1,11 +1,4 @@
-/**
- * Widget rows inside a node.
- *
- * Each row is [connect dot] [label] [control] on one 20px-tall line, the geometry a node graph
- * uses. Controls are real form elements — a select, a number input, a textarea, a checkbox — so
- * they are keyboard reachable and screen-reader labelled; the pill styling sits on top of them
- * rather than replacing them with div soup.
- */
+/** Widget rows inside a node. */
 
 import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { formatChips, parseChips, type WidgetSpec, type WidgetValue } from "./nodeDefs";
@@ -283,18 +276,7 @@ function TextareaWidget({ nodeId, spec, value, disabled, onChange }: WidgetRowPr
   );
 }
 
-/**
- * Multi-select, as a field of pills rather than a stack of rows.
- *
- * The thing this replaces is a row per choice — or, worse, a node per choice: publishing to three
- * places meant three Publish nodes wired to the same packages, and the graph said "three
- * publishes" where the operator meant "this one post, in three places". So one node holds the
- * whole set, and the set is legible at a glance: lit pills are where it goes, unlit ones are
- * where it does not.
- *
- * Every pill is a real checkbox under the styling, grouped and labelled, so the whole control is
- * keyboard-reachable and a screen reader reads it as the set of choices it is.
- */
+/** Multi-select, as a field of pills rather than a stack of rows. */
 function ChipsWidget({ nodeId, spec, value, disabled, onChange }: WidgetRowProps) {
   const options = spec.options ?? [];
   const selected = new Set(parseChips(value));

@@ -1,22 +1,4 @@
-"""Generate a Breeze-TTS-2 voice sheet: one clip per designed voice, model loaded once.
-
-    uv run --project skills/audio/breeze python skills/audio/breeze/samples.py
-
-Breeze has **no voice list**. Unlike Qwen3-TTS CustomVoice (nine named timbres in
-`config.talker_config.spk_id`), a Breeze voice *is* its instruction string — a natural-language
-description of who is speaking. So "the voices" here are the descriptors below, which are the ones
-validated in the 2026-09-05 evaluation (`output/eval/tts-2026-09-05/`), shaped after Breeze's own
-TTS-Voice-Design-Benchmark: accent, age, pitch, timbre, energy, style.
-
-Every voice speaks ONE shared line — the same line the Qwen3-TTS sample sheet uses — so the two
-models can be compared clip for clip.
-
-The 2026-09-05 batch script paid a full model load per clip; this loads the runtime once and
-reuses it, which is the whole reason this is a script rather than a shell loop.
-
-Not imported by the control plane. Weights are research/non-commercial (operator-accepted
-2026-09-05 for local testing); these clips are local evaluation material, nothing else.
-"""
+"""Generate a Breeze-TTS-2 voice sheet: one clip per designed voice, model loaded once."""
 
 from __future__ import annotations
 

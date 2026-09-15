@@ -1,25 +1,4 @@
-"""Sort a downloaded sound pack into its staging root, one directory per library category.
-
-    uv run --project skills/audio/sfx python skills/audio/sfx/stage_pack.py \
-        --recipe skills/audio/sfx/mixkit.json --from ~/Downloads [--copy] [--dry-run]
-
-The pack roots hold licensed source audio and live *outside* the repo, next to the other
-recorded libraries under `/mnt/fast/sound-libraries` -- the same arrangement as the
-#GameAudioGDC bundle, and for the same reason: the Mixkit licence permits an End Product that
-incorporates a sound, not redistribution of the sound itself, so the sources must not be
-committable. `.gitignore` already bars media under `assets/`; nothing bars a stray copy inside
-the repo, which is why the default root is not in it.
-
-The recipe decides where each file goes. `src.pack` is the category directory and `src.file` the
-delivered filename, so this script has no taxonomy of its own and cannot disagree with the
-builder about one: recategorise a sound in the recipe, run this again, and the file moves.
-
-Idempotent. A file already staged with the same bytes is left alone; one already staged with
-*different* bytes is refused by name rather than overwritten, because that is either a re-download
-of a changed source or two sounds fighting over a filename, and both want a human.
-
-`--dry-run` prints every move it would make and touches nothing.
-"""
+"""Sort a downloaded sound pack into its staging root, one directory per library category."""
 
 from __future__ import annotations
 
@@ -61,11 +40,7 @@ def plan(recipe: dict, src_dir: Path, root: Path) -> tuple[list[tuple[Path, Path
 
 
 def find_duplicates(recipe: dict, src_dir: Path) -> dict[str, str]:
-    """Leftover downloads whose bytes are already accounted for: {filename -> id it duplicates}.
-
-    Browsers name a second download of the same file `x(1).wav`; the pattern is not trusted here,
-    the bytes are. A file is a duplicate only if its sha256 matches a file the recipe names.
-    """
+    """Leftover downloads whose bytes are already accounted for: {filename -> id it duplicates}."""
     wanted = {spec["src"]["file"]: spec["id"] for spec in recipe["sounds"]}
     by_hash: dict[str, str] = {}
     for name, sound_id in wanted.items():

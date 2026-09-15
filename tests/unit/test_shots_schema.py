@@ -175,7 +175,6 @@ def test_registry_exports_the_new_contracts() -> None:
         assert schema["$id"].endswith(f"{name}.schema.json")
     valid, invalid = all_fixtures(), invalid_fixtures()
     assert len(valid["ShotSpec"]) == 2 and valid["ControlBundle"]
-    # Five: unknown field, bad planner, bad render pass, an empty character appearance and an
-    # over-long end_state. The last two are prompt text, where "" is a shot that silently tells
-    # the image model nothing rather than a permissive default.
+    # Five: unknown field, bad planner, bad render pass, an empty character appearance and an over-
+    # long end_state.
     assert len(invalid["ShotPlan"]) == 5

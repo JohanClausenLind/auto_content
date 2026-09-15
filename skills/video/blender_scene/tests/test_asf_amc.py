@@ -1,10 +1,4 @@
-"""ASF/AMC parsing and forward kinematics.
-
-The synthetic cases pin the format rules that are easy to break silently: variable value counts per
-bone, the axis conjugation, and the Y-up to Z-up conversion. The tests marked ``cmu`` additionally
-check the kinematics against real CMU data, where the strongest available evidence that the
-convention is right is that the figure stands still on the floor: a wrong convention drifts.
-"""
+"""ASF/AMC parsing and forward kinematics."""
 
 from __future__ import annotations
 
@@ -226,8 +220,7 @@ def test_cmu_figure_stands_on_a_stable_floor() -> None:
 
 @cmu
 def test_cmu_two_person_trials_are_frame_synchronised_in_one_world_frame() -> None:
-    """22_08 is 'hold hands, swing arms, walk'. A and B are the same take, so their frame counts
-    match and their wrists come close enough to be holding hands."""
+    """22_08 is 'hold hands, swing arms, walk'."""
     a_asf, a_amc = trial_paths(CMU_ROOT, "22", "08")
     b_asf, b_amc = trial_paths(CMU_ROOT, "23", "08")
     sa, sb = parse_asf(a_asf), parse_asf(b_asf)

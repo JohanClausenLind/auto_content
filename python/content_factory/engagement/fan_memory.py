@@ -1,5 +1,4 @@
-"""Per-fan conversation memory (14.1): the name they gave, running jokes, last topics, arc —
-scoped per platform account, retained and deletable under the privacy policy."""
+"""Per-fan conversation memory, scoped per platform account."""
 
 from __future__ import annotations
 

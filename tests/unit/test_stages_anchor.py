@@ -1,5 +1,4 @@
-"""generate_anchor / lock_generation / keyframes executors with the mock backend, fed by the fake
-Blender compiler (anchors per shot per anchor frame) and by the builtin MotionPlan path."""
+"""generate_anchor / lock_generation / keyframes executors with the mock backend."""
 
 from __future__ import annotations
 
@@ -86,9 +85,7 @@ def test_anchors_per_shot_from_blender_controls(ctx: StageContext, env, monkeypa
         # One attempt each. Above the anchor count means the deterministic blocker checks sent
         # frames back, which is GPU time spent on frames that arrived unusable.
         "attempts": 4,
-        # Nothing has been reviewed yet, so nothing was turned down and nothing was redrawn. A
-        # resume after a rejection names the frames here, because a redraw nobody can see in the
-        # record is a redraw nobody can audit.
+        # Nothing has been reviewed yet, so nothing was turned down and nothing was redrawn.
         "redrawn_after_rejection": [],
     }
     manifest = json.loads((ctx.ddir() / "anchors" / "manifest.json").read_text())
@@ -100,11 +97,7 @@ def test_anchors_per_shot_from_blender_controls(ctx: StageContext, env, monkeypa
             assert Image.open(png).size == (shot.width, shot.height)
             marker = json.loads(png.with_suffix(".done.json").read_text())
             # Two references by default: the OpenPose skeleton for the pose and depth for the
-            # figure's shape. The skeleton alone left the frame review's midtone check failing at
-            # 0.293 of the frame; depth took it to 0.460 and kept the staged stride. What is *not*
-            # here is an identity reference — the model reads every reference as subject material,
-            # so sending the Blender clay render makes it draw clay people. See
-            # ImageSequenceSettings.anchor_references.
+            # figure's shape.
             assert marker["references"] == 2 and marker["layout_boxes"] == 0
             assert marker["reference_kinds"] == ["pose_skeleton", "depth"]
     assert sum(1 for line in _log(ctx) if line.startswith("anchor:")) == 4
@@ -164,14 +157,7 @@ def test_single_anchor_and_motion_plan_keyframes_without_controls(ctx: StageCont
 
 
 def test_each_uncached_generation_records_what_it_cost(ctx: StageContext, env, monkeypatch) -> None:
-    """The measurement that was missing from every OOM and every timing surprise in this repo.
-
-    A marker said which frame was made and never what was on the card when it started, so "Ollama
-    was still holding the text model" stayed a hypothesis for weeks (STATUS 1213, 1361, 1380,
-    1657). And the HiDream server has reported `elapsed_s` since it was written with nothing
-    reading it, so a 6 min 25 s per-anchor figure went unchecked against the 114 s the server
-    reported for the same request (STATUS 3238).
-    """
+    """The measurement that was missing from every OOM and every timing surprise in this repo."""
     from content_factory.workflows import stages as st
 
     # nvidia-smi is not on every machine and must not be required; a fixed reading here keeps the
@@ -197,8 +183,7 @@ def test_each_uncached_generation_records_what_it_cost(ctx: StageContext, env, m
 
 
 def test_the_server_s_own_timing_reaches_the_marker(ctx: StageContext, env) -> None:
-    """Both timings are kept on purpose: they disagreed by a factor of three on the thirty-anchor
-    run and the gap was recorded as unexplained because nothing held them side by side."""
+    """Both timings are kept on purpose."""
     from content_factory.sequences.engine import MockReferenceEditBackend
     from content_factory.workflows import stages as st
 

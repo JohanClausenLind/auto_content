@@ -1,16 +1,4 @@
-"""A cached clip is only reused when the graph and the bytes both still match.
-
-Three cache holes, all of the same kind — the marker was believed and nothing else was checked:
-
-* The clip key carried the backend's *name* and a settings string, so editing a node in
-  `media/ltx_packages.py` (a sampler, a step count, different wiring) produced the **identical**
-  key and the old clip was reused with the new graph. Nobody notices that one, because the file
-  on disk is a plausible clip of the right length.
-* A file was reused because a marker said so. A clip truncated by a full disk, half-copied by a
-  rerun, or edited by hand all satisfy "the marker matches and the file exists", and the failure
-  surfaces stages later as a QC finding about a container.
-* The single-clip path had no marker at all, so it regenerated on every rerun of the lane.
-"""
+"""A cached clip is only reused when the graph and the bytes both still match."""
 
 from __future__ import annotations
 
@@ -31,12 +19,7 @@ def _backend(**kwargs) -> ComfyUIVideoBackend:
 
 
 def test_the_graph_digest_changes_when_a_node_does() -> None:
-    """The assertion the bug needed: editing a node must not leave the key alone.
-
-    A sampler, a cfg, a sigma schedule, a decoder tile size — none of these is a bound parameter,
-    so before this digest existed the only thing distinguishing two graphs in a clip's cache key
-    was the backend's name. Changing any of them reused every clip in every project on disk.
-    """
+    """The assertion the bug needed: editing a node must not leave the key alone."""
     base = _backend().graph_fingerprint(0)
     assert base == _backend().graph_fingerprint(0)  # deterministic
     for node, field, value in (
@@ -57,10 +40,7 @@ def test_the_graph_digest_changes_when_a_node_does() -> None:
 
 
 def test_a_bound_parameter_does_not_move_the_graph_digest() -> None:
-    """The other half of the design. `width`, `seed` and the prompt are injected at run time and
-    are already in the request part of the cache key; putting them in the graph digest too would
-    invalidate every clip in a film because one shot's prompt changed.
-    """
+    """The other half of the design."""
     assert _backend().graph_fingerprint(0) == _backend(width=512).graph_fingerprint(0)
     # `length` is the exception, and deliberately so: it is a bound parameter *and* a declared
     # default on LTXVImgToVideo, because the package is built for a fixed clip length.
@@ -113,8 +93,7 @@ def test_a_missing_file_or_marker_is_not_a_hit(tmp_path: Path) -> None:
 
 
 def test_a_marker_with_no_recorded_sha_still_hits(tmp_path: Path) -> None:
-    """Markers written before the sha was recorded must not invalidate every cached clip in
-    every project on disk: the input hash alone is what those runs had."""
+    """Markers written before the sha was recorded must not invalidate every cached clip."""
     clip = tmp_path / "clip.mp4"
     marker = tmp_path / ".done.json"
     _write_atomic(clip, b"older clip")
@@ -131,8 +110,7 @@ def test_an_unreadable_marker_is_a_miss_not_a_crash(tmp_path: Path) -> None:
 
 
 def test_an_atomic_write_leaves_no_temp_file_and_returns_the_sha(tmp_path: Path) -> None:
-    """A 40-second generation written straight to its final name leaves a truncated but *present*
-    file if the process dies mid-write, and the next run treats that as a cache hit."""
+    """A file written straight to its final name is truncated but present if the process dies."""
     target = tmp_path / "deep" / "clip.mp4"
     sha = _write_atomic(target, b"bytes")
     assert target.read_bytes() == b"bytes"

@@ -1,23 +1,4 @@
-"""The `assets/sfx` index: one sha256-pinned manifest.json and one browsable README.md.
-
-Every builder writes through here -- `build_library.py` for the sounds generated with
-Stable Audio 3 Small-SFX, `ingest_recorded.py` for the ones cut from a licensed recording bundle,
-`ingest_packs.py` for a pack of individually licensed files -- so the library has a single
-description of itself no matter which part was rebuilt last. Running any builder re-renders the
-index over the union of what is already in the manifest and what it just produced, which is why
-an entry carries its own `source`: it is the only way a partial rebuild can still describe the
-whole.
-
-`source` is one key per *origin*, not one per builder: `generated`, `recorded`, and one per pack
-(`mixkit`, `local-renders`). A pack is its own source because the thing a reader needs from this
-file -- which licence governs this sound, and where would I get the audio again -- is a property
-of the pack it came from, and merging two packs under one label would lose it.
-
-Every number in the prose is measured from the entries rather than written into it. The README
-makes claims about loop seams and about which one-shots sit under the target; those were true of
-the 38 generated sounds and are not true of the same set plus three hundred more, so they are
-computed here and cannot go stale.
-"""
+"""The `assets/sfx` index: one sha256-pinned manifest.json and one browsable README.md."""
 
 from __future__ import annotations
 
@@ -36,7 +17,7 @@ know which ones announce their own repeat."""
 
 
 def load(manifest_path: Path) -> tuple[dict[str, dict], dict]:
-    """(entries by id, previous sources block). An entry written before `source` existed is generated."""
+    """(entries by id, previous sources block)."""
     if not manifest_path.is_file():
         return {}, {}
     doc = json.loads(manifest_path.read_text())
@@ -59,22 +40,12 @@ def _fmt(entries: list[dict]) -> dict:
 
 
 def origin(entry: dict) -> dict | None:
-    """Where the audio came from, whichever builder wrote it. None for a generated sound.
-
-    `recorded_from` is the #GameAudioGDC excerpt block and `ingested_from` the pack-file block;
-    they carry the same provenance fields and differ only in what had to be chosen (a window in a
-    680 s recording, versus nothing -- the supplier already cut the file).
-    """
+    """Where the audio came from, whichever builder wrote it."""
     return entry.get("recorded_from") or entry.get("ingested_from")
 
 
 def _suppliers(entries: list[dict]) -> dict[str, dict]:
-    """supplier -> {count, libraries}. A source with no named supplier contributes nothing.
-
-    The operator's own renders have no supplier and no library to name; an empty row in this
-    table would read as a supplier called "", which is worse than an absent one. Their provenance
-    is the pack block in `sources` instead.
-    """
+    """supplier -> {count, libraries}."""
     out: dict[str, dict] = {}
     for e in entries:
         src = origin(e)
@@ -91,11 +62,7 @@ def _suppliers(entries: list[dict]) -> dict[str, dict]:
 
 
 def _present(entries: list[dict], sources: dict) -> dict[str, dict]:
-    """The sources that actually have sounds in this library, in manifest order of appearance.
-
-    A `sources` block carried forward from an older manifest can describe a source whose entries
-    have all been replaced; describing it in the README would promise audio that is not there.
-    """
+    """The sources that actually have sounds in this library, in manifest order of appearance."""
     have = {e.get("source", SOURCE_GENERATED) for e in entries}
     return {k: v for k, v in sources.items() if k in have}
 
@@ -283,24 +250,7 @@ def write(
     source_info: dict,
     prev_sources: dict | None = None,
 ):
-    """Write manifest.json + README.md over the union of entries. Returns (manifest, missing).
-
-    The caller describes only its own half in `source_info`; the other half's description is
-    carried forward from the manifest already on disk. That is what lets either builder run
-    alone -- `build_library.py` on a machine with no recording bundle, `ingest_recorded.py`
-    without loading a 4 GB text encoder -- and still leave the index describing the whole
-    library rather than only the part it happened to touch.
-
-    Entries are ordered by (category, id) rather than by recipe position: with several recipes
-    there is no single authoring order to preserve, and a stable sort means the manifest diff
-    after a rebuild shows what actually changed instead of a reshuffle.
-
-    `duplicated` is the third return: sets of ids whose FLACs are byte-identical. Two ids holding
-    one sound is a curation error rather than a build failure -- it happened once for real, when
-    two Mixkit items turned out to be the same recording trimmed to two lengths and both window
-    sweeps landed on the same span -- so it is reported loudly and not raised. Nothing downstream
-    breaks; the library just promises a choice it does not have.
-    """
+    """Write manifest.json + README.md over the union of entries."""
     sources = dict(prev_sources or {})
     sources[source_key] = source_info
     ordered = sorted(entries.values(), key=lambda e: (e["category"], e["id"]))

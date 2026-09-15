@@ -1869,7 +1869,7 @@
     },
     "StagedUpload": {
       "additionalProperties": false,
-      "description": "A file the operator dropped into the workspace, already sniffed and stored.\n\nIt is carried on the campaign rather than fetched by the browser at run time because the\nproject directory does not exist until the run's first activity makes it: the run materialises\neach of these into ``<project>/uploads/``, which is where the ``ingest`` stage looks. The\n``asset_id`` is the content-addressed artifact key — the bytes cannot change under it, and\nnothing here is a path the caller chose.",
+      "description": "A file the operator dropped into the workspace, already sniffed and stored.",
       "properties": {
         "asset_id": {
           "maxLength": 300,

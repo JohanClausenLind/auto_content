@@ -1,22 +1,4 @@
-"""Search, fetch, extract, claim: the orchestration the research library never had.
-
-Every part of this already existed and was tested. `search` has a SearXNG provider and a
-deterministic fixture one; `fetch.safe_fetch` re-validates every redirect hop against SSRF, caps
-the body, allowlists content types and flags injection markers as data; `extract` turns HTML and
-PDF into text with an author and a publisher; `claims.build_claim` verifies a number against
-evidence and a dataset. Nothing put them in a line, so `stage_research` returned the committed
-fixture and the whole library was reachable only from its own tests.
-
-**This is behind an execution flag and it stays there.** It is the one thing in the repo that
-reaches the public internet, and `just test` must not. `execution.live_research` is off by default;
-with it off `stage_research` uses the fixture exactly as before. The flag is read at the stage, not
-here, so this module is honest to import.
-
-What it deliberately does not do: decide anything. No model chooses which result to trust, which
-sentence is evidence, or whether a claim is supported — the sentence selection is a token-overlap
-match and the verdict is `build_claim`'s arithmetic. A pipeline that asked a model "is this
-supported?" would be a pipeline whose citations mean nothing.
-"""
+"""Search, fetch, extract, claim: the orchestration the research library never had."""
 
 from __future__ import annotations
 
@@ -64,12 +46,7 @@ class ResearchResult:
 
 
 def default_provider(*, repo_root: Path | None = None) -> SearchProvider:
-    """The configured search provider, falling back to the committed fixture.
-
-    ``search.offline_fixture_fallback`` is honoured because a machine with no SearXNG must still
-    produce a run rather than an exception — and because the fixture provider is what makes this
-    module testable at all.
-    """
+    """The configured search provider, falling back to the committed fixture."""
     from content_factory.config import get_settings
 
     cfg = get_settings().search
@@ -81,11 +58,7 @@ def default_provider(*, repo_root: Path | None = None) -> SearchProvider:
 
 
 def _sentences(text: str) -> list[tuple[int, int, str]]:
-    """``(start, end, sentence)`` over the extracted text, by offset.
-
-    The offsets are the point: ``EvidenceLocator(kind="char_range")`` records where in the captured
-    document the excerpt came from, so a reader can find it again in the bytes that were hashed.
-    """
+    """``(start, end, sentence)`` over the extracted text, by offset."""
     out: list[tuple[int, int, str]] = []
     start = 0
     for index, char in enumerate(text):
@@ -101,13 +74,7 @@ def _sentences(text: str) -> list[tuple[int, int, str]]:
 
 
 def _best_sentences(text: str, statement: str, *, limit: int = 2) -> list[tuple[int, int, str]]:
-    """The sentences most likely to be about ``statement``, by token overlap and shared numbers.
-
-    Deliberately dumb. A model asked to pick the supporting sentence would be a model deciding
-    whether a claim is supported, one step removed — and ``build_claim`` is then verifying the
-    number against a sentence chosen *because* it contained that number, which proves nothing.
-    Overlap is a retrieval heuristic whose failure mode is an unsupported verdict, not a false one.
-    """
+    """The sentences most likely to be about ``statement``, by token overlap and shared numbers."""
     wanted = {w for w in statement.casefold().split() if len(w) > 3}
     scored: list[tuple[int, tuple[int, int, str]]] = []
     for start, end, sentence in _sentences(text):
@@ -128,13 +95,7 @@ def research_topic(
     dataset: DatasetTable | None = None,
     today: dt.date | None = None,
 ) -> ResearchResult:
-    """One topic in, sources plus evidence plus verified claims out.
-
-    ``statements`` are the sentences whose truth matters — a script's claim-bearing lines. Without
-    them the topic itself is the only statement, which is enough to gather sources and not enough
-    to verify anything, and the result says so by returning claims with no evidence rather than
-    claims with invented evidence.
-    """
+    """One topic in, sources plus evidence plus verified claims out."""
     provider = provider or default_provider()
     accessed = (today or dt.datetime.now(dt.UTC).date()).isoformat()
     query = f"{topic} {objective}".strip()

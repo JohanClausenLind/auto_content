@@ -1,9 +1,4 @@
-"""Region Editor foundations (16.4): SelectionRegions rasterized to versioned MaskAssets.
-
-Deterministic: the same region at the same resolution yields byte-identical PNG masks. Masks are
-content-addressed and immutable; applying a masked edit creates a new asset revision, never an
-overwrite. Whole-image prompting is never a substitute for a mask (enforced by the router's
-capability flags — this module only produces the masks)."""
+"""Region Editor foundations (16.4): SelectionRegions rasterized to versioned MaskAssets."""
 
 from __future__ import annotations
 

@@ -1,12 +1,4 @@
-"""Blender-side entry point. Run inside Blender's Python:
-
-    blender --background --factory-startup --python-exit-code 3 \
-        --python blender_entry.py -- <spec.json> <raw_dir> [--assets=<root>]
-
-Writes raw per-frame outputs into <raw_dir> (the venv-side postprocess turns them into the final
-pass directories): data_NNNN.exr (multilayer), depth_NNNN.npy, normals_NNNN.npy, index_NNNN.npy,
-depth_NNNN.exr, rgb_NNNN.png, skeleton_NNNN.json, layout_NNNN.json, camera.json, manifest.json.
-"""
+"""Blender-side entry point."""
 
 from __future__ import annotations
 
@@ -205,9 +197,7 @@ def main() -> int:
                 if e.kind == "character"
             },
             "exr_channels": channels_seen,
-            # One row per posed character per frame. For a cf.clip.v2 clip it carries how many
-            # bones the aim solve actually aimed, which is the number that says the retarget ran
-            # rather than silently doing nothing.
+            # One row per posed character per frame.
             "poses": pose_reports,
             "elapsed_s": round(time.time() - t0, 3),
         },

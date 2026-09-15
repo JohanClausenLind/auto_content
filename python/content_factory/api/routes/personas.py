@@ -1,6 +1,4 @@
-"""/v1/personas: governed, versioned persona assets. The PersonaFirewall is code and has no
-representation here; the Persona schema itself refuses presented_age < 18. `revise` previews a
-typed diff; `apply` is revision-bound (stale diffs are refused, never merged)."""
+"""/v1/personas: governed, versioned persona assets."""
 
 from __future__ import annotations
 

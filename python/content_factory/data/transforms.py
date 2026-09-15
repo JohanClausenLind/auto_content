@@ -1,5 +1,4 @@
-"""Declarative, reproducible dataset transforms (section 12): classified outputs with executable
-transformation records. Same input + same spec = byte-identical output (content hash)."""
+"""Declarative dataset transforms: same input + same spec = byte-identical output (content hash)."""
 
 from __future__ import annotations
 
@@ -28,7 +27,7 @@ class SelectColumns(SchemaModel):
 
 
 class DeriveShare(SchemaModel):
-    """share_pct = part / whole * 100, rounded to `digits` (deterministic banker's-free rounding)."""  # noqa: E501
+    """share_pct = part / whole * 100, rounded to `digits`."""
 
     op: Literal["derive_share"] = "derive_share"
     part: str

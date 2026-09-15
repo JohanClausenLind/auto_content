@@ -1,17 +1,4 @@
-"""/v1/run-history/{run_id}/review: answering the frame-review gate from the page that made it.
-
-``review_frames`` stops a run and asks a person to look at the drawings. Until now the only way to
-answer was the CLI, with the run's path on disk — so the pictures that most needed somebody were
-the ones hardest to reach, and 27 runs sat overnight finished and unlooked-at.
-
-The rules are not re-stated here. Who may accept a batch unopened, what a verdict has to name and
-what the contract will read back all live in :mod:`content_factory.qc.verdict`, shared with
-``content-factory frames review``: this route decodes a run id, hands the decision over, and turns
-a refusal into a 422 that says which frames are outstanding.
-
-Reading needs ``viewer``; recording a verdict needs ``reviewer`` — the role that exists for exactly
-this and nothing else. Every verdict is audited with what it decided.
-"""
+"""/v1/run-history/{run_id}/review: answering the frame-review gate from the page that made it."""
 
 from __future__ import annotations
 
@@ -44,12 +31,7 @@ def _run(run_id: str) -> tuple[Path, history.RunRecord | None]:
 
 
 def _deliverable(run_dir: Path, named: str | None) -> Path:
-    """The deliverable whose gate is being acted on, or a 404/422 saying why not.
-
-    Shared by every route below rather than repeated: "this run has three gates, name one" is a
-    refusal the operator must get the same way whether they are recording a verdict or asking for
-    a second opinion about the same pictures.
-    """
+    """The deliverable whose gate is being acted on, or a 404/422 saying why not."""
     candidates = frame_reviews.deliverable_dirs(run_dir)
     if not candidates:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "this run has no frame-review batch")
@@ -67,13 +49,7 @@ def _deliverable(run_dir: Path, named: str | None) -> Path:
 
 
 def _ai_review_body(run_dir: Path, deliverable_dir: Path) -> dict[str, Any] | None:
-    """The stored vision-model opinion for one gate, labelled with whether it is still current.
-
-    ``current`` is the load-bearing field. An opinion formed about a frame that has since been
-    redrawn is worth showing — it says what was wrong last time — and worth never showing as if
-    it were about the picture on screen, which is the same rule
-    :func:`content_factory.qc.verdict.merge_verdict` applies to a human verdict.
-    """
+    """The stored vision-model opinion for one gate, labelled with whether it is still current."""
     review, current = current_review(run_dir, deliverable_dir)
     if review is None:
         return None
@@ -93,9 +69,8 @@ def _payload(run_id: str, run_dir: Path, record: history.RunRecord | None) -> di
         "run_id": run_id,
         "workflow": workflow,
         "project_dir": project_dir,
-        # A verdict unblocks the gate; it does not restart the stages after it. Saying so, with
-        # the command that does, is the difference between a reviewer waiting for a film and a
-        # reviewer making one.
+        # A verdict unblocks the gate but does not restart the stages after it; the reviewer
+        # needs the command that does.
         "resume_command": frame_reviews.resume_command(workflow, project_dir),
         "reviews": [review.as_dict() for review in reviews],
         # Served with the gate, not behind a second request: the panel has to know whether a
@@ -196,11 +171,7 @@ async def record_review(
 
 
 class AiReviewBody(BaseModel):
-    """Which gate to ask about. Nothing else: the review has no knobs on purpose.
-
-    A reviewer choosing a temperature or a model is a reviewer producing an opinion that cannot be
-    compared with yesterday's, and the point of storing these is that they can be.
-    """
+    """Which gate to ask about."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -215,18 +186,7 @@ async def request_ai_review(
     p: Principal = Depends(REVIEWER),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    """Ask the local vision model to look at this gate's pictures, and store what it says.
-
-    Needs ``reviewer`` rather than ``viewer``, and not because it changes a verdict — it cannot.
-    It spends about forty seconds of the GPU and writes a file into the run, and both of those are
-    the reviewer's to spend.
-
-    The two failure modes answer differently and must not be collapsed. A review that *cannot be
-    asked for* — no batch, no frame files, a run holding the card — is a 409 with a sentence the
-    operator can act on. A review that was asked for and *failed* — no model server, weights not
-    pulled, an answer that would not validate — is a 502: the pictures and the gate are fine and
-    the thing to fix is the model stack.
-    """
+    """Ask the local vision model to look at this gate's pictures, and store what it says."""
     run_dir, record = _run(run_id)
     deliverable_dir = _deliverable(run_dir, body.deliverable)
     try:

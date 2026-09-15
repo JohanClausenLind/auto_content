@@ -115,8 +115,7 @@ def test_report_summary_counts(tmp_path: Path) -> None:
 
 
 def test_models_root_override_and_resolution(tmp_path: Path) -> None:
-    """Weights moved out of <root>/models (2026-09-05): an explicit store is honoured and the
-    resolver falls back to a configured inventory root when <root>/models is gone."""
+    """Weights moved out of <root>/models (2026-09-05): an explicit store is honoured."""
     from content_factory.models.video_stack import resolve_models_root
 
     root = tmp_path / "stack"
@@ -148,8 +147,7 @@ def test_models_root_override_and_resolution(tmp_path: Path) -> None:
 def test_default_stack_root_env_then_repo_local(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """The stack is laid out inside the repo since 2026-09-05 (external/, models/, output/);
-    $AI_VIDEO_ROOT still overrides."""
+    """The stack is laid out inside the repo since 2026-09-05 (external/, models/, output/)."""
     from content_factory.models.video_stack import REPO_ROOT, default_stack_root
 
     assert (REPO_ROOT / "pyproject.toml").is_file()  # parents[3] really is the repo root
@@ -182,12 +180,7 @@ def test_symlink_index_resolves_to_the_store_it_points_into(tmp_path: Path) -> N
 
 
 def test_a_clip_is_never_asked_for_at_a_size_the_package_refuses() -> None:
-    """The graph owns the limit and nothing upstream had asked it.
-
-    Measured 2026-09-10: `image-to-video` on a 2560x1440 photograph and `silent-video` on a
-    1920x1080 story both died at `generate_video` with "parameter 'width' above maximum 1344.0",
-    raised inside the ComfyUI package validator — after the anchors had been generated.
-    """
+    """The graph owns the limit and nothing upstream had asked it."""
     import pytest
 
     from content_factory.media.video_generate import ComfyUIVideoBackend, MockVideoBackend

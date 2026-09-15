@@ -12,8 +12,7 @@ import { enter, motionFrames, progress } from "../motion";
 import { PlaceholderCard } from "./Placeholder";
 import { Lines, minTextPx, SceneFrame, useFittedText, useSceneGeometry } from "./common";
 
-/** The four projections the MapScene contract names. All are d3-geo: the contract describes a
- * topojson choropleth, not a tiled basemap, which is why this scene needs no WebGL and no tiles. */
+/** The four projections the MapScene contract names. */
 const PROJECTIONS: Record<Spec["projection"], () => GeoProjection> = {
   equalEarth: geoEqualEarth,
   mercator: geoMercator,
@@ -21,14 +20,7 @@ const PROJECTIONS: Record<Spec["projection"], () => GeoProjection> = {
   naturalEarth1: geoNaturalEarth1,
 };
 
-/**
- * Region key → value for a choropleth fill.
- *
- * Join convention: the dataset's FIRST column holds the region key, matched against the topojson
- * feature id. `column` names the value column and defaults to the second column. Rows whose value
- * is not a finite number are skipped rather than coerced, so a missing region stays unfilled
- * instead of rendering as a confident zero.
- */
+/** Region key → value for a choropleth fill. */
 export function regionValues(dataset: DatasetTable | undefined, column: string | null): Map<string, number> {
   const out = new Map<string, number>();
   if (!dataset) return out;
@@ -42,8 +34,7 @@ export function regionValues(dataset: DatasetTable | undefined, column: string |
   return out;
 }
 
-/** Fill opacity for one region: 0.15 at the bottom of the range, 1 at the top. A single-value
- * dataset gets the full weight rather than a divide-by-zero. */
+/** Fill opacity for one region: 0.15 at the bottom of the range, 1 at the top. */
 export function fillWeight(value: number | undefined, max: number): number {
   if (value === undefined || max <= 0) return 0;
   return 0.15 + 0.85 * Math.min(1, value / max);
@@ -53,20 +44,7 @@ interface Loaded {
   collection: FeatureCollection;
 }
 
-/**
- * Choropleth map: topojson decoded to GeoJSON, projected with d3-geo, drawn as plain SVG paths.
- * Deterministic by construction — no WebGL, no tile requests, and the only clock is the frame.
- * The topology is fetched once per mount from the bundle asset and the render is held until it
- * resolves; a missing or unreadable asset degrades to the labelled placeholder card rather than
- * failing the whole video.
- *
- * Asset requirement — RING WINDING. d3-geo treats polygons as spherical, so a counter-clockwise
- * exterior ring means "the whole globe except this shape": one badly wound region floods the
- * entire plot with its fill. Exterior rings must be clockwise in lon/lat. Topology published by
- * the usual sources (Natural Earth, us-atlas, world-atlas) is already correct; hand-built or
- * re-exported topology is where this bites, and it looks like a projection bug rather than a
- * data bug.
- */
+/** Choropleth map: topojson decoded to GeoJSON, projected with d3-geo, drawn as plain SVG paths. */
 export function MapScene({ scene, compiled }: { scene: Spec; compiled: { scene_id: string } }): ReactElement {
   const frame = useCurrentFrame();
   const { bundle, theme, assetUrl } = useSceneEnv();

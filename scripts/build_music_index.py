@@ -1,21 +1,4 @@
-"""Derive ``tracks.json`` for the music library from the library's own build manifest.
-
-Two manifests describe ``assets/music`` and they answer different questions. ``manifest.json`` is
-what ``skills/audio/music/build_library.py`` wrote: generator, model, seeds, loudness, QC, the full
-provenance of twenty-two generated beds. ``tracks.json`` is what ``stage_select_music`` reads, and
-it is a list of :class:`MusicTrack` — the four fields a selection needs plus the attribution that
-travels into a destination package.
-
-The stage was pointed at ``fixtures/music`` (one synthesised sine chord) while this library sat
-unread beside it, so every run that ever selected music selected ``calm_bed_a``, because it was the
-only track there was. Nothing was wrong with the stage; the library simply had no index in the
-shape the stage validates. This writes one.
-
-Re-runnable and deterministic: the hashes come from the files on disk and are checked against the
-build manifest, so a track edited after its build fails here rather than at run time.
-
-    uv run python scripts/build_music_index.py [--library assets/music] [--check]
-"""
+"""Derive ``tracks.json`` for the music library from the library's own build manifest."""
 
 from __future__ import annotations
 
@@ -65,10 +48,8 @@ def build(library: Path) -> list[dict]:
                 "sha256": digest,
                 "duration_s": round(float(sound["duration_s"]), 6),
                 "moods": moods[:MOODS_MAX],
-                # Generated locally, so the attribution is the model and its licence rather than a
-                # composer. The licence line matters downstream: MiniMax-Music3's community terms
-                # require disclosure of AI generation on anything publicly distributed, and this
-                # string is what carries that into a destination package.
+                # The model and its licence stand in for a composer: MiniMax-Music3's terms require
+                # disclosure of AI generation on public distribution, and this string carries it.
                 "attribution": f"Generated locally with {model}. {licence}"[:500],
             }
         )

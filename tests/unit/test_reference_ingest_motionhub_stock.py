@@ -1,12 +1,4 @@
-"""Tests for the MotionHub and stock reference ingesters.
-
-The synthetic tests build a root in ``tmp_path`` so the shape of the contract is checked on every
-host. The tests marked with ``REQUIRES_REFERENCE`` copy small slices of the real library into
-``tmp_path`` and run the ingesters over real bytes, which is the only way to catch a change in the
-data rather than a change in the code. One of them is not really a test of this module at all: it
-re-measures the two EgoBody bodies whose independent world frames are the reason every MotionHub
-clip declares ``people_count`` 1, so that claim fails loudly if the data is ever reconverted.
-"""
+"""Tests for the MotionHub and stock reference ingesters."""
 
 from __future__ import annotations
 
@@ -464,12 +456,7 @@ def test_stock_frame_rate_and_frame_count_helpers() -> None:
 
 @REQUIRES_REFERENCE
 def test_egobody_bodies_do_not_share_a_world_frame() -> None:
-    """The measurement behind ``people_count`` 1 for every MotionHub clip.
-
-    Both bodies of one recording start at exactly the world origin in x and z, so a pair cannot be
-    read as one two-person clip. If MotionHub is ever reconverted with a shared frame, this fails
-    and the ingester's people_count has to be revisited.
-    """
+    """The measurement behind ``people_count`` 1 for every MotionHub clip."""
     recording = (
         REFERENCE_ROOT
         / motionhub.MOTIONHUB_ROOT

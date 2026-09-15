@@ -1,11 +1,4 @@
-"""A finished film lands somewhere a person can find it.
-
-A deliverable lives at `deliverables/<id>/exports/final.mp4` — correct, addressable, and no use to
-anybody browsing. Measured 2026-09-10: 213 run directories held 34 films between them and the only
-way to watch one was to know the path. The operator asked for the finished videos to be stored
-somewhere logical, so the last stage of a run publishes the film into one flat directory named by
-the run.
-"""
+"""A finished film lands somewhere a person can find it."""
 
 from __future__ import annotations
 

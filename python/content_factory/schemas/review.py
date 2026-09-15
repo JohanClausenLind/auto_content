@@ -1,17 +1,4 @@
-"""Frame review: no generated image reaches a cut until someone has looked at it.
-
-Everything this pipeline got wrong in its first days was visible in the pictures and invisible to
-the code: two characters standing back to back, four people where two were staged, arms reaching
-away from the person they were reaching for, a skeleton's joint dots drawn as coloured baubles,
-a monochrome instruction half-applied so the image was neither colour nor grey. Deterministic
-checks catch some of that — tonal collapse and stray saturation are measurable — but "these two
-people are the same two people as the last frame" and "this pose makes bodily sense" are not.
-
-So a batch of frames produces a **contact sheet** and blocks on a verdict. The verdict binds to
-the digests of the exact images reviewed, so a regenerated frame is unreviewed again; and a
-reviewer can reject single frames rather than the whole batch, because one bad drawing out of
-thirty should cost one drawing.
-"""
+"""Frame review: no generated image reaches a cut until someone has looked at it."""
 
 from __future__ import annotations
 
@@ -27,8 +14,7 @@ ReviewerKind = Literal["operator", "agent", "vlm"]
 
 
 class FrameFinding(SchemaModel):
-    """One measured property of one frame. Advisory findings inform the reviewer; blockers stand
-    on their own and fail the frame without anyone having to look."""
+    """One measured property of one frame."""
 
     check: str = Field(min_length=1, max_length=60)
     passed: bool
@@ -101,17 +87,8 @@ class FrameReviewBatch(VersionedModel):
 
 
 # --- what a vision model says about a set ------------------------------------------------------
-#
-# The deterministic checks and a person are the two reviewers this gate was built for, and the
-# gap between them is real: measurements cannot see whether the subject is the same subject, and
-# a person is not always sitting there — 27 runs sat overnight with their drawings finished.
-# `ReviewerKind` has had "vlm" in it since the contract was written, and this is what it says.
-#
-# It is an **opinion, not a verdict**. Nothing below can accept or reject a frame: the review is
-# stored beside the batch, shown next to the pictures, and the operator decides. That is the same
-# rule the whole gate rests on — `qc/frame_review.py` says it plainly about its own numbers — and
-# it is more load-bearing here than anywhere else, because a model that mistakes what it is
-# looking at will do so fluently.
+# The deterministic checks and a person are the two reviewers this gate was built for, and the gap
+# between them is real: measurements cannot see whether the subject is the same subject.
 
 FrameOpinionSeverity = Literal["fine", "minor", "wrong"]
 
@@ -135,12 +112,7 @@ class FrameOpinion(SchemaModel):
 
 
 class SetOpinion(SchemaModel):
-    """What the reviewer says about the frames *together*, which is the point of asking.
-
-    A set can drift a little at each step and end somewhere else entirely with every consecutive
-    pair looking fine — which is why `qc.frame_review.consistency_matrix` compares every pair, and
-    why the question put to a vision model is about the whole set rather than about neighbours.
-    """
+    """What the reviewer says about the frames *together*, which is the point of asking."""
 
     same_world: bool
     """Whether these frames read as one subject in one place and one idiom."""
@@ -155,13 +127,7 @@ class SetOpinion(SchemaModel):
 
 
 class SetReview(VersionedModel):
-    """One vision-model review of one frame-review batch.
-
-    Bound to image digests, like every verdict here: a regenerated frame is not covered by an
-    opinion formed about the picture it replaced, and the panel says so rather than showing a
-    stale judgement next to a new drawing (see :func:`content_factory.qc.verdict.merge_verdict`,
-    which enforces the same rule for a human verdict).
-    """
+    """One vision-model review of one frame-review batch."""
 
     deliverable_id: OpaqueId
     reviewed_at: datetime
@@ -186,10 +152,7 @@ class SetReview(VersionedModel):
 
     @property
     def flagged(self) -> tuple[str, ...]:
-        """Frames the reviewer would not pass, in frame order.
-
-        Offered as *what to look at first* and never applied. The panel pre-marks them for the
-        operator, who is the only reviewer that can reject anything."""
+        """Frames the reviewer would not pass, in frame order."""
         return tuple(
             f.frame_id for f in self.frames if f.severity == "wrong" or not f.matches_intent
         )

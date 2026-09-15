@@ -42,10 +42,7 @@ export function resolveKeymap(actions: readonly KeyAction[], state: KeymapState)
   });
 }
 
-/**
- * Every pair that cannot coexist: the same sequence bound twice, or a short binding that would
- * always fire before a longer one starting with it could complete.
- */
+/** Every pair that cannot coexist: the same sequence bound twice. */
 export function findConflicts(resolved: readonly ResolvedAction[]): KeymapConflict[] {
   const out: KeymapConflict[] = [];
   for (let i = 0; i < resolved.length; i++) {
@@ -86,10 +83,7 @@ export interface SequenceMatch {
   partial: boolean;
 }
 
-/**
- * Match a pressed sequence. An exact hit wins even when a longer binding also starts with it —
- * `findConflicts` reports that pair so it can be fixed rather than silently swallowed.
- */
+/** Match a pressed sequence. */
 export function matchSequence(resolved: readonly ResolvedAction[], buffer: readonly string[]): SequenceMatch {
   if (buffer.length === 0) return { exact: null, partial: false };
   let exact: ResolvedAction | null = null;

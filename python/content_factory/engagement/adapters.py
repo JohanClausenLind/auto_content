@@ -1,5 +1,4 @@
-"""EngagementProvider read adapters (24.1), separate from publishing capabilities. Official APIs
-only, within their documented rules; surfaces without an API stay manual-only with deep links."""
+"""EngagementProvider read adapters (24.1), separate from publishing capabilities."""
 
 from __future__ import annotations
 
@@ -75,8 +74,7 @@ class MastodonEngagement(EngagementProvider):
 
 
 class DiscordEngagement(EngagementProvider):
-    """Bot token channel reads: GET /channels/{id}/messages (MESSAGE_CONTENT intent required;
-    self-enabled under 10k servers). Replies to the channel are the inbound stream."""
+    """Bot-token channel reads (MESSAGE_CONTENT intent required)."""
 
     platform = "discord"
     supports_dms = False

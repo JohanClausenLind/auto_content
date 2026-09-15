@@ -1,12 +1,4 @@
-/**
- * The canvas. React Flow moves the nodes and draws the links; everything that means something —
- * what may connect to what, what deleting does, what undo restores — lives in the graph model.
- *
- * Interaction matches the node editors people know: drag empty canvas to box-select, wheel to
- * zoom, middle/right-drag to pan, drag a slot to link (incompatible inputs dim), drop a link on
- * empty canvas to search for a node that accepts it, double-click the canvas to search, Delete /
- * Ctrl+Z / Ctrl+Shift+Z / Ctrl+D / Ctrl+C / Ctrl+V do what they say.
- */
+/** The canvas: React Flow moves nodes and draws links; what anything means lives in the graph model. */
 
 import {
   applyNodeChanges,
@@ -54,14 +46,7 @@ export interface NodeStatusMap {
   readonly [nodeId: string]: GraphNodeData["status"];
 }
 
-/**
- * What each node produced, keyed by node id, when the canvas is showing a run.
- *
- * Keyed by the canvas's own node id rather than by the lane's key, because the host application
- * owns that join: `GraphNode.key` carries the lane's name for a step and the host matches it
- * against the run report. The editor is given the answer, not the question — which is also what
- * makes a hand-built graph with no lane keys work, with nothing attached.
- */
+/** What each node produced, keyed by canvas node id: the host owns the join from lane key to node. */
 export interface NodeOutputsMap {
   readonly [nodeId: string]: GraphNodeData["outputs"];
 }
@@ -78,11 +63,7 @@ export interface NodeGraphEditorProps {
   readonly "aria-label"?: string;
   /** Fired when the user picks a node in the canvas (for a properties panel). */
   onInspect?(nodeId: string | null): void;
-  /**
-   * Files dropped onto the canvas, with the graph position they landed on. The editor knows
-   * where the drop happened and nothing else about it: what a file *is*, and which node should
-   * hold it, is the host application's question (this one asks its own API to sniff the bytes).
-   */
+  /** Files dropped on the canvas, and where; which node should hold a file is the host's question. */
   onDropFiles?(files: readonly File[], position: { x: number; y: number }): void;
 }
 
@@ -94,11 +75,7 @@ const FRAME_HEAD = 30;
 
 type CanvasNode = GraphFlowNode | GroupFlowNode;
 
-/**
- * A handle on a folded group is `in:<member>:<slot>`; a handle on an ordinary node is the slot
- * name. Both arrive through the same React Flow connection, so every connection is translated
- * back to the member and slot it really means before the graph model sees it.
- */
+/** Resolves a handle — `in:<member>:<slot>` on a group, a slot name elsewhere — to its real end. */
 function realEnd(nodeId: string, handle: string): { node: string; slot: string } {
   const port = parseGroupPort(handle);
   return port ? { node: port.node_id, slot: port.slot } : { node: nodeId, slot: handle };
@@ -186,9 +163,8 @@ function Canvas({
           } satisfies GroupFlowNode);
           continue;
         }
-        // Open: a labelled frame behind the members, sized to hold them. It is not draggable and
-        // not selectable — dragging the frame instead of the node it sits behind is the one thing
-        // a region like this must not do.
+        // Open: a labelled frame behind the members, sized to hold them. Neither draggable nor
+        // selectable, since dragging the frame instead of the node behind it must never happen.
         const members = group.members
           .map((id) => nodeById(graph, id))
           .filter((n): n is NonNullable<typeof n> => n !== undefined);

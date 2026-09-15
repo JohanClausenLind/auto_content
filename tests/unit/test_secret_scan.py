@@ -1,15 +1,4 @@
-"""No credentials in the finished film.
-
-Every other QC line in this repo asks whether the deliverable is good. This one asks whether
-publishing it is safe, and it is the only check whose failure cannot be undone: a caption or an
-on-screen line carrying an API key is published the moment the file leaves the machine, and
-rotating the key afterwards is damage control rather than a fix. The channel playbook's
-software-tutorial recipe has carried a "no credentials in output" line since it was written and
-nothing in this repo implemented it.
-
-Half these tests are about *not* firing. A check that blocks a film for a git sha teaches an
-operator to reach for --force, which is the one response it must never get.
-"""
+"""No credentials in the finished film."""
 
 from __future__ import annotations
 
@@ -50,8 +39,7 @@ def test_every_named_pattern_has_a_case_that_fires_it() -> None:
 
 
 def test_a_finding_never_repeats_the_secret() -> None:
-    """A QC report is itself an artifact: it gets read, pasted into a ticket and into chat. A
-    finding that quotes the value leaks it a second time."""
+    """A QC report is itself an artifact: it gets read, pasted into a ticket and into chat."""
     secret = "AKIAIOSFODNN7EXAMPLE"
     findings = scan_text(f"export AWS_ACCESS_KEY_ID={secret}", where="captions/captions.srt")
     assert findings and all(secret not in f.message for f in findings)
@@ -70,8 +58,7 @@ def test_an_assigned_high_entropy_value_fires_and_a_low_entropy_one_does_not() -
 
 
 def test_the_ordinary_words_of_a_film_do_not_fire_it() -> None:
-    """The false-positive budget. Every one of these appears in this repo's own fixtures, docs or
-    commit messages, and a check that blocks a film for one of them will be turned off."""
+    """The false-positive budget."""
     clean = [
         "In 2025, wind supplied about a fifth of Sweden's electricity.",
         "the commit is 9f4af66a1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
@@ -159,8 +146,7 @@ def test_a_key_in_a_beat_a_caption_or_a_capture_sidecar_blocks_the_deliverable(
 
 
 def test_a_short_reads_its_own_plan(deliverable: tuple[Path, Path]) -> None:
-    """A documentary's shorts narrate their own derived plans (item 5b), so the scan has to read
-    the one this deliverable actually speaks — not the episode's."""
+    """A documentary's shorts narrate their own derived plans (item 5b)."""
     project, ddir = deliverable
     shorts = project / "story" / "shorts"
     shorts.mkdir()
@@ -195,8 +181,6 @@ def test_the_qc_stage_blocks_on_a_leak(tmp_path: Path) -> None:
     assert check["passed"] is False
     assert check["findings"][0]["check"] == "secret:github_token"
     assert check["facts"]["ocr"] is False
-    # The plan written above is a stub, not a valid StoryPlan. QC records that as its own finding
-    # and carries on: an unreadable input must never suppress the one check whose failure cannot
-    # be undone. This is what an earlier version of the scene-kind check did by raising.
+    # The plan written above is a stub, not a valid StoryPlan.
     kinds = report["checks"]["scene_kinds_implemented"]
     assert kinds["passed"] is False and kinds["facts"]["story_plan"] == "unreadable"

@@ -1,13 +1,4 @@
-"""The voice chain: artifact detection, the deterministic FFmpeg tail, and the restore_speech stage.
-
-The two neural steps (ClearerVoice, Resemble Enhance) are behind a subprocess seam and are not run
-here — the core suite has no GPU and no model weights. What is tested is everything around them:
-the measurements that decide whether they run, the de-esser/EQ/compressor tail, the true-peak
-limiter now in front of the R128 master, and the promise the whole chain exists to keep — that a
-restored beat is exactly as long as the beat that went in, so no word timing moves.
-
-The live models have their own test at the bottom, marked ``gpu``.
-"""
+"""The voice chain: artifact detection, the deterministic FFmpeg tail."""
 
 from __future__ import annotations
 
@@ -59,8 +50,7 @@ def _write_wav(path: Path, samples: list[float], rate: int) -> Path:
 
 
 def _voice_like(path: Path, *, rate: int = 24000, seconds: float = 2.0, gain: float = 0.5) -> Path:
-    """A tonal, band-limited stand-in for speech: a 180 Hz fundamental with harmonics up to
-    ~3 kHz, gated into words so the detector has silences to measure a noise floor in."""
+    """A tonal, band-limited stand-in for speech."""
     n = int(rate * seconds)
     out = []
     for i in range(n):
@@ -291,11 +281,7 @@ def _essy(path: Path, *, rate: int = 48000, seconds: float = 2.0) -> Path:
 
 
 def test_restore_beat_de_esses_the_beat_that_needs_it(tmp_path: Path) -> None:
-    """The gate fires, and the filter behind it actually reduces the band it is named for.
-
-    Both halves matter. The intensity shipped at 0.25, which measured -0.1 % on a real narration
-    beat — the step was recorded as having run and had done nothing (2026-09-10).
-    """
+    """The gate fires, and the filter behind it actually reduces the band it is named for."""
     src = _essy(tmp_path / "s.wav")
     out = tmp_path / "restored.wav"
     report = restore_beat(
@@ -410,11 +396,7 @@ def test_stage_can_be_switched_off(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
 @pytest.mark.gpu
 def test_live_chain_rebuilds_the_missing_top_end(tmp_path: Path) -> None:
-    """Needs the two skill environments and the weights under models/speech_restoration/.
-
-    Run with: uv run pytest tests/unit/test_speech_restoration.py -m gpu
-    (``--device cpu`` is the default and works, just slowly: Resemble Enhance is ~19x realtime.)
-    """
+    """Needs the two skill environments and the weights under models/speech_restoration/."""
     src = _voice_like(tmp_path / "v.wav", rate=24000, seconds=2.0)
     out = tmp_path / "restored.wav"
     report = restore_beat(

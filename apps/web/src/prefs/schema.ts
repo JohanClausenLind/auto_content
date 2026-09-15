@@ -1,8 +1,4 @@
-/**
- * Operator preferences that are not the theme and not the keymap: how dense the shell is, how much
- * it animates, and where a session starts. Colour lives in the theme engine; this is everything
- * else that is a matter of taste rather than data.
- */
+/** Operator preferences that are neither theme nor keymap: shell density, motion, and where a session starts. */
 
 import { z } from "zod";
 

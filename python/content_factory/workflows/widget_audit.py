@@ -1,33 +1,4 @@
-"""Which of a node's declared widgets its stage executor actually reads.
-
-A widget that looks bound and does nothing is a defect class in this repo, not a one-off. It has
-been found three times by rendering a film and noticing the knob did nothing: ``upscale_video``'s
-resolution (a lane asking for 2160 got whatever the host was configured for), and
-``generate_keyframes``' two, which were removed because the frame count comes from the control plan
-and the seed from the generation lock. Each cost a render to find. The check that caught the second
-pair was two hand-written assertions naming those nodes, which cannot catch the fourth.
-
-So this reads ``workflows/stages.py`` as a syntax tree and answers the question for every node type
-at once: for each stage, which widget keys reach a ``_param``-family call, or a
-``ctx.params.get(...)``, anywhere in the executor or in a module-level helper it calls. Static
-rather than dynamic, because a widget's whole problem is that the code path reading it may never
-run in a test.
-
-Three indirections are followed, because stages use all three:
-
-* module-level helpers (``_anchor_lock``, ``_tts_executor``, ``_video_backend``);
-* derived readers — a helper that forwards its own ``key`` parameter to a primitive, found to a
-  fixpoint rather than listed, which is how ``_param_list`` and ``_param_int_list`` are picked up;
-* nested closures like ``_tts_executor``'s ``param(key, default)``;
-* table-driven loops: ``_control_passes`` reads six toggles by iterating a module constant, so the
-  strings of that constant count as read.
-
-``WIDGET_EXEMPTIONS`` is the escape hatch, and it takes a reason. A widget listed there is declared
-on the canvas and read by nothing, on purpose and with the purpose written down — always because
-the executor behind it is still a fixture stand-in, so the knob will bind when the executor is
-real. It is not a place to park a knob that is simply broken, and :func:`stale_exemptions` fails
-the entry once it stops applying.
-"""
+"""Which of a node's declared widgets its stage executor actually reads."""
 
 from __future__ import annotations
 
@@ -70,14 +41,7 @@ def _functions() -> dict[str, _Func]:
 
 @lru_cache(maxsize=1)
 def _module_tables() -> dict[str, frozenset[str]]:
-    """``module constant -> every string literal inside it``.
-
-    For the table-driven stages: ``_control_passes`` reads six toggles by looping over
-    ``_CONTROL_PASS_WIDGETS``, so the widget names live in a module constant rather than in the
-    call. Taking every string in the table over-approximates within that one table, which is the
-    right trade — the table *is* the declaration of what the stage reads, and a widget name absent
-    from it is still reported.
-    """
+    """``module constant -> every string literal inside it``."""
     tree = ast.parse(STAGES_PATH.read_text(encoding="utf-8"))
     out: dict[str, frozenset[str]] = {}
     for node in tree.body:
@@ -106,11 +70,7 @@ def _positional(fn: _Func) -> list[str]:
 
 @lru_cache(maxsize=1)
 def readers() -> dict[str, int]:
-    """``function name -> which positional argument is the widget key``.
-
-    Seeded with :data:`BASE_READERS` and grown to a fixpoint: a module-level function that forwards
-    one of its own parameters to a reader as the key is itself a reader.
-    """
+    """``function name -> which positional argument is the widget key``."""
     funcs = _functions()
     found: dict[str, int] = dict.fromkeys(BASE_READERS, 1)
     changed = True
@@ -135,11 +95,7 @@ def readers() -> dict[str, int]:
 
 
 def _closure_readers(fn: ast.AST) -> frozenset[str]:
-    """Nested defs that forward to a reader, so their first argument is the key.
-
-    ``_tts_executor`` does exactly this: a closure ``param(key, default)`` so the whole function
-    reads either the context or the settings without repeating the condition eight times.
-    """
+    """Nested defs that forward to a reader, so their first argument is the key."""
     known = readers()
     out: set[str] = set()
     for node in ast.walk(fn):
@@ -234,10 +190,7 @@ def unread_widgets() -> dict[str, tuple[str, ...]]:
 
 
 def stale_exemptions() -> dict[str, tuple[str, ...]]:
-    """Exemptions that no longer apply, so the table cannot rot into a list of stale excuses.
-
-    An entry is stale when the widget is now read, or when it is no longer declared at all.
-    """
+    """Exemptions that no longer apply, so the table cannot rot into a list of stale excuses."""
     reads = widget_reads()
     catalog = node_catalog()
     out: dict[str, tuple[str, ...]] = {}
@@ -250,32 +203,7 @@ def stale_exemptions() -> dict[str, tuple[str, ...]]:
 
 
 def undeclared_reads() -> dict[str, tuple[str, ...]]:
-    """``stage value -> keys the executor reads that its node never declares``.
-
-    The mirror of :func:`unread_widgets`, and the half that was missing. A declared widget nothing
-    reads is a control that looks bound and does nothing. A read key nothing declares is the
-    opposite: reachable from `--set` and from nowhere else — invisible on the canvas, and rejected
-    by `workflows/catalog.py` if a lane tries to freeze it.
-
-    `generate_keyframes` is how this was found. `drift_profile`, `locked_min` and
-    `style_delta_max` had always been read, the stage's own comment told the operator to reach for
-    `--set spokes.drift_profile=uncalibrated`, and none of the three was declared anywhere. A run
-    resumed without that flag met the mock-calibrated 0.92 that no real frame reaches and was
-    BLOCKED at a measured 0.8491 (2026-09-10). They are declared now.
-
-    **This is a report, not a gate, and the remaining entries are untriaged.** Two legitimate
-    reasons to read an undeclared key are already visible in the code, and telling them apart from
-    a real gap needs reading each one rather than a rule:
-
-    - the runner injects it from a dedicated flag (`resolved_steps` writes `story`, `subject`,
-      `planner` and `fixture_path` from `--story`, `--subject` and `--shots`);
-    - the stage injects it itself before reading it back through the same path
-      (`stage_lock_generation` writes `style` and `model` from the anchor's recorded marker, so
-      that a lock can never name art direction the anchor was not drawn in).
-
-    The test pins whatever this currently returns, so the list can shrink deliberately but cannot
-    grow by accident.
-    """
+    """``stage value -> keys the executor reads that its node never declares``."""
     reads = widget_reads()
     catalog = node_catalog()
     out: dict[str, tuple[str, ...]] = {}

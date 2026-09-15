@@ -1,9 +1,4 @@
-"""The CMU ingester: the two kinds of clip it makes, and the things it refuses to claim.
-
-The synthetic tests build a whole fake reference root, so they run on a host with no data. The
-tests marked with ``needs_reference`` are the ones that check the real 2514 trials and the 55
-baked clips, including that a parsed frame count agrees with a full line count of the AMC.
-"""
+"""The CMU ingester: the two kinds of clip it makes, and the things it refuses to claim."""
 
 from __future__ import annotations
 

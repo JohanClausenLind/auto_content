@@ -1,14 +1,4 @@
-"""Guides are measured, and drift thresholds are per style and per camera.
-
-`LTXVAddGuide` pins an anchor at a frame index and **nothing checked that the clip went anywhere
-near it**: a guide whose strength was too low, or whose index the 8k+1 length rule snapped past the
-end of the clip, produced exactly the same "ok" as one the model honoured. The thresholds in
-`sequences/drift.py` are calibrated against the first live guided run (2026-09-09) and the numbers
-are in that module's docstrings; these tests hold the behaviour those numbers were chosen for.
-
-Deliberately offline: PNGs are drawn here with Pillow, so the suite needs no clip, no ComfyUI and
-no GPU.
-"""
+"""Guides are measured, and drift thresholds are per style and per camera."""
 
 from __future__ import annotations
 
@@ -51,12 +41,7 @@ def test_a_clip_that_hits_its_guide_passes() -> None:
 
 
 def test_the_same_content_in_the_wrong_place_fails_on_arrangement() -> None:
-    """The failure the luminance measure alone cannot see: identical ink, mirrored.
-
-    Both frames are the same off-white ground with the same dark block, so they have almost the
-    same luminance histogram and almost the same mean absolute difference. Only the block
-    correlation notices that the subject moved from one side to the other.
-    """
+    """The failure the luminance measure alone cannot see: identical ink, mirrored."""
     result = guide_adherence({48: RIGHT}, {48: LEFT})
     assert not result.passed
     reasons = " ".join(r for report in result.reports for r in report.reasons)
@@ -65,8 +50,7 @@ def test_the_same_content_in_the_wrong_place_fails_on_arrangement() -> None:
 
 
 def test_a_guide_index_past_the_end_of_the_clip_is_a_named_finding() -> None:
-    """The 8k+1 snapping failure: a guide pinned at a frame the clip does not have. It used to be
-    invisible — the request carried the guide, the clip came back, nothing compared them."""
+    """The 8k+1 snapping failure: a guide pinned at a frame the clip does not have."""
     result = guide_adherence({0: LEFT}, {96: LEFT})
     assert not result.passed
     assert result.as_facts()["reasons"] == ["no frame 96 in the clip"]
@@ -96,15 +80,13 @@ def test_structural_similarity_is_symmetric_and_bounded() -> None:
 
 
 def test_a_flat_frame_against_a_structured_one_scores_zero_not_one() -> None:
-    """A frame with no arrangement has no correlation to report, and calling that "identical"
-    would hide the worst failure there is: a clip that came back as an empty grey field."""
+    """A flat frame has no correlation to report; "identical" would hide an empty grey field."""
     assert structural_similarity(PLAIN, PLAIN) == 1.0
     assert structural_similarity(PLAIN, LEFT) == 0.0
 
 
 def test_the_calibrated_bars_sit_between_the_measured_values() -> None:
-    """The live run measured 0.972 at the guide frame and 0.887 one third of a second earlier, and
-    0.998 / 0.960 structurally. Both bars have to fall inside those gaps or they mean nothing."""
+    """The live run measured 0.972/0.887 and 0.998/0.960; both bars must fall inside those gaps."""
     assert 0.887 < GUIDE_SIMILARITY_MIN < 0.972
     assert 0.960 < GUIDE_STRUCTURAL_MIN < 0.998
 
@@ -137,8 +119,7 @@ def test_an_unknown_style_or_camera_takes_the_defaults() -> None:
 
 
 def test_the_override_tables_start_empty() -> None:
-    """An override has to come from a measured run. Shipping invented per-style numbers would be
-    the hardcoded pair again, with more places to look for it."""
+    """An override has to come from a measured run."""
     default = DriftThresholds()
     assert default.by_style == {} and default.by_camera == {}
 

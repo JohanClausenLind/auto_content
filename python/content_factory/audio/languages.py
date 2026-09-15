@@ -1,30 +1,4 @@
-"""Which languages each local TTS can actually speak, and a check that runs before model load.
-
-The bug this exists for: ``skills/audio/kokoro/run.py`` mapped its ``--lang`` argument with
-
-    lang_code = "a" if args.lang.startswith("en") else "b"
-
-and ``"b"`` is Kokoro's **British English**. So `narration.locale = "sv-SE"` produced a British
-voice reading Swedish words as if they were English, with nothing in the run saying so — the whole
-film narrated in the wrong language and no failure anywhere. A locale nobody supports has to be a
-refusal, and it has to happen before the weights load: a 1.7B model on the card for ninety seconds
-before a config typo is reported is ninety seconds and a GPU eviction spent on nothing.
-
-**Every set below was measured on this machine on 2026-09-08, not remembered.**
-
-* Qwen3-TTS ``get_supported_languages()``, both downloads:
-  ``uv run --project skills/audio/qwen3tts python skills/audio/qwen3tts/run.py --list``
-  → ``auto, chinese, english, french, german, italian, japanese, korean, portuguese, russian,
-  spanish`` — identical for the CustomVoice and Base weights.
-* Kokoro ``kokoro.pipeline.LANG_CODES`` / ``ALIASES``:
-  ``a`` American English, ``b`` British English, ``e`` es, ``f`` fr-fr, ``h`` hi, ``i`` it,
-  ``p`` pt-br, ``j`` Japanese, ``z`` Mandarin Chinese.
-
-**There is no local Swedish TTS.** Qwen3-TTS does not list it, Kokoro has no lang code for it, and
-Breeze-TTS-2 is Mandarin and English. Recorded here rather than discovered again: if Swedish
-narration is ever actually requested, the thing to evaluate is Chatterbox Multilingual, and the
-decision to download it belongs to the operator. Until then a Swedish request is refused by name.
-"""
+"""Which languages each local TTS can actually speak, and a check that runs before model load."""
 
 from __future__ import annotations
 
@@ -97,19 +71,7 @@ ENGLISH_ONLY_SUFFIX = ".en"
 
 
 def aligner_model_for(locale: str, model: str, *, configured: bool) -> str:
-    """The forced-alignment model for a narration language, given what the settings asked for.
-
-    Qwen3-TTS speaks ten languages and the aligner was pinned to `base.en`, which is an
-    English-only Whisper checkpoint. It does not refuse other languages — it transcribes them as
-    English-sounding nonsense — so a word-perfect German take would score near zero against the
-    script and the beat would fail as a mis-speech. Nothing said which of the two was wrong.
-
-    So an English-only checkpoint left at its **default** is swapped for its multilingual sibling
-    (`base.en` -> `base`) when the narration is not English. A checkpoint the operator *configured*
-    is obeyed: a machine that has been told which weights it has on disk has to be believed, and
-    the run records which model actually aligned. Same precedence, and the same reason, as
-    `_anchor_backend_name`'s configured-versus-defaulted split.
-    """
+    """The forced-alignment model for a narration language, given what the settings asked for."""
     if configured or locale_prefix(locale) == "en":
         return model
     if model.endswith(ENGLISH_ONLY_SUFFIX):
@@ -141,12 +103,7 @@ def locale_prefix(locale: str) -> str:
 
 
 def kokoro_lang_code(locale: str) -> str:
-    """Kokoro's lang code for a locale, or `""` when it has none.
-
-    `en-GB` is the one case where the region matters rather than only the language: Kokoro ships
-    American and British English as two separate G2P front ends, and picking between them is the
-    only thing the region subtag decides here.
-    """
+    """Kokoro's lang code for a locale, or `""` when it has none."""
     prefix = locale_prefix(locale)
     if prefix == "en":
         return "b" if locale.strip().lower().endswith("-gb") else "a"
@@ -156,14 +113,7 @@ def kokoro_lang_code(locale: str) -> str:
 def check_narration_language(
     provider: str, locale: str, *, language: str | None = None
 ) -> LanguageChoice:
-    """Refuse a language the chosen voice cannot speak, by name, before anything is loaded.
-
-    ``language`` is Qwen3-TTS's own spelling when a caller has one configured. It is checked
-    against ``locale`` as well as against the model's list, because the two disagreeing is its own
-    silent failure: a run configured for ``locale="sv-SE", qwen_language="english"`` would produce
-    English audio and label it Swedish, and every downstream consumer of `VoiceIdentity.locale`
-    would believe the label.
-    """
+    """Refuse a language the chosen voice cannot speak, by name, before anything is loaded."""
     prefix = locale_prefix(locale)
     supported = SUPPORTED_LOCALES.get(provider)
     if supported is not None and prefix not in supported:

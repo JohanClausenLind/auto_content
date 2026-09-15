@@ -1,23 +1,4 @@
-"""/v1/run-history/{run_id}/ai-review: a second opinion on the pictures, from the browser.
-
-The gate's two existing reviewers are the deterministic checks and a person, and the gap between
-them is the failure this machine actually produces — measurements cannot see whether the subject
-is the same subject. A vision model can, and ``ReviewerKind`` has had ``vlm`` in it since the
-contract was written.
-
-What these tests pin is not the model. It is the boundary around the model:
-
-* the review is an **opinion** — no verdict is written, and the batch is untouched afterwards;
-* it is **served with the gate**, so a panel knows whether one already exists before offering to
-  spend forty seconds of GPU asking for another;
-* a **stale** review — the frames were redrawn after it was formed — is labelled rather than shown
-  as if it were about the picture on screen;
-* "cannot ask" and "asked and it failed" are **different answers**, because one is fixed by
-  waiting for a run to finish and the other by fixing the model stack.
-
-The model itself is stubbed: a real call is 42 s of GPU and a different sentence every time, which
-is a live test (`-m live`), not a contract test.
-"""
+"""/v1/run-history/{run_id}/ai-review: a second opinion on the pictures, from the browser."""
 
 from __future__ import annotations
 
@@ -80,11 +61,7 @@ async def sign_in(client, sessionmaker, *, role: Role | None = None) -> None:
 
 
 def _stub(monkeypatch: pytest.MonkeyPatch, **overrides):
-    """Stand in for the vision model: write the same file a real review would, and record the call.
-
-    Writing the file matters — the route reads the review back through the same loader the panel
-    and the CLI use, so a stub that only returned an object would leave that path untested.
-    """
+    """Stand in for the vision model: write the same file a real review would."""
     calls: list[tuple[Path, Path]] = []
 
     def fake(run_dir: Path, deliverable_dir: Path, **_kwargs) -> SetReview:
@@ -178,11 +155,7 @@ async def test_the_stored_opinion_travels_with_the_gate(
 async def test_a_redrawn_frame_makes_the_opinion_stale_rather_than_wrong(
     client, sessionmaker, output_root, monkeypatch
 ):
-    """The same rule a human verdict follows: an opinion binds to the digests it was formed about.
-
-    It is kept and labelled rather than deleted — "this is what was wrong last time" is worth
-    reading — but it must never sit under a picture it is not about.
-    """
+    """The same rule a human verdict follows."""
     run_dir = write_gated_run(output_root, "iceberg")
     _stub(monkeypatch)
     await sign_in(client, sessionmaker)
@@ -259,8 +232,7 @@ async def test_a_run_with_no_gate_is_a_404_and_an_unknown_deliverable_too(
 async def test_the_review_is_written_where_the_cli_reads_it(
     client, sessionmaker, output_root, monkeypatch
 ):
-    """One file, two surfaces. The panel and `content-factory frames ai-review` must not be able
-    to disagree about what the model said."""
+    """One file, two surfaces."""
     run_dir = write_gated_run(output_root, "iceberg")
     _stub(monkeypatch)
     await sign_in(client, sessionmaker)

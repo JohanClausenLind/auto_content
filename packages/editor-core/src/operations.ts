@@ -17,11 +17,7 @@ export class PreconditionError extends Error {
   }
 }
 
-/**
- * An inverse step restores the previous revision exactly. Most operations are their own inverse
- * with swapped values; two need private steps because the public operation vocabulary has no
- * "unsuppress" or "remove encoding key" (those must never be proposed by models).
- */
+/** Restores the previous revision exactly; the private steps are verbs models must never propose. */
 export type InverseStep =
   | { readonly kind: "op"; readonly op: EditOperation }
   | { readonly kind: "unsuppress_deliverable"; readonly deliverable_id: string }

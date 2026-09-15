@@ -1,5 +1,4 @@
-"""Local GPU services: stages start HiDream / ComfyUI themselves, one GPU tenant at a time, and
-link the packages' weights into ComfyUI before it starts. All process and HTTP seams are faked."""
+"""Local GPU services: stages start HiDream / ComfyUI, one GPU tenant at a time; seams faked."""
 
 from __future__ import annotations
 
@@ -99,9 +98,8 @@ def world(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> FakeWorld:
     w = FakeWorld()
     monkeypatch.setattr(svc, "SUBPROCESS_POPEN", w.fake_popen)
     monkeypatch.setattr(svc, "SUBPROCESS_RUN", w.fake_run)
-    # Off unless a test asks for it: whether this machine has a *user* systemd instance is a fact
-    # about the machine, and letting the probe run would make every assertion about the spawned
-    # command depend on where the suite happens to be executing.
+    # Off unless a test asks for it: whether this machine has a *user* systemd instance would
+    # otherwise decide every assertion about the spawned command.
     monkeypatch.setattr(svc, "SYSTEMD_RUN_AVAILABLE", lambda: False)
 
     real_kill = svc.os.killpg
@@ -155,12 +153,7 @@ def test_no_lora_is_configured_by_default(world: FakeWorld, tmp_path: Path):
 
 
 def test_a_configured_lora_reaches_the_server_at_spawn(world: FakeWorld, tmp_path: Path):
-    """An adapter is part of what the server IS, so it is set once at spawn and never per request.
-
-    Every frame of a sequence has to come off the same weights or the GenerationLock freezes a
-    model that changed underneath it — and with a pool of hosts, "same endpoint" is not "same
-    model", which is why /healthz reports the adapter back.
-    """
+    """An adapter is part of what the server IS: set once at spawn, never per request."""
     adapter = tmp_path / "romsketch_ho1_v1b.safetensors"
     adapter.write_bytes(b"")
     services = _services(world, tmp_path, hidream_lora=str(adapter), hidream_lora_multiplier=0.8)
@@ -172,8 +165,7 @@ def test_a_configured_lora_reaches_the_server_at_spawn(world: FakeWorld, tmp_pat
 def test_a_relative_lora_path_resolves_against_the_repo_not_the_cwd(
     world: FakeWorld, tmp_path: Path
 ):
-    """`datasets/training/romsketch/...` is how an operator would write it, and the server is
-    spawned detached with its own cwd."""
+    """Operators write repo-relative paths; the server is spawned detached with its own cwd."""
     rel = "datasets/training/romsketch/output/romsketch_ho1_v1b.safetensors"
     _services(world, tmp_path, hidream_lora=rel).ensure("hidream")
     assert world.env[0]["CF_HIDREAM_LORA"] == str(tmp_path / rel)
@@ -304,9 +296,7 @@ def test_backends_map_to_their_tenant_and_mocks_to_none() -> None:
 
 
 def test_a_pool_entry_on_the_other_box_is_not_this_machines_to_start() -> None:
-    """The second GPU host is in `hidream_endpoints`, and starting the local server for it puts
-    17-19 GB on a card the run never touches — measured 2026-09-10, and it was what killed the
-    `silent-video` running beside it (MMAudio met 15.5 GiB of somebody else's weights)."""
+    """Starting a local server for the other box's pool entry puts 17-19 GB on an unused card."""
     from content_factory.media.video_generate import ComfyUIVideoBackend
     from content_factory.schemas.fixtures import sample_ltx_i2v_package
     from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
@@ -332,14 +322,7 @@ def test_a_pool_entry_on_the_other_box_is_not_this_machines_to_start() -> None:
 def test_ensure_unloads_every_catalogued_ollama_model_before_loading(
     world: FakeWorld, tmp_path: Path
 ) -> None:
-    """Ollama is the third tenant on the card and the only one nothing here managed.
-
-    It keeps a model resident for five minutes after the last request, so a lane that drafts a hook
-    with qwen38-ridge (12.6 GB) and then generates an anchor arrives at HiDream's ~19.4 GB load
-    with the text model still holding its weights. That does not fail cleanly — the caching
-    allocator fragments and dies on a 238 MB allocation, which is the whole reason
-    PYTORCH_CUDA_ALLOC_CONF=expandable_segments is set at 30 % of the throughput.
-    """
+    """Ollama is the third tenant on the card and the only one nothing here managed."""
     from content_factory.models.catalog import default_catalog
 
     s = _services(world, tmp_path)
@@ -365,12 +348,7 @@ def test_ensure_unloads_every_catalogued_ollama_model_before_loading(
 def test_nothing_resident_means_nothing_is_asked_to_unload(
     world: FakeWorld, tmp_path: Path
 ) -> None:
-    """The guard that keeps this out of an offline test run's way, and out of an operator's.
-
-    Every stage on the model-loading path calls this, so "free the GPU" reaching into Ollama when
-    the card is already clear would be a side effect nobody asked for — including during
-    ``just test``, which must not disturb the host.
-    """
+    """The guard that keeps this out of an offline test run's way, and out of an operator's."""
     world.ollama_loaded = []
     s = _services(world, tmp_path)
     assert s.unload_ollama() == ()
@@ -396,9 +374,7 @@ def test_no_ollama_on_this_machine_is_not_an_error(world: FakeWorld, tmp_path: P
 def test_free_the_gpu_evicts_both_tenants_and_the_text_models(
     world: FakeWorld, tmp_path: Path, monkeypatch
 ) -> None:
-    """For the stages that load a model in their own uv environment through a subprocess — the post
-    chain, sound_design, restore_speech. Nothing stopped HiDream or ComfyUI for those, so the
-    second load met a card with 19 GB already on it."""
+    """Subprocess stages (post chain, sound_design, restore_speech) met a card with 19 GB on it."""
     from content_factory.services.local import free_the_gpu
 
     built = _services(world, tmp_path)
@@ -419,8 +395,7 @@ def test_free_the_gpu_evicts_both_tenants_and_the_text_models(
 def test_ensure_service_closes_the_http_client_it_opened(
     world: FakeWorld, tmp_path: Path, monkeypatch
 ) -> None:
-    """The stage entry points build a LocalServices per call, and the stages call them once per
-    stage. An unclosed httpx client is one leaked connection pool per stage of every run."""
+    """Stages build a LocalServices per call; an unclosed httpx client leaks one pool per stage."""
     from content_factory.services.local import ensure_service
 
     built = _services(world, tmp_path)
@@ -433,11 +408,7 @@ def test_ensure_service_closes_the_http_client_it_opened(
 def test_a_pid_we_did_not_start_is_signalled_alone_not_by_process_group(
     world: FakeWorld, tmp_path: Path, monkeypatch
 ) -> None:
-    """`pgrep -f ComfyUI/main.py` matches any checkout on the box, including the operator's own
-    `~/git/ComfyUI`, and a pid found that way need not lead its process group. `killpg(pid)`
-    would then signal whichever group happens to share that number — the operator's shell job,
-    say. Only a pid we started ourselves (own session, recorded in our state file) may be
-    signalled by group."""
+    """A pid found by `pgrep -f` need not lead its group; `killpg` could hit the operator's job."""
     s = _services(world, tmp_path)
     world.up["comfyui"] = "ready"
     plain: list[int] = []
@@ -462,13 +433,7 @@ def test_a_pid_we_did_not_start_is_signalled_alone_not_by_process_group(
 
 
 def test_a_gpu_that_fell_off_the_bus_is_named_rather_than_retried(monkeypatch) -> None:
-    """Measured on vegaserv 2026-09-10 03:12: a PCIe AER uncorrectable error during an LTX-2.5
-    22B generation, then `Xid 79, GPU has fallen off the bus` and `Xid 154, recovery action
-    changed to Node Reboot Required`. Inside the pipeline that arrived as two unrelated bugs —
-    `ComfyTransientError: All connection attempts failed` on one lane and SeedVR2's
-    `SafetensorError: device cpu:0 is invalid` on the next — and a queue would have spent every
-    remaining job finding out.
-    """
+    """Xid 79 (vegaserv 2026-09-10) looked like two unrelated bugs; a queue would burn each job."""
     import subprocess
 
     import pytest
@@ -512,13 +477,7 @@ def test_a_gpu_that_fell_off_the_bus_is_named_rather_than_retried(monkeypatch) -
 def test_stop_waits_for_the_driver_to_give_the_card_back(
     world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The three-second sleep this replaces hard-locked the machine on 2026-09-12.
-
-    `stop` returns once the tenant stops answering HTTP, which is the moment it closes its socket
-    -- tens of GB of CUDA allocations still being torn down behind it. ComfyUI was started into
-    that window, its CUDA init came back "unknown error ... Setting the available devices to be
-    zero", and the box went down four seconds later with nothing in the journal.
-    """
+    """The three-second sleep this replaces hard-locked the machine on 2026-09-12."""
     from content_factory.services import local as local_mod
 
     readings = iter([1_000, 2_000, 9_000, 19_500])
@@ -534,11 +493,7 @@ def test_stop_waits_for_the_driver_to_give_the_card_back(
 def test_a_card_someone_else_partly_owns_does_not_stall_every_handover(
     world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Free VRAM that stops climbing short of the target is another owner, not a slow release.
-
-    Without the settle rule this waits out the whole timeout on every handover, which would turn
-    a rare hang into a guaranteed two-minute tax.
-    """
+    """Free VRAM that stops climbing short of the target is another owner, not a slow release."""
     from content_factory.services import local as local_mod
 
     monkeypatch.setattr(local_mod, "FREE_VRAM_MIB", lambda: 12_000)  # never reaches 18 GB
@@ -565,13 +520,7 @@ def test_a_machine_with_no_driver_does_not_wait(
 def test_a_gpu_server_is_started_in_its_own_scope_not_the_shell_that_launched_it(
     world: FakeWorld, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """What died on 2026-09-13 was the operator's terminal, not the server that overran.
-
-    ComfyUI loading Ideogram 4 reached 26.5 GB of RSS on a 31 GB box, and the cgroup the kernel
-    named in the oom-kill was the wezterm scope the shell was in -- because a server started from
-    a shell inherits that shell's scope and systemd kills per scope. In a scope of its own, the
-    ceiling stops it getting that big and an overrun kills the allocator.
-    """
+    """What died on 2026-09-13 was the operator's terminal, not the server that overran."""
     from content_factory.services import local as local_mod
 
     monkeypatch.setattr(local_mod, "SYSTEMD_RUN_AVAILABLE", lambda: True)

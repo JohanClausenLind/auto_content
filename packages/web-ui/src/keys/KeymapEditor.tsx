@@ -1,8 +1,4 @@
-/**
- * Settings ▸ Keyboard. Every action, its live binding, and a Record button that captures the next
- * keypress (or two, for a sequence). Conflicts are shown rather than prevented — the operator can
- * see which pair collides and decide which one to move.
- */
+/** Settings ▸ Keyboard. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../components/Button";

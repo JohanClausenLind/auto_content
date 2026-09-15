@@ -1,22 +1,4 @@
-"""/v1/uploads: a file dropped on the canvas becomes a typed, stored, described asset.
-
-One POST does the whole thing an operator expects from a drop: the bytes are sniffed (never the
-extension), **converted if the pipeline cannot read that container** — a screen recording lands as
-Matroska and leaves as MP4, usually by copying the streams rather than re-encoding them — refused
-if even after that it is not on the allowlist, stored in the artifact store under a
-content-addressed key, measured with ffprobe, and answered with everything the canvas needs to
-put a node on the graph: which node type holds this kind of file, one line describing what
-arrived, what was done to it, and the type-correct next steps worth offering.
-
-One of those answers takes more than a sniff. A recording off a phone or a meeting tool is an
-MP4 with an hour of black in it, and its bytes are indistinguishable from a film's, so the
-picture is measured: a video container with sound and nothing to look at comes back as ``audio``,
-lands on the Audio File node, and carries the reason it was called one.
-
-Nothing here trusts the request beyond its bytes: the filename is sanitised and used only for
-display and for the name the file gets in the run's uploads folder, the kind comes from the sniff,
-and the stored key is derived from the content. Uploading is editor-level, like starting a run.
-"""
+"""/v1/uploads: a file dropped on the canvas becomes a typed, stored, described asset."""
 
 from __future__ import annotations
 
@@ -106,10 +88,8 @@ async def upload(
         except UploadRejectedError as err:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(err)) from err
         facts = probe_media(source) if ingested.kind in ("audio", "video", "image") else {}
-        # A recording wrapped in MP4 sniffs as `video/mp4` like any film, and putting it on a
-        # Video node is how an operator ends up unable to wire their own interview into an audio
-        # lane. The picture is measured instead: nothing to look at means this is a recording,
-        # and the whole answer below — node, description, next steps — follows from that.
+        # A recording wrapped in MP4 sniffs as `video/mp4`; the picture is measured instead, and
+        # a blank one makes this a recording, which the node, description and next steps follow.
         picture: BlankPicture | None = (
             await run_in_threadpool(blank_picture, source) if ingested.kind == "video" else None
         )
@@ -141,9 +121,8 @@ async def upload(
             if conversion is not None
             else None
         ),
-        # Why a file whose MIME says video is being offered as a recording, or null when the
-        # kind is simply what the bytes said. The canvas shows it: an operator handed an audio
-        # node for their MP4 is owed the measurement that decided it.
+        # Why a video-MIME file is offered as a recording (null when the kind is what the bytes
+        # said); the canvas shows the measurement that decided it.
         "blank_picture": picture.reason if picture else None,
         "node_type": node_type,
         "node_slot": SOURCE_SLOT.get(node_type, ""),

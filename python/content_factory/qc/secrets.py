@@ -1,28 +1,4 @@
-"""No credentials in the finished film.
-
-Every other QC line here is about whether the deliverable is *good*. This one is about whether
-publishing it is safe, and it is the only check whose failure cannot be undone: a caption, an
-on-screen line or a screenshot caption that carries an API key has been published the moment the
-file leaves the machine, and rotating the key afterwards is damage control rather than a fix.
-
-The channel playbook's software-tutorial recipe has carried a "no credentials in output" line since
-it was written, with no implementation anywhere in this repo.
-
-Two deliberate limits, because a check that overstates what it covers is worse than one that does
-not exist:
-
-* **Text only.** This reads the words that will be rendered — the story plan's display text and
-  spoken text, the caption cues, the drafted copy, and any text sidecar beside a capture. It does
-  **not** read pixels: there is no OCR in the offline core, so a key visible in a screenshot but
-  written nowhere in the plan is not caught here. `facts["ocr"]` says so, in the report, rather
-  than leaving a reader to assume it was covered.
-* **Named patterns first, entropy only in context.** Every pattern below is a shape that is a
-  credential and cannot be anything else — a private-key header, a provider's own token prefix, a
-  URL with a password in it. The entropy test fires only on the right-hand side of something that
-  reads like an assignment of a secret (``api_key = …``), because a bare high-entropy string in a
-  script is a hash, an id or a digest, and blocking a film for one of those teaches an operator to
-  ignore the check.
-"""
+"""No credentials in the finished film."""
 
 from __future__ import annotations
 
@@ -38,11 +14,7 @@ from content_factory.qc.media import Finding, QCResult, Severity
 
 @dataclass(frozen=True)
 class SecretScan:
-    """A ``QCResult`` with its own facts typed, so a caller can read them without a cast.
-
-    ``scanned`` is what was read and ``images_not_read`` is what was not: there is no OCR in the
-    offline core, so a pass here means "no credential in the WORDS" and the shape says so.
-    """
+    """A ``QCResult`` with its own facts typed, so a caller can read them without a cast."""
 
     result: QCResult
     scanned: tuple[str, ...]
@@ -155,12 +127,7 @@ def shannon_bits(value: str) -> float:
 
 
 def scan_text(text: str, *, where: str = "text") -> list[Finding]:
-    """Every credential-shaped thing in one string, as blocker findings.
-
-    The finding never repeats the secret. It names where it is and what shape it has, which is
-    everything an operator needs to find it — and a QC report is itself an artifact that gets read,
-    copied into a ticket and pasted into a chat, so quoting the value would leak it a second time.
-    """
+    """Every credential-shaped thing in one string, as blocker findings."""
     out: list[Finding] = []
     for spec in NAMED_PATTERNS:
         hits = spec.pattern.findall(text)
@@ -214,11 +181,7 @@ def _story_texts(project_dir: Path, deliverable_id: str | None) -> Iterable[tupl
 def scan_deliverable(
     project_dir: Path, ddir: Path, deliverable_id: str | None = None
 ) -> SecretScan:
-    """Every rendered word of one deliverable, plus the text sidecars beside its captures.
-
-    ``facts["scanned"]`` names what was read and ``facts["ocr"]`` says plainly that pixels were
-    not, so a passing report cannot be mistaken for "no key is visible in the video".
-    """
+    """Every rendered word of one deliverable, plus the text sidecars beside its captures."""
     sources: list[tuple[str, str]] = list(_story_texts(project_dir, deliverable_id))
     for name in ("captions.srt", "captions.vtt", "captions.ass"):
         path = ddir / "captions" / name

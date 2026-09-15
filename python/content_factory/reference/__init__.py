@@ -1,10 +1,4 @@
-"""The reference library's words half: a sentence in, ranked clips out.
-
-``lexicon`` turns everyday words into the closed vocabulary of
-``content_factory.schemas.reference``; ``query`` turns an expansion into an FTS5 MATCH expression
-and runs it against a built index. Nothing here reaches the network, a GPU or torch: retrieval is
-FTS5 and bm25 from the standard library, which is also why a score is reproducible.
-"""
+"""The reference library's words half: a sentence in, ranked clips out."""
 
 from __future__ import annotations
 

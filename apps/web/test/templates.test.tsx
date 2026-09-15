@@ -21,15 +21,8 @@ beforeEach(() => {
 
 describe("workflow templates", () => {
   it("every template builds a graph the canvas accepts, or says why it cannot", () => {
-    // Exactly two kinds of error are allowed in a freshly opened lane, and both are the
-    // operator's next move rather than a defect in the definition:
-    //
-    // 1. a file input with nothing dropped on it — the lane's declared entry point, which must
-    //    say what to put there;
-    // 2. an unconnected input on a lane that declares a caveat explaining it.
-    //
-    // Everything else is a wiring or value mistake in the YAML, and there is nowhere left for one
-    // to hide: the Python loader refuses an unwired required input outright now.
+    // Only two errors are allowed in a freshly opened lane, both the operator's next move: a file
+    // input with nothing dropped on it, and an unconnected input the lane's caveat explains.
     for (const template of WORKFLOW_TEMPLATES) {
       const graph = template.build();
       const errors = validateGraph(graph, workspaceCatalog).filter((p) => p.severity === "error");
@@ -62,9 +55,8 @@ describe("workflow templates", () => {
   });
 
   it("folds the steps every lane repeats, and a folded group hides nothing that is wrong", () => {
-    // The point of a group is that a lane opens readable. The point of THIS test is that folding
-    // can never be a way to hide a hole: a group's ports are derived from the links, so an
-    // unconnected required input inside a folded group still shows on the folded node.
+    // Folding can never hide a hole: a group's ports are derived from the links, so an unconnected
+    // required input inside a folded group still shows on the folded node.
     const folded = WORKFLOW_TEMPLATES.filter((t) => t.build().groups.length > 0);
     expect(folded.length, "no lane folds anything, so the catalogue reads as raw nodes").toBeGreaterThan(10);
     for (const template of WORKFLOW_TEMPLATES) {
@@ -88,11 +80,8 @@ describe("workflow templates", () => {
 
   it("offers every lane the backend defines, and every name is general", () => {
     const ids = WORKFLOW_TEMPLATES.map((t) => t.id);
-    // Parity, not a floor. `fixtures/schema/workflow_templates.json` is the tracked contract that
-    // `scripts/export_workflows.py` writes from `workflows/*.yaml`, and the Python side asserts
-    // its ids equal the definition ids exactly. Comparing against it here closes the loop: a lane
-    // that reaches the contract but not the panel the operator clicks now fails on this side too,
-    // where a `>= 10` floor would have shrugged at a dropped lane.
+    // Parity with the tracked contract `fixtures/schema/workflow_templates.json`, not a floor: a
+    // lane that reaches the contract but not the panel fails here, where `>= 10` would shrug.
     const contractIds = TRACKED_TEMPLATES.templates.map((t: { id: string }) => t.id).sort();
     expect([...ids].sort()).toEqual(contractIds);
     for (const id of [
@@ -192,9 +181,8 @@ describe("templates panel", () => {
 
     // the image-to-video card knows its comfy models are installed
     const ltx = within(panel).getByRole("article", { name: "Image to video" });
-    // The LTX comfy files are in the fixture inventory, so the card shows them installed. Its
-    // skill and path requirements are not file-detectable from the browser, so the card may still
-    // report some as wanted; the assertion is that detection works, not that nothing is missing.
+    // The LTX comfy files are in the fixture inventory; its skill and path requirements are not
+    // file-detectable, so the assertion is that detection works, not that nothing is missing.
     expect(within(ltx).getAllByText("installed").length).toBeGreaterThan(0);
 
     await user.click(within(ltx).getByRole("button", { name: "Use template" }));
@@ -220,8 +208,7 @@ describe("picture story template", () => {
     const byType = new Map(graph.nodes.map((n) => [n.type, n]));
 
     // The chain that makes the bodies consistent: retrieval picks the captured take, the Blender
-    // skeleton carries it, and the drawing is conditioned on that. --shots still overrides the
-    // whole plan with a hand-authored fixture.
+    // skeleton carries it, and the drawing is conditioned on that; --shots still overrides the plan.
     expect(byType.get("plan_shots")!.values).toMatchObject({ planner: "reference" });
     expect(byType.has("find_reference")).toBe(true);
     expect(byType.get("find_reference")!.values).toMatchObject({ affection: "affection" });
@@ -230,10 +217,8 @@ describe("picture story template", () => {
       skeleton: true,
     });
     expect(byType.get("generate_anchor")!.values.model).toBe("hidream-o1");
-    // A preset NAME, not the prompt written out. The lane carried the ink_wash text verbatim,
-    // which meant `style_name_for` returned "" for it and it silently got no per-style drift
-    // override. The length check was standing in for "the style is set at all"; the name is the
-    // stronger assertion, because only a name resolves.
+    // A preset NAME, not the prompt written out: only a name resolves through `style_name_for`, and
+    // the verbatim text silently got no per-style drift override.
     expect(byType.get("generate_anchor")!.values.style).toBe("ink_wash");
 
     // The voice is recorded, never synthesized: no TTS node in this graph.
@@ -274,10 +259,8 @@ describe("picture story template", () => {
 
 describe("template runnability honesty", () => {
   it("a lane using a stage with no executor must say so in its caveat", () => {
-    // Derived, not hardcoded. This list used to be a literal `["ingest"]` mirroring python's
-    // STAGE_EXECUTORS by hand, and it went stale the moment ingest got an executor: every lane
-    // using it was then asked for a caveat about a stage that runs. `stages_without_executor` is
-    // computed per template by scripts/export_workflows.py from the real STAGE_EXECUTORS.
+    // Derived, not hardcoded: `stages_without_executor` is computed per template by
+    // scripts/export_workflows.py from the real STAGE_EXECUTORS, so it cannot go stale.
     for (const template of WORKFLOW_TEMPLATE_DATA) {
       const blocked = template.stages_without_executor;
       if (blocked.length > 0) {

@@ -1,14 +1,4 @@
-"""Post-chain runner: one job file in, a normalised frame directory + one JSON summary line out.
-
-    uv run --project skills/video/postchain python skills/video/postchain/run.py <job.json>
-
-job.json: {"tool": "cutie|propainter|seedvr2|gimm_vfi|rife", "frames_dir": "...", "out_dir": "...",
-           "params": {...}}   (see tools/*.py for each tool's params)
-
-Every tool writes ``<out_dir>/frames/%04d.png`` (Cutie writes masks there) so the stages can chain
-them without caring which tool ran. Exit codes: 0 ok · 2 bad job · 3 tool failed · 4 missing
-interpreter/weights.
-"""
+"""Post-chain runner: one job file in, a normalised frame directory + one JSON summary line out."""
 
 from __future__ import annotations
 

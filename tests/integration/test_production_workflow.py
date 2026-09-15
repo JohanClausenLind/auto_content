@@ -1,9 +1,4 @@
-"""Phase-6 gate (integration: compose postgres + temporal + headless browser):
-1. Full run parks at WAITING_FOR_APPROVAL; a stale-revision approval is ignored; the exact
-   revision approves; every node executes exactly once.
-2. A card edit rebuilds only that card (per-card cache; image branch untouched).
-3. A killed worker resumes without duplicate artifacts or re-executed completed stages.
-"""
+"""Phase-6 gate (integration: compose postgres + temporal + headless browser): 1."""
 
 from __future__ import annotations
 
@@ -308,7 +303,8 @@ async def _worker_kill_flow(tmp_path: Path) -> None:
         await _wait_state(run_id, "COMPLETE", timeout_s=240)
         counts = _executions(project_dir)
         node_counts = {k: v for k, v in counts.items() if not k.startswith("render_card:")}
-        # Nodes that completed before the kill executed exactly once; the in-flight node at most twice.  # noqa: E501
+        # Nodes that completed before the kill executed exactly once; the in-flight node at most
+        # twice.
         for node_id in completed_before_kill:
             assert node_counts.get(node_id, 0) == 1, (node_id, node_counts)
         assert all(v <= 2 for v in node_counts.values()), node_counts

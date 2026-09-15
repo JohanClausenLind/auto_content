@@ -1,7 +1,4 @@
-/**
- * App preferences: local first, synced to the account when signed in, painted onto the document
- * root as data attributes so the CSS can respond without every component reading context.
- */
+/** App preferences: local first, synced to the account when signed in. */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_APP_PREFS, initialAppPrefs, saveAppPrefs, type AppPrefs } from "./schema";

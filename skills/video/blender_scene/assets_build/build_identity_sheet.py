@@ -1,28 +1,5 @@
 #!/usr/bin/env python3
-"""Build one character's styled identity sheet, in one style.
-
-An asset build step, not a lane node. The mesh and its turnaround come out of Blender
-(``build_character.py`` then ``render_turnaround.py``); this draws the styled, clothed reference
-that the ``identity`` slot of an anchor prompt actually sends, from the asset's own turnaround
-views so it is the same body. Run it once per character per style — when the asset is built, or
-when the film's style changes — never once per run.
-
-Why it exists at all: HiDream-O1's IP pipeline treats every reference as subject material, so the
-clay render makes it draw clay people and the untextured MPFB turnaround makes it draw a nude
-mannequin. Both were measured (STATUS 1339, 1379-1381), which is why
-``ImageSequenceSettings.anchor_references`` says to add ``identity`` only once a *styled* sheet
-exists. This is how one gets made.
-
-Usage, from the repo root:
-
-    uv run python skills/video/blender_scene/assets_build/build_identity_sheet.py \\
-        --asset man_01 --style watercolour [--seed 0] [--backend hidream] \\
-        [--appearance "a man in his forties, short dark hair, plain grey coat"] [--all-styles ...]
-
-The image model has to be reachable: the HiDream skill server on 127.0.0.1:8801, or ComfyUI for
-``--backend flux2``. Both are started for you when ``local_services.auto_start`` is on. ``--dry-run``
-prints what would be built and touches nothing.
-"""
+"""Build one character's styled identity sheet, in one style."""
 
 from __future__ import annotations
 

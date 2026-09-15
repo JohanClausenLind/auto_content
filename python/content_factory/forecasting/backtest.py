@@ -1,9 +1,4 @@
-"""Rolling-origin backtesting with no future-data leakage, by construction.
-
-For each origin, the model function receives ONLY observations strictly before the origin and
-must return ``horizon`` predictions, which are scored against the actuals it never saw. Results
-carry sample counts so a lucky single window cannot masquerade as skill.
-"""
+"""Rolling-origin backtesting with no future-data leakage, by construction."""
 
 from __future__ import annotations
 

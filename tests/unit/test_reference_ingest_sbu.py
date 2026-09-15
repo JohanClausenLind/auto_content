@@ -1,10 +1,4 @@
-"""SBU Kinect ingester: the joint mapping, the normalisation, and the real 282-sequence tree.
-
-The synthetic half builds a miniature reference root, so the shape of the output, the skip lines
-and the determinism are testable on a host with no data. The measured half runs against
-``/mnt/fast/reference`` and is skipped when it is not mounted; it is the half that checks the
-numbers the module claims, including the 13.75 % of joints that fall outside the frame.
-"""
+"""SBU Kinect ingester: the joint mapping, the normalisation, and the real 282-sequence tree."""
 
 from __future__ import annotations
 

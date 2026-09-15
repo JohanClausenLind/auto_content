@@ -1,19 +1,4 @@
-"""What ships is measured on the right file, judged against a real promise, and listed with digests.
-
-Four defects in the last two stages before a destination:
-
-* the delivery-promise check measured `exports/bnd_run000000001.mp4` — the Remotion bundle. On the
-  hybrid path that is only the typeset half; the picture that ships is `composed.mp4`, which
-  interleaves the generated clips. So it read a file with none of the generated motion in it and
-  then reported on the motion.
-* the promise came from `spec.intent.startswith("animated")` over a 1000-character free-text
-  field, so it was always `chart_led` — the one value that makes the check unable to fail.
-* it had no route counts, so it could not tell a card that does not move (fine) from a generated
-  clip that does not move (a wasted generation).
-* `compile_destination_packages` wrote `{"status": "packaged"}` and not one word about **what**
-  was packaged, so a package for a film that failed to render looked exactly like one for a film
-  that had not.
-"""
+"""What ships is measured on the right file, judged on a real promise, and listed with digests."""
 
 from __future__ import annotations
 
@@ -58,8 +43,7 @@ def test_a_package_records_the_files_and_their_digests() -> None:
 
 
 def test_a_package_with_nothing_to_publish_is_refused() -> None:
-    """Captions and a QC report are not a deliverable. This is the case `{"status": "packaged"}`
-    could not distinguish from a finished film."""
+    """Captions and a QC report are not a deliverable."""
     with pytest.raises(ValidationError, match="nothing to publish"):
         _package(
             files=(
@@ -82,8 +66,7 @@ def test_duplicate_paths_are_refused() -> None:
 
 
 def test_an_absolute_or_escaping_path_is_refused() -> None:
-    """A package is meant to survive the project being moved, and an absolute path in a manifest
-    is a path on one machine."""
+    """A package must survive a move; an absolute path in a manifest is a path on one machine."""
     with pytest.raises(ValidationError, match="relative"):
         DeliveryFile(
             role="video", path="/tmp/final.mp4", sha256="a" * 64, bytes=1, content_type="video/mp4"
@@ -99,8 +82,7 @@ def test_an_absolute_or_escaping_path_is_refused() -> None:
 
 
 def test_a_zero_byte_file_is_refused() -> None:
-    """A zero-byte export is a failed render that left a file behind, and in a manifest it looks
-    like a deliverable."""
+    """A zero-byte export is a failed render that left a file behind, not a deliverable."""
     with pytest.raises(ValidationError):
         DeliveryFile(
             role="video",
@@ -112,15 +94,13 @@ def test_a_zero_byte_file_is_refused() -> None:
 
 
 def test_qc_is_recorded_not_enforced() -> None:
-    """A package is allowed to exist for a film that failed, and a publisher is allowed to refuse
-    it. Refusing to *record* it would move the ignorance one step later."""
+    """A package may exist for a failed film; refusing to record that only moves the ignorance."""
     assert _package().qc_passed is None
     assert _package(qc_passed=False).qc_passed is False
 
 
 def test_the_promise_comes_from_what_the_film_is_made_of() -> None:
-    """The old rule was `intent.startswith("animated")` over a prose field: false for every real
-    brief, so the promise was always chart_led and the check could never fail."""
+    """The old `intent.startswith("animated")` over prose was always false: always chart_led."""
     assert promised_delivery("", {"render": 10}) == "chart_led"
     assert promised_delivery("a data explainer about wind power", {"render": 10}) == "chart_led"
     assert promised_delivery("", {"render": 8, "generate": 2}) == "mixed"
@@ -129,8 +109,7 @@ def test_the_promise_comes_from_what_the_film_is_made_of() -> None:
 
 
 def test_prose_that_names_motion_still_counts() -> None:
-    """One signal among several rather than the only one: an operator who asked for an animated
-    explainer and got a slideshow should hear about it even if every segment was a card."""
+    """One signal among several: whoever asked for animation should hear they got a slideshow."""
     for words in ("an animated explainer", "motion graphic piece", "with animation throughout"):
         assert promised_delivery(words, {"render": 10}) == "animated_explainer", words
 
@@ -147,8 +126,7 @@ def test_the_animated_threshold_is_the_documented_one() -> None:
 
 
 def test_the_stage_collects_what_is_on_disk_with_real_digests(tmp_path: Path) -> None:
-    """Scanned rather than declared: what a lane produces depends on the lane, and a hand-written
-    list of expected outputs would go stale the first time a lane changed."""
+    """Scanned rather than declared: a hand-written list of outputs goes stale with each lane."""
     from content_factory.schemas.base import file_sha256
     from content_factory.workflows.stages import _delivery_files
 
@@ -178,16 +156,7 @@ def test_the_stage_collects_what_is_on_disk_with_real_digests(tmp_path: Path) ->
 
 
 def test_a_campaign_run_ships_its_render_bundles_not_only_its_metadata(tmp_path: Path) -> None:
-    """The other naming scheme, which the scan used to miss entirely.
-
-    A lane run through the local runner writes `exports/final.mp4` and `exports/card_*.png`. A
-    campaign run through ProductionWorkflow writes one file per *render bundle* instead, because
-    `render_artboard` names its output after the bundle it rendered — so a three-card carousel
-    leaves `bnd_card000000001.png` and friends, and the fixed-name scan found nothing but
-    `qc/report.json`. The package then carried only `["metadata"]` and `DeliveryPackage` refused
-    it, which was correct: a package of captions and metadata with no film in it is exactly what
-    that validator exists to catch. Four integration tests failed on it.
-    """
+    """The other naming scheme, which the scan used to miss entirely."""
     from content_factory.schemas.base import file_sha256
     from content_factory.workflows.stages import _delivery_files
 

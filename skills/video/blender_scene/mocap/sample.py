@@ -1,13 +1,4 @@
-"""Sample a ``cf.clip.v2`` document at a render frame.
-
-The v1 sampler in ``posing.sample_clip`` slerps quaternions. This one interpolates *directions*,
-which is the same idea one representation down: the shortest arc between two unit vectors, so a
-sampled direction is still a unit vector and a limb never changes length between frames. Root
-translation is interpolated linearly and yaw along the shortest way round.
-
-A two-actor clip is sampled per actor. Both actors share one timeline, so sampling them at the
-same render frame keeps captured contact intact; sampling them independently would not.
-"""
+"""Sample a ``cf.clip.v2`` document at a render frame."""
 
 from __future__ import annotations
 
@@ -18,12 +9,7 @@ Vec3 = tuple[float, float, float]
 
 
 def _nlerp(a: list[float], b: list[float], t: float) -> Vec3:
-    """Shortest-arc interpolation between two unit vectors, renormalised.
-
-    Uses the great-circle path when the vectors are far apart and a straight line when they are
-    close, for the same reason slerp does: the linear form loses precision as the angle shrinks,
-    and the trigonometric form loses it as the angle vanishes.
-    """
+    """Shortest-arc interpolation between two unit vectors, renormalised."""
     d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
     d = max(-1.0, min(1.0, d))
     if d > 0.9995 or d < -0.9995:
@@ -116,8 +102,7 @@ def sample_actor(
         "directions": directions,
         "root_translation": absolute,
         # What the renderer should actually apply: displacement from the clip's shared origin, so
-        # the shot's own staging still decides where the pair stands while the capture decides how
-        # they move and how far apart they are.
+        # the shot's own staging still decides.
         "root_offset": (absolute[0] - origin[0], absolute[1] - origin[1], absolute[2] - origin[2]),
         "root_yaw_deg": yaw,
         "clip_frames": (i0, i1, blend),

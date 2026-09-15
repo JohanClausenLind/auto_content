@@ -1,5 +1,4 @@
-"""Local auth spike: Argon2id passwords, TOTP with replay protection, and a full passkey
-registration + authentication round trip against a software authenticator (test-only)."""
+"""Local auth spike: Argon2id passwords, TOTP replay protection, and a passkey round trip."""
 
 from __future__ import annotations
 

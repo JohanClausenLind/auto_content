@@ -1,25 +1,4 @@
-/**
- * Blocks: the parts of a lane that are the same in every lane.
- *
- * Look at the catalogue and the repetition is the first thing you see. Nine lanes clean up a
- * voice the same way. Six turn word timings into captions the same way. Every single one checks
- * the finished thing and packages it, with the same two nodes wired the same way round. Building
- * a lane by hand therefore meant placing and wiring the same four or five nodes again, correctly,
- * from memory — and reading one meant reading them again.
- *
- * A block is that fragment, once: its nodes, the wires between them, the values that make it
- * mean what it says, and the name it goes by. Inserting one adds all of it in a single undoable
- * commit **and folds it into one node**, so a graph gains a step called "Clean up the voice"
- * rather than three nodes an operator has to recognise. Opening it shows the actual nodes — the
- * same ones, in the same graph — and every widget is there to change. There is no second copy and
- * no separate format: a block is a way of writing nodes and links down, and after insertion the
- * graph is an ordinary flat graph with a folded view over part of it.
- *
- * Adding a block: put it in BLOCKS with `in` naming the slots it takes from outside. Nothing
- * validates a block into existence — the graph model's own connection rules apply to its wires
- * exactly as they do to a hand-drawn one, so a block that wires the wrong slot together simply
- * fails to insert, in the tests, the first time it is tried.
- */
+/** Blocks: reusable node fragments inserted as one undoable, folded commit. */
 
 import {
   applyOps,
@@ -203,11 +182,7 @@ export function blockById(id: string): WorkflowBlock | undefined {
   return BLOCKS.find((block) => block.id === id);
 }
 
-/**
- * The ops that insert a block at ``position``: its nodes, its internal wires, and one collapsed
- * group over all of them, as a single commit — so one undo removes the whole block and the
- * operator never sees a half-inserted one.
- */
+/** The ops that insert a block at ``position``. */
 export function insertBlockOps(
   graph: WorkspaceGraph,
   block: WorkflowBlock,

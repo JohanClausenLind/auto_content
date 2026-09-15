@@ -1,10 +1,4 @@
-"""Pinned nodes: a frozen step is skipped, reused, and recorded as frozen.
-
-The point of a pin is that a rerun does not pay for a node again. The point of *these* tests is
-that it cannot lie about it while doing so: the stage never executes, the report says `pinned`
-rather than pretending to have produced the output, and the 0.0 s it took never reaches the
-duration medians that tell the next run how long a lane should take.
-"""
+"""Pinned nodes: a frozen step is skipped, reused, and recorded as frozen."""
 
 from __future__ import annotations
 
@@ -122,8 +116,7 @@ def test_unpinning_releases_and_is_forgiving(tmp_path: Path) -> None:
 
 
 def test_a_pinned_stage_never_reaches_the_duration_medians(tmp_path: Path) -> None:
-    """A skipped stage took 0.0 s. Letting that in would teach the estimator that a six-minute
-    generation is instant."""
+    """A skipped stage took 0.0 s."""
     from content_factory.services import durations
 
     root = tmp_path / "runs"

@@ -1,10 +1,4 @@
-"""The Harmony4D ingester: the arithmetic offline, the two real takes when the library is mounted.
-
-The pure-geometry tests run anywhere. The ones that touch ``/mnt/fast/reference`` are skipped on a
-host without the data, and they assert the numbers this ingester claims rather than only its shape:
-a wrong handedness or a wrong camera alignment would still produce a valid ``ReferenceClip``, so
-the facing, the azimuth ring and the reprojection error are all checked against measurements.
-"""
+"""The Harmony4D ingester: the arithmetic offline, the two real takes."""
 
 from __future__ import annotations
 

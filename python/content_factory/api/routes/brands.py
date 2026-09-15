@@ -1,6 +1,4 @@
-"""/v1/brand-nodes: persisted brand hierarchy. Lock semantics come from brands.hierarchy — a
-child cannot even declare an override for a key its ancestry locked, and `effective` is the
-root-to-leaf merge where locked keys keep the locker's value."""
+"""/v1/brand-nodes: persisted brand hierarchy."""
 
 from __future__ import annotations
 

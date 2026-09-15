@@ -1,8 +1,4 @@
-/**
- * Tiny colour helper: hex <-> RGB/HSL, mixing, lighten/darken and WCAG contrast.
- * Everything works on 6/3-digit hex strings so results can be written straight
- * into CSS custom properties and asserted in tests.
- */
+/** Tiny colour helper: hex <-> RGB/HSL, mixing, lighten/darken and WCAG contrast. */
 
 export interface Rgb {
   r: number;

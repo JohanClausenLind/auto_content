@@ -1,20 +1,4 @@
-"""The durable path and the local path ask for the same things, and a timeout means something.
-
-Three gaps between running a lane locally and running it through Temporal:
-
-* `StageNode.resource_class` has been in the DAG since it was written and the workflow **threw it
-  away**, so every activity got 240 seconds: minutes of slack for a JSON write, and far too little
-  for a GPU stage (one LTX-2.5 anchor pair measured 100-330 s on this host, and a render-gpu node
-  holds several shots). When the deadline passed mid-generation Temporal retried the whole
-  activity, so the failure mode was "the GPU work restarts for ever".
-* The human-gate stages were never run before the workflow parked on them, so the ActionItem said
-  "drop the finished asset onto the node" and pointed at a contact sheet that did not exist.
-* `review_frames` and `review_assets` had **no validator at all**, so a durable run parked on them
-  for ever: there was no way to submit the verdict the stage reads.
-
-No Temporal server here: the pieces under test are the plan, the options table, the ActionItem
-body and the two validators.
-"""
+"""The durable path and the local path ask for the same things, and a timeout means something."""
 
 from __future__ import annotations
 
@@ -44,9 +28,7 @@ DELIVERABLE = "dlv_short0000001"
 
 @pytest.fixture(autouse=True)
 def _clear_settings_cache():
-    """`get_settings` is an `lru_cache`, and conftest's env isolation does not reach it. Without
-    clearing on the way *out*, a tmp_path-derived approvals directory leaks into every later test
-    in the process — which is a much more annoying failure than the one it would be hiding."""
+    """`get_settings` is an `lru_cache`, and conftest's env isolation does not reach it."""
     from content_factory.config import get_settings
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
@@ -71,14 +53,12 @@ def test_the_gpu_classes_get_more_than_the_old_ceiling_and_control_gets_less() -
 
 
 def test_the_video_timeout_covers_a_measured_shot_list() -> None:
-    """40 s a clip measured at 704x384, and a shot list is tens of clips; the post chain runs per
-    clip on top of that. Twenty clips plus a post pass has to fit."""
+    """40 s a clip measured at 704x384, twenty clips, and the post chain runs per clip on top."""
     assert ACTIVITY_TIMEOUTS["inference-video"] >= 20 * 40 * 2
 
 
 def test_the_heartbeat_stays_short_for_every_class() -> None:
-    """It is how a *stuck* activity is told from a slow one. A GPU stage heartbeats through its
-    generation, so one that stopped has died — raising this with the timeout would hide that."""
+    """It is how a *stuck* activity is told from a slow one."""
     assert HEARTBEAT_TIMEOUT_S <= 10
 
 
@@ -121,8 +101,7 @@ def test_prepare_mode_is_off_by_default() -> None:
 
 
 def test_only_the_review_gates_are_prepared() -> None:
-    """`write_copy`'s human executor has no deterministic half — the person *is* the executor — so
-    preparing it would run the model the human slot exists to replace."""
+    """`write_copy`'s human executor has no deterministic half: the person is the executor."""
     assert PREPARABLE_HUMAN_STAGES == {"review_frames", "review_assets"}
     assert "write_copy" not in PREPARABLE_HUMAN_STAGES
 
@@ -196,8 +175,7 @@ def test_a_frame_verdict_is_written_where_the_stage_reads_it(tmp_path: Path) -> 
 
 
 def test_a_verdict_about_regenerated_images_is_refused(tmp_path: Path) -> None:
-    """The reason `FrameRecord` carries a digest at all: a verdict on an image that has since been
-    redrawn is not a verdict on what would ship."""
+    """A verdict on an image that has since been redrawn is not a verdict on what would ship."""
     _prepare_frames(tmp_path, "a" * 64)
     inp = _human_input("review_frames", _frame_batch("b" * 64, reviewed=True), tmp_path)
     result = _validate_frame_review(inp, tmp_path, json.loads(inp.payload_json))
@@ -263,9 +241,8 @@ def test_an_asset_approval_must_be_about_the_build_on_disk(tmp_path: Path, monke
     (prepared / "chr_runner.review.json").write_text(
         json.dumps(_asset_review("a" * 64, approved=False))
     )
-    # The settings are frozen models, so the override goes through the environment and the cache
-    # is cleared either side — approvals live outside the run, so the test must not write into the
-    # repo's own approvals directory.
+    # Settings are frozen models, so the override goes through the environment; approvals live
+    # outside the run, so the test must not write into the repo's own approvals directory.
     monkeypatch.setenv("CF__CONTROLS__ASSET_APPROVALS_DIR", str(approvals))
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
@@ -291,8 +268,7 @@ def test_an_unapproved_asset_review_is_not_an_approval(tmp_path: Path) -> None:
 
 
 def test_the_workspace_graph_adapter_is_typed() -> None:
-    """It used to return a bare dict in a shape that was not `WorkspaceGraph`'s, so none of the
-    contract's invariants applied to the fifteen committed lane definitions."""
+    """A bare dict let none of `WorkspaceGraph`'s invariants apply to the committed lanes."""
     from content_factory.schemas.workspace_graph import WorkspaceGraph
     from content_factory.workflows.catalog import load_definitions, to_workspace_graph
 

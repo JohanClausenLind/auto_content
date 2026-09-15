@@ -1,16 +1,4 @@
-"""One shared system instruction, one home for prompts, and figures that come off a row.
-
-Two of the small gaps from the audit:
-
-* **Prompts were f-strings inline** in whichever module needed one — three in `copywriter.py`, a
-  sixty-line builder in `scriptwriter.py`, another in `shots/prompt_compile.py`. Nothing shared,
-  nothing versioned, and — since Ollama's constrained decoding replaced the pasted-in schema —
-  **no system message at all**, so the shared rules about inventing figures went to nobody.
-* **A chart's columns were never checked against its dataset.** The renderer is total by design
-  (`chartPoints` maps a missing cell to `0`, `resolveNumber` returns `null` for a row it cannot
-  find), so a `ChartScene` whose `y` column is misspelled draws a flat line along zero, under a
-  real dataset's name, and passed every check there was.
-"""
+"""One shared system instruction, one home for prompts, and figures that come off a row."""
 
 from __future__ import annotations
 
@@ -32,8 +20,7 @@ from content_factory.schemas.render import DatasetTable
 
 
 def test_the_shared_instruction_is_attached_by_the_gateway() -> None:
-    """In the gateway, not at each call site, because a call site can forget — and one did: when
-    constrained decoding replaced the pasted-in schema, the system message went with it."""
+    """In the gateway, not at each call site, because a call site can forget — and one did."""
     messages = [{"role": "user", "content": "write a caption"}]
     out = _with_system_instruction(messages, None)
     assert [m["role"] for m in out] == ["system", "user"]
@@ -58,8 +45,7 @@ def test_a_probe_can_opt_out_entirely() -> None:
 
 
 def test_the_default_option_defers_to_the_module() -> None:
-    """`None`, not a copy of the text: a frozen copy in a dataclass default would be a second
-    place to edit and a first place to forget."""
+    """`None`, not a copy of the text."""
     assert GatewayOptions().system_instruction is None
 
 
@@ -86,8 +72,7 @@ def test_every_template_is_named_versioned_and_renders() -> None:
 
 
 def test_a_missing_render_field_fails_by_name() -> None:
-    """`format`, not an f-string at the call site: a missing input is a KeyError naming the field
-    rather than a silently empty string in the middle of a prompt."""
+    """`format`, not an f-string at the call site."""
     with pytest.raises(KeyError):
         get("copy.caption").render(platform="x")
 
@@ -139,8 +124,7 @@ def test_a_sound_chart_reports_nothing() -> None:
 
 
 def test_a_misspelled_series_column_is_the_flat_line_at_zero() -> None:
-    """The defect this exists for: the renderer maps a missing cell to 0, so the chart draws a
-    flat line along the axis under a real dataset's name and nothing said so."""
+    """The defect this exists for: the renderer maps a missing cell to 0."""
     problems = chart_problems(_chart(y=("share_pcnt",)), {"ds_wind00000001": _table()})
     assert len(problems) == 1
     assert "share_pcnt" in problems[0].detail
@@ -168,9 +152,7 @@ def test_a_missing_dataset_is_reported_once() -> None:
 
 
 def test_the_resolution_rules_mirror_the_renderer() -> None:
-    """`row_key` matches the first column (or one named key/row_key); `column` defaults to the
-    LAST. Mirrored from content-ui/src/format/number.ts, and pinned here because a mirrored rule
-    that drifts would report figures as sound that the renderer draws as dashes."""
+    """`row_key` matches the first column (or one named key/row_key)."""
     table = _table()
     assert key_column(table) == "year"
     assert key_column(_table(columns=("row_key", "v"), rows=({"row_key": "a", "v": 1},))) == (

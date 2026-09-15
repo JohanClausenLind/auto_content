@@ -1,18 +1,4 @@
-"""The script writer: one call, typed scenes, and nothing unsupported reaching generation.
-
-`plan_story` loaded a hand-written fixture or the demo's, so a topic an operator actually has
-became a film only if somebody wrote the twenty-one-kind scene grammar, the claim links and the
-beat timings by hand. This is the largest genuine gap in the pipeline.
-
-Most of what is tested here is the *refusals*, because that is the part that decides whether a
-number a viewer reads is real. Four validators run before a plan exists, and each has a test that
-proves a bad beat is dropped into `story/gaps.json` with its reason rather than rendered:
-
-* a claim id the writer was never shown (a model cannot cite a claim into being);
-* a figure in no dataset row and no cited claim;
-* a scene kind with no renderer (today a placeholder card passes QC);
-* an asset, source or dataset id that does not exist.
-"""
+"""The script writer: one call, typed scenes, and nothing unsupported reaching generation."""
 
 from __future__ import annotations
 
@@ -113,8 +99,7 @@ def test_a_figure_in_no_dataset_and_no_cited_claim_is_refused() -> None:
 
 
 def test_a_scene_kind_with_no_renderer_is_refused_by_name() -> None:
-    """Today a placeholder card passes QC, so a plan naming `ranking` ships a grey card where a
-    chart was meant to be."""
+    """Today a placeholder card passes QC, so a plan naming `ranking` ships a grey card."""
     for kind in sorted(PLACEHOLDER_KINDS):
         reason = _validate(_beat(scene_kind=kind))
         assert "has no renderer" in reason, kind
@@ -192,8 +177,7 @@ def _draft(*beats: DraftBeat):
 
 
 def test_one_call_returns_beats_and_typed_scenes_that_validate() -> None:
-    """A beat and its scene are one object in one response. Asking twice resends every beat as
-    context and lets the second answer disagree with the first."""
+    """A beat and its scene are one object in one response."""
     result = _draft(
         _beat(section="cold_open", scene_kind="title", headline="A fifth of the grid"),
         _beat(
@@ -313,8 +297,7 @@ def test_the_surviving_beats_are_the_film_and_the_rest_are_the_operators_next_ta
 
 
 def test_the_scorers_grade_the_model_and_not_the_validators() -> None:
-    """Scoring the surviving plan would report a perfect "no invented numbers" by construction:
-    the beats that invented one are exactly the beats that are no longer there."""
+    """Scoring the surviving plan would report a perfect "no invented numbers" by construction."""
     good = _draft(
         _beat(section="cold_open", scene_kind="title", display_text="A fifth of the grid."),
         _beat(
@@ -361,8 +344,7 @@ def test_the_floor_is_a_number_and_the_writer_is_off_until_it_is_cleared() -> No
 def test_plan_story_uses_the_writer_behind_the_flag_and_writes_the_gaps(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """A run with the writer on must never silently fall back to the demo film: an operator who
-    turned it on and got Swedish wind power would have no way to tell."""
+    """A run with the writer on must never silently fall back to the demo film."""
     from content_factory.models import scriptwriter
     from content_factory.runners.local import make_context
     from content_factory.schemas.scenes import StoryPlan
@@ -377,9 +359,8 @@ def test_plan_story_uses_the_writer_behind_the_flag_and_writes_the_gaps(
             _beat(section="question_stakes", scene_kind="ranking", dataset_id="ds_x"),
         )
     )
-    # The stage imports the writer inside the function, so patching the module attribute is what
-    # it picks up. The fake gateway returns this exact draft, so what is under test is the stage's
-    # own wiring: the outline it builds, the gaps it writes, the facts it reports.
+    # The stage imports the writer inside the function, so patching the module attribute is what it
+    # picks up.
     monkeypatch.setattr(scriptwriter, "draft_story_plan", lambda *a, **kw: _draft(*plan.beats))
     try:
         out = stage_plan_story(ctx)

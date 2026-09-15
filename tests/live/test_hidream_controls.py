@@ -1,5 +1,4 @@
-"""Live HiDream server: one conditioned anchor (two references + one layout box). Needs the skill
-server running with the model loaded; skipped otherwise."""
+"""Live HiDream server: one conditioned anchor (two references + one layout box)."""
 
 from __future__ import annotations
 

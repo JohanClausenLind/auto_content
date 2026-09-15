@@ -64,10 +64,7 @@ export interface ThemeCustomizerProps {
   onDone?: () => void;
 }
 
-/**
- * Progressive disclosure: presets first, then scale/transparency, then "Make your own"
- * (base tokens with live preview), then import/export.
- */
+/** Progressive disclosure: presets first, then scale/transparency, then "Make your own". */
 export function ThemeCustomizer({ onDone }: ThemeCustomizerProps) {
   const theme = useTheme();
   const { state, resolved } = theme;

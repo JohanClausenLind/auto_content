@@ -1,14 +1,4 @@
-"""Breeze TTS 2 executor: reads text on stdin, prints one JSON line (wav path, no timestamps).
-
-Run inside this skill's own environment:
-`uv run --project skills/audio/breeze python skills/audio/breeze/run.py --instruction "..."`.
-Not imported by the control plane. The inference code is the breeze-tts checkout (Apache-2.0)
-at CF_BREEZE_REPO (default <repo>/external/breeze-tts); the weights are at CF_BREEZE_MODEL_PATH
-(default <repo>/models/speech/Breeze-TTS-2; research/non-commercial licence).
-
-Breeze emits streaming PCM only — `tokens` is always empty, so the caller must obtain word
-timings by forced alignment (ADR-0004: WhisperX / faster-whisper), never from this script.
-"""
+"""Breeze TTS 2 executor: reads text on stdin, prints one JSON line (wav path, no timestamps)."""
 
 from __future__ import annotations
 

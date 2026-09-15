@@ -41,13 +41,7 @@ def _env(name: str, value: str) -> Iterator[None]:
 
 @pytest.fixture(scope="session")
 def migrated_test_db() -> str:
-    """Bring the test database to head with Alembic, once per session.
-
-    Tests must never build the schema from ``Base.metadata``: that creates tables behind
-    Alembic's back and leaves ``alembic_version`` on an older revision, so the next
-    ``alembic upgrade head`` (setup.sh, `just migrate`) dies on an already-existing table.
-    Migrations are the single source of truth for this database.
-    """
+    """Bring the test database to head with Alembic, once per session."""
     url = _test_url()
     if not url:
         pytest.skip("DATABASE_URL_TEST not set")

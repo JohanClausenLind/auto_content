@@ -1,15 +1,4 @@
-"""Stock footage: a handful of hand-picked clips, fetched per shot rather than mirrored.
-
-``Stock/pexels`` is normally almost empty, and an empty or absent directory is the expected state,
-not an error. So this ingester returns no clips and one line saying why, rather than raising.
-
-**Every stock clip is tagged only after somebody has looked at a frame.** The rest of this library
-gets its labels from dataset annotations; stock footage arrives with a filename and nothing else. A
-guess made from the filename would be the one wrong label that makes a search for tenderness return
-something else, so the annotations live in ``VERIFIED_CLIPS`` below, keyed by the Pexels id, and a
-file with no entry there is skipped with that as the reason. The numbers, in contrast, are never
-taken on trust: width, height, frame rate, frame count and duration all come from ffprobe.
-"""
+"""Stock footage: a handful of hand-picked clips, fetched per shot rather than mirrored."""
 
 from __future__ import annotations
 
@@ -61,12 +50,8 @@ VERIFIED_CLIPS: dict[str, _Verified] = {
     "4701507": _Verified(
         people_count=2,
         affection=Affection.affection,
-        # Frames 0, 50, 100 and 149 all show the same thing: two seated people across a table, one
-        # hand closed around the other's hand and wrist. ``hold_hands_walk`` is the vocabulary's
-        # only hand-holding tag and it is wrong here, because nobody walks and nobody stands up in
-        # the six seconds. ``conversation`` is the closest thing that is true of the whole clip:
-        # two people at rest together at one table. What the vocabulary cannot say is "holding
-        # hands while seated", so that goes in the caption and in ``vocabulary_gap``.
+        # Frames 0, 50, 100 and 149: two seated people across a table, hand around hand. Nobody
+        # walks, so hold_hands_walk is wrong; "holding hands while seated" goes in vocabulary_gap.
         interaction_tags=(InteractionTag.conversation,),
         contact_tags=(ContactTag.hands,),
         postures=(Posture.sitting,),
@@ -88,15 +73,7 @@ VERIFIED_CLIPS: dict[str, _Verified] = {
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every verified stock clip present on disk, plus one line per file left out and why.
-
-    Guarantees: clips are sorted by ``clip_id`` and the skipped lines are sorted, so two runs over
-    an unchanged directory return identical bytes; every ``ReferenceFile.path`` is relative to
-    ``root`` and its ``sha256`` is the real digest of the file; ``width``, ``height``,
-    ``native_fps``, ``frame_count`` and ``duration_s`` are ffprobe's answer and never the
-    filename's; and an absent, empty or unprobeable directory yields no clips rather than an
-    exception, because a nearly empty stock directory is the normal state of this source.
-    """
+    """Every verified stock clip present on disk, plus one line per file left out and why."""
     directory = root / PEXELS_DIR
     if not directory.is_dir():
         return [], [f"pexels {PEXELS_DIR}: directory is not on disk, stock is fetched per shot"]

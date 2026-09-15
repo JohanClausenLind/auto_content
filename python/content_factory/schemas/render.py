@@ -1,8 +1,4 @@
-"""RenderBundle: everything a deterministic renderer needs, fully resolved, no network.
-
-Numbers reach the renderer only through resolved dataset rows (2.4). Assets are local paths that
-the render orchestrator materialized from the ArtifactStore.
-"""
+"""RenderBundle: everything a deterministic renderer needs, fully resolved, no network."""
 
 from __future__ import annotations
 
@@ -81,10 +77,7 @@ class RenderBundle(VersionedModel):
                     refs.add(ds.dataset_id)
         if self.plan:
             for scene in self.plan.scenes:
-                # `left_value`/`right_value` are the comparison scene's two figures. They were
-                # missing from this list for as long as nothing drew a comparison; a bundle could
-                # promise a side-by-side against a dataset it did not carry, and the scene would
-                # render two em dashes rather than fail.
+                # `left_value`/`right_value` are the comparison scene's two figures.
                 for attr in ("value", "data", "left_value", "right_value"):
                     ds = getattr(scene, attr, None)
                     if ds is not None:

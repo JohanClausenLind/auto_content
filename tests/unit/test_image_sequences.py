@@ -1,7 +1,4 @@
-"""Phase-7 sequence gate: hub-and-spoke from the anchor with locks intact; injected drift caught
-and regenerated from the anchor; flipbook PDF + animated preview assertions; a single-frame
-revision rebuilds only that frame; the edit-instruction compiler emits the preserve list and
-exactly one delta."""
+"""Phase-7 sequence gate: hub-and-spoke from the anchor, drift, flipbook, single-frame revision."""
 
 from __future__ import annotations
 
@@ -73,9 +70,8 @@ def test_edit_instruction_contains_preserve_list_and_exactly_one_delta() -> None
     )
     from content_factory.sequences.instructions import EXEMPT_BY_KIND
 
-    # Everything is preserved except the two things a move is *about*. Both used to be in the
-    # list, so the instruction said "do not alter composition or subject anatomy" and then asked
-    # for the subject to be moved — and a six-view owl set came back as six copies of the anchor.
+    # Everything is preserved except the two things a move is *about*: with both in the list, a
+    # six-view owl set came back as six copies of the anchor.
     exempt = EXEMPT_BY_KIND["move_subject"]
     assert exempt == ("composition", "subject anatomy")
     for item in PRESERVE_LIST:
@@ -207,14 +203,7 @@ def test_conditioning_changes_the_marker_and_reaches_the_backend(tmp_path: Path)
 
 
 def test_the_lock_records_the_model_that_actually_drew_the_anchor(tmp_path, monkeypatch) -> None:
-    """`lock_generation` re-derived the backend from its own node, which has no `model` widget.
-
-    Measured on `image-set` (2026-09-10): the anchor's marker said `hidream-o1` and the lock it
-    was frozen into said `mock-reference-edit`. The lock's model rides in every spoke's
-    `input_hash`, so the wrong name is not only a wrong record — it keys the whole frame set on a
-    model that never touched it. The style had the same defect and was fixed the same way, off
-    the anchor's own marker; this is the other half.
-    """
+    """`lock_generation` re-derived the backend from its own node, which has no `model` widget."""
     import json
 
     from content_factory.workflows.stages import ANCHOR_BACKEND_MODELS, _anchor_recorded_backend

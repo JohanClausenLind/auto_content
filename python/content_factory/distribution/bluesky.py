@@ -1,7 +1,4 @@
-"""Bluesky adapter (AT Protocol, Tier 1). App-password session; text ≤300 graphemes; ≤4 images
-with alt text (blob ≤ ~976 KB); facets omitted in phase 9 (plain text + media). No native
-idempotency key: reconciliation lists recent posts and matches the embedded idempotency token in
-the record's own `via`-style field is unavailable, so we match on exact text + recency window."""
+"""Bluesky adapter (AT Protocol, Tier 1)."""
 
 from __future__ import annotations
 

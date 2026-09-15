@@ -1,27 +1,5 @@
 #!/usr/bin/env python
-"""Generate one shot at several seeds, score every clip the same way, and build the panel.
-
-Why a script and not a stage: choosing a seed is an *audition*, not a step in making a film. The
-pipeline's job is to produce the same film from the same inputs, and a seed is one of those inputs
-— so the place to try five of them is beside the pipeline, with a sheet a person looks at and a
-table of numbers that says which ones are worth looking at first.
-
-What it scores, all deterministic and all already in the repo:
-
-* ``qc/frame_review.py`` — tonal collapse, half-applied colour, edge intrusion, background churn.
-  These are findings about a *frame*, and they are the same checks the review stages apply.
-* ``sequences/drift.py:guide_adherence`` — did the clip actually arrive at the anchors it was
-  given. Calibrated on the first live guided run (see ``GUIDE_SIMILARITY_MIN``).
-
-No model grades another model. The ranking is arithmetic over those two, and the contact sheet is
-there because the thing the numbers cannot judge — whether the motion reads as a camera move or as
-a cross-dissolve between two anchors — is exactly what a person sees at a glance.
-
-    uv run python scripts/seed_panel.py --anchor <start.png> --seeds 7,11,13 \
-        --out output/seed-panels/wind-hook [--end-anchor <end.png>] [--prompt "..."]
-
-Needs a running ComfyUI with the LTX-2.5 weights (``comfy launch --background -- --cache-none``).
-"""
+"""Generate one shot at several seeds, score every clip the same way, and build the panel."""
 
 from __future__ import annotations
 

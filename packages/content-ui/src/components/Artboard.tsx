@@ -199,10 +199,7 @@ function ChartBlock({ layer, box, theme, background }: { layer: ChartLayer; box:
   return <PlaceholderBox layerId={layer.layer_id} kind="chart" box={box} label={`chart · ${layer.scene_ref}`} theme={theme} background={background} />;
 }
 
-/**
- * Renders an ArtboardSpec at its native size with data resolved from the bundle. Purely
- * deterministic: inline styles only, no transitions, no randomness, no network.
- */
+/** Renders an ArtboardSpec at native size from the bundle; deterministic: inline styles, no network. */
 export function Artboard({ bundle, artboard = bundle.artboard ?? undefined, assetUrl = identity, theme, style }: ArtboardProps): ReactElement {
   if (!artboard) throw new Error("Artboard: bundle has no artboard and none was supplied");
   const resolved = theme ?? resolveTheme(artboard.theme, bundle.brand);

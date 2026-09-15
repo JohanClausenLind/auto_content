@@ -1,14 +1,4 @@
-"""``content-factory workflows …`` and ``content-factory make …``.
-
-Two audiences, one shape. A person wants to browse the catalogue; an agent wants to run a whole
-production in one call and read as little as possible afterwards. So every command here defaults to
-terse, line-per-fact output with a single JSON object at the end, and nothing prints a wall of text
-unless asked.
-
-``make`` is the one command. It resolves a workflow definition, preflights what the lane needs,
-runs every stage, and prints one line per stage. That is deliberately the whole interface: the
-alternative is an agent orchestrating fifteen stages by hand and paying for the transcript.
-"""
+"""``content-factory workflows …`` and ``content-factory make …``."""
 
 from __future__ import annotations
 
@@ -31,11 +21,7 @@ def _catalog():
 
 
 def _run_report(run_dir: Path) -> Path:
-    """The run report inside a project directory, whatever the deliverable is called.
-
-    Globbed rather than assuming `dlv_short0000001`: the id comes from the campaign, and a lane
-    that produces something other than a short would have been silently given no memory at all.
-    """
+    """The run report inside a project directory, whatever the deliverable is called."""
     found = sorted(run_dir.glob("deliverables/*/run.json"))
     return found[0] if found else run_dir / "deliverables" / "none" / "run.json"
 
@@ -51,18 +37,7 @@ def _load_report(run_dir: Path) -> dict:
 
 
 def _refuse_unknown_widget(node: str, key: str, steps) -> None:
-    """A `--set` naming a widget the node does not declare is a typo, and has to say so.
-
-    The owner was already checked; the key never was. A lane definition setting a widget that does
-    not exist is rejected by `workflows/catalog.py` for exactly the reason its docstring gives —
-    "a typo'd key is silently swallowed by the stage's `_param` default and the workflow quietly
-    does something else" — and `--set` is the same door with no lock on it. Measured while adding
-    the drift knobs: `--set spokes.drift_profil=uncalibrated` was accepted, ignored, and the run
-    gated on the threshold the override was meant to lift.
-
-    Stage-scoped overrides are left alone: they apply to every node running that stage, and a
-    stage is not a node, so there is no single declaration to check against.
-    """
+    """A `--set` naming a widget the node does not declare is a typo, and has to say so."""
     from content_factory.workflows.catalog import node_catalog
 
     stage = next((s for k, s, _v in steps if k == node), None)
@@ -82,12 +57,7 @@ def _refuse_unknown_widget(node: str, key: str, steps) -> None:
 def _parse_overrides(
     set_: list[str], steps
 ) -> tuple[dict[str, dict[str, str]], dict[Stage, dict[str, str]]]:
-    """`--set node.key=value` / `--set stage.key=value`, split by which one the owner names.
-
-    Parsed before `--plan` rather than after it, so the flag that prints what will run can print
-    what will run. A malformed override now fails before the takes check instead of after it,
-    which is also the better order: it is a typo in the command line, not a missing recording.
-    """
+    """`--set node.key=value` / `--set stage.key=value`, split by which one the owner names."""
     from content_factory.schemas.dag import Stage
 
     node_params: dict[str, dict[str, str]] = {}
@@ -125,14 +95,7 @@ handed to it."""
 
 
 def _story_wants_pictures_the_lane_cannot_make(template, story: str, run_dir: Path) -> str:
-    """`""` unless the story is made of pictures this lane will never produce.
-
-    Measured 2026-09-10: five `narrated-video` runs delivered films that are five
-    "PLACEHOLDER · IMAGE / missing asset" cards end to end, with narration over them and an mp4
-    in the delivery package. The stories were `ImageScene`s and the lane draws none; the one run
-    that supplied its own still is clean. `qc_deliverable` catches it now, but only after the
-    render — this is the same fact, knowable in the first second.
-    """
+    """`""` unless the story is made of pictures this lane will never produce."""
     if not story:
         return ""
     path = Path(story)
@@ -380,12 +343,7 @@ def make(
         False, "--no-pins", help="Ignore every pin and run the whole lane"
     ),
 ) -> None:
-    """Run one workflow end to end. This is the whole interface: one call, one line per stage.
-
-    The preflight refuses a lane whose stages have no executor or whose weights are absent, because
-    finding that out fifteen minutes into a render costs more than finding it out now. ``--force``
-    runs anyway.
-    """
+    """Run one workflow end to end."""
     from content_factory.runners.local import (
         LocalRunError,
         discovered_takes,
@@ -418,10 +376,8 @@ def make(
     )
 
     if plan_only:
-        # The steps as they will actually run. `--plan` printed the lane's own values before
-        # this, so `--set`, `--story`, `--subject` and `--style` were all invisible to the one
-        # flag whose job is to say what will happen (measured 2026-09-10, while checking whether
-        # a `--set` had landed — it had, and `--plan` showed the untouched defaults).
+        # The steps as they will actually run: `--plan` once printed the lane's own defaults, so
+        # `--set`, `--story`, `--subject` and `--style` were invisible to it (journal 2026-09-10).
         from content_factory.runners.local import recorded_values, resolved_steps
 
         planned = resolved_steps(
@@ -451,10 +407,8 @@ def make(
         )
         return
 
-    # A takes-mode lane needs one recording per beat, which no `--input` count can prove and no
-    # file-input node can declare. Checked here, against the directory the run will actually read,
-    # because the alternative is what it used to do: accept the lane and fail inside `voice_over`
-    # — stage 3 of 8, or stage 10 of 20 with the drawings already paid for.
+    # A takes-mode lane needs one recording per beat, which no `--input` count or file-input node
+    # can prove; checked against the run's directory, or it fails inside `voice_over` after paying.
     if workflow_needs_takes(template.id) and not force:
         supplied = [Path(i).expanduser().name for i in inputs] + discovered_takes(run_dir)
         if not supplied:
@@ -479,13 +433,8 @@ def make(
             raise typer.Exit(code=3)
 
     needs = workflow_inputs(template.id)
-    # Material already in the run's uploads folder *is* material. The refusal used to ignore it
-    # and send the operator to `--force`, which is the wrong instrument: a `--from` resume of a
-    # lane that consumed its recording nine stages ago was told "this lane works on material you
-    # supply" about a file the earlier stages had put there themselves (measured on
-    # `audio-picture-story --from finish`, 2026-09-10). `--force` still exists for the case this
-    # cannot see — a takes directory named by the voice node — and is no longer needed for the
-    # ordinary one.
+    # Material already in the run's uploads folder is material, or a `--from` resume is refused
+    # over a file earlier stages put there (journal 2026-09-10). `--force` covers what this misses.
     staged = sorted(p for p in (run_dir / "uploads").glob("*") if p.is_file())
     if needs and not inputs and not staged and not force:
         typer.echo(
@@ -531,19 +480,11 @@ def make(
     lines: list[str] = []
 
     def terse(message: str) -> None:
-        """One line per stage, hard-truncated. An agent should not pay for a render's chatter.
-
-        Three outcomes, three labels, because they want three different responses. A human review
-        gate is a GATE: show someone the contact sheet and ask. A BLOCK is a stage that generated,
-        checked and gave up — a person has to look at what it produced. Only FAIL means fix
-        something. They are the same exception underneath, and labelling all three FAIL invites
-        reaching for --force, which is the one response a gate and a block must not get.
-        """
+        """One line per stage, hard-truncated."""
         lines.append(message)
         if message.startswith("--- "):
-            # When the run should be done, on the evidence of past runs. One line, at the top,
-            # because "is it stuck or is it slow?" is the question a long lane provokes and the
-            # only other way to answer it was watching nvidia-smi.
+            # When the run should be done, from past runs: one line at the top answers "stuck or
+            # slow?" without watching nvidia-smi.
             typer.echo(message[4:])
         elif message.startswith("    not counted, never timed:"):
             typer.echo(message.strip())

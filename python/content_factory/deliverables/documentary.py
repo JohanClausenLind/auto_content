@@ -1,10 +1,4 @@
-"""Documentary episode lane: outline planning, campaign shape, and shorts derivation.
-
-Everything here is deterministic: the same brief, duration and shorts count produce the same
-campaign, outline and excerpts. Shorts are re-edits, not crops — each excerpt is a contiguous,
-self-contained run of long-form beats that becomes its own vertical StoryPlan, so narration,
-alignment, captions and layout all regenerate per short through the normal audio/video branches.
-"""
+"""Documentary episode lane: outline planning, campaign shape, and shorts derivation."""
 
 from __future__ import annotations
 
@@ -233,13 +227,7 @@ def plan_shorts(
     max_ms: int = SHORT_MAX_MS,
     hooks: Mapping[str, str] | None = None,
 ) -> ShortsPlan:
-    """Pick one contiguous beat window per short: self-contained, 20-60 s, claim-dense first.
-
-    Windows never split a beat mid-sentence, prefer starting on a claim-bearing beat, and stay
-    disjoint while enough disjoint candidates exist. When the whole long plan is shorter than
-    ``min_ms`` the only honest excerpt is the full plan; that fallback is used for every short
-    rather than inventing content.
-    """
+    """Pick one contiguous beat window per short: self-contained, 20-60 s, claim-dense first."""
     hooks = dict(hooks or {})
     beats = sorted(long_plan.beats, key=lambda b: b.order)
     durs = [_beat_duration_ms(b) for b in beats]
@@ -311,8 +299,7 @@ def short_story_plan(
     width: int = 1080,
     height: int = 1920,
 ) -> StoryPlan:
-    """A fresh vertical plan from the excerpt's beats: narration timings reset (each short is
-    re-synthesized and re-aligned), scenes re-anchored, a rewritten hook loses claim links."""
+    """Fresh vertical plan from the excerpt's beats: timings reset, scenes re-anchored."""
     wanted = set(excerpt.source_beat_ids)
     beats = [b for b in sorted(long_plan.beats, key=lambda b: b.order) if b.beat_id in wanted]
     if {b.beat_id for b in beats} != wanted:
@@ -362,12 +349,7 @@ def aspect_dimensions(aspect: AspectRatio) -> tuple[int, int]:
 
 
 def aspect_or_portrait(value: object) -> AspectRatio:
-    """A deliverable spec's aspect when it has one, else 9:16.
-
-    Not every spec carries an aspect: an article and a newsletter have no picture. A caller that
-    works across the whole spec union therefore needs somewhere for "no aspect was asked for" to
-    land, and it should be a checked value rather than a cast that would let a typo through.
-    """
+    """A deliverable spec's aspect when it has one, else 9:16."""
     for aspect in _ASPECT_DIMS:
         if value == aspect:
             return aspect

@@ -1,27 +1,4 @@
-"""Generate the shot plan and the script for a two-hander film, from a scenario.
-
-    uv run python scripts/make_story_fixtures.py            # every scenario
-    uv run python scripts/make_story_fixtures.py love_story # just one
-
-A scenario is data: who is in it, how far apart they start and end, what the camera does, what is
-said and for how long. Everything else — the gait, the reach, the camera arc, the shot ids — is
-arithmetic, so a new film is a dozen lines here rather than a hand-authored 30-shot JSON.
-
-Why the poses are authored rather than prompted: the *only* thing that keeps a generated character
-walking the same way from drawing to drawing is a skeleton that came from somewhere real. Each shot
-poses the two MPFB rigs explicitly (bone names verified against the baked ``t_pose.json``), Blender
-renders the OpenPose skeleton and the layout boxes, and HiDream draws that exact stance. The gait is
-arithmetic, not luck.
-
-Axes, read off the baked ``t_pose.json`` rather than guessed: on the MPFB default rig an arm
-raises and lowers about the bone's **local Z** (that pose is +30 deg Z on ``upperarm01``, mirrored),
-and a limb swings forwards and backwards about **local X** (its elbow bend is -37 deg X). The rig's
-rest pose already holds the arms out from the body, so every pose here starts by bringing them down
-and composes the swing on top — quaternion multiplication, not replacement.
-
-Sign convention: if the first render walks backwards, flip ``SWING_SIGN`` — one constant, one
-re-render (the whole 30-shot control pass takes about 90 seconds), no re-prompting.
-"""
+"""Generate the shot plan and the script for a two-hander film, from a scenario."""
 
 from __future__ import annotations
 
@@ -57,13 +34,8 @@ WIDTH, HEIGHT = 1024, 576
 SWING_SIGN = 1.0
 SENSOR_MM = 36.0  # CameraSpec.sensor_width_mm default
 BODY_MARGIN_M = 1.3  # two bodies seen from above are about this wide in total
-# A person's OVERHEAD footprint, which is what a camera looking straight down actually sees — not
-# their height. Getting this wrong is the mistake that made every shot in this film wrong: the rule
-# used 1.9 m, a person's head-to-foot length, which is the dimension you see from the *side*. From
-# above, Blender's own layout boxes measure 0.56-0.72 m front-to-back (0.46-1.05 m across, wider
-# when the arms are extended). Sizing an overhead frame with a side-on constant made every camera
-# about 3.2x too high, so the figures came out a third of the size intended, and the image model
-# treated skeletons that small as scene decoration rather than as the subject.
+# A person's OVERHEAD footprint (Blender layout boxes: 0.56-0.72 m front-to-back), not their
+# height: sizing the frame with the 1.9 m side-on length put every camera about 3.2x too high.
 BODY_PLAN_M = 0.75  # 0.72 m measured at its widest, plus a little headroom
 # The floor under how small a person may be drawn, as a fraction of the frame's short side.
 MIN_BODY_FRACTION = 0.22
@@ -115,11 +87,8 @@ def bone(q: Quat) -> BoneRotation:
     return BoneRotation(rotation_quaternion=tuple(round(c, 6) for c in q))  # type: ignore[arg-type]
 
 
-# No arms-down correction: the MPFB rest pose already hangs the arms at the sides. An earlier
-# version rotated them 80 deg about local Z to "bring them down", diagnosed from a top-down clay
-# render where foreshortening made the shoulders look splayed. Seen in profile the rest pose is
-# plainly correct, and that rotation was what pushed every figure into a starfish; composing the
-# reach after it also sent the arms backwards. Rest is the baseline; only the swing is applied.
+# No arms-down correction: the MPFB rest pose already hangs the arms at the sides, and the 80 deg
+# local-Z rotation an earlier version applied is what pushed every figure into a starfish.
 
 
 def rot_x(deg: float) -> BoneRotation:
@@ -127,8 +96,7 @@ def rot_x(deg: float) -> BoneRotation:
 
 
 def _arms(swing_l_deg: float, swing_r_deg: float, elbow_deg: float) -> dict[str, BoneRotation]:
-    """Arms swung from their resting position about local X. Positive is forwards, verified in a
-    profile render: +75 deg reaches ahead of the body, -75 deg reaches behind it."""
+    """Arms swung from their resting position about local X."""
     return {
         "upperarm01.L": rot_x(swing_l_deg),
         "upperarm01.R": rot_x(swing_r_deg),
@@ -140,8 +108,7 @@ def _arms(swing_l_deg: float, swing_r_deg: float, elbow_deg: float) -> dict[str,
 def stride(
     phase: float, *, leg_deg: float = 26.0, arm_deg: float = 18.0
 ) -> dict[str, BoneRotation]:
-    """One frame of a walk: legs swing in antiphase, arms counter-swing, the recovery knee bends.
-    ``phase`` is the position in the gait cycle in [0, 1)."""
+    """One frame of a walk: legs swing in antiphase, arms counter-swing, the recovery knee bends."""
     s = SWING_SIGN * math.sin(2 * math.pi * phase)
     return {
         "upperleg01.L": rot_x(leg_deg * s),
@@ -153,14 +120,12 @@ def stride(
 
 
 def standing() -> dict[str, BoneRotation]:
-    """The rest pose is a person standing with their arms down; only a slight elbow break is
-    needed to stop it reading as a mannequin."""
+    """Rest pose with a slight elbow break, so it does not read as a mannequin."""
     return _arms(0.0, 0.0, -8.0)
 
 
 def reaching(amount: float) -> dict[str, BoneRotation]:
-    """Both arms lifting towards the other person; ``amount`` in [0, 1] is how far the reach has
-    travelled — 1.0 is hands meeting at chest height."""
+    """Both arms lifting towards the other person; ``amount`` in [0, 1], 1.0 is hands meeting."""
     lift = 75.0 * amount
     return {
         # Elbows stay slightly broken through the reach so the arms do not read as poles.
@@ -173,13 +138,7 @@ def lerp(a: float, b: float, t: float) -> float:
 
 
 def orbit_camera(index: int, count: int, subject_z: float = 0.95) -> tuple[Vec3, Vec3, float]:
-    """(position, look_at, lens) for shot ``index`` of an orbiting camera.
-
-    Azimuth sweeps most of a circle so consecutive shots are genuinely different angles; elevation,
-    distance and lens each move on their own cycle so the sweep does not read as one mechanical
-    dolly. The look-at stays on the subject's chest, which is what keeps thirty different cameras
-    reading as thirty views of one thing rather than thirty unrelated pictures.
-    """
+    """(position, look_at, lens) for shot ``index`` of an orbiting camera."""
     t = index / max(1, count - 1)
     azimuth = math.radians(-150.0 + 300.0 * t)
     elevation = math.radians(6.0 + 26.0 * (0.5 - 0.5 * math.cos(2 * math.pi * t * 1.5)))
@@ -195,14 +154,7 @@ def orbit_camera(index: int, count: int, subject_z: float = 0.95) -> tuple[Vec3,
 
 
 def camera_height(gap: float, fill: float, lens_mm: float) -> float:
-    """How high a straight-down camera must sit to hold both people at ``fill`` of the frame.
-
-    A camera at height h with focal length f sees a strip ``SENSOR_MM * h / f`` metres wide. Two
-    constraints, and the looser one wins: the pair plus a body's width has to fit across the frame,
-    and a body seen end-on from above is nearly two metres long, so it has to fit *down* the frame
-    too — the check that a width-only rule misses, which is how a close shot ends up beheading both
-    of them.
-    """
+    """How high a straight-down camera must sit to hold both people at ``fill`` of the frame."""
     fill = max(0.05, fill)
     across = (gap + BODY_MARGIN_M) / fill
     down = (BODY_PLAN_M / fill) * (WIDTH / HEIGHT)
@@ -225,9 +177,8 @@ class Act:
     shots: int
     gap_from: float  # metres between the two people at the first shot of the act
     gap_to: float
-    # How much of the frame width the pair should span. The camera height follows from this and
-    # the gap, so a shot cannot accidentally push its subjects off the edge: 0.5 leaves the plaza
-    # around them, 0.85 is close enough that the hands are the subject.
+    # Fraction of the frame width the pair spans; camera height follows from it and the gap.
+    # 0.5 leaves the plaza around them, 0.85 makes the hands the subject.
     fill: float
     description: str
     motion: str
@@ -236,10 +187,8 @@ class Act:
 @dataclass(frozen=True)
 class Scenario:
     slug: str
-    # One sentence naming the world. It leads the anchor prompt, ahead of the per-shot staging.
-    # Without it the anchor stage falls back to the *campaign's* brief topic, which for a local
-    # run is the fixture campaign — every drawing of this film was being asked for over the top of
-    # "How much of Sweden's electricity came from wind in 2025?".
+    # One sentence naming the world, leading the anchor prompt. Without it the anchor stage falls
+    # back to the campaign's brief topic, which for a local run is the wind-power fixture.
     subject: str
     # Short code used in ids. It ends up in the take filenames the person recording sees, so
     # "love_04.wav" beats "bea_love_svoice04.wav".
@@ -259,9 +208,8 @@ class Scenario:
     alt_text: str = "Overhead: two people and the distance between them."
     seed_base: int = 1000
     reach_program: str = "together"  # together | apart
-    # topdown: the overhead formula the two-handers use. orbit: a camera that moves around the
-    # subject, changing azimuth, elevation, distance and lens every shot. Thirty near-identical
-    # cameras score nothing on variety, and a running figure has no reason to be seen from above.
+    # topdown: the two-handers' overhead formula. orbit: azimuth, elevation, distance and lens
+    # change every shot, because thirty near-identical cameras score nothing on variety.
     camera_program: str = "topdown"
     extra: dict[str, str] = field(default_factory=dict)
 
@@ -271,9 +219,7 @@ class Scenario:
 
 
 def _reel(base: Scenario, shots_per_act: tuple[int, ...]) -> Scenario:
-    """A short cut of a film for comparing art directions: the same acts, the same staging
-    arithmetic, fewer shots each. Eight drawings still tell approach → stop → hands, and at ~5.5
-    minutes a drawing that is 45 minutes per style instead of nearly three hours."""
+    """A short cut of a film for comparing art directions: the same acts, fewer shots each."""
     from dataclasses import replace
 
     acts = tuple(replace(act, shots=n) for act, n in zip(base.acts, shots_per_act, strict=True))
@@ -489,13 +435,7 @@ SCENARIOS: tuple[Scenario, ...] = (
 
 
 def run_cycle_scenario() -> Scenario:
-    """One person running, thirty shots, a different camera on each.
-
-    Deliberately not overhead: the earlier films fought the fact that OpenPose skeletons are
-    read as front-on, and a running figure has no reason to be seen from above. The cameras orbit,
-    track and change height instead, which is also the only way to score anything on camera
-    variety — thirty near-identical cameras is a slideshow with extra steps.
-    """
+    """One person running, thirty shots, a different camera on each."""
     from dataclasses import replace
 
     base = SCENARIOS[0]
@@ -504,12 +444,8 @@ def run_cycle_scenario() -> Scenario:
         slug="runner",
         code="run",
         subject=(
-            # An overcast track, not the dusk wet cobbles this started as. Measured on one staged
-            # shot: the dusk brief came back with 37 % of its pixels crushed under luma 12 against
-            # the frame review's 35 % threshold and 26 % midtones against its 30 %, because a dark
-            # street lit by practical lamps is a genuinely high-contrast subject and the model
-            # grades it harder. The same style on a flat overcast track lands at 18 % crushed and
-            # 46 % midtones. The brief was the tone problem, not the pipeline.
+            # An overcast track, not dusk cobbles: the dusk brief came back 37 % crushed against
+            # the frame review's 35 % threshold; the same style on an overcast track lands at 18 %.
             "A lone runner on an empty concrete running track under a flat overcast morning sky, "
             "seen from a moving camera."
         ),
@@ -654,10 +590,8 @@ def build_shots(scenario: Scenario) -> ShotPlan:
                     ),
                 ),
                 characters=(
-                    # Facing, verified in a profile render: yaw -90 faces -X, yaw +90 faces +X.
-                    # The one standing on the -X side must therefore be yawed +90 to look at the
-                    # other. These signs were swapped, so the pair stood back to back in every
-                    # frame of every film and the reach extended away from the person it was for.
+                    # Facing, verified in a profile render: yaw -90 faces -X, yaw +90 faces +X, so
+                    # the one on the -X side is yawed +90. Swapped signs put the pair back to back.
                     CharacterSpec(
                         id=id_a,
                         asset=asset_a,
@@ -693,9 +627,7 @@ def build_shots(scenario: Scenario) -> ShotPlan:
 
 
 def build_story(scenario: Scenario) -> StoryPlan:
-    """The narration track. The beat id is the take's filename, so whoever records reads from this
-    list and saves ``<beat_id>.wav``. Planned durations hold the timeline until real takes are
-    aligned, after which the measured words drive it."""
+    """The narration track."""
     beats = tuple(
         VisualBeat(
             beat_id=f"bea_{scenario.code}_take{i:02d}",

@@ -1,15 +1,4 @@
-"""Energy integration and allocation.
-
-Two measurement paths: a reliable cumulative counter is integrated by differences (counter
-resets detected and handled — a decrease means the meter restarted, and only post-reset energy
-is counted for that segment); power-only sampling is integrated by trapezoid over elapsed time,
-and any sampling hole longer than ``max_gap_s`` becomes a recorded gap with NO energy counted —
-missing data stays visible instead of becoming invented watt-hours.
-
-Attribution follows a documented policy: within each interval between job boundaries, measured
-energy is split evenly among the jobs active in that interval; intervals with no active job go
-to the explicit ``idle`` bucket. Shares always sum to the measured total.
-"""
+"""Energy integration and allocation."""
 
 from __future__ import annotations
 
@@ -93,6 +82,5 @@ def attribute_energy(
 
 
 def energy_cost(kwh: float, tariff: Tariff) -> float:
-    """kWh times the all-in price. Cloud rentals already include power — never charge a
-    second time; any cloud energy estimate is a separate physical metric, not a cost."""
+    """kWh times the all-in price."""
     return round(kwh * tariff.price_per_kwh, 6)

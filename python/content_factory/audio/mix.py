@@ -1,13 +1,4 @@
-"""Narration layout, mastering, and muxing via a typed FFmpeg wrapper (argument arrays only).
-
-Layout: lead-in → segment 1 → pause → segment 2 … → tail. Produces the narration stem (WAV),
-the per-beat measured offsets (ms) that drive the timeline compiler, a mastered stem at the house
-target (true-peak limiter into two-pass EBU R128 loudnorm, -14 LUFS / -1 dBTP by default), and the
-muxed delivery MP4.
-
-The per-beat voice chain that runs before any of this - detection, cleanup, band extension,
-restoration, de-esser, EQ, compression - is content_factory.audio.restore.
-"""
+"""Narration layout, mastering, and muxing via a typed FFmpeg wrapper (argument arrays only)."""
 
 from __future__ import annotations
 
@@ -138,18 +129,7 @@ def add_music_bed(
     sample_rate_hz: int = 48000,
     duck_against: Path | None = None,
 ) -> None:
-    """Mix a music bed under the narration stem: the bed loops to the stem's length, sits at
-    ``gain_db`` below full scale, ducks slightly under speech via sidechain compression, and
-    fades out over the final second. The combined stem then goes through the same two-pass
-    loudnorm master as a narration-only mix.
-
-    ``duck_against`` is the sidechain *key* when the thing being mixed into is no longer just
-    speech. Beds are added one after another, so by the time the effects bed arrives the first
-    input already contains the music — and keying off that made the effects duck under the music
-    as well as under the voice, which at a -18 dB bed is loud enough to hold them ducked for the
-    whole film. Pointing the key at the narration stem makes "duck under speech" mean what it
-    says. Left unset the key is the mix itself, which is right for the first bed.
-    """
+    """Loop a bed under the stem, ducked against ``duck_against``."""
     key = duck_against or narration_wav
     inputs = ["-i", str(narration_wav), "-stream_loop", "-1", "-i", str(music)]
     # The key is a third input only when it is a different file, so the common case stays a
@@ -190,15 +170,7 @@ def place_sfx(
     *,
     sample_rate_hz: int = 48000,
 ) -> dict[str, object]:
-    """Render a cue sheet to one mono wav the length of the mix. One ffmpeg call, no models.
-
-    Each cue becomes an input, trimmed or looped to its own length, gain-trimmed, faded, delayed to
-    its own start, and summed. `amix` with `normalize=0` because the levels were decided by the
-    cue sheet and the library's own loudness pass — letting ffmpeg renormalise would make every
-    cue's level depend on how many other cues happen to be in the film.
-
-    Returns facts for the run record: what was placed, and where.
-    """
+    """Render a cue sheet to one mono wav the length of the mix."""
     pairs = resolve(sheet, library)
     if not pairs:
         # A silent bed of the right length, so callers need no special case: the mix folds in a
@@ -324,15 +296,7 @@ DEFAULT_MASTER_CHAIN = MasterChainSpec()
 
 
 def limit_true_peak(in_wav: Path, out_wav: Path, spec: MasterChainSpec) -> None:
-    """Look-ahead peak limiter at ``spec.limiter_ceiling_dbtp``, before normalization.
-
-    This is the step that catches the isolated transients — a plosive, an SFX hit landing on a
-    consonant — that would otherwise force loudnorm's own true-peak stage to pull the whole
-    programme's gain down to fit them. The ceiling deliberately sits below the delivery ceiling:
-    normalization still has to add or remove gain after this, and a limiter parked exactly at the
-    delivery ceiling leaves that move nowhere to go. ``level=disabled`` keeps FFmpeg from
-    auto-levelling, which would fight the R128 pass that follows.
-    """
+    """Look-ahead peak limiter at ``spec.limiter_ceiling_dbtp``, before normalization."""
     ceiling = 10 ** (spec.limiter_ceiling_dbtp / 20)
     ffmpeg(
         [
@@ -359,12 +323,7 @@ def master(
     out_wav: Path,
     spec: MasterChainSpec = DEFAULT_MASTER_CHAIN,
 ) -> LoudnessReport:
-    """The programme master: true-peak limiter -> two-pass EBU R128 normalization -> WAV.
-
-    Two passes because one is a guess: the first measures the programme, the second applies the
-    measured correction linearly, which is what keeps the dynamics intact instead of riding gain.
-    The result is measured again and returned; the caller decides whether it is close enough.
-    """
+    """The programme master: true-peak limiter -> two-pass EBU R128 normalization -> WAV."""
     source = in_wav
     limited: Path | None = None
     if spec.limiter:
@@ -372,9 +331,8 @@ def master(
         limit_true_peak(in_wav, limited, spec)
         source = limited
     target_lufs = spec.target_lufs
-    # What the master aims at, which is below the delivery ceiling: the AAC encode raises the
-    # true peak (see `MasterChainSpec.encode_headroom_db`). The *report* is still measured
-    # against the delivery ceiling, so `passed` keeps meaning "the file that ships is legal".
+    # Aim below the delivery ceiling because the AAC encode raises the true peak
+    # (`MasterChainSpec.encode_headroom_db`); the report still measures against the ceiling.
     target_tp = spec.master_true_peak_dbtp
     lra = spec.loudness_range_lu
     first = subprocess.run(
@@ -429,20 +387,7 @@ TRUE_PEAK_TRIM_MARGIN_DB = 0.05
 def _trim_to_ceiling(
     out_wav: Path, report: LoudnessReport, *, target_lufs: float, target_tp: float
 ) -> LoudnessReport:
-    """Pull the master back under the true-peak ceiling if the linear pass pushed it over.
-
-    `loudnorm` in `linear=true` mode applies one measured gain and does **not** limit: its `TP`
-    argument only informs the gain it picks, and its true-peak estimate is a prediction. When the
-    prediction is low the delivered file is over the ceiling and nothing catches it — measured on
-    `audio-picture-story` (2026-09-10): the master landed on -14.2 LUFS, right on target, with a
-    true peak of **-0.8 dBTP** against a -1.0 ceiling, and the stage refused the run at stage
-    nine of twenty rather than deliver it.
-
-    The correction is a second linear gain of exactly the overshoot, which moves the true peak by
-    the same number of dB and the programme loudness by the same number too — a fifth of a decibel
-    on the measured case, well inside the 1 LU tolerance. Linear, because the alternative is to
-    compress, and this chain deliberately does not.
-    """
+    """Pull the master back under the true-peak ceiling if the linear pass pushed it over."""
     over = report.true_peak_dbtp - target_tp
     if over <= 0:
         return report
@@ -481,21 +426,7 @@ def _media_ms(path: Path) -> int:
 
 
 def mux(video: Path, audio_wav: Path, out_mp4: Path, *, min_video_ms: int | None = None) -> None:
-    """One delivery encode: the video stream copied, the stem as AAC, fast start.
-
-    ``min_video_ms`` is how long the picture has to last for the film to carry everything that is
-    said — the end of the last spoken word, as the mix laid it out. Given it, the **last frame is
-    held** until then instead of ``-shortest`` cutting the words off.
-
-    That flag alone was fine for as long as every lane's picture came from the timeline compiler,
-    which sizes itself to the speech: what it cut was the stem's ``tail_ms`` of silence. A lane
-    whose picture is its own length — drawings held for the spans of speech they illustrate —
-    loses *sentences* to it instead, which is what a live run of ``audio-picture-story`` measured
-    as "audio shorter than the narration it should carry" from the composer's own QC.
-
-    Without ``min_video_ms`` nothing changes: the copy-and-truncate path is taken exactly as
-    before, which is what keeps the timeline lanes' frame counts identical to the frame.
-    """
+    """One delivery encode: the video stream copied, the stem as AAC, fast start."""
     pad_ms = (min_video_ms - _media_ms(video)) if min_video_ms is not None else 0
     if pad_ms <= MUX_PAD_TOLERANCE_MS:
         ffmpeg(
@@ -533,9 +464,8 @@ def mux(video: Path, audio_wav: Path, out_mp4: Path, *, min_video_ms: int | None
             "0:v:0",
             "-map",
             "1:a:0",
-            # tpad clones the last decoded frame, so the film holds on its final picture instead
-            # of cutting to black — and the colour tags are re-declared because the re-encode
-            # would otherwise write an untagged stream for players to guess at.
+            # tpad holds the final picture instead of cutting to black; the colour tags are
+            # re-declared or the re-encode writes an untagged stream for players to guess at.
             "-vf",
             f"tpad=stop_mode=clone:stop_duration={pad_ms / 1000:.3f}",
             # Whatever is left of the audio after the last word is still trimmed: the picture is

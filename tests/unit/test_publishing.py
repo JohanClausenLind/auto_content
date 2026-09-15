@@ -1,6 +1,4 @@
-"""Adapter contract + idempotency tests with adversarial mocks (phase 9 gate, offline):
-exactly-once under chaos retries, ambiguous responses become reconciliation not blind retries,
-kill switch halts everything, mention safety, capability validation."""
+"""Adapter contract + idempotency tests with adversarial mocks (phase 9 gate, offline)."""
 
 from __future__ import annotations
 

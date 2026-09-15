@@ -1,9 +1,4 @@
-"""The build driver, exercised through a hand-made ingester rather than a real one.
-
-The ingest package is synthesised into ``sys.modules`` with its ``__path__`` pointing at a
-temporary directory, so discovery, import and the uniform call shape are all the real code paths
-while nothing here depends on which of the seven real ingesters has been written yet.
-"""
+"""The build driver, exercised through a hand-made ingester rather than a real one."""
 
 from __future__ import annotations
 

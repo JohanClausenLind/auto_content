@@ -2,7 +2,7 @@
   "$defs": {
     "SoundCue": {
       "additionalProperties": false,
-      "description": "One sound from the curated library, at one place, for one stated reason.\n\n``assets/sfx`` has held 49 curated, loudness-measured, provenance-tracked sounds since\n2026-09-07 and **nothing placed any of them**: the only non-speech audio a film could get was\na generated MMAudio bed, so a chart drawing itself on screen was silent and a hard cut between\ntwo cards had nothing on it. This is the contract that says where a sound goes.\n\n``reason`` is required and is not decoration. A cue sheet is the one part of the mix a person\nreads rather than hears, and \"chart_reveal at 12.4 s because scn_chart000001 is a chart\" is\nreviewable where a bare id and a timestamp are not.",
+      "description": "One sound from the curated library, at one place, for one stated reason.",
       "properties": {
         "at_ms": {
           "minimum": 0,
@@ -104,7 +104,7 @@
   "$id": "https://content-factory.local/schema/CueSheet.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Every library sound in one deliverable's mix, in time order.\n\nTied to the library it was cut against by ``library_sha256``: a cue names a sound by id, and an\nid that resolves to different bytes than the sheet was reviewed with is a different mix. The\nrenderer refuses a sheet whose library has moved rather than quietly using the new sound.",
+  "description": "Every library sound in one deliverable's mix, in time order.",
   "properties": {
     "cues": {
       "default": [],

@@ -1,20 +1,9 @@
-/**
- * The workspace node catalogue: one node type per pipeline stage, plus the campaign brief as the
- * source node and a free-text note.
- *
- * `Record<Stage, …>` is deliberate — when a stage is added to the Pydantic contract and
- * regenerated, this file fails to typecheck until the stage has a node definition, so the
- * canvas can never silently lag the pipeline.
- */
+/** The workspace node catalogue, one node type per stage. */
 
 import type { Stage } from "@content-factory/content-schema-ts";
 import { createCatalog, type NodeDefinition } from "@content-factory/node-graph";
 
-/**
- * LTX-2.5 generation sizes (multiples of 32, both portrait and landscape). 512x896 is the size
- * the proven showcase lane renders at on the 24 GB card; larger sizes lean on offload and the
- * x2 latent spatial upscaler.
- */
+/** LTX-2.5 generation sizes (multiples of 32). */
 const LTX_SIZES = [
   "512x896",
   "576x1024",
@@ -24,18 +13,7 @@ const LTX_SIZES = [
   "1344x768",
 ] as const;
 
-/**
- * Every destination this repo has a real publishing backend for, in the order the pills read.
- *
- * Taken from the backends themselves (`python/content_factory/distribution/`), not from a guess:
- * bluesky, mastodon and discord post, wordpress, ghost and listmonk create drafts. `export` is
- * the seventh and is not a platform — it writes the package into the run's own deliverable folder
- * and sends nothing, which is what "publish" means during development and what an operator who
- * wants to post by hand actually needs.
- *
- * The old list said "discord-webhook", which no backend answers to: `DiscordBackend.platform` is
- * "discord".
- */
+/** Every destination with a real backend (`python/content_factory/distribution/`). */
 const PUBLISH_DESTINATIONS = [
   "export",
   "bluesky",
@@ -205,9 +183,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     summary: "Splits the story into an ordered card sequence",
     inputs: [{ name: "story", type: "STORY" }],
     outputs: [{ name: "artboards", type: "ARTBOARD" }],
-    // The card count is the carousel deliverable's own `card_count`, decided when the campaign
-    // was compiled and used by write_copy to draft that many texts. A node widget that disagreed
-    // with it could only be ignored, which is what it was.
+    // The card count is the carousel deliverable's own `card_count`, fixed at compile time and read
+    // by write_copy; a widget that disagreed with it could only be ignored.
     widgets: [],
   },
   render_cards: {
@@ -440,10 +417,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     executor: "ai",
     inputs: [
       {
-        // Optional in truth: the stage draws from the shot's staging when there are controls, and
-        // from its own prompt (or the brief's topic) when there are not. A lane that animates one
-        // supplied still has no script at all, and marking this required made that lane's graph
-        // permanently invalid over an input its stage never reads.
+        // Optional in truth: the stage draws from the shot's staging or its own prompt, and a lane
+        // that animates one supplied still has no script at all.
         name: "story",
         type: "STORY",
         optional: true,
@@ -457,9 +432,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         hint: "source: upload — connect an Image File to start from a picture you already have",
       },
       {
-        // The stage really reads it: with an empty prompt widget the campaign brief's topic is
-        // the subject the picture is drawn from. Declared so a lane whose only source of subject
-        // is the brief can say so on the canvas instead of leaving the brief feeding nothing.
+        // The stage really reads it: with an empty prompt widget the brief's topic is the subject,
+        // so a lane whose only subject is the brief can say so on the canvas.
         name: "brief",
         type: "BRIEF",
         optional: true,
@@ -469,10 +443,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     outputs: [{ name: "anchor", type: "IMAGE" }],
     widgets: [
       {
-        // `upload` is what makes "start from a picture I already have" expressible. It skips the
-        // model entirely: the still in the run's uploads folder becomes anchors/anchor.png and
-        // the manifest a generated anchor would have written, so Generate Video moves the
-        // operator's photograph without knowing it was not drawn here.
+        // `upload` skips the model: the still in the run's uploads folder becomes anchors/anchor.png
+        // plus the manifest a generated anchor would have written.
         name: "source",
         kind: "combo",
         default: "generate",
@@ -532,25 +504,14 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       { name: "controls", type: "CONTROLS" },
     ],
     outputs: [{ name: "frames", type: "SEQUENCE" }],
-    // No `frames` or `seed` widget on purpose: the frame count comes from the control plan and
-    // the seed from the generation lock, so either would look bound and do nothing -- the stage
-    // never reads them. If the length should become settable, the plan has to be resampled first
-    // and the widget can come back with the behaviour.
+    // No `frames` or `seed` widget on purpose: the frame count comes from the control plan and the
+    // seed from the generation lock, so the stage never reads them.
     widgets: [
-      // `model` is different: the stage really does resolve its backend from this node's own
-      // widget (`_reference_backends` -> `_anchor_backend_name(ctx)`), and without it declared a
-      // lane could not say which model draws its spokes. `photo-sequence-video` pinned
-      // hidream-o1 on the anchor node and got a real anchor with **mock spokes**, because the
-      // pin could not be written here (measured 2026-09-10).
+      // `model` is read by the stage (`_anchor_backend_name(ctx)`); undeclared, a lane could not pin
+      // it and `photo-sequence-video` got a real anchor with mock spokes (journal 2026-09-10).
       { name: "model", kind: "combo", default: "hidream-o1", options: ["hidream-o1", "flux2-dev", "mock"] },
-      // The drift gate's three knobs. The stage has always read them (`stage_generate_keyframes`
-      // -> `_param(ctx, "drift_profile" | "locked_min" | "style_delta_max")`) and its own comment
-      // tells the operator to reach for `--set spokes.drift_profile=uncalibrated`, but they were
-      // declared nowhere: settable from the command line, invisible on the canvas, and rejected
-      // by `catalog.py` if a lane tried to freeze one. An `image-set` resumed to redraw a single
-      // frame lost that `--set`, met the mock-calibrated 0.92 that no real frame reaches, and was
-      // BLOCKED after three attempts at a measured 0.8491 (2026-09-10). Declaring them is what
-      // lets a lane carry the calibration instead of the operator remembering it every time.
+      // The drift gate's three knobs, read by `stage_generate_keyframes` via `_param(ctx, …)`; declared
+      // so a lane carries the calibration instead of a `--set` that a resume loses (journal 2026-09-10).
       {
         name: "drift_profile",
         kind: "combo",
@@ -647,10 +608,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         hint: "the frames, the clip or the stills to enlarge — an Image File works, so does a clip",
       },
     ],
-    // SEQUENCE,IMAGE like Review Frames, and for the same reason: what comes out is a directory
-    // of PNGs, and the first of them is a still that Generate Video can hold or animate from.
-    // Declaring SEQUENCE alone made "enlarge the drawings, then hold them" a graph the canvas
-    // refused to draw while the runner did it anyway.
+    // SEQUENCE,IMAGE like Review Frames: the output is a directory of PNGs whose first frame is a
+    // still Generate Video can hold or animate from.
     outputs: [{ name: "frames", type: "SEQUENCE,IMAGE" }],
     widgets: [
       { name: "resolution", kind: "combo", default: "1080", options: ["720", "1080", "1440", "2160"] },
@@ -663,9 +622,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     summary: "Contact sheet, MP4 preview or print flipbook PDF",
     inputs: [{ name: "frames", type: "SEQUENCE" }],
     outputs: [{ name: "package", type: "PACKAGE" }],
-    // Contact sheet, mp4 preview and flipbook PDF are all written every time: they are what the
-    // frame-review gate shows a person, they cost seconds, and different reviewers want different
-    // ones. A single-choice widget could only take two of them away.
+    // Contact sheet, mp4 preview and flipbook PDF are all written every time: they cost seconds and
+    // different reviewers want different ones.
     widgets: [],
   },
   // --- audio ------------------------------------------------------------------------------
@@ -769,8 +727,22 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         options: ["faster_whisper", "even_split", "whisperx"],
       },
       { name: "speed", kind: "float", default: 1.0, min: 0.5, max: 1.5, step: 0.05, precision: 2 },
+      {
+        name: "describe",
+        kind: "text",
+        default: "",
+        // VoiceDesign weights: the sentence IS the voice, so `speaker` no longer applies.
+        placeholder: "a low, unhurried woman in her sixties, slight rasp",
+      },
+      {
+        name: "continuous_take",
+        kind: "toggle",
+        default: true,
+        // Speak the whole script as one utterance and cut it at the pauses: beat-at-a-time synthesis
+        // reads as announcements (169 Hz +/- 35 onset, 6.1 dB spread vs +/- 15 Hz, 0.6 dB; journal 2026-09-13).
+      },
     ],
-    keywords: ["tts", "voice", "narration", "qwen", "kokoro", "timbre", "alignment"],
+    keywords: ["tts", "voice", "narration", "qwen", "kokoro", "timbre", "alignment", "prosody"],
   },
   voice_over: {
     title: "Voice Over (recorded)",
@@ -834,10 +806,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         options: ["off", "clearervoice_sr"],
       },
       { name: "enhancer", kind: "combo", default: "off", options: ["off", "resemble_enhance"] },
-      // Read only inside `if spec.enhancer == "resemble_enhance"` (audio/restore.py:317), so with
-      // the enhancer off these two are two controls that do nothing and read as if they might.
-      // `device` stays visible: it applies to whichever of the three neural steps is on, and
-      // "show when any of three is not off" is a disjunction this model deliberately cannot say.
+      // Read only inside `if spec.enhancer == "resemble_enhance"` (audio/restore.py), so hidden when
+      // the enhancer is off; `device` stays visible because it applies to whichever neural step is on.
       {
         name: "enhancer_mode",
         kind: "combo",
@@ -915,9 +885,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     summary: "SRT/WebVTT from measured word timings",
     inputs: [{ name: "timings", type: "DATASET" }],
     outputs: [{ name: "captions", type: "CAPTIONS" }],
-    // SRT, WebVTT and the styled ASS burn-in track are all written every time: the sidecars cost
-    // nothing, each destination package picks the one it wants, and compose_video needs the SRT to
-    // burn from. Choosing one would only break the others.
+    // SRT, WebVTT and the styled ASS burn-in track are all written every time: each destination
+    // package picks its own and compose_video needs the SRT to burn from.
     widgets: [],
   },
   select_music: {
@@ -1015,19 +984,12 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       // hold needs no model at all: the drawings are cut together, each held for its shot's
       // length, and every frame on screen is one you approved. The jump between them is the look.
       { name: "motion", kind: "combo", default: "ltx", options: ["ltx", "hold"] },
-      // Which generator animates, the way `generate_anchor.model` says which one draws. Without
-      // it a lane could name its LTX weight files -- this node has three widgets for exactly
-      // that -- and still run the deterministic ffmpeg stand-in, because `video.backend`
-      // defaults to `mock` and only an environment variable could say otherwise. Measured
-      // 2026-09-10: five video lanes had never run against anything but the mock. The default
-      // stays `mock` so an unpinned lane and an offline test are unchanged; a lane that means
-      // LTX now says so where the weights it names are.
+      // Which generator animates; `video.backend` defaults to `mock`, and before this widget five video
+      // lanes had only ever run against the mock (journal 2026-09-10). Default stays `mock` for offline tests.
       { name: "model", kind: "combo", default: "mock", options: ["mock", "ltx-2.5.i2v", "wan-animate-2.pose"] },
       {
-        // Read by the stage and, until now, settable only through `make --subject`, so a canvas
-        // Run of a lane with no shot plan died at "generate_video has no subject" with no widget
-        // anywhere to answer it. A lane WITH shots never reads this: the shot's own compiled
-        // cinematography is the prompt.
+        // Read by the stage when there is no shot plan (otherwise "generate_video has no subject");
+        // a lane WITH shots never reads this, since the shot's compiled cinematography is the prompt.
         name: "subject",
         kind: "text",
         default: "",
@@ -1042,9 +1004,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         kind: "combo",
         default: "ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf",
         options: ["ltx-2.5-22b-distilled-transformer-Q5_K_M.gguf"],
-        // The three weight names are read on the LTX branch only (stages.py:5433-5443, after
-        // `wan-animate-2.pose` has already returned), so on mock and on the pose model they are
-        // three GGUF filenames that change nothing.
+        // The three weight names are read on the LTX branch only (stages.py, after `wan-animate-2.pose`
+        // has returned), so on mock and on the pose model they change nothing.
         displayOptions: { show: { model: ["ltx-2.5.i2v"] } },
       },
       {
@@ -1061,9 +1022,8 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         options: ["ltx-2.5-video-vae-conv-bf16.safetensors"],
         displayOptions: { show: { model: ["ltx-2.5.i2v"] } },
       },
-      // `audio_vae` was here and there is no audio branch in the i2v graph to load it into:
-      // shots are generated silent and the sound is designed against the cut (sound_design ->
-      // mix_audio). It would have been a weight name nothing loaded.
+      // No `audio_vae`: the i2v graph has no audio branch to load it into; shots are generated
+      // silent and the sound is designed against the cut (sound_design -> mix_audio).
     ],
     keywords: ["ltx", "ltx-2.5", "gguf", "i2v", "comfyui", "video generation"],
     width: 320,
@@ -1089,15 +1049,12 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
       },
       { name: "routing", type: "SHOTS", optional: true },
     ],
-    // A picture is a frame sequence or a clip, and neither slot alone is required. Marking
-    // `frames` required was a lie two lanes had to apologise for in their caveats: a lane that
-    // makes one clip has no sequence to give it, and the composer takes the picture off disk
-    // either way.
+    // A picture is a frame sequence or a clip, and neither slot alone is required: a lane that makes
+    // one clip has no sequence to give, and the composer takes the picture off disk either way.
     requires_one_of: [["frames", "clips"]],
     outputs: [{ name: "video", type: "VIDEO" }],
-    // Delivery is H.264 in MP4 throughout: the artifact store, the ffprobe QC, the caption burn
-    // and every destination package assume it. VP9 and ProRes are a delivery-format decision (a
-    // different container, different QC limits, different packages), not a knob on one node.
+    // Delivery is H.264 in MP4 throughout (artifact store, ffprobe QC, caption burn, every package);
+    // VP9 and ProRes are a delivery-format decision, not a knob on one node.
     widgets: [],
   },
   // --- delivery ---------------------------------------------------------------------------
@@ -1171,8 +1128,7 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
     title: "Package QC",
     category: "delivery",
     // Do not describe this as checking platform limits: its executor writes {"passed": true} and
-    // checks nothing. Saying otherwise in the panel would be the exact dishonesty the QC nodes
-    // exist to prevent.
+    // checks nothing.
     summary: "Placeholder: writes a passing report without checking anything yet",
     help:
       "Not implemented. The stage exists and runs, but it writes qc/package.json with" +
@@ -1195,19 +1151,11 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
 };
 
 
-/**
- * Non-stage nodes: the campaign brief feeds the graph, notes are text on the canvas, and the
- * comfy.* / publish.* nodes stand for the local ComfyUI generation path and the Tier-1
- * distribution path. Model filename options are the allowlisted local files the inventory
- * endpoint (`/v1/comfy/models`) verifies.
- */
+/** Non-stage nodes: the campaign brief, notes, and the comfy.* / publish.* nodes. */
 const EXTRA_DEFS: readonly NodeDefinition[] = [
   {
-    // One post, every place it goes. This used to be a single-destination combo, which meant
-    // posting to three platforms was three Publish nodes wired to the same packages — a graph
-    // that says "three publishes" where the operator meant "this one thing, in three places",
-    // and three separate places to forget the approval toggle. The destinations are a set now,
-    // shown as a field of pills rather than a row each.
+    // One post, every place it goes: destinations are a set shown as pills, so "this one thing, in
+    // three places" is one node with one approval toggle rather than three Publish nodes.
     type: "publish.social",
     title: "Publish",
     category: "delivery",
@@ -1235,9 +1183,8 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
         name: "destinations",
         kind: "chips",
         label: "where it goes",
-        // `export` writes the package into the run's own folder and sends nothing, which is the
-        // only default a node that reaches other people may have. Lighting up a platform is a
-        // deliberate click, and it still cannot post without an approved distribution profile.
+        // `export` writes the package into the run's own folder and sends nothing, the only default a
+        // node that reaches other people may have; a platform still needs an approved distribution profile.
         default: "export",
         options: PUBLISH_DESTINATIONS,
         required: true,
@@ -1285,9 +1232,8 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
     width: 300,
   },
   {
-    // Litegraph-shaped terminal, the counterpart to the brief. Every lane used to end on an
-    // output nothing consumed — the canvas called it an unused output and the operator had no
-    // way to see where the files went. This node is that answer, on the canvas.
+    // Litegraph-shaped terminal, the counterpart to the brief: where the files went, on the canvas,
+    // instead of every lane ending on an output nothing consumed.
     type: "output.deliverables",
     title: "Deliverables",
     category: "delivery",
@@ -1306,9 +1252,8 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
         hint: "the finished thing: the cut, the master, the card set, the captions",
       },
       {
-        // Verdicts ship with what they judged. Split from `files` because a lane commonly has
-        // both — a film and the decision that let it out — and one slot takes one link, so a
-        // shared slot left one of them wired to nothing and looking like a mistake.
+        // Verdicts ship with what they judged; split from `files` because a lane commonly has both
+        // and one slot takes one link.
         name: "reports",
         type: "QC",
         optional: true,
@@ -1321,9 +1266,8 @@ const EXTRA_DEFS: readonly NodeDefinition[] = [
     width: 260,
   },
   {
-    // The dropped-file nodes. Their widgets are written by the drop, not typed by hand: `asset`
-    // is a content-addressed artifact key, which is why the file cannot be swapped under the
-    // graph and why the node carries no path an operator could point somewhere else.
+    // The dropped-file nodes. Their widgets are written by the drop: `asset` is a content-addressed
+    // artifact key, so the file cannot be swapped under the graph and the node carries no path.
     type: "input.audio",
     title: "Audio File",
     category: "input",

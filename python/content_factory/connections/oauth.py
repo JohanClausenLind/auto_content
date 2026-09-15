@@ -1,5 +1,4 @@
-"""Connection broker (22.3): server-side OAuth intents with state + PKCE (S256), exact redirect
-URIs, single-use callbacks; tokens sealed into the vault the moment they arrive."""
+"""Connection broker: server-side OAuth with state + PKCE (S256), exact redirect URIs."""
 
 from __future__ import annotations
 
@@ -81,8 +80,7 @@ async def complete(
     handle: str,
     transport: httpx.AsyncBaseTransport | None = None,
 ) -> ConnectedAccount:
-    """Single-use callback: verify state (workspace-bound, unexpired, unconsumed), exchange the
-    code with PKCE, seal tokens. A replayed or foreign state is refused."""
+    """Single-use callback: verify state, exchange the code with PKCE, seal tokens."""
     row = (
         await db.execute(select(OAuthState).where(OAuthState.state == state))
     ).scalar_one_or_none()

@@ -1,13 +1,4 @@
-/**
- * Premade workflow templates: a template is a function that builds a complete, valid graph, plus
- * the model files it needs. Requirements are checked against the real local inventory
- * (`GET /v1/comfy/models`, which scans the comfy-cli workspace and configured extra roots), and a
- * missing requirement carries the registry key that installs it (`install_key`, resolved by
- * scripts/export_workflows.py against models/weights.py), so the card can offer a real Install
- * button rather than a command to run somewhere else. No template invents a download URL: the
- * pinned source lives in the Python registry, and a requirement the registry cannot satisfy says
- * so instead of guessing.
- */
+/** Premade workflow templates: a builder for a complete valid graph plus its model. */
 
 import {
   applyOps,
@@ -62,8 +53,7 @@ export interface WorkflowTemplate {
   readonly models: readonly ModelRequirement[];
   /** Honest limitation shown on the card (e.g. stages whose executors have not landed yet). */
   readonly caveat?: string;
-  /** Something the operator must do before the run works — files to record, a service to start.
-   *  Distinct from ``caveat``: the graph is runnable, it just needs its inputs. */
+  /** Something the operator must do before the run works. */
   readonly prerequisite?: string;
   build(): WorkspaceGraph;
 }
@@ -81,11 +71,7 @@ function normalize(filename: string): string {
 
 export type RequirementStatus = "present" | "missing" | "unknown";
 
-/**
- * The authoritative state of a requirement: the model store when it knows the family (it scans
- * the weight store and the skill envs, which the ComfyUI inventory cannot see), the inventory
- * scan otherwise.
- */
+/** The authoritative state of a requirement: the model store when it knows the family. */
 export function requirementState(
   req: ModelRequirement,
   catalog: ModelCatalog | undefined,
@@ -159,8 +145,7 @@ function graphOf(
       ...(placed.values ? { values: placed.values } : {}),
       ...(placed.note ? { note: placed.note } : {}),
       // A definition that renames a node means it: two deliverables terminals in one lane are
-      // "Film" and "Card set", not "Deliverables" twice. This was parsed out of the YAML, carried
-      // through the exporter, and then dropped here, so no title in the catalogue ever showed.
+      // "Film" and "Card set", not "Deliverables" twice.
       ...(placed.title ? { title: placed.title } : {}),
     });
     graph = applyOps(graph, [{ op: "add_node", node: made[key]! }]).graph;
@@ -189,11 +174,8 @@ function graphOf(
 }
 
 // --- the catalogue ----------------------------------------------------------------------------
-//
-// Every template is generated from workflows/*.yaml by scripts/export_workflows.py. There is no
-// hand-written array any more: a workflow used to be defined here AND in the local runner, and the
-// two drifted in every way duplicated definitions do. Add a workflow by writing its YAML file and
-// running `just schemas`.
+// Every template is generated from workflows/*.yaml by scripts/export_workflows.py; add a workflow
+// by writing its YAML and running `just schemas`.
 
 interface GeneratedModel {
   readonly kind: "comfy" | "path" | "skill";

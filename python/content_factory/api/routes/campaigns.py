@@ -1,9 +1,4 @@
-"""/v1/campaigns: the Create flow — validate-and-quote (preview) before any execution (20.4).
-
-Only deliverable types whose production branches are fully implemented in this build are
-accepted; everything else is refused with a plain-language reason (no logo-grid promises).
-Research in this build runs against offline fixtures; the preview says so honestly.
-"""
+"""/v1/campaigns: the Create flow — validate-and-quote (preview) before any execution (20.4)."""
 
 from __future__ import annotations
 

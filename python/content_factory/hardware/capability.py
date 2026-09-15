@@ -1,10 +1,4 @@
-"""Build a node capability report: probe hardware, verify encoders, inventory volumes.
-
-Listed is not verified: ffmpeg's `-encoders` output only proves the build knows the encoder
-name. Verification runs a real 0.2 s test encode — this is what catches an RTX 3090 build that
-lists av1_nvenc but cannot encode AV1. The runner is injectable so tests stay offline and the
-report never guesses: anything unprobeable lands in ``unknown_fields`` or a failed ProbeResult.
-"""
+"""Build a node capability report: probe hardware, verify encoders, inventory volumes."""
 
 from __future__ import annotations
 

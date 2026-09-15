@@ -1,16 +1,4 @@
-"""Stable Audio 3 Small-SFX: one prompt on stdin, one JSON line on stdout.
-
-    echo "TrackType: SFX, a heavy iron gate closing in a stone courtyard." | \
-      uv run --project skills/audio/sfx python skills/audio/sfx/run.py --duration 4 --seed 7
-
-For the curated set use build_library.py; this is the ad-hoc path, for auditioning a prompt before
-adding it to library.json. Not imported by the control plane.
-
-Two defaults worth knowing (both explained at length in README.md):
-  * the model is asked for at least 3 s even when --duration is shorter, because short requests are
-    out of distribution and come back as broadband hiss; --duration then trims the result;
-  * --loop wraps the take into a seamless bed instead of trimming it to an event.
-"""
+"""Stable Audio 3 Small-SFX: one prompt on stdin, one JSON line on stdout."""
 
 from __future__ import annotations
 

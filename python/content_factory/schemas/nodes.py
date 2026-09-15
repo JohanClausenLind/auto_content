@@ -1,11 +1,4 @@
-"""Node capability reports: what a machine can actually do, probed and versioned.
-
-Scheduling facts come from detected, validated capability reports — never from a stale
-hard-coded machine profile. Advertised, detected, and verified are different things: an encoder
-listed by ffmpeg is only ``listed`` until a real tiny encode succeeds (an RTX 3090 lists
-av1_nvenc support in some builds yet cannot encode AV1). Unknown fields are recorded as unknown,
-not guessed.
-"""
+"""Node capability reports: what a machine can actually do, probed and versioned."""
 
 from __future__ import annotations
 
@@ -20,8 +13,7 @@ MediaClass = Literal["hdd", "ssd", "nvme", "removable", "network", "unknown"]
 
 
 class VolumeInfo(SchemaModel):
-    """One mounted volume, identified stably (filesystem UUID or device identity), never by
-    fragile device-order names such as /dev/sdb."""
+    """One mounted volume, identified stably (filesystem UUID or device identity)."""
 
     volume_id: str = Field(min_length=1, max_length=128)  # fs UUID, or "dev:<st_dev>" fallback
     mount_path: str = Field(min_length=1)
@@ -47,8 +39,7 @@ class ProbeResult(SchemaModel):
 
 
 class NodeCapabilityReport(VersionedModel):
-    """Versioned probe of one enrolled machine. Rechecked on enrollment, reboot, hardware or
-    driver changes, and health events; placement must refuse reports older than its policy."""
+    """Versioned probe of one enrolled machine."""
 
     node_id: OpaqueId
     hostname: str = Field(min_length=1, max_length=200)

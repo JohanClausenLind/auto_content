@@ -1,27 +1,4 @@
-"""The reference library: real human interaction, queryable in words.
-
-Seven sources of two-person material live outside the repo under ``/mnt/fast/reference``: mocap,
-multi-camera capture, labelled skeleton sets, broadcast footage. This module is the contract for one
-queryable unit of it, for the library manifest, and for a query and its answer, so a retrieval
-stage's output is a contract rather than a dict.
-
-Three decisions are worth reading before the field lists.
-
-**Vocabularies are closed.** ``InteractionTag``, ``ContactTag``, ``Posture`` and ``Affection`` are
-StrEnums, not free text, because retrieval depends on the values matching. ``Affection`` is the
-field that keeps a shove out of a tender scene: half of the labelled material on disk is aggression.
-
-**Four tags name things the library does not have.** ``head_on_shoulder``, ``cuddle``,
-``slow_dance`` and ``carry_child`` are declared and match nothing. That is deliberate. A query for
-them comes back empty with the term listed in ``expanded_terms``, so the caller sees the library's
-gap instead of being handed a near-miss. The gap is the shooting list.
-
-**Usage class is about the material, not permission.** ``reference_only`` means the pixels cannot be
-used as a visual reference no matter who owns them - every Harmony4D frame has a camera tripod
-between the lens and the subjects. ``pose_derivable`` means poses can be read off it;
-``pixels_usable`` means the image itself is worth looking at. Licences are deliberately not modelled
-here at all: they gate nothing in this project.
-"""
+"""The reference library: real human interaction, queryable in words."""
 
 from __future__ import annotations
 
@@ -211,13 +188,7 @@ class ReferenceFile(SchemaModel):
 
 
 class ReferenceJoint(SchemaModel):
-    """One joint. ``x`` and ``y`` are normalised but deliberately NOT clamped.
-
-    Joints leave the frame: 3.55 % of the Harmony4D joints and 13.75 % of the SBU joints fall
-    outside it. Clamping would move them to the edge and invent a pose; dropping them at ingest
-    would throw away the fact that the capture saw them. They are kept as measured, and the
-    conversion to a ``SkeletonPose`` is where the drop rule applies.
-    """
+    """One joint."""
 
     x: float
     y: float
@@ -250,11 +221,7 @@ class ReferencePersonPose(SchemaModel):
         return self
 
     def to_skeleton_pose(self) -> SkeletonPose | None:
-        """The pipeline's ``SkeletonPose``, dropping joints outside the frame.
-
-        Same rule the Blender control bundle already applies, so a reference pose and a rendered
-        pose are filtered identically. Returns None when nothing survives.
-        """
+        """The pipeline's ``SkeletonPose``, dropping joints outside the frame."""
         kept = {name: joint.to_point() for name, joint in self.joints.items() if joint.usable}
         if not kept:
             return None
@@ -435,11 +402,7 @@ class ReferenceMatch(SchemaModel):
 
 
 class ReferenceMatchSet(VersionedModel):
-    """The answer, including what the query was understood to mean.
-
-    ``expanded_terms`` and ``unmatched_words`` are not diagnostics, they are the answer's honesty:
-    a caller can see that "head on shoulder" was understood, searched for, and found nothing.
-    """
+    """The answer, including what the query was understood to mean."""
 
     library_id: str = Field(min_length=3, max_length=64)
     query: ReferenceQuery

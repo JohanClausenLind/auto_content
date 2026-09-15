@@ -1,5 +1,4 @@
-/** App i18n scaffolding: a typed catalog, a context-backed `useT()`, and a locale preference
- * persisted per account (`/v1/prefs/locale`). English is always the fallback. */
+/** App i18n scaffolding: a typed catalog, a context-backed `useT()`. */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";

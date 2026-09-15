@@ -1,9 +1,4 @@
-"""One button stops everything: the run, the processes, the GPU, compose — and nothing else.
-
-The machine is described rather than had: process tables are fixtures, signals are recorded, and
-the only real processes involved are the test's own. What matters is what a stop *decides* —
-whose pid it signals, what it leaves alone, and what a stopped run leaves behind on disk.
-"""
+"""One button stops everything: the run, the processes, the GPU, compose — and nothing else."""
 
 from __future__ import annotations
 
@@ -66,8 +61,7 @@ class FakeMachine:
 
 # -- what counts as ours ---------------------------------------------------------------------
 def test_only_this_checkouts_own_commands_are_ever_touched() -> None:
-    """The narrow rule is the safety rule: this host runs other projects and other checkouts,
-    and an operator's grep for a command is not that command."""
+    """The narrow rule is the safety rule: this host runs other projects and other checkouts."""
     assert classify(proc(2, 1, "uv", "run", "content-factory", "worker")) == "worker"
     assert classify(proc(3, 2, f"{REPO}/.venv/bin/content-factory", "serve", "--reload")) == "api"
     assert classify(proc(4, 1, "node", f"{REPO}/node_modules/.bin/vite")) == "web"
@@ -110,8 +104,7 @@ def test_a_launcher_and_the_process_it_launched_are_one_thing(monkeypatch) -> No
 
 
 def test_the_mcp_server_is_reported_and_left_running(monkeypatch) -> None:
-    """It is the stdio server an assistant is connected through: killing it kills the session
-    that asked for the stop, and stops nothing that was running."""
+    """It is the stdio server an assistant is connected through."""
     machine = FakeMachine([proc(200, 1, "uv", "run", "content-factory", "mcp")])
     machine.install(monkeypatch)
     stopper = Stopper(sleep=machine.sleep, monotonic=machine.monotonic)
@@ -121,8 +114,7 @@ def test_the_mcp_server_is_reported_and_left_running(monkeypatch) -> None:
 
 
 def test_a_stop_never_signals_itself_or_the_shell_it_was_typed_into(monkeypatch) -> None:
-    """The stop runs from inside the repo, under a shell that also runs from inside the repo.
-    Both would match every scoping rule; signalling either ends the stop, not the run."""
+    """The stop runs from inside the repo, under a shell that also runs from inside the repo."""
     me = os.getpid()
     machine = FakeMachine(
         [
@@ -179,8 +171,7 @@ def test_the_registration_goes_away_when_the_run_ends(monkeypatch, tmp_path) -> 
 def test_a_stop_between_stages_keeps_the_finished_work_and_says_where_to_resume(
     monkeypatch, tmp_path
 ) -> None:
-    """The point of stopping between stages: everything finished stays finished. The report says
-    where it stopped, and that name is what ``--from`` takes to carry on."""
+    """The point of stopping between stages: everything finished stays finished."""
     monkeypatch.setenv("CF_SERVICES_DIR", str(tmp_path))
     monkeypatch.setenv("CF__SHOTS__PLANNER", "story_presets")
     from content_factory.config import get_settings
@@ -274,8 +265,7 @@ def test_stop_asks_the_run_first_and_then_signals_its_tree(monkeypatch, tmp_path
 
 
 def test_a_run_nobody_registered_still_stops(monkeypatch, tmp_path) -> None:
-    """A run started before the registry existed, or by something that does not register, is
-    still a run holding the GPU."""
+    """A run started before the registry existed, or by something that does not register."""
     monkeypatch.setenv("CF_SERVICES_DIR", str(tmp_path))
     machine = FakeMachine([proc(600, 1, "uv", "run", "content-factory", "run-local", "hybrid")])
     machine.install(monkeypatch)
@@ -286,8 +276,7 @@ def test_a_run_nobody_registered_still_stops(monkeypatch, tmp_path) -> None:
 
 
 def test_compose_goes_down_with_every_profile(monkeypatch) -> None:
-    """Verified against this host with `docker compose down --dry-run`: a plain down lists only
-    postgres and temporal, so a container started by `just up search` survives it."""
+    """Verified against this host with `docker compose down --dry-run`."""
     calls: list[tuple[list[str], dict]] = []
 
     def fake_run(cmd, **kwargs):
@@ -328,8 +317,7 @@ def test_targets_are_independent_and_a_dry_run_touches_nothing(monkeypatch, tmp_
 
 
 def test_the_command_line_adds_up_the_targets(monkeypatch) -> None:
-    """No flags means all four; naming some means only those; `--no-x` subtracts; and naming one
-    run means that run, not that run *and* the compose stack."""
+    """No flags means all four; naming some means only those; `--no-x` subtracts."""
     from typer.testing import CliRunner
 
     from content_factory.cli.main import app

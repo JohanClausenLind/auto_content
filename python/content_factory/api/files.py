@@ -1,18 +1,4 @@
-"""Serving a file off local disk, once, so the containment rule has one implementation.
-
-Two routes now hand generated media to the browser — ``/v1/sequences`` for a sequence workdir and
-``/v1/run-history`` for everything a run produced — and the rule they need is identical and
-unforgiving: resolve the path, refuse anything that leaves the base directory, refuse anything
-whose extension is not on an allowlist. A second copy of that is how the two drift, and the one
-that drifts is the one that serves ``/etc/shadow``.
-
-Every check is on the **resolved** path, which is what catches the case a string comparison misses:
-a symlink inside the base directory pointing outside it. ``output/`` is full of hard links and the
-gallery makes more, so this is not hypothetical.
-
-An allowlist rather than a denylist, because "everything except the dangerous extensions" is a
-list nobody finishes.
-"""
+"""Serving a file off local disk, once, so the containment rule has one implementation."""
 
 from __future__ import annotations
 
@@ -28,12 +14,7 @@ IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 
 
 def contained_file(base: Path, relative: str, allowed: Mapping[str, str]) -> tuple[Path, str]:
-    """The file ``relative`` names inside ``base``, and its media type.
-
-    Raises ``404`` — never ``403`` — for a path that escapes, is missing, or is of a type not
-    served: telling a caller apart "exists but forbidden" from "does not exist" hands them a
-    filesystem oracle for free.
-    """
+    """The file ``relative`` names inside ``base``, and its media type."""
     base = base.resolve()
     if not relative or relative.startswith("/") or "\x00" in relative:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")

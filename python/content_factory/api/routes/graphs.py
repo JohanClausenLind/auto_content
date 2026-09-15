@@ -1,11 +1,4 @@
-"""/v1/graphs: workspace node-graph documents — persistence, compile preview, and Run.
-
-The document is the WorkspaceGraph contract the browser editor serialises; every write is
-validated against it (unknown fields are errors). `compile` is a dry run returning the typed
-per-node dispositions; `runs` compiles and starts the same durable ProductionWorkflow campaigns
-use, with the precompiled DAG as input. Approval gates apply to graph runs exactly as they do to
-campaign runs.
-"""
+"""/v1/graphs: workspace node-graph documents — persistence, compile preview, and Run."""
 
 from __future__ import annotations
 

@@ -1,7 +1,4 @@
-"""Typer CLI entry point: ``content-factory``.
-
-Commands are added phase by phase; each one calls the same service layer as the API.
-"""
+"""Typer CLI entry point: ``content-factory``."""
 
 from __future__ import annotations
 
@@ -80,7 +77,7 @@ def bootstrap(
     password: str | None = typer.Option(None, help="Owner password (generated if omitted)."),
     demo: bool = typer.Option(True, help="Seed two demo workspaces."),
 ) -> None:
-    """Create the owner account and demo workspaces (idempotent). Prints a generated password once."""  # noqa: E501
+    """Create the owner account and demo workspaces (idempotent)."""
     import asyncio
 
     from content_factory.db.session import session_scope
@@ -103,8 +100,7 @@ def model_check(
         "Name three qualities of a good video hook.", help="Question to send."
     ),
 ) -> None:
-    """Prove the local model path end to end: route via the default catalog (local_only, zero
-    cloud candidates), call Ollama, validate the structured reply. No cloud egress, ever."""
+    """Prove the local model path end to end: route local-only, call Ollama, validate the reply."""
     from pydantic import BaseModel, Field
 
     from content_factory.budgets.ledger import Cap, Scope
@@ -174,8 +170,7 @@ def reset_password(
         help="Type the new password with hidden input (never touches argv, history, or ps).",
     ),
 ) -> None:
-    """Reset a local account's password (direct DB access; run on the server as the operator).
-    Prints the new password once — Argon2id hashes cannot be recovered, only replaced."""
+    """Reset a local account's password (direct DB access; run on the server as the operator)."""
     import asyncio
     import secrets as _secrets
 
@@ -313,8 +308,7 @@ def services(
     action: str = typer.Argument("status", help="status | stop"),
     tenant: str = typer.Option("", help="hidream | comfyui (stop: default both)"),
 ) -> None:
-    """Local GPU servers the stages start themselves (services/local.py): show who answers, or stop
-    them to give the GPU back (the last tenant stays up after a run so a rerun is instant)."""
+    """Show which local GPU servers answer, or stop them to give the GPU back."""
     from content_factory.services.local import TENANTS, LocalServices, Tenant
 
     if tenant and tenant not in TENANTS:
@@ -354,12 +348,7 @@ def stop(
     reason: str = typer.Option("stopped from the CLI", help="Recorded on the run."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Say what would stop; touch nothing."),
 ) -> None:
-    """Stop everything this repo started: the run, the worker, the servers, the GPU, compose.
-
-    With no flags it stops all four. Name some (`--runs --services`) to stop only those, or
-    subtract (`--no-docker`) to keep the rest of the stack up. Nothing outside this checkout is
-    ever signalled, and the MCP server is left alone because an assistant is connected through it.
-    """
+    """Stop everything this repo started: the run, the worker, the servers, the GPU, compose."""
     from content_factory.services import stop as stop_svc
 
     chosen = {"runs": runs, "apps": apps, "services": services_, "docker": docker}
@@ -405,12 +394,7 @@ def gpu_yield(
         False, "--keep-services", help="Leave HiDream/ComfyUI/Ollama loaded (frees far less)."
     ),
 ) -> None:
-    """Make room on the GPU, parking the local run only if that is what it takes.
-
-    Returns immediately when enough is already free, so this is cheap to call on every session
-    start. Exits non-zero when the card still cannot fit the request after everything was stopped,
-    which is the caller's signal to degrade rather than OOM.
-    """
+    """Make room on the GPU, parking the local run only if that is what it takes."""
     from content_factory.services import gpu_priority
 
     outcome = gpu_priority.yield_gpu(
@@ -434,13 +418,7 @@ def gpu_resume(
         help="Only resume if the claim is older than this many seconds (for a cron safety net).",
     ),
 ) -> None:
-    """Put back whatever `gpu yield` parked, and drop the claim.
-
-    Idempotent: with no claim, or a claim that parked nothing, this says so and does nothing. Safe
-    to call from the other tenant's end-of-session hook and from a timer both — the hook passes no
-    `--stale-after` because it knows the session ended; the timer passes one longer than a session
-    so it cannot take the card back from somebody still using it.
-    """
+    """Put back whatever `gpu yield` parked, and drop the claim."""
     from content_factory.services import gpu_priority
 
     outcome = gpu_priority.resume_gpu(print_only=print_only, stale_after_s=stale_after)
@@ -478,13 +456,7 @@ def gpu_watch(
     out: str = typer.Option("", help="CSV to append to; default .services/gpu-telemetry.csv"),
     limit: int = typer.Option(0, help="Stop after this many samples (0 = run until stopped)"),
 ) -> None:
-    """Record what the card is doing, so the next Xid 79 is diagnosable rather than researched.
-
-    The 03:12 dropout on 2026-09-10 left no trace of the GPU's own state, so temperature, power,
-    clocks, throttle reasons and the root port's PCIe error counters all had to be argued about
-    from forum threads. One `nvidia-smi` call per interval closes that. See "Making it less
-    likely, and making it visible" in docs/gpu-hosts.md for the systemd unit.
-    """
+    """Record what the card is doing, so the next Xid 79 is diagnosable rather than researched."""
     from content_factory.doctor import _gpu_root_port
     from content_factory.services import gpu_telemetry
 
@@ -547,8 +519,7 @@ def assets_approve(
         "", help="Defaults to controls.asset_approvals_dir, which is where review_assets looks"
     ),
 ) -> None:
-    """Approve a built asset for use. The approval binds to the mesh digest: rebuild it and this
-    approval no longer applies."""
+    """Approve a built asset for use."""
     import datetime as dt
     import pathlib
 
@@ -578,11 +549,7 @@ def assets_approve(
 
 
 def _refusal_lines(exc: VerdictRefusedError, *, base: Path, frames: int) -> list[str]:
-    """A refused verdict, worded for a terminal.
-
-    The rule and its sentence come from `qc.verdict`; what is added here is the part that only
-    exists at a command line — which flag would have done it, and the file to open first.
-    """
+    """A refused verdict, worded for a terminal."""
     if exc.kind == "agent_blanket":
         return [f"--accept-all is not available to --as agent: {exc.reason}"]
     if exc.kind == "undecided":
@@ -614,12 +581,7 @@ def frames_film(
     vignette: float = typer.Option(0.06, help="Corner falloff"),
     seed: int = typer.Option(0, help="Grain seed; varied per frame across a directory"),
 ) -> None:
-    """Put a photographic response back into generated frames, and say what it changed.
-
-    Prints the dead-flat tile fraction before and after, because that is the number this exists to
-    move and "looks better" is not a measurement. It is a finisher, not a fix: grain on a faceted
-    render is a grainy faceted render, and the before-number tells you which one you have.
-    """
+    """Put a photographic response back into generated frames, and say what it changed."""
     from content_factory.imaging import FilmResponse, apply_film_response
     from content_factory.qc.frame_review import dead_flat_fraction
 
@@ -670,21 +632,12 @@ def frames_review(
     note: str = typer.Option("", help="What the reviewer saw, kept with the verdict"),
     reviewer: str = typer.Option("operator", "--as", help="operator, agent or vlm"),
 ) -> None:
-    """Record a verdict on a batch of frames. Run the pipeline's review_frames stage first: it
-    writes the contact sheet and the batch this command decides on.
-
-    An **agent** has to name every frame. `--accept-all` is a reviewer saying yes to a batch
-    without opening it, which is defensible for a person looking at one contact sheet and is not
-    defensible for an agent that reads the images one at a time — so it is refused, and the
-    frames left unmentioned are listed. `reviews/frames/request.md` beside the images carries the
-    list to work from.
-    """
+    """Record a verdict on a batch of frames."""
     import pathlib
     import typing
 
-    # Checked here, against the contract's own list, because it was not checked anywhere: this
-    # command accepted `--as overnight-review`, printed `{"passed": true}`, wrote the verdict —
-    # and the next `review_frames` refused the very file it had just written.
+    # Checked against the contract's own list: unchecked, `--as overnight-review` wrote a verdict
+    # that the next `review_frames` refused.
     from content_factory.schemas.review import FrameReviewBatch, ReviewerKind
 
     allowed = typing.get_args(ReviewerKind)
@@ -700,10 +653,8 @@ def frames_review(
     from content_factory.qc.verdict import VerdictRefusedError, decide
     from content_factory.services.frame_reviews import current_batch
 
-    # The MERGED state, the same one `record_verdict` and the review panel decide on: the question
-    # with any answer already recorded laid over it. Deciding on `batch.json` alone would reset
-    # every frame a previous verdict had accepted, because `decide` can only preserve a decision
-    # it can see — so answering a redraw would silently un-accept the frames that were not redrawn.
+    # The merged state `record_verdict` and the panel decide on: `decide` only preserves decisions
+    # it can see, so deciding on `batch.json` alone would un-accept the frames not redrawn.
     batch = current_batch(base.parent.parent) or FrameReviewBatch.model_validate_json(
         batch_path.read_text()
     )
@@ -720,10 +671,8 @@ def frames_review(
             note=note,
         )
     except VerdictRefusedError as exc:
-        # The rules themselves live in `qc.verdict`, shared with the review panel in the app —
-        # one place decides whether a verdict may be written, so the two surfaces cannot drift
-        # into different answers about whether an unopened batch is acceptable. What is left here
-        # is the wording that only makes sense at a terminal: flag names, and the path to open.
+        # The rules live in `qc.verdict`, shared with the review panel so the two surfaces cannot
+        # drift; only the terminal wording (flag names, the path to open) is here.
         for line in _refusal_lines(exc, base=base, frames=len(batch.frames)):
             typer.echo(line, err=True)
         raise typer.Exit(code=1 if exc.kind == "unknown_frames" else 2) from exc
@@ -751,18 +700,7 @@ def frames_ai_review(
         False, "--ignore-gpu", help="Ask even while a run is executing. It will probably OOM."
     ),
 ) -> None:
-    """Ask the local vision model to describe these frames and say whether they are one set.
-
-    An **opinion, not a verdict**. It cannot accept or reject anything: it writes
-    `reviews/frames/ai-review.json` beside the batch, and `frames review` is still the only thing
-    that records a decision. That is deliberate — a model that mistakes what it is looking at does
-    so fluently, and `shows` is printed first so the mistake is visible.
-
-    It answers the question the measurements cannot: whether the subject is the same subject.
-    Measured on `w-iceberg`, where `drift_qc` could only say the set had no consistent core and
-    named no frame, this named `frame:0003` and said why — a higher camera angle, a smaller
-    iceberg, and a water pattern of regular circles the others do not have.
-    """
+    """Ask the local vision model to describe these frames and say whether they are one set."""
     import pathlib
 
     from content_factory.qc.vlm_review import (
@@ -929,10 +867,7 @@ def run_local(
         help="Art direction: a preset name (content_factory.sequences.styles) or a full prompt",
     ),
 ) -> None:
-    """Run one workflow's stages locally in order (no Temporal). Stages that need the HiDream
-    server or ComfyUI start them themselves (local_services.auto_start) and hand the GPU over
-    between them. Backends come from the environment: CF__CONTROLS__COMPILER=blender
-    CF__IMAGE_SEQUENCES__BACKEND=hidream CF__VIDEO__BACKEND=comfyui CF__NARRATION__TTS=qwen3tts."""
+    """Run one workflow's stages locally in order (no Temporal)."""
     from pathlib import Path
 
     from content_factory.runners.local import LocalRunError, run_workflow
@@ -1075,8 +1010,7 @@ def runs_stop(
         False, "--after-node", help="Stop at the next node boundary; do not cancel the node."
     ),
 ) -> None:
-    """Stop a durable run. The workflow closes itself (CANCELLED, ActionItems resolved); a node
-    already inside a GPU stage is cancelled after 15 s and the run row is corrected from here."""
+    """Stop a durable run."""
     import asyncio
 
     from content_factory.services.runs import open_run_ids, stop_run
@@ -1374,12 +1308,7 @@ def remote_list(
     host: str = typer.Option("", help="One host by name; default every configured host."),
     as_json: bool = typer.Option(False, "--json", help="Machine-readable output."),
 ) -> None:
-    """What each producer has, and which of it is ready to come home.
-
-    Reads only: one ssh round trip per host and not a byte of media. A run stopped at the human
-    review gate is reported as such rather than left out, because that is the resting state of an
-    `image-set` and silence about it reads as "nothing to collect".
-    """
+    """What each producer has, and which of it is ready to come home."""
     from content_factory.services.harvest import HarvestError, already_harvested, discover
 
     rows = []
@@ -1424,12 +1353,7 @@ def remote_harvest(
     limit: int = typer.Option(1, help="Passes to make (0 = keep going until stopped)."),
     interval: float = typer.Option(60.0, help="Seconds between passes when limit is not 1."),
 ) -> None:
-    """Bring finished deliverables home from the other producers.
-
-    Only what a lane actually delivers crosses — the manifest `compile_destination_packages` wrote,
-    verified digest by digest on arrival — plus a few hundred KB of evidence. Safe to run on a
-    timer: a deliverable already here transfers nothing.
-    """
+    """Bring finished deliverables home from the other producers."""
     import time
 
     from content_factory.services.harvest import harvest as run_harvest

@@ -1,16 +1,4 @@
-"""Character-asset review: a built sculpture is not usable until its renders have been checked.
-
-A character asset is generated (MPFB2 recipe -> Blender -> a ``.blend`` plus a turnaround), and
-nothing downstream can tell a good one from a broken one: a rig whose arms are mirrored wrong, a
-mesh whose keypoint anchors collapsed, a figure that does not fit its own turnaround frame. Those
-faults do not announce themselves — they surface as thirty drawings of a person standing
-impossibly, hours of GPU later.
-
-So an asset carries a review: deterministic checks over the renders it already produced, a contact
-sheet for a person to look at, and a verdict bound to the built ``.blend``'s digest. Rebuild the
-asset and the digest changes, so the old approval no longer applies — the same binding the
-preflight approval uses against a campaign revision.
-"""
+"""Character-asset review: a built sculpture is not usable until its renders have been checked."""
 
 from __future__ import annotations
 
@@ -37,18 +25,7 @@ class AssetCheck(VersionedModel):
 
 
 class IdentitySheet(VersionedModel):
-    """A styled character sheet: the same person, drawn in the film's own style, clothed.
-
-    This exists because the mesh is not a usable identity reference. HiDream-O1's IP pipeline
-    treats every reference as subject material, so handing it the Blender clay render makes it draw
-    clay people, and handing it an untextured MPFB turnaround makes it draw a nude mannequin
-    (measured, STATUS 1339, 1379-1381). A sheet is generated once per character per style, from the
-    asset's own turnaround views so it is the same body, and it is what an ``identity`` reference
-    slot sends.
-
-    ``blend_sha256`` binds it to the mesh it was drawn from: rebuild the asset and the sheet is
-    stale. ``seed`` and ``prompt_version`` are here so the exact image can be reproduced.
-    """
+    """A styled character sheet: the same person, drawn in the film's own style, clothed."""
 
     style: str = Field(min_length=1, max_length=400)
     """The style prompt the sheet was drawn in, written out. A film's anchors and its identity
@@ -66,13 +43,7 @@ class IdentitySheet(VersionedModel):
 
 
 class CharacterAssetReview(VersionedModel):
-    """The verdict on one built character asset.
-
-    ``approved_by`` is deliberately separate from ``checks_passed``: the checks catch what can be
-    measured, and a person still has to look at the contact sheet, because "this mesh is a
-    plausible human" is not something the checks can decide. An asset with passing checks and no
-    approval is *reviewable*, not approved.
-    """
+    """The verdict on one built character asset."""
 
     asset: AssetRef
     blend_sha256: Sha256Hex

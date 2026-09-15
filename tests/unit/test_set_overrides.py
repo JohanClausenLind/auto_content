@@ -1,16 +1,4 @@
-"""`--set` has to be held to the same standard a lane definition is.
-
-`workflows/catalog.py` rejects a definition that sets a widget the node does not declare, and its
-docstring gives the reason: "a typo'd key is silently swallowed by the stage's `_param` default and
-the workflow quietly does something else". `--set` was the same door with no lock on it — it
-checked the node or stage name and never the key.
-
-The drift knobs are the case that made it visible. `stage_generate_keyframes` has always read
-`drift_profile`, `locked_min` and `style_delta_max`, and its own comment tells the operator to
-reach for `--set spokes.drift_profile=uncalibrated`, but none of the three was declared on the
-node: settable from the command line, invisible on the canvas, and rejected by the definition
-validator if a lane tried to freeze one.
-"""
+"""`--set` has to be held to the same standard a lane definition is."""
 
 from __future__ import annotations
 
@@ -52,17 +40,14 @@ def test_a_typoed_widget_key_is_refused_rather_than_swallowed(capsys) -> None:
 
 
 def test_a_stage_scoped_override_is_left_alone() -> None:
-    """A stage is not a node: it applies to every node running it, so there is no single
-    declaration to check against."""
+    """A stage is not a node: it applies to every node running it."""
     node_params, by_stage = _parse_overrides(["generate_anchor.style=charcoal"], STEPS)
     assert node_params == {}
     assert by_stage == {Stage.generate_anchor: {"style": "charcoal"}}
 
 
 def test_zero_leaves_the_drift_profile_alone_rather_than_flooring_it_at_zero(tmp_path) -> None:
-    """The widget defaults to 0 because the real thresholds are per-style and resolved at run
-    time. If 0 were taken literally, every node that never touched the widget would silently
-    override the profile with a floor of zero and pass every frame."""
+    """The widget defaults to 0 because the real thresholds are per-style."""
     from content_factory.runners.local import make_context
     from content_factory.workflows.stages import _param_float
 

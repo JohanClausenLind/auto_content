@@ -1,23 +1,4 @@
-"""Compile a hand-drawn WorkspaceGraph into the same DeliverableDAG + ContentCampaign the
-campaign compiler produces — one execution engine, two front doors.
-
-Every node gets a typed disposition (executes / skipped-with-reason / blocks-the-run), so the
-UI can show exactly what a Run will and will not do. The rules:
-
-- ``input.brief`` becomes the campaign brief (topic/audience/quality); never a DAG node.
-- ``utility.note`` and muted/bypassed nodes are annotations: skipped, reported.
-- ``publish.social`` marks a distribution intent: publishing stays behind its own gated flow.
-- ``output.deliverables`` marks where the files land; the run writes there regardless.
-- ``input.audio`` / ``input.image`` / ``input.video`` are files the operator dropped on the
-  canvas. They carry an artifact key, not a path, and become the campaign's ``staged_uploads``:
-  the run's first activity writes them into ``<project>/uploads/`` where the ``ingest`` stage
-  reads them. A key that does not belong to this workspace, or is not in the store any more,
-  blocks the run instead of failing later inside an activity.
-- A pipeline stage with a registered executor becomes a StageNode with the same resource class
-  and executor defaults the campaign compiler assigns.
-- A stage without an executor (article/newsletter/sequence branches today) *blocks* the run and
-  says so, rather than silently pretending it would produce something.
-"""
+"""Compile a hand-drawn WorkspaceGraph into the same DeliverableDAG + ContentCampaign."""
 
 from __future__ import annotations
 
@@ -41,10 +22,7 @@ from content_factory.schemas.content import (
 from content_factory.schemas.dag import DeliverableDAG, Stage, StageNode
 from content_factory.schemas.workspace_graph import WorkspaceGraph, WorkspaceNode
 
-# Stages that inspect or package what another stage made. None of them can be a lane's first
-# step, so a graph where one has nothing upstream of it would schedule it before the thing it is
-# supposed to read — the canvas refuses that (a required input with no link is an error there),
-# and this is the same refusal on the server, where the CLI and the MCP tool arrive.
+# Stages that inspect or package what another stage made.
 DOWNSTREAM_ONLY_STAGES: frozenset[Stage] = frozenset(
     {
         Stage.qc_deliverable,
@@ -127,17 +105,7 @@ def _brief_values(nodes: list[WorkspaceNode]) -> tuple[dict[str, str], list[str]
 
 
 def campaign_with_brief(template: ContentCampaign, values: Mapping[str, object]) -> ContentCampaign:
-    """``template`` with its brief replaced by an ``input.brief`` node's widget values.
-
-    One helper for both front doors. The canvas path calls it from :func:`compile_graph`; the local
-    runner calls it with the lane definition's own ``input.brief`` values so that a lane run gets
-    the lane's subject rather than the demo fixture's. Before this, ``runners.local.make_context``
-    handed every run ``sample_campaign()`` unchanged, so a film about two people on a plaza was
-    generated under "How much of Sweden's electricity came from wind in 2025?" (STATUS 1370, 1678).
-
-    ``topic`` is required and must be non-empty: it is the one field of a brief that no default can
-    stand in for. The error names it.
-    """
+    """``template`` with its brief replaced by an ``input.brief`` node's widget values."""
     topic = str(values.get("topic", "")).strip()
     if not topic:
         msg = "the Campaign Brief topic is empty: set input.brief.topic (or pass --subject)"
@@ -157,13 +125,7 @@ def campaign_with_brief(template: ContentCampaign, values: Mapping[str, object])
 
 
 def _staged_upload(node: WorkspaceNode, workspace_id: str) -> tuple[StagedUpload | None, str]:
-    """One dropped-file node as a staged upload, or the reason it cannot be one.
-
-    Everything except the display name comes out of the content-addressed artifact key
-    (``<workspace>/originals-<kind>/<ab>/<sha256>.<ext>``), so the node cannot claim a kind or a
-    hash the stored bytes do not have — the only fields a browser controls are which key to name
-    and what to call it.
-    """
+    """One dropped-file node as a staged upload, or the reason it cannot be one."""
     key = str(node.values.get("asset", "")).strip()
     name = str(node.values.get("filename", "")).strip() or "dropped"
     expected_kind = SOURCE_NODE_KINDS.get(node.type, "")
@@ -196,8 +158,7 @@ def _staged_upload(node: WorkspaceNode, workspace_id: str) -> tuple[StagedUpload
 
 
 def compile_graph(graph: WorkspaceGraph, template: ContentCampaign) -> GraphCompilation:
-    """Pure: same graph + same campaign template → same compilation. ``template`` supplies the
-    structural campaign fields (workspace, destinations) that a graph does not carry."""
+    """Pure: same graph + same campaign template → same compilation."""
     from content_factory.workflows.stages import STAGE_EXECUTORS
 
     defaults = stage_defaults()
@@ -231,9 +192,7 @@ def compile_graph(graph: WorkspaceGraph, template: ContentCampaign) -> GraphComp
         elif node.type == "utility.note":
             kind, reason = "skipped", "note: canvas annotation only"
         elif node.type == "publish.social":
-            # Name the destinations the node is set to. The compile preview is where an operator
-            # checks what a Run would do, and "publishing is skipped" without saying where it
-            # would have gone is the half of the answer that does not need checking.
+            # Name the destinations the node is set to.
             wanted = [
                 d.strip() for d in str(node.values.get("destinations", "")).split(",") if d.strip()
             ]
@@ -313,9 +272,7 @@ def compile_graph(graph: WorkspaceGraph, template: ContentCampaign) -> GraphComp
             deps[link.to_node].append(link.from_node)
 
     # The workflow runs every shared node before any per-deliverable node, so a shared stage
-    # depending on a per-deliverable one can never be satisfied at run time (the dependency's
-    # output would be missing). Refuse it here with the node named, instead of a KeyError
-    # inside the workflow after the operator approved preflight.
+    # depending on a per-deliverable one can never be satisfied at run time.
     node_by_id = {n.id: n for n in nodes}
     for node_id, (graph_node, stage) in included.items():
         if stage in SHARED_STAGES:
@@ -327,8 +284,7 @@ def compile_graph(graph: WorkspaceGraph, template: ContentCampaign) -> GraphComp
                         f"per-deliverable stage {dep_stage.value}"
                     )
     # An inspector or packager with nothing upstream: it would run before the deliverable it is
-    # meant to read exists, and its report would describe an empty folder. Dependencies come only
-    # from links (above), so an unwired delivery node is not "ordered last" — it is unordered.
+    # meant to read exists, and its report would describe an empty folder.
     for node_id, (graph_node, stage) in included.items():
         if stage in DOWNSTREAM_ONLY_STAGES and not deps[node_id]:
             problems.append(
@@ -362,16 +318,13 @@ def compile_graph(graph: WorkspaceGraph, template: ContentCampaign) -> GraphComp
                 depends_on=tuple(sorted(dag_ids[d] for d in deps[node_id])),
                 executor=executor,
                 resource_class=rc,
-                # What the operator typed into the node travels with it: the stage reads the keys
-                # it knows, and the values are part of the node's input hash, so a changed widget
-                # re-runs that stage and everything downstream of it.
+                # What the operator typed into the node travels with it: the stage reads the keys it
+                # knows, and the values are part of the node's input hash.
                 params={k: str(v) for k, v in sorted(graph_node.values.items())},
             )
         )
 
-    # The approval gate is an invariant of every run: the workflow parks on the preflight
-    # revision. A graph without a Preflight Gate node gets one injected (after every other
-    # shared stage) rather than a run that skips human review.
+    # The approval gate is an invariant of every run: the workflow parks on the preflight revision.
     if Stage.preflight not in stages_present:
         shared_ids = tuple(sorted(n.node_id for n in stage_nodes if n.deliverable_id is None))
         rc, executor = defaults[Stage.preflight]

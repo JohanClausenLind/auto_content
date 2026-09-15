@@ -1,9 +1,4 @@
-"""The two labelled video ingesters: UT-Interaction and TV Human Interactions.
-
-Split in two: the helpers that align the UT spreadsheet and order the TV-HI head orientations are
-pure and run everywhere, while anything that needs the 19 GB library under /mnt/fast is skipped on
-a host that does not have it.
-"""
+"""The two labelled video ingesters: UT-Interaction and TV Human Interactions."""
 
 from __future__ import annotations
 

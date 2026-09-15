@@ -1,6 +1,4 @@
-"""Render passes. Data passes (depth, normals, object index) come from Cycles on the CPU at one
-sample per pixel: exact, GPU-free and deterministic. The rough RGB comes from Workbench (studio
-clay look) when a GPU context exists, else from a Cycles CPU fallback."""
+"""Render passes."""
 
 from __future__ import annotations
 
@@ -61,7 +59,7 @@ def render_data(scene: Any, out_stem: Path) -> Path:
 def decode_data(
     path: Path, world_to_camera: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[str]]:
-    """-> (depth float32 [H,W], normals_cam float32 [H,W,3] in [-1,1], index uint8 [H,W], channel names)."""
+    """-> (depth float32 [H,W], normals_cam float32 [H,W,3] in [-1,1], index uint8 [H,W]."""
     ch = read_multilayer_exr(path)
     depth = find_channel(ch, "Depth.Z", ".Z")
     nx = find_channel(ch, "Normal.X")
@@ -118,15 +116,7 @@ def configure_rgb_workbench(scene: Any, spec: dict[str, Any]) -> None:
     sh.show_object_outline = True
     sh.show_specular_highlight = False
     set_if_has(sh, "use_dof", False)
-    # Camera-relative studio lighting, not world-space. Measured across thirty runner stills that
-    # orbit one figure: with world-space lighting the studio light stays put, so body brightness
-    # swung from luma 39 to 116 depending only on where the camera stood, and twenty of the thirty
-    # left the figure darker than luma 60 with less than 12 luma between it and the ground. The
-    # pose signal is the whole reason this pass exists and a near-silhouette does not carry it.
-    # Camera-relative lighting lifted the worst of those to luma 85-87 and left the ones that were
-    # already lit alone. studiolight_rotate_z only applies to world-space lighting, so it is gone:
-    # the light now follows the camera and there is no rotation to compute. Shadow direction still
-    # comes from the shot's key azimuth below, in world space, where a shadow belongs.
+    # Camera-relative studio lighting, not world-space.
     set_if_has(sh, "use_world_space_lighting", False)
     set_if_has(sh, "background_type", "WORLD")
     set_if_has(scene.display, "render_aa", "5")
@@ -164,7 +154,5 @@ def render_rgb(scene: Any, out_stem: Path) -> Path:
 
 
 def gpu_context_available() -> bool:
-    """Workbench/EEVEE create their own offscreen GPU context in --background; the ``gpu`` module
-    cannot be queried before that happens, so the only reliable probe is to try the render (the
-    caller falls back to Cycles CPU on failure)."""
+    """Workbench/EEVEE create their own offscreen GPU context in --background."""
     return True

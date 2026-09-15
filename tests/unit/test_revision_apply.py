@@ -1,5 +1,4 @@
-"""Revision Box apply/undo on a project directory: overlay revisions are append-only and undo
-restores the exact previous overlay hash."""
+"""Revision Box apply/undo on a project directory: overlay revisions are append-only."""
 
 from __future__ import annotations
 

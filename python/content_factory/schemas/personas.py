@@ -1,5 +1,4 @@
-"""Persona contracts (14.1): a governed, versioned asset. The PersonaFirewall is code and is NOT
-represented here — no field on these models can weaken it. Adults only, enforced in the type."""
+"""Persona contracts (14.1): a governed, versioned asset."""
 
 from __future__ import annotations
 
@@ -89,7 +88,7 @@ class PersonaRevisionDiff(SchemaModel):
 
 
 class RemakeProposal(SchemaModel):
-    """Retroactive consistency (14.1): queued/unpublished items that no longer fit; ASK, never act."""  # noqa: E501
+    """Retroactive consistency (14.1): queued/unpublished items that no longer fit; ASK."""
 
     item_id: OpaqueId
     item_kind: Literal["queued_script", "reply_draft", "queued_thumbnail", "open_draft"]

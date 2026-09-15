@@ -1,8 +1,4 @@
-/**
- * A miniature of a whole graph as a single SVG — nodes as rounded cards with their header strip,
- * links as curves coloured by the source datatype. Template cards use it the way ComfyUI uses
- * workflow preview images, except this one is drawn from the graph itself so it can never lie.
- */
+/** A whole graph as one SVG miniature, drawn from the graph itself so a template card can never lie. */
 
 import { useMemo } from "react";
 import { slotColor } from "./datatypes";

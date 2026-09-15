@@ -1,15 +1,4 @@
-"""The scene grammar's two halves have to agree: Python says what is drawable, TypeScript draws it.
-
-``IMPLEMENTED_KINDS`` gates real behaviour on the Python side — the script writer refuses a beat
-whose kind is not in it, and ``qc_deliverable`` fails a plan that uses one that is not. The list
-is therefore a claim about code that lives in another language, in another package, and nothing
-checked it. It was wrong within an hour of being written: `image`, `comparison` and `flow_diagram`
-went in as implemented while their components did not exist yet, so the writer would have been
-free to plan three kinds that rendered as grey placeholder cards and passed QC doing it.
-
-These tests read the TypeScript. Both files, because they can disagree with each other too: the
-switch is what actually runs, and `mapping.ts`'s list is what the renderer's own callers ask.
-"""
+"""The scene grammar's two halves have to agree: Python says what is drawable."""
 
 from __future__ import annotations
 
@@ -62,15 +51,13 @@ def test_every_implemented_kind_has_a_case_in_the_switch() -> None:
 
 
 def test_no_kind_is_drawn_without_being_declared_implemented() -> None:
-    """The other direction: a component wired up but left out of the list is a scene the writer
-    is refused permission to plan, which is a silent capability loss rather than a broken film."""
+    """The other direction: a component wired up."""
     extra = sorted(_switch_cases() - set(IMPLEMENTED_KINDS))
     assert extra == [], f"drawn by the switch but not declared implemented: {extra}"
 
 
 def test_the_two_kind_sets_partition_the_scene_grammar() -> None:
-    """Every kind in the contract is either drawable or knowingly a placeholder — no third state
-    where a kind exists, nothing draws it, and nothing says so."""
+    """Every kind in the contract is either drawable or knowingly a placeholder."""
     known = set(IMPLEMENTED_KINDS) | set(PLACEHOLDER_KINDS)
     assert _all_scene_kinds() == known
     assert not (set(IMPLEMENTED_KINDS) & set(PLACEHOLDER_KINDS))

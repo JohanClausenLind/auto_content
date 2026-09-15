@@ -1,9 +1,4 @@
-"""Consistent image-sequence engine (16.6): anchor → lock → deterministic controls →
-hub-and-spoke keyframes → drift QC with bounded regeneration → packaging.
-
-Every keyframe is generated as a reference edit of the ANCHOR (never frame N from N-1). A frame's
-cache marker folds in the lock, control, instruction, and attempt salt, so a single-frame revision
-rebuilds exactly that frame."""
+"""Consistent image-sequence engine (16.6)."""
 
 from __future__ import annotations
 
@@ -37,15 +32,7 @@ class SequenceError(Exception):
 
 @dataclass(frozen=True)
 class ControlConditioning:
-    """Everything a frame is conditioned on besides the anchor and the text:
-
-    * ``reference_pngs`` — ordered reference images. Identity references (one per layout box)
-      come first, then structural references (the Blender rough render, the OpenPose skeleton).
-    * ``layout_boxes`` — where each identity reference goes (relative x, y, w, h), at most as
-      many as there are references.
-    * ``control_png`` — the legacy 2D control raster; kept in the cache key, sent as one more
-      reference only when the backend opts in.
-    """
+    """Everything a frame is conditioned on besides the anchor and the text."""
 
     control_png: bytes | None = None
     reference_pngs: tuple[bytes, ...] = ()
@@ -92,8 +79,7 @@ class ReferenceEditBackend(ABC):
         *,
         attempt: int,
     ) -> bytes:
-        """Edit with a full conditioning bundle. Backends that only understand the legacy control
-        raster get it through ``edit``; richer backends override this."""
+        """Edit with a full conditioning bundle."""
         return self.edit(
             anchor_png, conditioning.control_png or b"", instruction, lock, attempt=attempt
         )
@@ -106,8 +92,7 @@ class ReferenceEditBackend(ABC):
 
 
 class MockReferenceEditBackend(ReferenceEditBackend):
-    """Deterministic stand-in: repaints the anchor with the subject moved to the control's boxes.
-    Faithful by construction; `drift_at` can inject an off-style frame on a given attempt."""
+    """Deterministic stand-in: repaints the anchor with the subject moved to the control's boxes."""
 
     name = "mock-reference-edit"
 
@@ -160,8 +145,7 @@ class MockReferenceEditBackend(ReferenceEditBackend):
     def generate(
         self, prompt: str, conditioning: ControlConditioning, lock: GenerationLock, *, seed: int
     ) -> bytes:
-        """Deterministic anchor: the mock canvas plus one filled rectangle per layout box, so a
-        conditioned anchor is visibly different from an unconditioned one."""
+        """Deterministic anchor: the mock canvas plus one filled rectangle per layout box."""
         self.calls.append(
             {
                 "prompt": prompt,
@@ -181,10 +165,7 @@ class MockReferenceEditBackend(ReferenceEditBackend):
         draw = ImageDraw.Draw(img)
         w, h = img.size
         # A different prompt has to give a different picture, or every cache test that turns a
-        # prompt knob is vacuous: the anchor comes back byte-identical, its sha256 is unchanged,
-        # and the clip generated from it is served from cache even though a real backend would
-        # have drawn something else. One deterministic row of colour keyed on the prompt is enough
-        # to make that real while leaving the frame's tonal statistics where they were.
+        # prompt knob is vacuous: the anchor comes back byte-identical, its sha256 is unchanged.
         tint = sha256_hex(prompt.encode())
         draw.rectangle(
             [0, 0, w, 0],
@@ -223,8 +204,7 @@ class SequenceResult:
 def make_anchor(
     lock: GenerationLock, *, width: int, height: int, subject_box: Box | None = None
 ) -> bytes:
-    """Mock anchor generation (deterministic from the lock's seed). Real anchors come from a
-    text_to_image ComfyWorkflowPackage selected by the router."""
+    """Mock anchor generation (deterministic from the lock's seed)."""
     seed = lock.seed
     box = subject_box or Box(x=0.42, y=0.45, w=0.16, h=0.25)
     img = Image.new("RGB", (width, height), (240 - seed % 16, 238, 232))
@@ -261,19 +241,14 @@ def _frame_marker_hash(
         key["conditioning"] = conditioning_sha
     if control_sent is not None:
         # Whether the raster reaches the model is an input to the picture, not a detail of how it
-        # got there: the same control sha with the flag off produces a different frame, and a cache
-        # that cannot see the flag serves the red-boxed one for ever. Absent -> the old hash, so
-        # nothing already on disk is invalidated by the parameter merely existing.
+        # got there: the same control sha with the flag off produces a different frame.
         key["control_sent"] = control_sent
     return sha256_hex(canonical_dumps(key).encode())
 
 
 @dataclass(frozen=True)
 class _FrameJob:
-    """One frame's inputs, resolved before any GPU is touched.
-
-    Everything here is computed in a single serial pass so the pool only ever sees independent
-    work: no job reads another job's output, and the cache decision is already made."""
+    """One frame's inputs, resolved before any GPU is touched."""
 
     idx: int
     control_png: bytes
@@ -322,13 +297,7 @@ def build_sequence(
     style_delta_max: float = 0.15,
     seed_offsets: Mapping[int, int] | None = None,
 ) -> SequenceResult:
-    """Build every frame of a hub-and-spoke sequence from one anchor.
-
-    ``backends``, when given, is a pool of interchangeable servers -- one per GPU host -- and the
-    frames are spread over it. It REPLACES ``backend`` for the frame work (``backend`` still makes
-    the anchor), so the local server has to be in the list to take a share. Frames never read each
-    other and ``drift_report`` measures each against the *anchor*, so which host serves which frame
-    changes the wall clock and nothing else. Omit it and the serial path runs untouched."""
+    """Build every frame of a hub-and-spoke sequence from one anchor."""
     workdir.mkdir(parents=True, exist_ok=True)
     frames_dir = workdir / "frames"
     frames_dir.mkdir(exist_ok=True)
@@ -442,19 +411,9 @@ def build_sequence(
         assert png is not None and report is not None
         served_by = getattr(worker, "endpoint", worker.name)
         # Written here, the moment the frame exists, rather than after the whole pool comes back.
-        # Every frame already carried its own ``input_hash`` marker so that a rerun could skip the
-        # ones that were finished -- and it could not, because nothing reached disk until the last
-        # frame did. A sequence is tens of minutes to hours of GPU time; one interruption threw all
-        # of it away and the next run redrew every picture. Paths are keyed by frame index, so two
-        # workers never write the same file.
         record: dict | None = None
         if not report.passed:
-            # The picture that did not pass, kept where it can be looked at. The block this
-            # becomes says "look at sequence/frames/0000.png" -- and that file was never written,
-            # because only a passing frame reached disk. An operator was being sent to a path that
-            # did not exist, to judge a rejection they could not see, and the measurement that
-            # rejected it existed only in memory. Out of `frames/` so the review sheet's glob and
-            # the cut do not pick a rejected drawing up.
+            # The picture that did not pass, kept where it can be looked at.
             reject_dir = workdir / "rejected"
             reject_dir.mkdir(parents=True, exist_ok=True)
             (reject_dir / f"{job.idx:04d}.png").write_bytes(png)

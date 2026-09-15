@@ -1,25 +1,4 @@
-"""The drawings a run is waiting on somebody to look at, and the verdict they record.
-
-Thirteen runs on this machine are parked at ``review_frames`` with their pictures finished: the
-gate did its job, wrote a contact sheet, and stopped. Answering it meant knowing the path on disk
-and typing ``content-factory frames review`` — so the images that most needed a person were the
-ones hardest to reach, and 27 runs sat overnight with nobody coming.
-
-This module is what the workspace's review panel reads and writes. It is deliberately thin:
-
-* **The batch on disk is the question.** ``reviews/frames/batch.json`` is written by the gate;
-  ``verdict.json`` beside it is the answer. The current state is the first with the second laid
-  over it, matched by image digest (:func:`content_factory.qc.verdict.merge_verdict`) — the same
-  merge the stage does, so the panel and the gate never disagree about what is outstanding.
-* **The rules live in one place.** Who may accept a batch unopened, what a verdict has to name,
-  what the contract will read back: all of that is :mod:`content_factory.qc.verdict`, shared with
-  the CLI.
-* **Paths only.** No run ids, no HTTP, no database — the route decodes the run id and this takes
-  the directory, which keeps it usable from a test, a script and the API alike.
-
-Nothing here starts or resumes a run: recording a verdict unblocks the gate, and the run itself is
-continued with the command in :func:`resume_command`.
-"""
+"""The drawings a run is waiting on somebody to look at, and the verdict they record."""
 
 from __future__ import annotations
 
@@ -94,11 +73,7 @@ def verdict_path(deliverable_dir: Path) -> Path:
 
 
 def current_batch(deliverable_dir: Path) -> FrameReviewBatch | None:
-    """The question with the answer laid over it, or None when this deliverable has no gate.
-
-    A malformed batch is None rather than an exception: a run writing its report while the panel
-    polls is normal, and one unreadable file must not take the whole list down with it.
-    """
+    """The question with the answer laid over it, or None when this deliverable has no gate."""
     path = batch_path(deliverable_dir)
     try:
         batch = FrameReviewBatch.model_validate_json(path.read_text())
@@ -112,12 +87,7 @@ def current_batch(deliverable_dir: Path) -> FrameReviewBatch | None:
 
 
 def frame_image(deliverable_dir: Path, frame_id: str) -> Path | None:
-    """The picture a frame id names, as the two lanes lay them out.
-
-    ``frame:0007`` is a keyframe (``sequence/frames/0007.png``); ``shot_ab54…:0000`` is a per-shot
-    anchor, whose path the anchor manifest carries — read rather than guessed, because a lane may
-    write more than one frame per shot.
-    """
+    """The picture a frame id names, as the two lanes lay them out."""
     head, _, tail = frame_id.rpartition(":")
     if not head:
         return None
@@ -195,11 +165,7 @@ def run_reviews(run_dir: Path) -> list[RunReview]:
 
 
 def waiting_frames(run_dir: Path) -> int:
-    """How many drawings in this run nobody has decided about yet.
-
-    Cheap enough for a list of a hundred runs: only a run that reached the gate has a batch to
-    read, and a batch is a few kilobytes describing six pictures.
-    """
+    """How many drawings in this run nobody has decided about yet."""
     total = 0
     for deliverable in deliverable_dirs(run_dir):
         batch = current_batch(deliverable)
@@ -209,12 +175,7 @@ def waiting_frames(run_dir: Path) -> int:
 
 
 def resume_command(workflow: str | None, project_dir: str) -> str:
-    """What continues a run once its gate is answered.
-
-    A verdict unblocks the gate; it does not restart the stages after it, and pretending otherwise
-    would leave a reviewer waiting for a film that nothing is making. The stages before
-    ``review_frames`` are cached, so this costs the pictures nothing.
-    """
+    """What continues a run once its gate is answered."""
     return (
         f"content-factory run-local {workflow or '<workflow>'}"
         f" --project-dir {project_dir} --from {GATE_STAGE}"
@@ -233,14 +194,7 @@ def record_verdict(
     redirect: str = "",
     note: str = "",
 ) -> RunReview:
-    """Write the verdict for one deliverable, or raise before anything reaches disk.
-
-    Every rule that can refuse it is in ``qc.verdict`` (:class:`VerdictRefusedError`), so the panel
-    and the CLI cannot come to different answers about what a verdict may say.
-
-    The decision is taken on the *current* batch — question plus any answer already recorded — so
-    a reviewer who rejected one frame yesterday is deciding today about what is actually left.
-    """
+    """Write the verdict for one deliverable, or raise before anything reaches disk."""
     batch = current_batch(deliverable_dir)
     if batch is None:
         msg = f"no frame-review batch under {deliverable_dir}"

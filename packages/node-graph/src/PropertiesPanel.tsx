@@ -1,8 +1,4 @@
-/**
- * The right-hand panel: a Parameters tab for whatever is selected and a Nodes tab listing the
- * whole graph in execution order — the same split the reference editor uses, and the list doubles
- * as the screen-reader path through the graph.
- */
+/** The right-hand panel: Parameters for the selection; the Nodes list is the screen-reader path. */
 
 import { useState } from "react";
 import { splitTypes } from "./datatypes";

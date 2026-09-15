@@ -2,7 +2,7 @@
   "$defs": {
     "AudioArtifactThresholds": {
       "additionalProperties": false,
-      "description": "Where \"this asset has a problem\" begins. One place, so the detector, the QC gate and the\nprocessing chains all agree on the same numbers.\n\nUse :meth:`for_profile` rather than the bare defaults: the defaults are the speech ones, and\napplying them to a sound effect would flag rain as hiss and a whoosh as harsh.",
+      "description": "Where \"this asset has a problem\" begins.",
       "properties": {
         "band_limit_hz_min": {
           "default": 14000.0,
@@ -64,7 +64,7 @@
     },
     "VoiceChainSpec": {
       "additionalProperties": false,
-      "description": "The deterministic tail of the voice chain: de-esser → EQ → light compression.\n\nOne FFmpeg filter graph, no model, no randomness: the same input always produces the same\nbytes, which is what lets the restoration stage cache per beat.",
+      "description": "The deterministic tail of the voice chain: de-esser → EQ → light compression.",
       "properties": {
         "air_db": {
           "default": 0.0,
@@ -216,7 +216,7 @@
   "$id": "https://content-factory.local/schema/SpeechRestorationSpec.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "One beat's trip through the voice chain, in the order the audio travels it:\n\ndetection → cleanup (ClearerVoice SE) → band extension (ClearerVoice SR) →\nrestoration (Resemble Enhance) → de-esser → EQ → light compression.\n\nThe neural steps default to ``off``: like every other model backend in this repo the mocks\nare the default and ``.env`` turns the real thing on. The FFmpeg tail needs nothing but\nFFmpeg, so it runs everywhere.",
+  "description": "One beat's trip through the voice chain, in the order the audio travels it.",
   "properties": {
     "band_extension": {
       "default": "off",

@@ -1,16 +1,4 @@
-"""Bake the CMU clip library named by ``cmu_clips.json``, and measure what came out.
-
-Run it:
-
-    uv run --project skills/video/blender_scene \
-        python skills/video/blender_scene/mocap/bake_library.py [--only cmu_22_23_08] [--dry-run]
-
-Every clip is measured as it is written, and the measurements go in ``clips/manifest.json`` beside
-them: duration, how far each actor travels, how close the two get, and the smallest wrist-to-wrist
-gap. Those are the numbers that say whether a clip is what its description claims - a clip tagged
-``hold_hands_walk`` whose wrists never come within arm's reach is mislabelled, and the manifest is
-where that shows up instead of on screen.
-"""
+"""Bake the CMU clip library named by ``cmu_clips.json``, and measure what came out."""
 
 from __future__ import annotations
 
@@ -33,13 +21,7 @@ def _travel(frames: list[dict[str, Any]]) -> float:
 
 
 def _speed(frames: list[dict[str, Any]], fps: int) -> dict[str, float]:
-    """Ground-plane root speed in m/s: the peak, and the fastest sustained second.
-
-    The posture tag says *running*; this says how fast, which is the difference between a sprint
-    and a hurried walk. Both numbers are needed because they disagree in the interesting cases: a
-    scramble peaks high for two frames and averages low, a jog does the reverse. Measured over the
-    root only, so it is speed across the floor and not limb speed.
-    """
+    """Ground-plane root speed in m/s: the peak, and the fastest sustained second."""
     xy = np.array([f["root_translation"][:2] for f in frames])
     if len(xy) < 2:
         return {"peak": 0.0, "sustained_1s": 0.0}
@@ -126,13 +108,7 @@ def flags(entry: dict[str, Any], m: dict[str, Any]) -> list[str]:
 
 
 def actors_for(entry: dict[str, Any], pairs: dict[str, str]) -> list[tuple[str, str]]:
-    """``[(actor_id, subject), ...]`` for one recipe entry.
-
-    ``pair: "18"`` bakes both halves of an A/B two-person take into one clip. ``subject: "35"``
-    bakes one performer alone, which is what a solo action - a sprint, a walk cycle - is: there is
-    no second subject to synchronise with, and inventing actor ``b`` would give the renderer an
-    actor id that the clip cannot answer for.
-    """
+    """``[(actor_id, subject), ...]`` for one recipe entry."""
     if ("pair" in entry) == ("subject" in entry):
         raise ValueError(
             f"clip entry {entry.get('trial', '?')} must name exactly one of pair or subject"

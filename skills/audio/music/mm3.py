@@ -1,18 +1,4 @@
-"""MiniMax-Music3 through the HOT-Step engine: server lifecycle, HTTP client, music QC.
-
-The weights in `models/music/MiniMax-Music3-GGUF` are not usable with llama.cpp or ComfyUI-GGUF --
-music generation needs the full five-module pipeline (LM -> RVQ depth decoder -> condition encoder
--> flow-matching DiT -> vocoder), which only the HOT-Step engine implements. So this module does no
-inference itself: it starts `ace-server` against the weights and drives `POST /mm3/synth`.
-
-The DSP and loudness machinery is *imported from the sfx skill* rather than copied. Both libraries
-land in the same asset tree at the same level with the same measurements, and that code has already
-been audited; a second implementation would only be a second thing to keep right. Importing it
-costs nothing extra here — `sfx.py` imports numpy at module level and torch only inside
-`load_model()`, which this module never calls.
-
-Rationale and sources: docs/research/2026-09-07-background-music-library.md
-"""
+"""MiniMax-Music3 through the HOT-Step engine: server lifecycle, HTTP client, music QC."""
 
 from __future__ import annotations
 
@@ -46,13 +32,13 @@ MAX_FRAMES = 9000  # engine cap -> 360 s
 
 
 def _get(url: str, timeout: float = 10.0) -> bytes:
-    with urllib.request.urlopen(url, timeout=timeout) as r:  # noqa: S310 (localhost only)
+    with urllib.request.urlopen(url, timeout=timeout) as r:  # noqa: S310
         return r.read()
 
 
 def _post_json(url: str, payload: dict, timeout: float = 60.0) -> dict:
     body = json.dumps(payload).encode()
-    req = urllib.request.Request(  # noqa: S310 (fixed http://127.0.0.1 URLs, built here)
+    req = urllib.request.Request(  # noqa: S310
         url, data=body, headers={"Content-Type": "application/json"}, method="POST"
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310
@@ -73,11 +59,7 @@ def start_server(
     log: Path | None = None,
     wait_s: float = 300.0,
 ) -> subprocess.Popen | None:
-    """Start ace-server if it is not already answering. Returns the process we started, or None.
-
-    Returning None for "already running" is what lets the caller leave a server it did not start
-    alone: a 12 GB model load is not something to tear down on someone else's behalf.
-    """
+    """Start ace-server if it is not already answering."""
     if server_up(port):
         return None
     exe = Path(os.environ.get("CF_MM3_ENGINE", engine or DEFAULT_ENGINE))
@@ -94,8 +76,7 @@ def start_server(
     fh = log.open("ab")
 
     # libggml-cuda.so records RUNPATH $ORIGIN only, so the CUDA runtime libs have to be found
-    # through the environment. CUDA_ROOT is the repo-local toolkit the engine was built against
-    # (see this skill's README); a system toolkit on the default loader path needs nothing here.
+    # through the environment.
     env = dict(os.environ)
     cuda_lib = REPO_ROOT / ".venvs" / "cuda-12.6" / "root" / "lib64"
     if cuda_lib.is_dir():
@@ -139,12 +120,7 @@ def generate(
     timeout_s: float = 3600.0,
     on_progress=None,
 ) -> tuple[np.ndarray, dict]:
-    """Render one track. Returns (float64 audio shaped (channels, samples), job info).
-
-    `instrumental=True` is not a hint to the caption: the engine substitutes the literal
-    `[instrumental]` structure tag for the lyrics in the prompt it assembles, and skips LRC
-    alignment capture entirely (mm3-align.h, mm3-job.h).
-    """
+    """Render one track."""
     if duration_s * FRAME_RATE > MAX_FRAMES:
         raise ValueError(f"{duration_s}s exceeds the engine cap of {MAX_FRAMES / FRAME_RATE:.0f}s")
     base = f"http://127.0.0.1:{port}"
@@ -217,26 +193,14 @@ def fade(x: np.ndarray, sr: int, in_s: float, out_s: float) -> np.ndarray:
 
 
 def presence_ratio(x: np.ndarray, sr: int) -> float:
-    """Share of total energy in 1-4 kHz -- the band a narrator competes for.
-
-    This is the one measurement that says whether a bed will fight the voice. It is a *ratio*, so
-    it describes something turning the track down cannot fix: ducking moves the whole spectrum, it
-    does not change how much of the track lives where the words live.
-    """
+    """Share of total energy in 1-4 kHz -- the band a narrator competes for."""
     f, p = sfx.spectrum(x, sr)
     total = float(p[(f >= 20) & (f <= 20000)].sum()) or 1e-20
     return round(float(p[(f >= 1000) & (f <= 4000)].sum() / total), 4)
 
 
 def slow_envelope_range_db(x: np.ndarray, sr: int, win_s: float = 10.0) -> float:
-    """p95 - p5 of a 10-second moving RMS: does the track actually travel?
-
-    EBU LRA is the wrong tool for this question on this material. A felt piano with long gaps of
-    near-silence between chords measured LRA 25.7 LU while being perfectly even in level -- LRA sees
-    the gaps, which is what it is for. Smoothing over ten seconds throws the gaps away and leaves
-    the shape: a bed that holds one level reads near zero however sparse it is, and one that builds
-    and recedes reads high.
-    """
+    """p95 - p5 of a 10-second moving RMS: does the track actually travel?"""
     mono = x.mean(axis=0)
     b = int(1.0 * sr)
     nb = max(mono.size // b, 1)
@@ -255,12 +219,7 @@ def best_loop_window(
     law: str = "equal_power",
     step_s: float = 1.0,
 ):
-    """Wrap the most level-stable window of the take, not simply the first one.
-
-    A pad that swells over its length gives a wrap whose two sides sit at different levels, which
-    pumps once per cycle. Sliding the window costs nothing (it is all numpy on audio we already
-    have) and picks the span where the two ends agree.
-    """
+    """Wrap the most level-stable window of the take, not simply the first one."""
     need = round((length_s + crossfade_s) * sr)
     if body.shape[-1] < need:
         return None, None

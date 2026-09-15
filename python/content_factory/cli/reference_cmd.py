@@ -1,9 +1,4 @@
-"""``content-factory reference …``: build the reference library, and ask it questions in words.
-
-Terse on purpose, like ``make``. Asking the library something should cost one command and a handful
-of lines, because the answer is usually a list of clip ids and the point of the list is to be acted
-on rather than read.
-"""
+"""``content-factory reference …``: build the reference library, and ask it questions in words."""
 
 from __future__ import annotations
 
@@ -50,11 +45,7 @@ def search_library(
     require_pose: bool = typer.Option(False, help="Only clips something can be driven from"),
     as_json: bool = typer.Option(False, "--json"),
 ) -> None:
-    """Ask the library a question. Prints the ranked clips, and what it could not answer.
-
-    ``absent`` is the important line: those are words the library understood and has nothing for.
-    It is a gap in the material, not a failure of the search, and it doubles as a shooting list.
-    """
+    """Ask the library a question."""
     from content_factory.config import get_settings
     from content_factory.reference.query import search
     from content_factory.schemas.reference import ReferenceQuery

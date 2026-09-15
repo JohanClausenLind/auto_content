@@ -1,8 +1,4 @@
-"""Timeline compiler (2.2, 2.3): measured milliseconds in, integer frames out.
-
-Order of truth: narration timings (measured) → planned durations (silent deliverables). Scene
-durations are never frozen before narration exists when narration is requested.
-"""
+"""Timeline compiler (2.2, 2.3): measured milliseconds in, integer frames out."""
 
 from __future__ import annotations
 
@@ -61,10 +57,7 @@ def compile_timeline(plan: StoryPlan, *, timeline_id: OpaqueId, narrated: bool) 
         start_ms, end_ms = _beat_span_ms(beat, require_measured=narrated)
         if narrated:
             # Measured: the scene holds until the next beat's speech starts (plus a handle at the
-            # end of the last beat), so cuts land on speech boundaries, never mid-word. Boundaries
-            # are placed at ABSOLUTE frame indices (round(measured_ms - t0)) rather than by
-            # accumulating per-span round-ups: the narration stem sits at absolute milliseconds,
-            # so accumulated rounding would drift the cues off the voice by ~1 frame per beat.
+            # end of the last beat), so cuts land on speech boundaries, never mid-word.
             if t0 is None:
                 t0 = start_ms
             nxt = beats[i + 1] if i + 1 < len(beats) else None
@@ -78,10 +71,8 @@ def compile_timeline(plan: StoryPlan, *, timeline_id: OpaqueId, narrated: bool) 
                 boundary = ms_to_frames(nxt.measured_start_ms - t0, fps)
             else:
                 boundary = ms_to_frames(end_ms - t0, fps) + handle_f
-            # The narration audio is the clock: never clamp to min_scene_ms here, or the
-            # cursor overshoots the absolute boundary and every later cue (and cut) lands
-            # off the voice — which the av_drift QC then fails as a blocker. min_scene_ms
-            # remains a planning guard for the silent path below.
+            # The narration audio is the clock: never clamp to min_scene_ms here, or the cursor
+            # overshoots the absolute boundary and every later cue (and cut) lands off the voice.
             duration = max(1, boundary - cursor)
         else:
             duration = max(min_f, ms_to_frames(end_ms, fps, round_up=True))

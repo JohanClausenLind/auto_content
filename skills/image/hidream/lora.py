@@ -1,23 +1,4 @@
-"""Merge a musubi-tuner HiDream-O1 LoRA into the loaded model, once, at startup.
-
-The romsketch adapter sat on this host for five days with nowhere to plug in: 82 image+caption
-pairs of two-person affection, trained twice, and the HiDream skill had no way to load an adapter
-at all. This is that way.
-
-**Merged, not attached.** The weights are folded into the base tensors when the server starts, so
-generation costs nothing extra and every request sees the same model. The price is that it cannot
-be unloaded — a different adapter means restarting the server, which is what ``ensure()`` already
-does when it switches GPU tenants.
-
-**Naming.** musubi-tuner writes ``lora_unet_<dotted module path with dots replaced by underscores>``
-(``model.language_model.layers.0.mlp.down_proj`` becomes
-``lora_unet_model_language_model_layers_0_mlp_down_proj``). Underscores are ambiguous read
-backwards — ``down_proj`` and ``language_model`` both contain one — so this never parses the
-flattened name. It walks the real module tree, flattens each Linear's own path the same way, and
-matches. A key that matches nothing is reported rather than skipped silently: a LoRA that lands on
-none of the model is indistinguishable from no LoRA at all, and that is exactly the failure worth
-being loud about.
-"""
+"""Merge a musubi-tuner HiDream-O1 LoRA into the loaded model, once, at startup."""
 
 from __future__ import annotations
 
@@ -32,11 +13,7 @@ SUFFIX_ALPHA = ".alpha"
 
 
 def read_metadata(path: Path) -> dict[str, str]:
-    """The safetensors ``__metadata__`` header, without loading a single tensor.
-
-    Cheap enough to call before deciding whether to load at all, which is what lets the server
-    refuse a mismatched adapter instead of merging it and producing quiet nonsense.
-    """
+    """The safetensors ``__metadata__`` header, without loading a single tensor."""
     with Path(path).open("rb") as fh:
         length = struct.unpack("<Q", fh.read(8))[0]
         header = json.loads(fh.read(length))
@@ -45,12 +22,7 @@ def read_metadata(path: Path) -> dict[str, str]:
 
 
 def group_adapter_keys(keys) -> dict[str, set[str]]:
-    """``flattened module name -> which of {down, up, alpha} the checkpoint carries for it``.
-
-    Pure, and separated from :func:`merge` for exactly that reason: this is where an adapter in the
-    wrong naming convention is detectable, and it is the half of the loader that can be tested in
-    the core suite, which has no torch.
-    """
+    """``flattened module name -> which of {down, up, alpha} the checkpoint carries for it``."""
     out: dict[str, set[str]] = {}
     for key in keys:
         if not key.startswith(LORA_PREFIX):
@@ -63,12 +35,7 @@ def group_adapter_keys(keys) -> dict[str, set[str]]:
 
 
 def flatten_module_paths(model) -> dict[str, str]:
-    """``flattened name -> dotted module path`` for every Linear in the model.
-
-    Built from the tree rather than from the checkpoint, so the mapping is whatever the model
-    actually is. A collision would mean two different modules flatten to one name; it has never
-    happened on this architecture, and it raises rather than picking one.
-    """
+    """``flattened name -> dotted module path`` for every Linear in the model."""
     import torch
 
     out: dict[str, str] = {}
@@ -91,11 +58,7 @@ def _module_at(model, dotted: str):
 
 
 def merge(model, path: Path, multiplier: float = 1.0) -> dict[str, object]:
-    """Fold the adapter at ``path`` into ``model`` in place. Returns what it did.
-
-    ``W += multiplier * (alpha / rank) * (up @ down)``, which is musubi's own convention and the
-    same scaling its ``hidream_o1_generate_image.py`` applies at ``--lora_multiplier``.
-    """
+    """Fold the adapter at ``path`` into ``model`` in place."""
     import torch
     from safetensors.torch import load_file
 

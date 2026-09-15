@@ -1,7 +1,4 @@
-/**
- * The shell's action table. Navigation entries are derived from `NAV_AREAS` rather than listed
- * again here, so a new area arrives with its `g` sequence already working and cannot drift.
- */
+/** The shell's action table; navigation entries derive from `NAV_AREAS`. */
 
 import type { KeyAction } from "@content-factory/web-ui";
 import type { NavArea } from "./nav";

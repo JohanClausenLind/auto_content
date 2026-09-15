@@ -47,9 +47,8 @@ def test_edit_sends_anchor_and_varies_seed_per_attempt() -> None:
     out = backend.edit(b"anchor-bytes", b"control", "move the hands closer", LOCK, attempt=1)
     backend.edit(b"anchor-bytes", b"control", "move the hands closer", LOCK, attempt=2)
     assert out == PNG
-    # The 2D control raster is NOT a reference by default: the one `run_sequence` compiles is a
-    # pure #FF0000 rectangle on black, and this pipeline treats every reference as subject
-    # material. See ImageSequenceSettings.control_as_reference for the measurement.
+    # The 2D control raster is NOT a reference by default: every reference is read as subject
+    # material, and this one is a #FF0000 rectangle (ImageSequenceSettings.control_as_reference).
     assert [base64.b64decode(r) for r in calls[0]["ref_images_b64"]] == [b"anchor-bytes"]
     assert (
         calls[0]["scheduler"] == "flow_match" and calls[0]["steps"] == 28
@@ -110,12 +109,7 @@ def test_edit_conditioned_sends_anchor_then_refs_then_control_with_boxes() -> No
 
 
 def test_control_reference_can_be_turned_back_on() -> None:
-    """Opting in is still possible, and it is still a scheduler switch.
-
-    Sending the raster is what makes this a two-reference request, and upstream branches the whole
-    dev recipe on ``len(ref_images) == 1`` — so the flag does not only add a picture, it moves the
-    frame onto a different sampler. That is half of why it is off by default.
-    """
+    """Opting in is still possible, and it is still a scheduler switch."""
     calls: list[dict] = []
 
     def handler(request: httpx.Request) -> httpx.Response:

@@ -14,9 +14,7 @@ export interface Rect {
   height: number;
 }
 
-/** Where an image of `natural` size lands inside `box` under object-fit: contain. Letterboxing is
- * split evenly, so a highlight expressed in image fractions can be placed on the rendered pixels
- * rather than on the container. */
+/** Where an image of `natural` size lands inside `box` under object-fit: contain. */
 export function containRect(natural: { width: number; height: number }, box: { width: number; height: number }): Rect {
   if (natural.width <= 0 || natural.height <= 0) return { left: 0, top: 0, ...box };
   const fit = Math.min(box.width / natural.width, box.height / natural.height);
@@ -25,9 +23,7 @@ export function containRect(natural: { width: number; height: number }, box: { w
   return { left: (box.width - width) / 2, top: (box.height - height) / 2, width, height };
 }
 
-/** The contract's highlight_region is four floats as fractions of the image: x, y, w, h. Values
- * are clamped into the image, and anything non-numeric drops the highlight entirely rather than
- * drawing a box in the wrong place. */
+/** The contract's highlight_region is four floats as fractions of the image: x, y, w, h. */
 export function highlightBox(region: readonly unknown[] | null, image: Rect): Rect | null {
   if (region === null || region.length !== 4) return null;
   const nums = region.map((v) => (typeof v === "number" && Number.isFinite(v) ? v : Number.NaN));
@@ -44,12 +40,7 @@ export function highlightBox(region: readonly unknown[] | null, image: Rect): Re
   };
 }
 
-/**
- * A captured web page with an optional highlight box. Playwright produces the PNG in a capture
- * step before the render (`apps/renderer/scripts/capture-screenshot.mjs`); by the time this scene
- * runs the image is just another bundle asset. The render is held until the bitmap has decoded so
- * its natural size is known, which keeps the highlight aligned on every frame.
- */
+/** A captured web page with an optional highlight box. */
 export function ScreenshotScene({ scene, compiled }: { scene: Spec; compiled: { scene_id: string } }): ReactElement {
   const frame = useCurrentFrame();
   const { bundle, theme, assetUrl } = useSceneEnv();

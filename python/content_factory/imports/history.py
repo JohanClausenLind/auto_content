@@ -1,5 +1,4 @@
-"""Import/Migration toolkit (phase 12): historical posts from CSV into Channel Brain memory.
-Dry-run first, deterministic dedup, full rollback, and a reconciliation report every time."""
+"""Import/Migration toolkit (phase 12): historical posts from CSV into Channel Brain memory."""
 
 from __future__ import annotations
 

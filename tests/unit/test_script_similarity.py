@@ -1,19 +1,4 @@
-"""The alignment gate compares words as words and numbers as numbers.
-
-It was failing beats **the model read correctly**. Measured against the real aligner
-(faster-whisper `base.en`) on this repo's own fixtures, 2026-09-09:
-
-* the script said `40.8 terawatt-hours`; the transcript came back `40 8 terawatt hours` -> **0.73**
-* the script said `twelve hundred` and `four fifty`; the transcript came back `1200` and `450`
-  -> **0.73**
-
-Both are correct reads. Two systems render a figure differently and neither is wrong, so comparing
-the renderings measured the aligner's number formatting rather than whether the model said the
-script — and the run died at `synthesize_narration` with a diff that looked like a hallucination.
-
-`wind_2024.json` now narrates all eight beats with **no lexicon at all**, where before it failed
-at beat 2 and then beat 4.
-"""
+"""The alignment gate compares words as words and numbers as numbers."""
 
 from __future__ import annotations
 
@@ -38,8 +23,7 @@ def test_the_two_measured_failures_now_agree_exactly() -> None:
 
 
 def test_a_dropped_figure_still_fails() -> None:
-    """The failure that matters: the sentinel is per *run*, so a missing number is a missing token
-    in the sequence and the run counts disagree in the diff."""
+    """The failure that matters: the sentinel is per *run*."""
     score, diff = _script_similarity(
         "Wind supplied twenty-one per cent in 2025.", "wind supplied per cent"
     )
@@ -71,8 +55,7 @@ def test_an_identical_read_scores_one() -> None:
 
 
 def test_the_diff_is_readable_by_a_person() -> None:
-    """The sentinel is a private-use control character; a diff a person reads must not contain
-    it, or the error message that names the problem is unreadable."""
+    """The sentinel is a private-use control character."""
     _score, diff = _script_similarity("about 40 per cent", "about 55 per cent")
     joined = " ".join(diff)
     assert NUMBER_TOKEN not in joined
@@ -110,17 +93,14 @@ def test_a_line_with_no_numbers_is_unchanged() -> None:
 
 
 def test_a_hyphenated_compound_agrees_with_the_words_it_is_made_of() -> None:
-    """Hyphens are orthography and the aligner does not write them. Masking the number alone still
-    left "terawatt-hours" against "terawatt hours" — a two-token difference in a three-token line,
-    which scored the beat 0.40. It also makes the commonest phrase in this repo's scripts agree."""
+    """Hyphens are orthography and the aligner does not write them."""
     assert _script_similarity("twenty-one per cent", "21 per cent")[0] == 1.0
     assert _script_similarity("a well-sited turbine", "a well sited turbine")[0] == 1.0
     assert spoken_word_shape("terawatt-hours") == (["terawatt", "hours"], 0)
 
 
 def test_a_year_is_a_figure() -> None:
-    """It is one for this purpose: the aligner may write "twenty twenty five" for "2025", and the
-    words either side are what the gate is checking."""
+    """It is one for this purpose: the aligner may write "twenty twenty five" for "2025"."""
     shape, runs = spoken_word_shape("in 2025 wind supplied a fifth")
     assert shape == ["in", NUMBER_TOKEN, "wind", "supplied", "a", "fifth"]
     assert runs == 1

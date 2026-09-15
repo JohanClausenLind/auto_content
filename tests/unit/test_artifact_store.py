@@ -82,11 +82,7 @@ def test_signed_urls_expire_and_reject_tampering() -> None:
 
 
 def test_open_store_honors_the_backend_setting(tmp_path: Path, monkeypatch) -> None:
-    """`object_store.backend` must actually select the backend.
-
-    Regression: every production caller used to construct FilesystemArtifactStore directly, so
-    setting backend="s3" was inert and artifacts silently kept landing on local disk.
-    """
+    """`object_store.backend` must actually select the backend."""
     from content_factory.artifacts import open_store
     from content_factory.config import get_settings
 

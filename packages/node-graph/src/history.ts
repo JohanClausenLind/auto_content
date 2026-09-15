@@ -1,12 +1,4 @@
-/**
- * Undo/redo as stacks of inverse operations.
- *
- * A history entry is (ops, inverse) so undo replays the inverse and redo replays the original —
- * no snapshots, so memory stays flat no matter how large the graph grows.
- *
- * `coalesce_key` merges consecutive entries that belong to one gesture: dragging a node emits a
- * move per pointermove, and typing emits a set_widget per keystroke; both should undo in one step.
- */
+/** Undo/redo as stacks of inverse operations. */
 
 import { applyOps, type GraphOp, type WorkspaceGraph } from "./graphModel";
 

@@ -1,24 +1,4 @@
-"""Turning "these are fine, that one is wrong" into a verdict the gate will read back.
-
-Two surfaces now record a verdict on a batch of drawings — ``content-factory frames review`` and
-the workspace's review panel — and the rules they have to enforce are identical and load-bearing.
-A second copy of "may an agent accept a batch it never opened" is how the two answers drift, and
-the one that drifts is the one that lets six unopened pictures into a film.
-
-Every refusal below is something that actually happened on this machine:
-
-* **``--as overnight-review``** — a reviewer kind the contract does not have. The command printed
-  ``{"passed": true}``, wrote the file, and the next ``review_frames`` refused the very verdict it
-  had just been handed.
-* **a 401-character rejection reason** — ``model_copy(update=...)`` does not re-validate in
-  Pydantic v2, so it went to disk and the gate died three stages later reading it.
-* **an agent accepting a batch in one word** — see :mod:`content_factory.qc.reviewer`; an agent
-  reads the images one at a time, so a verdict that does not name a frame is a frame it did not
-  open.
-
-So the decided batch goes through its own contract *before* anything is written, and a violated
-constraint becomes a sentence for the reviewer instead of a crash in a later stage.
-"""
+"""Turning "these are fine, that one is wrong" into a verdict the gate will read back."""
 
 from __future__ import annotations
 
@@ -44,11 +24,7 @@ sentence in ``reason`` is the same on both surfaces, because it is the same rule
 
 
 class VerdictRefusedError(Exception):
-    """A verdict that must not be written, and what the reviewer has to do about it.
-
-    Carries the frames it is about, so a caller can point at them rather than making the reviewer
-    diff two lists by eye.
-    """
+    """A verdict that must not be written, and what the reviewer has to do about it."""
 
     def __init__(
         self,
@@ -77,11 +53,7 @@ def decide(
     note: str = "",
     now: dt.datetime | None = None,
 ) -> FrameReviewBatch:
-    """The batch as decided, or :class:`VerdictRefusedError`. Writes nothing.
-
-    ``accept_rest`` is the blanket yes: a person looking at one contact sheet of every frame may
-    reasonably say "all fine", and an agent reading them one at a time may not.
-    """
+    """The batch as decided, or :class:`VerdictRefusedError`."""
     accepted = {f.strip() for f in accept if f.strip()}
     rejected = {f.strip() for f in reject if f.strip()}
     known = {f.frame_id for f in batch.frames}
@@ -122,17 +94,8 @@ def decide(
             " accept the batch, or name the frames that are wrong.",
         )
 
-    # `accept_rest` accepts what was not rejected; otherwise a frame is accepted only when it was
-    # named. Both paths leave `rejected` deciding, so a frame in both lists cannot slip through as
-    # accepted — that combination is refused above.
-    #
-    # A frame this verdict does not mention **keeps the decision it already carries**. That matters
-    # now that a rejected anchor really is redrawn: `record_verdict` decides on the *merged* batch,
-    # so an untouched frame arrives here already carrying an accept from a prior verdict about a
-    # byte-identical picture. Resetting it to unreviewed would make one rejected drawing cost a
-    # re-review of the whole set, which is the opposite of what `image-set` promises — "rejecting
-    # one drawing costs one drawing, not the film". A frame that has never been decided is still
-    # `unreviewed` and still has to be named.
+    # `rejected` decides first on both paths. An unmentioned frame keeps the decision it carries
+    # (a prior accept of a byte-identical picture), so one rejected drawing costs one redraw.
     def _decided(frame: FrameRecord) -> tuple[str, str, str]:
         if frame.frame_id in rejected:
             return "reject", reason, redirect
@@ -170,12 +133,7 @@ def decide(
 
 
 def merge_verdict(batch: FrameReviewBatch, prior: FrameReviewBatch) -> FrameReviewBatch:
-    """``batch`` carrying the decisions ``prior`` made about the *same* images.
-
-    A verdict binds to the digests of the exact pictures reviewed, so a regenerated frame comes
-    back unreviewed and has to be looked at again. That is the whole point of the gate, and it is
-    why this is a digest comparison rather than a frame-id one.
-    """
+    """``batch`` carrying the decisions ``prior`` made about the *same* images."""
     by_id = {f.frame_id: f for f in prior.frames}
     return batch.model_copy(
         update={

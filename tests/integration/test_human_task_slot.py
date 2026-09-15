@@ -1,6 +1,4 @@
-"""Phase-11 gate: a human write_copy slot parks the run (no worker consumed, survives waiting),
-rejects an invalid submission with reasons, accepts a valid one, and the completeness gate holds —
-nothing downstream ran before the slot was filled."""
+"""Phase-11 gate: a human write_copy slot parks the run (no worker consumed, survives waiting)."""
 
 from __future__ import annotations
 

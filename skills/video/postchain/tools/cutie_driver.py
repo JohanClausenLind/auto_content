@@ -1,11 +1,4 @@
-"""Runs INSIDE the Cutie checkout's environment: propagate an indexed mask through a frame dir.
-
-    python cutie_driver.py <frames_dir> <seed_mask.png> <masks_out_dir> [--weights PATH]
-        [--max-internal-size 480] [--mem-every 5]
-
-The seed mask is an indexed or grayscale PNG with 0 = background (the Blender segmentation pass is
-exactly that). Output: one indexed PNG per frame with the same ids.
-"""
+"""Runs INSIDE the Cutie checkout's environment: propagate an indexed mask through a frame dir."""
 
 from __future__ import annotations
 

@@ -1,12 +1,4 @@
-"""The pure half of the HiDream LoRA loader.
-
-The merge itself needs torch and a 33 GB model, so it lives behind the skill's own environment and
-is exercised by `tests/live`. What can be checked here is the part that was actually at risk: the
-naming convention. musubi-tuner flattens a module path with underscores, and `down_proj` and
-`language_model` both contain one — so reading the flattened name backwards is ambiguous and the
-loader must never try. These tests pin that it doesn't, and that a wrong-convention adapter is
-detected rather than silently merged into nothing.
-"""
+"""The pure half of the HiDream LoRA loader."""
 
 from __future__ import annotations
 
@@ -62,12 +54,7 @@ def test_ignores_keys_outside_the_convention(lora_mod) -> None:
 
 
 def test_flattening_is_generated_from_the_tree_never_parsed_back(lora_mod) -> None:
-    """The dotted path is recovered by flattening the real module names, not by splitting.
-
-    Reading "model_language_model_layers_0_mlp_down_proj" backwards has several valid splits; only
-    one matches a module that exists. Generating the key from the tree removes the ambiguity, so
-    this asserts the direction of the mapping rather than the result of a parse.
-    """
+    """The dotted path is recovered by flattening the real module names, not by splitting."""
 
     class _Linear:
         pass

@@ -1,5 +1,4 @@
-"""OAuth/vault attack tests (phase 9 gate): CSRF/foreign state, callback replay, expiry,
-wrong workspace, PKCE verifier in the exchange, tokens sealed (never stored in plaintext)."""
+"""OAuth/vault attack tests (phase 9 gate): CSRF/foreign state, callback replay, expiry."""
 
 from __future__ import annotations
 

@@ -69,12 +69,7 @@ def pose_for_frame(
 def apply_for_frame(
     rig: Any, pose_ref: dict[str, Any] | None, assets_root: Path, frame: int, fps: int
 ) -> dict[str, Any] | None:
-    """Pose one character for one frame, whichever kind of pose reference it carries.
-
-    ``cf.clip.v2`` ("segments") is the one kind that cannot be reduced to a bone->quaternion dict
-    ahead of time, because the solve depends on the rig's own rest orientations. Returning the
-    retarget report lets the runner put the numbers in its summary.
-    """
+    """Pose one character for one frame, whichever kind of pose reference it carries."""
     if not pose_ref:
         return None
     if pose_ref.get("kind") == "segments":

@@ -1,9 +1,4 @@
-"""Candidate selection and admission (18.5) — deterministic policy over typed inputs.
-
-Given a skill, a policy, the model catalog, hardware inventory, budget headroom, and evaluation
-approvals, produce an :class:`ExecutionDecision`. Never routes on a model's self-reported
-confidence; never lets ``local_only`` reach the cloud; never dispatches below the quality floor.
-"""
+"""Candidate selection and admission (18.5) — deterministic policy over typed inputs."""
 
 from __future__ import annotations
 

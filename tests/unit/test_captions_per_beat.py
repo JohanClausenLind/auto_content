@@ -96,19 +96,15 @@ def test_ass_track_highlights_each_word_once_and_carries_the_hook() -> None:
     caps = [d for d in dialogues if ",Cap," in d]
     highlights = [d for d in dialogues if ",CapHL," in d]
     assert len(hook) == 1 and hook[0].endswith("Wind beat nuclear.") and "0:00:02.50" in hook[0]
-    # Two events per spoken word: the boxed cue, and the highlight painted over it on a boxless
-    # style. One event carrying both put a colour override inside a BorderStyle-3 line, and libass
-    # draws that box per span -- so the translucent box overlapped itself and left a hard dark bar
-    # either side of whichever word was lit.
+    # Two events per word: the boxed cue and the highlight on a boxless style. libass draws a
+    # BorderStyle-3 box per span, so one event carrying both left a dark bar beside the lit word.
     assert len(caps) == 3
     assert len(highlights) == 3
     assert all("&H00FFC34C&" not in d for d in caps), "the boxed layer carries no override at all"
     # the highlight colour appears exactly once per overlay, on the word being spoken, in order
     assert all(d.count("&H00FFC34C&") == 1 for d in highlights)
-    # The lit word is whatever follows the override block that carries the colour. Read by
-    # splitting on the closing brace rather than on an exact tag string: the block also carries the
-    # `\t` scale that makes the word rise (`compose.caption_pop`, added 2026-09-12), so a literal
-    # "\1c<colour>}" no longer appears and matching on it asserted the animation away.
+    # Split on the closing brace, not an exact tag string: the block also carries the `\t` scale of
+    # `compose.caption_pop` (2026-09-12), so a literal "\1c<colour>}" asserts the animation away.
     lit = [d.split("&H00FFC34C&", 1)[1].split("}", 1)[1].split("{", 1)[0] for d in highlights]
     assert lit == ["Wind", "beat", "nuclear"]
     # every word is present in both layers, so the two are laid out identically and stay in register
@@ -126,14 +122,7 @@ def test_ass_track_highlights_each_word_once_and_carries_the_hook() -> None:
 
 
 def test_no_hook_is_burned_over_a_film_that_opens_on_typography() -> None:
-    """A hook over a headline card is a second headline over the first.
-
-    Both halves were measured on `narrated-video` (2026-09-10). The word test alone let
-    "Resistance is not something bacteria learn" sit across the top of a title card reading
-    "Resistance is not learned" — a paraphrase is not the same words, and two different headlines
-    stacked read worse than a repeat. The word test still earns its place: it catches a hook that
-    repeats a *non*-headline opening scene's own line.
-    """
+    """A hook over a headline card is a second headline over the first."""
     from content_factory.schemas.fixtures import sample_story_plan
     from content_factory.workflows.stages import HEADLINE_OPENERS, _hook_overlay
 
@@ -172,9 +161,7 @@ def test_no_hook_is_burned_over_a_film_that_opens_on_typography() -> None:
 
 
 def test_no_cue_ends_on_a_word_that_binds_to_the_next_one() -> None:
-    """Measured on a German cut (2026-09-10): a cue read "... die Luft dünner. Der" — a dangling
-    article on screen by itself. English had been doing it all evening unnoticed: "Any sort that
-    works by comparing / two things has a"."""
+    """Measured on a German cut (2026-09-10): a cue read "..."""
     from content_factory.audio.captions import BINDS_FORWARD, balanced_groups
     from content_factory.schemas.scenes import WordTiming
 

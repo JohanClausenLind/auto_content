@@ -1,5 +1,4 @@
-"""Append-only audit events for every connection, authorization, approval, publish, kill-switch,
-import, and settings change (section 25)."""
+"""Append-only audit events for every connection, authorization, approval, publish."""
 
 from __future__ import annotations
 

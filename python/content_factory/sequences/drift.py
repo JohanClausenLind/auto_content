@@ -1,9 +1,4 @@
-"""Drift QC (16.6): deterministic comparison of each generated frame against the anchor.
-
-Locked-region similarity is measured OUTSIDE the frame's declared motion region (the subject may
-move; everything else may not). Style delta is a global luminance-histogram distance. The
-consistency priority (composition > subject anatomy > style > fine detail) is expressed as which
-checks block: locked-region (composition) failures block first, style second."""
+"""Drift QC (16.6): deterministic comparison of each generated frame against the anchor."""
 
 from __future__ import annotations
 
@@ -100,19 +95,7 @@ which keeps it deterministic across machines the way the rest of drift QC is."""
 
 
 def structural_similarity(a_png: bytes, b_png: bytes, *, grid: int = STRUCTURAL_GRID) -> float:
-    """Where the light is, rather than how much of it there is. 1.0 identical, 0.0 anticorrelated.
-
-    `_similarity` measures mean absolute luminance difference, which is blind to *arrangement*:
-    measured on six unrelated rendered cards (2026-09-08), completely different pictures sharing a
-    flat paper ground scored **0.86-0.93** — higher than the bar a guide would be held to. This
-    correlates the two frames' 8x8 block grids instead, so a picture with its content in different
-    places scores low however similar its overall brightness is.
-
-    Reported alongside the existing numbers rather than replacing them, and **not** gating: on the
-    same six cards it separated better (0.47-0.84 for unrelated pairs against 0.83-0.98 for two
-    moments of one scene) but the ranges still touch, and there is no live guided clip on this host
-    to calibrate against. Two numbers whose disagreement is visible beat one number that is wrong.
-    """
+    """Where the light is, rather than how much of it there is."""
     x = _blocks(a_png, grid)
     y = _blocks(b_png, grid)
     n = len(x)
@@ -200,25 +183,7 @@ def guide_adherence(
     structural_min: float = GUIDE_STRUCTURAL_MIN,
     style_delta_max: float = 0.30,
 ) -> GuideAdherence:
-    """Compare each guide anchor with the generated frame at the index it was pinned to.
-
-    The measurement the guided package never had. `LTXVAddGuide` pins an anchor at a frame index
-    and nothing afterwards checked that the clip went anywhere near it — a guide whose strength was
-    too low, or whose index the length rule had snapped past the end of the clip, produced exactly
-    the same "ok" as one the model honoured.
-
-    No motion boxes: a guide pins the *whole* composition, so the whole frame is the locked region.
-    That is the difference from the still-edit path, where the subject is expected to move and
-    everything else is not.
-
-    **What this cannot tell you**, recorded because the first live run showed it and the numbers
-    looked perfect throughout: neither measure distinguishes "the camera moved from A to B" from
-    "A and B were cross-dissolved". Given a start and an end anchor far apart in camera space (a
-    side view and a head-on view of the same runner), LTX-2.5 hit both pinned frames — 0.97 and
-    0.97 — and got between them by drawing **both figures at once** at the midpoint. The similarity
-    curve of a dissolve is monotone and indistinguishable from that of a move. Look at the middle
-    frame; the metric is a check on the ends only.
-    """
+    """Compare each guide anchor with the generated frame at the index it was pinned to."""
     reports = []
     structural = []
     for index in sorted(guides):

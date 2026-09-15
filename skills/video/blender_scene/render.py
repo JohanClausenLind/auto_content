@@ -1,14 +1,4 @@
-"""Render a ShotSpec's control passes with headless Blender (one-shot skill runner).
-
-Usage:
-    uv run --project skills/video/blender_scene python skills/video/blender_scene/render.py \
-        <spec.json> <out_dir> [--blender PATH] [--engine workbench|eevee|cycles_cpu] \
-        [--frames 0,48,96] [--assets ROOT] [--keep-raw] [--timeout SECONDS]
-
-Exit codes: 0 ok · 2 invalid spec · 3 exception inside Blender · 4 blender binary or asset
-missing · 5 timeout · 6 post-processing / verification failure. The last stdout line is one JSON
-summary; Blender's own output goes to <out_dir>/logs/.
-"""
+"""Render a ShotSpec's control passes with headless Blender (one-shot skill runner)."""
 
 from __future__ import annotations
 

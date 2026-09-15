@@ -116,12 +116,7 @@ export const historyRunQuery = (runId: string) =>
     staleTime: 5 * 60_000,
   });
 
-/** The frame-review gate of one run: what it is asking, and what has been decided so far.
- *
- * Not polled. Answering it is the only thing that changes it, and the answer comes from this tab;
- * a poll would re-hash every drawing on disk (the digest check behind `on_disk`) every few
- * seconds for a question nobody else is answering.
- */
+/** The frame-review gate of one run; not polled, since only this tab's answer changes it. */
 export const runReviewQuery = (runId: string) =>
   queryOptions({
     queryKey: queryKeys.runReview(runId),

@@ -1,11 +1,4 @@
-"""Converting what an operator has into what the pipeline reads.
-
-Every fixture here is made by ffmpeg in the test rather than committed, because what is being
-checked is a decision about real codecs: whether a file can be *copied* into MP4 or has to be
-re-encoded, and that the result is actually readable afterwards. The MIME strings the decisions
-key on are asserted too — they come from `python-magic` on this host, and a wrong one would make
-a whole container silently unacceptable again.
-"""
+"""Converting what an operator has into what the pipeline reads."""
 
 from __future__ import annotations
 
@@ -56,8 +49,7 @@ def source(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 def test_the_convertible_set_is_disjoint_from_what_is_already_accepted() -> None:
-    """Conversion exists to accept what would otherwise be refused — never to re-encode a file
-    the pipeline can already read, which would cost quality for nothing."""
+    """Conversion exists to accept what would otherwise be refused."""
     assert set(CONVERTIBLE) & set(ALLOWED) == set()
     assert needs_conversion("video/x-matroska") and not needs_conversion("video/mp4")
     # Everything convertible becomes something the allowlist accepts, or the conversion is a
@@ -71,8 +63,7 @@ def test_the_convertible_set_is_disjoint_from_what_is_already_accepted() -> None
 def test_a_matroska_recording_is_copied_into_mp4_without_re_encoding(
     source: Path, tmp_path: Path
 ) -> None:
-    """The screen-recording case: OBS writes H.264/AAC in Matroska, so this is a container
-    change. A re-encode here would cost minutes and quality for no reason."""
+    """The screen-recording case: OBS writes H.264/AAC in Matroska."""
     mkv = tmp_path / "2026-09-09 13-35-29.mkv"
     _run("-i", str(source), "-c", "copy", str(mkv))
     assert sniff_mime(mkv) == "video/x-matroska"
@@ -105,8 +96,7 @@ def test_a_webm_is_re_encoded_because_its_codecs_cannot_be_delivered(
 def test_a_video_with_a_subtitle_track_converts_and_says_what_was_dropped(
     source: Path, tmp_path: Path
 ) -> None:
-    """MP4 cannot carry Matroska's subtitles, and a blind `-c copy` fails on them. Mapping only
-    the first video and audio stream is the fix; saying so is the honest half of it."""
+    """MP4 cannot carry Matroska's subtitles, and a blind `-c copy` fails on them."""
     srt = tmp_path / "subs.srt"
     srt.write_text("1\n00:00:00,000 --> 00:00:01,000\nhello\n\n")
     mkv = tmp_path / "with-subs.mkv"
@@ -156,8 +146,7 @@ def test_audio_containers_become_pcm_wav(
 
 
 def test_an_audio_only_matroska_is_treated_as_audio(source: Path, tmp_path: Path) -> None:
-    """A .mkv with no picture is an audio file wearing a video container, and the audio lanes
-    are what should be offered for it."""
+    """A .mkv with no picture is an audio file wearing a video container."""
     mka = tmp_path / "voice.mkv"
     _run("-i", str(source), "-vn", "-c:a", "libopus", str(mka))
     result = convert_media(mka, sniff_mime(mka), tmp_path / "out")
@@ -216,9 +205,7 @@ def _blank(path: Path, *, seconds: float = 3.0, colour: str = "black", tone: boo
 
 
 def test_an_mp4_with_no_video_stream_at_all_is_a_recording(tmp_path: Path) -> None:
-    """The commonest shape of the problem, and the one the container settles on its own: a
-    voice-memo app writes AAC into MP4, `magic` reads the ftyp brand and says `video/mp4`, and
-    there has never been a picture in it."""
+    """The commonest shape of the problem, and the one the container settles on its own."""
     out = tmp_path / "memo.mp4"
     _run("-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "aac", str(out))
     assert sniff_mime(out) == "video/mp4", "the bytes say video whatever is inside"
@@ -239,8 +226,7 @@ def test_an_mp4_whose_picture_is_black_the_whole_way_is_a_recording(tmp_path: Pa
 
 
 def test_an_mp4_that_holds_one_unchanging_cover_is_a_recording(tmp_path: Path) -> None:
-    """The other half of the same problem: a podcast tool renders the show's artwork over the
-    audio, so the picture is not black — it is simply not a film."""
+    """The other half of the same problem."""
     verdict = blank_picture(_blank(tmp_path / "episode.mp4", colour="0x203040"))
 
     assert verdict is not None and verdict.certainty == "sampled"
@@ -248,20 +234,17 @@ def test_an_mp4_that_holds_one_unchanging_cover_is_a_recording(tmp_path: Path) -
 
 
 def test_a_film_is_not_a_recording_however_much_the_operator_wants_one(source: Path) -> None:
-    """The check has to be able to say no, or it is not a check: `--input holiday.mp4` to an
-    audio lane is a mistake, and the lane that takes video is one command away."""
+    """The check has to be able to say no, or it is not a check."""
     assert blank_picture(source) is None
 
 
 def test_a_black_video_with_no_sound_is_not_a_recording(tmp_path: Path) -> None:
-    """Blankness alone is not the question. The question is whether the sound can stand on its
-    own, and silence cannot — so this stays a video and is refused as one."""
+    """Blankness alone is not the question."""
     assert blank_picture(_blank(tmp_path / "dead.mp4", tone=False)) is None
 
 
 def test_a_file_ffprobe_cannot_read_is_not_a_recording(tmp_path: Path) -> None:
-    """Total, like every other measurement here: an unreadable file is refused by the allowlist
-    that already looked at it, not by an exception out of a heuristic."""
+    """Total, like every other measurement here."""
     junk = tmp_path / "broken.mp4"
     junk.write_bytes(b"\x00" * 4096)
     assert blank_picture(junk) is None
@@ -270,8 +253,7 @@ def test_a_file_ffprobe_cannot_read_is_not_a_recording(tmp_path: Path) -> None:
 def test_looking_at_a_long_recording_costs_a_bounded_number_of_frames(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The verdict is reached from a fixed sample however long the file is. That is the whole
-    reason this can run in front of an operator waiting for a run to start."""
+    """The verdict is reached from a fixed sample however long the file is."""
     from content_factory.ingest import convert
 
     looked_at: list[float] = []

@@ -1,10 +1,4 @@
-"""ArtifactStore (section 8): immutable, workspace-scoped, content-addressed object storage.
-
-Two backends behind one interface: filesystem (default) and S3-compatible (SeaweedFS/AWS/…).
-Keys are ``<workspace_id>/<kind>/<sha256[:2]>/<sha256>.<ext>``. Writes are atomic
-(temp-then-rename or single PUT); an existing object with the same hash is never rewritten.
-Browsers receive short-lived signed URLs; provider credentials never leave the server.
-"""
+"""ArtifactStore (section 8): immutable, workspace-scoped, content-addressed object storage."""
 
 from __future__ import annotations
 
@@ -313,12 +307,7 @@ class S3ArtifactStore(ArtifactStore):
 
 
 def open_store(root: Path | None = None) -> ArtifactStore:
-    """The artifact store `object_store.backend` selects.
-
-    Every caller must come through here, or the backend setting is a lie. `root` overrides the
-    filesystem location for callers that own a per-run directory (stage contexts, the demo
-    runner); it is meaningless for object storage and ignored when the backend is s3.
-    """
+    """The artifact store `object_store.backend` selects."""
     from content_factory.config import get_settings
 
     s = get_settings().object_store

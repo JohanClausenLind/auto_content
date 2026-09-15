@@ -89,10 +89,7 @@ function join(numeral: string, unit: string): FormattedNumber {
 
 export type CellValue = string | number | null;
 
-/**
- * Resolve a DataRef through the bundle datasets: `row_key` matches the first column's value
- * (or a column literally named `key`/`row_key`); `column` defaults to the last column.
- */
+/** Resolve a DataRef: row_key matches the first or key/row_key column, column defaults to last. */
 export function resolveDataRef(ref: DataRef, datasets: Readonly<Record<string, DatasetTable>>): CellValue | undefined {
   const table = datasets[ref.dataset_id];
   if (!table) return undefined;
@@ -116,15 +113,7 @@ export function resolveNumber(ref: DataRef, datasets: Readonly<Record<string, Da
 
 export type DataClassification = DatasetTable["classification"];
 
-/**
- * The classification of the dataset a DataRef points at, or `undefined` when the table is absent.
- *
- * The reason this exists is the pair `ESTIMATE` and `ILLUSTRATIVE`. A table marked either of those
- * is not a measurement — an illustrative table is a *shape*, drawn to explain a mechanism, and a
- * figure lifted out of one and set in 200-point type is indistinguishable on screen from a figure
- * that came off a source. `DatasetTable.classification` has carried that distinction since the
- * contract was written and no renderer read it, so the caveat existed only in the JSON.
- */
+/** A DataRef's dataset classification: ESTIMATE and ILLUSTRATIVE figures must not read as measured. */
 export function refClassification(
   ref: DataRef | null | undefined,
   datasets: Readonly<Record<string, DatasetTable>>,

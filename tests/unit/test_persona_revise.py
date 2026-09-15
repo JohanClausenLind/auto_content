@@ -1,5 +1,4 @@
-"""Persona Revision Box (14.1): plain language → typed diff shown before apply; retroactive
-consistency proposes remakes of queued work and ASKS; published content untouched; adults only."""
+"""Persona Revision Box (14.1): plain language → typed diff shown before apply."""
 
 from __future__ import annotations
 

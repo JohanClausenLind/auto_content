@@ -1,18 +1,4 @@
-"""Generate the canvas's workflow data from the definitions in ``workflows/*.yaml``.
-
-    uv run python scripts/export_workflows.py [--check]
-
-Writes two files:
-
-* ``fixtures/schema/workflow_templates.json`` - tracked, canonical JSON. This is the drift gate:
-  ``--check`` fails when it is stale, and it is tracked precisely because
-  ``packages/content-schema-ts/generated`` and ``apps/web/src/workspace/generated`` are git-ignored,
-  so a ``git diff`` gate on the generated TS would always pass and prove nothing.
-* ``apps/web/src/workspace/generated/workflowTemplates.ts`` - what the canvas imports.
-
-Nodes without an explicit position are laid out by topological depth, so a definition can leave
-positions out and still open as a readable graph.
-"""
+"""Generate the canvas's workflow data from the definitions in ``workflows/*.yaml``."""
 
 from __future__ import annotations
 
@@ -68,12 +54,7 @@ def positioned(template) -> list[dict]:
 
 
 def install_key(requirement) -> str:
-    """The models/weights.py registry key that satisfies this requirement, or "".
-
-    Resolved here rather than in the browser so the canvas never has to re-implement the match:
-    the card can offer a real Install button because this key is what /v1/models/install takes.
-    An empty key means the registry has no source for it, which the card says plainly.
-    """
+    """The models/weights.py registry key that satisfies this requirement, or ""."""
     if requirement.kind == "skill":
         env = skill_env_by_key(requirement.skill)
         return env.key if env else ""

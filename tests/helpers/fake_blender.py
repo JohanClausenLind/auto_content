@@ -1,6 +1,4 @@
-"""A stand-in for ``uv run … skills/video/blender_scene/render.py``: writes the skill's full
-output contract from the ShotSpec alone (Pillow + numpy), so the control plane's Blender path is
-testable without Blender. Deterministic: same spec -> same bytes."""
+"""A stand-in for ``uv run … skills/video/blender_scene/render.py``."""
 
 from __future__ import annotations
 

@@ -1,21 +1,4 @@
-"""The research lane, end to end offline: uploads in, verified claims out.
-
-Every library this exercises already existed and was tested. `ingest.uploads` has had size caps,
-magic-number sniffing and an allowlist that never accepts SVG since phase 4; `research.claims` has
-verified numbers against evidence and datasets since section 10; `research.fetch` re-validates
-every redirect hop against SSRF. What was missing was anything that put them in a line, so:
-
-* `stage_ingest` did not exist, which is why `data-story-video` was the one lane the catalogue
-  marked unfinished;
-* `stage_compile_datasets` returned `sample_dataset()`, so a data-led film could only be about
-  Swedish wind power whatever the operator uploaded;
-* `stage_verify_claims` re-derived the FIXTURE claims and gated `sample_story_plan()` — a film
-  nobody was rendering — and it ran before `plan_story`, so there was no script to gate;
-* `EvidenceRequirement.requires_independent_sources` was computed and read nowhere, so two outlets
-  reprinting one press release counted twice.
-
-Nothing here touches the network: `execution.live_research` is off, which is the default.
-"""
+"""The research lane, end to end offline: uploads in, verified claims out."""
 
 from __future__ import annotations
 
@@ -108,8 +91,7 @@ def test_a_csv_becomes_a_typed_table_and_transforms_are_recorded(tmp_path: Path)
 
 
 def test_a_computed_column_makes_the_table_derived_data(tmp_path: Path) -> None:
-    """The distinction is load-bearing: the renderer labels an estimate on screen, and calling a
-    computed share "source data" puts a derived number on a chart claiming to be measured."""
+    """The distinction is load-bearing: the renderer labels an estimate on screen."""
     path = tmp_path / "energy.csv"
     path.write_text(WIND_CSV)
     result = compile_dataset(
@@ -202,9 +184,7 @@ def test_ingest_sniffs_every_upload_and_records_it_as_a_source(ctx: StageContext
 
 
 def test_a_hand_copied_recording_is_converted_rather_than_refused(ctx: StageContext) -> None:
-    """A .mkv copied into the run's uploads folder used to fail the whole stage. The browser
-    converts on upload; this is the same step for a file put there by hand — the operator's own
-    file is left alone and the converted copy is what becomes the source."""
+    """A .mkv copied into the run's uploads folder used to fail the whole stage."""
     import subprocess
 
     uploads = ctx.project_dir / "uploads"
@@ -252,8 +232,7 @@ def test_a_hand_copied_recording_is_converted_rather_than_refused(ctx: StageCont
 
 
 def test_a_rejected_upload_fails_the_stage_rather_than_being_skipped(ctx: StageContext) -> None:
-    """A film built from three of an operator's four files, silently, is worse than one that
-    stopped. And a declared .svg is refused whatever the bytes sniff as."""
+    """A film built from three of an operator's four files, silently."""
     _upload(ctx, "energy.csv", WIND_CSV)
     _upload(ctx, "logo.svg", "<svg xmlns='http://www.w3.org/2000/svg'></svg>")
     with pytest.raises(RuntimeError, match=r"logo\.svg"):
@@ -313,8 +292,7 @@ def test_research_carries_the_operators_uploads_as_sources(ctx: StageContext) ->
 
 
 def test_the_claim_digest_ignores_the_check_date(ctx: StageContext) -> None:
-    """A cache key that changes with the clock is not a cache key: folding `checked_at` in made
-    every stage downstream of research re-run at midnight."""
+    """A cache key that changes with the clock is not a cache key."""
     from content_factory.schemas.research import ClaimRecord
     from content_factory.workflows.stages import _claim_digest
 
@@ -383,8 +361,7 @@ def _sourced(publisher: str, source_id: str, excerpt: str):
 
 
 def test_two_outlets_reprinting_one_wire_report_count_as_one_publisher() -> None:
-    """`requires_independent_sources=2` has been set on high-stakes claims since the requirement
-    compiler was written, and nothing read it — so this exact case passed."""
+    """`requires_independent_sources=2` was set on high-stakes claims and nothing read it."""
     from content_factory.research.claims import (
         build_claim,
         compile_requirements,
@@ -431,8 +408,7 @@ def test_two_outlets_reprinting_one_wire_report_count_as_one_publisher() -> None
 
 
 def test_the_gate_leaves_ordinary_claims_and_unsupported_ones_alone() -> None:
-    """It fires only where the requirement compiler asks for two publishers, and never on a claim
-    that already failed — a second finding on an unsupported claim buries the first."""
+    """It fires only where the requirement compiler asks for two publishers."""
     from content_factory.research.claims import build_claim, independence_findings
     from content_factory.schemas.research import VerificationStatus
 
@@ -461,8 +437,7 @@ def test_the_gate_leaves_ordinary_claims_and_unsupported_ones_alone() -> None:
 
 
 def test_lock_script_gates_the_script_it_locked_and_not_a_fixture(ctx: StageContext) -> None:
-    """`verify_claims` ran BEFORE `plan_story` and gated `sample_story_plan()` — a film nobody was
-    rendering. The gate belongs at the last moment before the words are spoken."""
+    """`verify_claims` ran BEFORE `plan_story` and gated `sample_story_plan()`."""
     import json as _json
 
     from content_factory.schemas.research import ClaimRecord, VerificationStatus
@@ -493,8 +468,7 @@ def test_lock_script_gates_the_script_it_locked_and_not_a_fixture(ctx: StageCont
 
 
 def test_a_written_film_with_no_claims_is_not_gated_into_the_ground(ctx: StageContext) -> None:
-    """Every picture-story lane is a hand-written StoryPlan with no claim links. Inventing a gate
-    failure for one would block the lanes that never had claims to check."""
+    """Every picture-story lane is a hand-written StoryPlan with no claim links."""
     import json as _json
 
     from content_factory.workflows.stages import stage_lock_script

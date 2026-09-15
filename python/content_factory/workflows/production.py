@@ -1,12 +1,4 @@
-"""The durable production workflow (section 7, phase 6).
-
-States: CREATED → PREFLIGHTING → WAITING_FOR_APPROVAL → APPROVED → PRODUCING → COMPLETE
-(FAILED/CANCELLED as side states). The approval signal binds to the exact preflight revision hash;
-a mismatched approval is recorded and ignored. WAITING_FOR_APPROVAL consumes no worker. Every
-stage activity is idempotent: results are cached by an input hash that folds in the campaign,
-quality, edit overlays, and all dependency output hashes, so a targeted edit invalidates exactly
-its dependency closure on the next run of the same project.
-"""
+"""The durable production workflow (section 7, phase 6)."""
 
 from __future__ import annotations
 
@@ -233,11 +225,7 @@ async def compile_plan(inp: ProductionInput) -> CompiledPlan:
     )
     (project_dir / "dag.json").write_text(dag.model_dump_json(indent=1))
     (project_dir / "campaign.json").write_text(campaign.model_dump_json(indent=1))
-    # Files the operator dropped on the canvas. They are copied out of the artifact store into
-    # the uploads folder here, in the first activity, because this is the moment the project
-    # directory exists — and because the `ingest` stage reads that folder, so a dropped file
-    # becomes a typed source through the same path (and the same sniffing) as one put there by
-    # hand. Idempotent by name and size: a replayed activity re-copies nothing.
+    # Files the operator dropped on the canvas.
     if campaign.staged_uploads:
         from content_factory.artifacts import open_store
         from content_factory.ingest.dropped import materialize
@@ -311,14 +299,6 @@ async def execute_node(inp: ExecuteNodeInput) -> NodeResult:
     with log.open("a") as fh:
         fh.write(f"{inp.node_id}\t{inp.input_hash[:12]}\n")
     # The injected delay heartbeats through itself, for the same reason the executor below does.
-    # It used to be a bare `await asyncio.sleep(delay)` taken BEFORE the first heartbeat, and
-    # `test_stopping_a_producing_run_cancels_the_node_in_flight` sets it to 8 s against a 6 s
-    # HEARTBEAT_TIMEOUT_S — so every activity in that run missed its first heartbeat and the whole
-    # run failed with "activity Heartbeat timeout" before it ever reached the state the test is
-    # about. It passed anyway whenever a retry happened to land inside the window (the failing
-    # logs show `attempt: 2`), which is why it read as flaky under load rather than as wrong: the
-    # delay exists to make a node slow enough to catch mid-flight, and a slow node is exactly what
-    # heartbeating is for.
     delay = float(os.environ.get("CF_TEST_STAGE_DELAY_S", "0") or 0)
     deadline = time.monotonic() + delay
     while delay and time.monotonic() < deadline:
@@ -331,14 +311,9 @@ async def execute_node(inp: ExecuteNodeInput) -> NodeResult:
     try:
         out = task.result()
     # BlockedError FIRST: it subclasses RuntimeError, so the prepare-mode clause below would
-    # otherwise shadow it and a blocked run would raise a plain error instead of the
-    # non-retryable ApplicationError the BLOCKED state machine reads. pyright caught this.
+    # otherwise shadow it and a blocked run would raise a plain error.
     except BlockedError as blocked:
-        # Non-retryable on purpose. The stage has already regenerated up to
-        # max_regen_attempts_per_frame and run the deterministic checks on every attempt; a
-        # Temporal retry is three more GPU-minutes per frame for the same answer. The payload
-        # rides in the failure details so the workflow can set RunState.BLOCKED and the operator
-        # can see which candidate images to look at.
+        # Non-retryable on purpose.
         raise ApplicationError(
             str(blocked),
             blocked.as_dict(),
@@ -348,9 +323,7 @@ async def execute_node(inp: ExecuteNodeInput) -> NodeResult:
     except RuntimeError as exc:
         if not inp.prepare:
             raise
-        # Prepare mode: the gate being shut is what we are here to arrange, not a failure. The
-        # sheet, the manifest and the findings are on disk now, which is what the operator needs
-        # before they can approve anything.
+        # Prepare mode: the gate being shut is what we are here to arrange, not a failure.
         return NodeResult(
             inp.node_id, "", False, json.dumps({"prepared": True, "gate": str(exc)[:600]})
         )
@@ -540,14 +513,7 @@ async def validate_human_submission(inp: HumanValidationInput) -> NodeResult:
 def _validate_frame_review(
     inp: HumanValidationInput, project_dir: Path, payload: dict
 ) -> NodeResult:
-    """A submitted frame verdict, checked against the frames actually on disk.
-
-    `review_frames` had no validator at all, so a durable run parked on it for ever: there was no
-    way to submit the verdict the stage reads. What a verdict has to satisfy is not "is this valid
-    JSON" — it is **which images was this a verdict about**. A verdict that reviewed a frame that
-    has since been regenerated is not a verdict on what would ship, which is the whole reason
-    `FrameRecord` carries `png_sha256` and the stage re-checks it.
-    """
+    """A submitted frame verdict, checked against the frames actually on disk."""
     from content_factory.schemas.review import FrameReviewBatch
 
     assert inp.deliverable_id is not None
@@ -602,16 +568,7 @@ def _validate_frame_review(
 def _validate_asset_review(
     inp: HumanValidationInput, project_dir: Path, payload: dict
 ) -> NodeResult:
-    """A submitted asset approval, checked against the built mesh it claims to be about.
-
-    Same discipline as a frame verdict and for the same reason: `CharacterAssetReview` carries
-    `blend_sha256` because a rebuild withdraws the approval. An approval for a mesh that is no
-    longer the one on disk would let an unreviewed sculpture through the gate that exists to stop
-    exactly that.
-
-    Approvals are written to `controls.asset_approvals_dir` rather than into the run: an approved
-    character outlives the run that first built it, which is what `review_assets` already assumes.
-    """
+    """A submitted asset approval, checked against the built mesh it claims to be about."""
     from content_factory.config import get_settings
     from content_factory.schemas.assets import CharacterAssetReview
 
@@ -653,8 +610,7 @@ def _validate_asset_review(
 
 
 def _atomic_json(path: Path, text: str) -> None:
-    """tmp + replace, the same discipline `write_copy`'s validator already used: a submission
-    half-written by a crash must not read as a verdict."""
+    """tmp + replace, the same discipline `write_copy`'s validator already used."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text)
@@ -681,12 +637,7 @@ it would run the model that the human slot exists to replace.
 
 
 def _human_task_body(stage: str, prepared: dict) -> str:
-    """The ActionItem's body, naming what is on disk to look at.
-
-    "Drop the finished asset onto the node" is the right instruction for `write_copy` and the wrong
-    one for a review gate, where the operator's job is to look at a sheet that already exists and
-    say yes or no.
-    """
+    """The ActionItem's body, naming what is on disk to look at."""
     base = (
         "The pipeline is parked on this slot. Drop the finished asset onto the node"
         " (or submit via the PWA); it will be validated before anything downstream runs."
@@ -732,14 +683,7 @@ class ApprovalSignal:
 
 @dataclass
 class StopSignal:
-    """Stop this run: sent by ``content-factory stop`` and POST /v1/runs/{id}/stop.
-
-    A signal rather than a Temporal cancellation because a cancelled workflow cannot run one more
-    activity, and the run row would stay at PRODUCING for ever with nothing left to correct it.
-    Signalled, the workflow closes itself the way a rejected preflight does: the open ActionItem is
-    resolved, the run is recorded CANCELLED with who stopped it, and Temporal sees an ordinary
-    completion. The caller still cancels afterwards if a long node is holding the boundary.
-    """
+    """Stop this run: sent by ``content-factory stop`` and POST /v1/runs/{id}/stop."""
 
     actor: str
     reason: str = ""
@@ -788,8 +732,7 @@ class ProductionWorkflow:
 
     @workflow.signal
     def request_stop(self, signal: StopSignal) -> None:
-        """Stop at the next node boundary. The first request wins: a second actor asking again
-        must not overwrite who stopped the run, and stopping is not undoable."""
+        """Stop at the next node boundary."""
         if self._stop is None:
             self._stop = signal
 
@@ -812,14 +755,7 @@ class ProductionWorkflow:
     async def _close_as_stopped(
         self, inp: ProductionInput, *, campaign_id: str, project_id: str, where: str, detail: str
     ) -> dict:
-        """End the run the way a rejected preflight ends it: CANCELLED, with nothing left open.
-
-        Reached two ways. Cleanly, when the stop is noticed at a node boundary. And from the
-        generic failure handler, when the stop arrived while a node was executing: cancelling the
-        run cancels that activity, which surfaces here as an ordinary activity failure. Recording
-        that as FAILED would open a "run failed" ActionItem for something an operator did on
-        purpose, and FAILED is the state that invites a retry.
-        """
+        """End the run the way a rejected preflight ends it: CANCELLED, with nothing left open."""
         assert self._stop is not None
         opts = {
             "start_to_close_timeout": timedelta(seconds=30),
@@ -883,14 +819,7 @@ class ProductionWorkflow:
         }
 
         def node_opts(resource_class: str) -> dict:
-            """Activity options for one node, sized by what it actually needs.
-
-            Everything used to get 240 seconds. That is minutes of slack for a node that writes a
-            JSON file, and not enough for a single GPU stage: an LTX-2.5 anchor pair measured
-            100-330 s on this host and a render-gpu node holds several shots. When the deadline
-            passes mid-generation Temporal retries the *whole activity*, so the failure mode was
-            "the GPU work restarts for ever" rather than "this timed out".
-            """
+            """Activity options for one node, sized by what it actually needs."""
             seconds = ACTIVITY_TIMEOUTS.get(resource_class, DEFAULT_ACTIVITY_TIMEOUT_S)
             return {
                 "start_to_close_timeout": timedelta(seconds=seconds),
@@ -1007,16 +936,7 @@ class ProductionWorkflow:
             return result
 
         async def run_human_node(node: NodePlan, input_hash: str) -> NodeResult:
-            """The workflow PARKS here on a signal wait — no worker slot is consumed. The spec is
-            shown on the node (ActionItem + Pipeline Canvas); the operator drops the asset in;
-            validation accepts or requests a redo; only then does anything downstream run.
-
-            Before parking, the stage runs in **prepare mode** when it has an executor. That is
-            what puts the contact sheet, the review manifest and the deterministic findings on
-            disk. Without it the workflow parked on an empty slot: the ActionItem said "drop the
-            finished asset onto the node" and there was nothing for the operator to look at, so a
-            durable run and a local run of the same lane asked a person for different things.
-            """
+            """The workflow PARKS here on a signal wait — no worker slot is consumed."""
             prepared: dict = {}
             if node.stage in PREPARABLE_HUMAN_STAGES:
                 prepare_result: NodeResult = await workflow.execute_activity(
@@ -1241,9 +1161,8 @@ class ProductionWorkflow:
                     where=self._current_node or "a node in flight",
                     detail=_error_text(exc)[:200],
                 )
-            # BLOCKED has been in the RunState enum since the state machine was written and
-            # nothing set it. This is what sets it: a stage that generated, checked and gave up is
-            # waiting for a person, not broken, and a run marked FAILED gets retried.
+            # BLOCKED has been in the RunState enum since the state machine was written and nothing
+            # set it.
             blocked = blocked_details(exc)
             await self._set_state(
                 inp,

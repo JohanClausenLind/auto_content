@@ -1,16 +1,4 @@
-"""Render the same short film once per art direction, cut as held drawings, for comparison.
-
-    uv run python scripts/make_style_reel.py out/style-reel woodblock charcoal riso
-    uv run python scripts/make_style_reel.py out/style-reel            # every preset
-
-One Blender pass is shared by every style — the control passes do not depend on the art direction,
-only the drawings do — so the cost per style is just its drawings. Each style gets its own project
-directory so their anchor caches cannot collide, and the finished cut is copied out as
-``<style>.mp4`` next to the others.
-
-Styles are rendered one at a time and each is complete before the next starts, so an interrupted
-run leaves finished videos rather than a directory of half-films.
-"""
+"""Render the same short film once per art direction, cut as held drawings, for comparison."""
 
 from __future__ import annotations
 
@@ -33,7 +21,7 @@ def _run(args: list[str], *, env: dict[str, str] | None = None) -> subprocess.Co
 
     # Fixed argv: the only caller-supplied values are a style name already checked against
     # STYLE_PRESETS and two fixture paths, and nothing goes through a shell.
-    return subprocess.run(  # noqa: S603
+    return subprocess.run(
         args, cwd=REPO_ROOT, capture_output=True, text=True, env={**os.environ, **(env or {})}
     )
 

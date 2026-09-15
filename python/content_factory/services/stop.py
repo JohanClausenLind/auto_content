@@ -1,22 +1,4 @@
-"""Stop everything this repo started. ``just stop`` is this module with no arguments.
-
-Five kinds of thing run in the background on this machine, started by five different commands,
-and until now each was stopped its own way: the workflow itself (a local run holding the GPU, or a
-durable run inside Temporal), the Temporal worker, the API and web dev servers, the GPU servers
-the stages start for themselves (HiDream, ComfyUI, and Ollama's resident models), and the compose
-stack. Stopping "everything" meant remembering all five, in the right order, and finding pids by
-hand for the ones nothing tracked.
-
-Order matters and is fixed here: the runs first (they are what is using the rest), then the
-processes that serve them, then the GPU tenants, then compose. Every step is independent and
-survives the others failing — a stop button that gives up half way because Postgres was already
-down is not a stop button.
-
-Nothing outside this checkout is ever signalled. A process qualifies only when it is running from
-this repository (its cwd is inside it, or the path is in its argv) *and* its argv names one of the
-commands below. That is deliberately narrower than "everything with the word content-factory in
-it": this host runs other projects, other checkouts and the operator's own shells.
-"""
+"""Stop everything this repo started."""
 
 from __future__ import annotations
 
@@ -112,11 +94,7 @@ PROCESSES: Callable[[], list[ProcInfo]] = _read_processes
 
 
 def classify(proc: ProcInfo, *, repo_root: Path = REPO_ROOT) -> str | None:
-    """What this process is to us, or None when it is none of our business.
-
-    Matching is on argv entries, not on a joined command line: ``grep "content-factory make"``
-    contains every word and must never be mistaken for a run.
-    """
+    """What this process is to us, or None when it is none of our business."""
     root = str(repo_root)
     if not (
         (proc.cwd or "") == root
@@ -143,8 +121,7 @@ def classify(proc: ProcInfo, *, repo_root: Path = REPO_ROOT) -> str | None:
 
 
 def _ancestors(pid: int, by_pid: dict[int, ProcInfo]) -> set[int]:
-    """This process and everything that spawned it. Never signalled: a stop that kills the shell
-    it was typed into (or the agent that asked for it) has not stopped anything, it has crashed."""
+    """This process and everything that spawned it."""
     chain: set[int] = set()
     current = pid
     while current > 1 and current not in chain:
@@ -157,13 +134,7 @@ def _ancestors(pid: int, by_pid: dict[int, ProcInfo]) -> set[int]:
 
 
 def _descendants(pid: int, procs: Iterable[ProcInfo], *, skip: Iterable[int] = ()) -> list[int]:
-    """Everything under ``pid``, not descending through ``skip``.
-
-    Skipping matters when the tree being stopped contains this very process — a run and the stop
-    that ends it are often children of the same shell. Walking through the protected chain would
-    collect the stop's own children (the ``docker compose down`` it is about to run) as things to
-    signal.
-    """
+    """Everything under ``pid``, not descending through ``skip``."""
     children: dict[int, list[int]] = {}
     for proc in procs:
         children.setdefault(proc.ppid, []).append(proc.pid)
@@ -179,11 +150,7 @@ def _descendants(pid: int, procs: Iterable[ProcInfo], *, skip: Iterable[int] = (
 
 
 def _outermost(matched: Sequence[ProcInfo], procs: Sequence[ProcInfo]) -> list[ProcInfo]:
-    """Drop matches that are already inside another match's tree.
-
-    ``uv run content-factory worker`` is two processes that are both the worker; signalling the
-    tree of the outer one takes the inner one with it, and reporting both would claim two stops.
-    """
+    """Drop matches that are already inside another match's tree."""
     by_pid = {p.pid: p for p in procs}
     pids = {p.pid for p in matched}
     return sorted(
@@ -192,9 +159,7 @@ def _outermost(matched: Sequence[ProcInfo], procs: Sequence[ProcInfo]) -> list[P
 
 
 class Stopper:
-    """One stop, start to finish. Constructed fresh per invocation; nothing here is reusable
-    state, and every seam it touches (processes, signals, subprocesses, the clock) is injectable
-    so the tests can describe a busy machine without having one."""
+    """One stop, start to finish."""
 
     def __init__(
         self,
@@ -228,12 +193,7 @@ class Stopper:
         return _ancestors(os.getpid(), by_pid)
 
     def signal_tree(self, pid: int, procs: Sequence[ProcInfo]) -> str:
-        """SIGTERM the process and everything under it, then SIGKILL whatever is left.
-
-        The whole tree, because the interesting processes are launchers: ``uv run`` around the
-        CLI, the CLI around a skill's own venv, that skill around ffmpeg. Terminating only the pid
-        in the registry leaves the GPU exactly as busy as it was.
-        """
+        """SIGTERM the process and everything under it, then SIGKILL whatever is left."""
         protected = self._protected(procs)
         if pid in protected:
             return "left alone (this stop is running inside it)"
@@ -262,16 +222,7 @@ class Stopper:
 
     # -- targets --------------------------------------------------------------------------------
     def stop_local_runs(self, *, only: str = "", graceful: bool = False) -> None:
-        """Ask every registered local run to stop, then (unless graceful) signal its tree.
-
-        The request is written first either way: a run that survives the signal — one whose stage
-        swallowed it, one started under a supervisor — must not begin another stage.
-
-        A run that never registered (a process from before this existed, or one started some other
-        way) is still a run holding the GPU, so the process table is swept for those too. Only
-        when no single run was named: a name is a registry key, and matching it against argv would
-        make ``--run`` mean two different things.
-        """
+        """Ask every registered local run to stop, then (unless graceful) signal its tree."""
         procs = PROCESSES()
         runs = [r for r in registry.active_runs() if not only or r.run_key == only]
         acted = False
@@ -353,9 +304,7 @@ class Stopper:
             self.record("gpu", "none", "no GPU tenant was up")
 
     def stop_docker(self) -> None:
-        """``docker compose --profile "*" down``. Without the wildcard compose only touches the
-        profiles it was given, so a container started by ``just up search`` (or s3, or notify)
-        survives the stop — which is why ``just down`` passes it now as well."""
+        """``docker compose --profile "*" down``."""
         if self.dry_run:
             self.record("docker", "compose", 'would run: docker compose --profile "*" down')
             return
@@ -378,8 +327,7 @@ class Stopper:
             self.record("docker", "compose", f"skipped: {tail[-1] if tail else 'docker failed'}")
 
     def stop_durable_runs(self, *, only: str = "", graceful: bool = False) -> None:
-        """Cancel the runs Temporal still has open. Skipped, with the reason, when the engine or
-        the database is not there — which is the normal case on a box whose compose is down."""
+        """Cancel the runs Temporal still has open."""
         if self.dry_run:
             self.record("durable", only or "every running workflow", "would stop through Temporal")
             return
@@ -399,12 +347,7 @@ class Stopper:
 
 
 async def _stop_durable(only: str, actor: str, reason: str, graceful: bool) -> list[dict]:
-    """Stop the open durable runs at once, not one after another.
-
-    A stop waits a few seconds for each run to close itself before cancelling it, and a dev
-    Temporal accumulates runs whose worker is long gone — this host had 31 of them. In sequence
-    that is eight minutes of a stop button doing nothing visible; together it is one wait.
-    """
+    """Stop the open durable runs at once, not one after another."""
     from content_factory.services.runs import open_run_ids, stop_run
 
     run_ids = [only] if only else await asyncio.wait_for(open_run_ids(), timeout=20)
@@ -435,10 +378,7 @@ def stop(
     actor: str = "operator",
     reason: str = "stop",
 ) -> list[Outcome]:
-    """Stop the named targets and return one line per thing acted on.
-
-    ``run`` narrows to a single run — a local run key or a durable run id, whichever it matches.
-    """
+    """Stop the named targets and return one line per thing acted on."""
     unknown = [t for t in targets if t not in TARGETS]
     if unknown:
         msg = f"unknown stop target(s) {unknown}; known: {list(TARGETS)}"

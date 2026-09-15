@@ -1,23 +1,4 @@
-"""What a dropped file is, and what the canvas should do with it.
-
-The browser half of this is a drop target; everything that requires knowing something — what the
-file actually is, which node can hold it, and what a sensible next step would be — is decided
-here, because the answers come from the pipeline's own stages and from measurements of the file
-rather than from its name.
-
-Three steps, in order:
-
-* **Identity** comes from :mod:`content_factory.ingest.uploads`: the MIME is sniffed from the
-  bytes, extensions from the dangerous set are refused whatever the sniff says, and anything not
-  on the allowlist is rejected. Nothing below is reached by a file that failed that.
-* **Facts** come from ffprobe — duration, sample rate, channels, resolution, frame rate. They are
-  what makes a suggestion specific instead of generic: a 16 kHz mono take needs band extension
-  and a 48 kHz one does not, and only measuring the file can tell which is on the table.
-* **Suggestions** are type-correct by construction. Each one names a node type, the slot on that
-  node the source connects to, and the reason, so the canvas can spawn it already wired — and a
-  test asserts every slot named here exists in the node catalogue with a compatible type, because
-  a suggestion that produces a refused link is worse than no suggestion.
-"""
+"""What a dropped file is, and what the canvas should do with it."""
 
 from __future__ import annotations
 
@@ -36,10 +17,8 @@ COPY_CHUNK_BYTES = 1024 * 1024
 
 Kind = Literal["image", "video", "audio", "document", "data", "text"]
 
-# Which node holds a dropped file of each kind. Data and documents have no node of their own on
-# purpose: `ingest` already turns every file in the uploads folder into typed sources, which is
-# exactly what a CSV or a PDF is for here, and inventing a second door for them would mean two
-# code paths for one thing.
+# Which node holds a dropped file of each kind. Data and documents have none on purpose: `ingest`
+# already turns every upload into typed sources, and a second door would be two paths for one thing.
 SOURCE_NODE: dict[str, str] = {
     "audio": "input.audio",
     "image": "input.image",
@@ -60,12 +39,7 @@ SOURCE_SLOT: dict[str, str] = {
 
 @dataclass(frozen=True)
 class Suggestion:
-    """One offered next step: a node to spawn, wired to the dropped file where a wire applies.
-
-    ``to_slot`` empty means the node takes nothing from the source node because it reads the
-    run's uploads folder itself — which is true of the stages built around uploaded data. The
-    canvas spawns those unwired rather than drawing a link the graph would refuse.
-    """
+    """One offered next step: a node to spawn, wired to the dropped file where a wire applies."""
 
     node_type: str
     title: str
@@ -84,12 +58,7 @@ class Suggestion:
 
 
 def probe_media(path: Path) -> dict[str, Any]:
-    """Duration, rate, channels and size, as ffprobe reports them. ``{}`` when it cannot say.
-
-    Deliberately total: a file ffprobe refuses is still a file the operator dropped, and the
-    caller has already established what it is from its bytes. No facts means unspecific
-    suggestions, not an error.
-    """
+    """Duration, rate, channels and size, as ffprobe reports them."""
     from content_factory.qc.media import ffprobe
 
     try:
@@ -119,17 +88,7 @@ def probe_media(path: Path) -> dict[str, Any]:
 
 
 def _audio_suggestions(facts: dict[str, Any]) -> list[Suggestion]:
-    """What to offer for a dropped recording.
-
-    Reading it comes first, and that is not a preference — it is the shape of the audio chain.
-    Everything downstream of a voice here is per-beat and carries word timings, so
-    ``restore_speech`` and ``mix_audio`` work on ``<beat_id>.wav`` files that only a voice stage
-    writes. Offering them wired straight to a dropped file produced a graph that failed on its
-    first stage looking for takes that did not exist, which is the same defect ``audio-restore``
-    had as a whole lane. ``transcribe_audio`` is the door: it normalises the recording, measures
-    where every word is, and is what lets the beats — and therefore the repair, the captions and
-    the mix — exist at all.
-    """
+    """What to offer for a dropped recording."""
     rate = int(facts.get("sample_rate_hz") or 0)
     channels = facts.get("channels")
     narrow = 0 < rate < 44_100
@@ -293,11 +252,7 @@ def describe(kind: str, facts: dict[str, Any]) -> str:
 
 
 def safe_name(raw: str | None) -> str:
-    """A display name made only of characters the staged-upload contract accepts.
-
-    The name is never how a file is identified — that is the sniffed kind and the content hash —
-    so anything unusable here is replaced rather than argued with.
-    """
+    """A display name made only of characters the staged-upload contract accepts."""
     name = Path(raw or "dropped").name
     # ASCII only: `str.isalnum()` is Unicode-aware and the staged-upload contract's pattern is
     # not, so "ünïcode.wav" would pass here and be refused by the contract two calls later.
@@ -312,12 +267,7 @@ def safe_name(raw: str | None) -> str:
 def materialize(
     uploads_dir: Path, store: ArtifactStore, workspace_id: str, staged: StagedUpload
 ) -> Path:
-    """Write one staged upload into a run's uploads folder. Idempotent by name and size.
-
-    Called by the production workflow's setup activity rather than by a request: the project
-    directory does not exist until the run starts, which is why the campaign carries the staged
-    reference instead of the browser writing a file somewhere itself.
-    """
+    """Write one staged upload into a run's uploads folder."""
     uploads_dir.mkdir(parents=True, exist_ok=True)
     dest = uploads_dir / safe_name(staged.filename)
     if dest.is_file() and dest.stat().st_size == staged.size_bytes:

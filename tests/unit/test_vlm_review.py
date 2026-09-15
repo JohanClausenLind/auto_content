@@ -1,18 +1,4 @@
-"""The boundary around a vision model's opinion of a set of frames.
-
-The model itself is not under test — a real call is 42 s of GPU and a different sentence each
-time, which belongs in a live test. What is under test is everything that keeps a fluent answer
-from becoming a decision or a claim about pictures it never saw:
-
-* the whole set goes in **one call**, because "do these belong together" cannot be answered one
-  picture at a time;
-* every frame arrives **downscaled**, because six frames at their native size were refused by the
-  context window at 22,494 tokens;
-* an opinion about a frame that was not attached is **dropped**, and an answer about none of them
-  is an error rather than an empty review;
-* the review **binds to the digests** it saw, so a redrawn frame makes it stale;
-* it **writes no verdict**, ever.
-"""
+"""The boundary around a vision model's opinion of a set of frames."""
 
 from __future__ import annotations
 
@@ -81,13 +67,7 @@ def gated_run(root: Path, *, frames: int = 3) -> tuple[Path, Path]:
 
 
 def gateway_for(judgement: dict[str, Any]) -> tuple[ModelGateway, list[dict[str, Any]]]:
-    """The real gateway with a canned completion, and the calls it made.
-
-    A real :class:`ModelGateway` rather than a stand-in object, through the ``completion_fn`` seam
-    the gateway carries for exactly this. It costs nothing and buys the whole path: routing
-    actually picks the vision alias (so `required_models` is under test rather than asserted),
-    the schema is enforced the way Ollama enforces it, and the budget is reserved and settled.
-    """
+    """The real gateway with a canned completion, and the calls it made."""
     calls: list[dict[str, Any]] = []
 
     def fake_completion(**kwargs: Any) -> dict[str, Any]:
@@ -186,8 +166,7 @@ def test_the_vision_model_is_required_rather_than_chosen(tmp_path: Path) -> None
     review = vlm_review.review_batch(run_dir, deliverable, gateway=gateway, check_gpu=False)
 
     # Routing actually resolved to the vision tier — asserted through the weights the call named,
-    # not through the manifest's own declaration. This is the only catalogue entry with a clip
-    # projector, and a text-only model here would answer confidently about nothing.
+    # not through the manifest's own declaration.
     assert "Qwen3.6-27B-Heretic" in calls[0]["model"]
     assert review.model_alias == vlm_review.VISION_ALIAS
     # No egress: these are unpublished frames, several of them the ones that came out wrong.
@@ -308,9 +287,8 @@ def test_the_review_says_which_weights_answered_and_what_they_were_told(tmp_path
     assert "Qwen3.6-27B" in review.model_id
     # The brief it saw, so "does not match intent" can be told from "the brief never arrived".
     assert "one small iceberg" in review.intent
-    # Bound to every frame it was *shown*, not only the ones it described: the third had no
-    # opinion, and redrawing it still makes this review a judgement about a set that no longer
-    # exists. The conservative direction is the only safe one here.
+    # Bound to every frame it was *shown*, not only the ones it described: the third had no opinion,
+    # and redrawing it still makes this review a judgement about a set that no longer exists.
     assert set(review.digests) == {"frame:0000", "frame:0001", "frame:0002"}
 
 

@@ -1,13 +1,4 @@
-/**
- * Slot datatypes and their dot colours.
- *
- * A link may only join slots whose datatypes are compatible, which is what keeps a graph
- * meaningful: a VIDEO output cannot feed a SCRIPT input. `ANY` is the wildcard, and a slot may
- * declare a union ("IMAGE,SEQUENCE") the same way ComfyUI does.
- *
- * The palette follows ComfyUI's "Dark (Default)" node_slot colours so the canvas reads the way a
- * node graph is expected to read; the type names are ours.
- */
+/** Slot datatypes and dot colours; `ANY` is the wildcard, "IMAGE,SEQUENCE" a union, as in ComfyUI. */
 
 export const WILDCARD = "ANY";
 

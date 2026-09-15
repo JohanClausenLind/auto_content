@@ -1,10 +1,4 @@
-"""The words half of reference retrieval: lexicon expansion, FTS5 syntax, ranked rows.
-
-The index itself is built by another module, so these tests build a small one from the shipped
-schema in ``tmp_path`` and query that. Its rows are the real baked CMU clips, numbers and
-descriptions copied from ``/mnt/fast/models/blender-assets/clips/manifest.json``, so a ranking
-assertion here is a ranking assertion about material that exists.
-"""
+"""The words half of reference retrieval: lexicon expansion, FTS5 syntax, ranked rows."""
 
 from __future__ import annotations
 
@@ -353,13 +347,7 @@ def test_a_word_can_never_be_read_as_fts_syntax() -> None:
 
 
 def test_the_tokenizer_keeps_the_underscore() -> None:
-    """``tokenchars \'_\'`` is mandatory, and this is what it buys.
-
-    With it, ``head_shoulder`` is one token, so a tag search means the tag. Without it unicode61
-    splits on the underscore and the same MATCH string quietly turns into the two-word phrase
-    "head shoulder", which real prose contains: a caption reading "her head, shoulder and back"
-    then answers a query for head-on-shoulder contact.
-    """
+    """``tokenchars '_'`` is mandatory, and this is what it buys."""
     conn = sqlite3.connect(":memory:")
     conn.execute(f'CREATE VIRTUAL TABLE kept USING fts5(contact, caption, tokenize = "{TOKENIZE}")')
     conn.execute('CREATE VIRTUAL TABLE split USING fts5(contact, caption, tokenize = "unicode61")')
@@ -600,12 +588,7 @@ def test_the_lexicon_can_name_every_baked_clip_and_every_verified_class() -> Non
 
 
 def test_require_pose_excludes_a_bounding_box(tmp_path: Path) -> None:
-    """ "Something can be driven from it" is a higher bar than "it has some geometry".
-
-    A bounding box says where a person was, not how they were standing, so no rig can be aimed by
-    one. Admitting bbox_only made a search for drivable material return television clips whose only
-    geometry is a rectangle.
-    """
+    """ "Something can be driven from it" is a higher bar than "it has some geometry"."""
     from content_factory.reference import index as index_mod
 
     def clip(clip_id: str, pose_format: str) -> ReferenceClip:

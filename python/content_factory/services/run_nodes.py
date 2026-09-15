@@ -1,28 +1,4 @@
-"""A run read as its nodes: which step made which file, and what the run was rendering.
-
-The history could show a run's files grouped by file type. That answers "what came out of this"
-and not the question a person in front of a bad picture actually has — *which step made this, and
-what else did that step make?* ComfyUI answers it by hanging every output off the node that
-emitted it, and the answer is worth having here for the same reason: a drift-QC number and the
-eight frames it is about belong on one node, not in two lists.
-
-Two sources of attribution, and the reader is always told which it got:
-
-* **recorded** — the run observed it. :mod:`content_factory.runners.attribution` snapshots the run
-  directory between steps, so ``run.json`` carries the exact file list per node. Only runs made
-  after 2026-09-11 have this.
-* **inferred** — the path says it. The 241 reports already on disk represent weeks of GPU time and
-  predate the recording, so ``anchors/`` is read as ``generate_anchor``'s work and
-  ``audio/*.restored.wav`` as ``restore_speech``'s. This is a guess from a table, and it is
-  labelled as one.
-
-A file the table cannot place stays **unattributed** rather than being hung on a plausible node.
-That is the same rule :func:`content_factory.services.durations.infer_workflow` follows for lanes:
-an ambiguous answer is worse than no answer, because the wrong node is where somebody will look
-for the cause of a fault that is somewhere else.
-
-Nothing here writes anything.
-"""
+"""A run read as its nodes: which step made which file, and what the run was rendering."""
 
 from __future__ import annotations
 
@@ -34,13 +10,7 @@ from typing import Any, Literal
 Attribution = Literal["recorded", "inferred"]
 
 # Where a file sits, and which stage could have put it there. Longest key wins, so
-# `sequence/frames/` is the keyframes and plain `sequence/` is the sheet made from them. Every
-# entry was read off the 241 reports on disk rather than off the stage list.
-#
-# Several keys name more than one candidate, because several lanes write to the same folder:
-# `exports/` is a film on `narrated-video`, a card set on `single-clip-post` and a flipbook on
-# `image-set`. The candidate list is resolved against the stages the run *actually ran*, and a
-# path whose candidates leave two possibilities is left unattributed — see `attribute`.
+# `sequence/frames/` is the keyframes and plain `sequence/` is the sheet made from them.
 _STAGES_BY_PATH: tuple[tuple[str, tuple[str, ...]], ...] = (
     # the run root
     ("story/", ("plan_story",)),
@@ -55,11 +25,7 @@ _STAGES_BY_PATH: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("sequence/frames/", ("generate_keyframes",)),
     ("sequence/drift/", ("drift_qc",)),
     # `sequence/anchor.png` is the hub every spoke is edited from, copied out of `anchors/` by
-    # `stage_generate_keyframes` itself. Named rather than left to the `sequence/` fallback, which
-    # attributed it to `package_sequence` — a stage that had not run — on the first stopped run
-    # this was tried against (2026-09-11). `lock_generation` is the second candidate because it is
-    # the other stage that writes into `sequence/`, so on a lane holding both the file goes
-    # unattributed instead of to whichever the table happened to name first.
+    # `stage_generate_keyframes` itself.
     ("sequence/anchor.png", ("generate_keyframes", "lock_generation")),
     ("sequence/lock.json", ("lock_generation",)),
     ("sequence/", ("package_sequence",)),
@@ -156,19 +122,7 @@ def _stage_entries(report: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _lane_nodes(report: dict[str, Any], workflow: str | None) -> list[tuple[str, str]]:
-    """``(node_key, stage)`` for the whole lane, in lane order, or as much as can be known.
-
-    The list has to be the **lane's** nodes and not the ones this run executed, because a run
-    started with ``--from`` executes a slice: ``ps1c-pinecone`` resumed at ``upscale_video`` and
-    its twelve stage records begin there, so a list built from them has no ``anchor`` node — and
-    every anchor drawing in the run then belongs to nobody. That is exactly the run somebody
-    opens, because it is the one that needed a resume.
-
-    Three sources, most authoritative first: the lane definition (every node, in order, with its
-    stage); the report's own ``steps`` record, which the runner merges across resumes and so
-    carries nodes this slice never ran, though a carried node's stage is recorded empty; and
-    finally the stage records, which is all a report from before either feature has.
-    """
+    """``(node_key, stage)`` for the whole lane, in lane order, or as much as can be known."""
     executed = [
         (str(e["node"]), str(e["stage"]))
         for e in _stage_entries(report)
@@ -198,12 +152,7 @@ def _lane_nodes(report: dict[str, Any], workflow: str | None) -> list[tuple[str,
 
 
 def node_records(report: dict[str, Any], *, workflow: str | None = None) -> list[NodeRecord]:
-    """The lane's nodes in order, each carrying what this run did at it.
-
-    A node the lane has and this run did not reach is present with ``ok`` false and no error: it
-    is a step that has not happened, which is different from one that failed, and a canvas needs
-    to draw the whole lane either way.
-    """
+    """The lane's nodes in order, each carrying what this run did at it."""
     ran = {
         str(entry["node"]): entry
         for entry in _stage_entries(report)
@@ -248,17 +197,7 @@ def node_records(report: dict[str, Any], *, workflow: str | None = None) -> list
 def attribute(
     report: dict[str, Any], paths: list[str], *, workflow: str | None = None
 ) -> dict[str, tuple[str, str, Attribution]]:
-    """``path -> (node, stage, how)`` for every path either source can place.
-
-    The recorded lists win wherever they exist, because they are what the run observed; the table
-    fills in the rest, which for every run made before 2026-09-11 is all of it. A path neither can
-    place is absent from the mapping — the caller shows it as unattributed rather than guessing.
-
-    Both sources speak the same spelling, so nothing is rebased: the runner observes paths
-    relative to the *project* directory, the history addresses files relative to the *run*
-    directory, and for a report at ``deliverables/<id>/run.json`` those are one tree
-    (``run_history._record`` walks up to it).
-    """
+    """``path -> (node, stage, how)`` for every path either source can place."""
     out: dict[str, tuple[str, str, Attribution]] = {}
     known = set(paths)
     records = node_records(report, workflow=workflow)
@@ -270,11 +209,7 @@ def attribute(
             if path in known:
                 out[path] = (record.node, record.stage, "recorded")
 
-    # The table, for everything the run did not record. Attributed only to a node the lane
-    # actually has: an `exports/` file in a lane with no `compose_video` belongs to whichever of
-    # the candidates that lane does have, and to nobody when it has two of them or none. Hanging
-    # it on an absent node would invent a step, and hanging it on the first plausible one would
-    # send somebody looking for a fault at a stage that never ran.
+    # The table, for everything the run did not record.
     by_stage: dict[str, list[NodeRecord]] = {}
     for record in records:
         by_stage.setdefault(record.stage, []).append(record)
@@ -315,16 +250,7 @@ def _clean(text: object) -> str | None:
 
 
 def subject(run_dir: Path, report: dict[str, Any]) -> str | None:
-    """What this run was making, in the operator's own words, or None.
-
-    A history of 241 rows called ``a20-imageset-owl`` and ``m04-picture-story-24`` is a list of
-    directory names: it says which lane ran and nothing about what came out. The brief's topic is
-    what the operator typed, so it is read first; the story plan's subject is what the lane made
-    of it, and is the answer for a run started from a fixture with no brief widget set.
-
-    Read from the report before the disk: the report is one file that is already open, and a run
-    whose story plan has been cleared away still knows what it was asked for.
-    """
+    """What this run was making, in the operator's own words, or None."""
     for entry in report.get("steps") or []:
         if not isinstance(entry, dict):
             continue

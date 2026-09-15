@@ -1,6 +1,4 @@
-"""Article & newsletter destination adapters (Tier 1, 21): WordPress (REST + Application
-Passwords), Ghost (Admin API, HS256 JWT, source=html), Listmonk (draft campaigns). DRAFTS by
-default everywhere; publishing/sending is gated exactly like social publishing."""
+"""Article and newsletter adapters (WordPress, Ghost, Listmonk): drafts by default."""
 
 from __future__ import annotations
 
@@ -49,8 +47,7 @@ def _raise_for(resp: httpx.Response, what: str) -> None:
 
 
 class WordPressBackend:
-    """Self-hosted WordPress core REST: Basic auth with an Application Password. Draft-only here;
-    `status=publish`/`future` is a distribution-profile decision made elsewhere."""
+    """Self-hosted WordPress core REST: Basic auth with an Application Password."""
 
     platform = "wordpress"
 
@@ -113,8 +110,7 @@ class WordPressBackend:
 
 
 class GhostBackend:
-    """Ghost Admin API: HS256 JWT from the Admin key (`id:secret`), 5-minute expiry,
-    `aud: /admin/`; posts created from HTML via ?source=html. Draft-only here."""
+    """Ghost Admin API: HS256 JWT from the Admin key, posts created from HTML; draft-only here."""
 
     platform = "ghost"
 
@@ -202,8 +198,7 @@ class NewsletterPackage:
 
 
 class ListmonkBackend:
-    """Self-hosted Listmonk: draft campaigns via POST /api/campaigns (Basic auth api user:token).
-    Sending is a separate, gated status change this adapter deliberately does not expose."""
+    """Self-hosted Listmonk: draft campaigns via POST /api/campaigns (Basic auth api user:token)."""
 
     platform = "listmonk"
 

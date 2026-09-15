@@ -112,5 +112,6 @@ Funnel (public) refuses to start unless password auth + MFA are enabled.
 
 ## Documentation
 
-`docs/adr/` (10 decisions), `docs/research/` (dated official-doc research), `docs/licensing.md`,
+`docs/setup.md`, `docs/gpu-hosts.md`, `docs/adr/` (12 decisions), `docs/research/` (dated
+official-doc research), `docs/licensing.md`,
 `docs/scale-later.md`.

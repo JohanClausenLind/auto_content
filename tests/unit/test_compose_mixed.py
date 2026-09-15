@@ -1,5 +1,4 @@
-"""Hybrid workflow end to end with mocks: route_shots -> only routed shots reach Blender ->
-compose_video splices Remotion cuts and generated clips in beat order on one narrated timeline."""
+"""Hybrid workflow end to end with mocks: route, compile, and splice on one narrated timeline."""
 
 from __future__ import annotations
 
@@ -58,10 +57,8 @@ def env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         CF__SHOTS__PLANNER="story_presets",
         CF__CONTROLS__COMPILER="blender",
         CF__CONTROLS__ASSETS_ROOT=str(tmp_path / "no-assets"),
-        # The demo fixture has no `image` scene, which is the only kind the shipped default routes
-        # to the generative chain (ADR-0012, 2026-09-08 amendment). This suite's subject is the
-        # SPLICE, so it needs at least one generated beat: the title beat is routed here, in the
-        # test, rather than by the setting the whole channel runs on.
+        # The demo fixture has no `image` scene, the only kind the shipped default generates
+        # (ADR-0012). The splice under test needs a generated beat; the title beat is routed here.
         CF__ROUTING__GENERATE_KINDS='["title"]',
     )
     monkeypatch.setattr(blender_mod, "SUBPROCESS_RUN", fake_subprocess_run)
@@ -254,15 +251,7 @@ def test_srt_burn_is_the_fallback_when_highlighting_is_off(ctx: StageContext, en
 def test_a_drawn_film_holds_its_last_frame_instead_of_losing_its_last_words(
     ctx: StageContext, env
 ) -> None:
-    """The defect a live run of `audio-picture-story` found, as a test.
-
-    A film whose picture is its own length — drawings held for the spans of speech they
-    illustrate — is shorter than the mastered stem, because the mix puts `lead_in_ms` before the
-    first beat, a pause between beats and `tail_ms` after the last one. `mux`'s `-shortest` then
-    cut the *words*, and the composer's own audio QC caught it as "audio shorter than the
-    narration it should carry". So the picture is held to the last word instead, and the QC that
-    would have failed is the assertion: `stage_compose_video` raises when it does not pass.
-    """
+    """The defect a live run of `audio-picture-story` found, as a test."""
     from content_factory.audio.mix import _media_ms, ffmpeg
     from content_factory.workflows.stages import _speech_end_ms
 

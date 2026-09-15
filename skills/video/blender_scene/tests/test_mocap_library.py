@@ -1,12 +1,4 @@
-"""The recipe-driven library bake: which trials become clips, and what the manifest says about them.
-
-The manifest exists so a mislabelled clip shows up in a table instead of on screen. Two things
-here are load-bearing for that. A recipe entry names either a two-person ``pair`` or a solo
-``subject``, and the two must not be confusable, because handing a renderer an actor id the clip
-cannot answer for fails deep inside Blender. And speed is measured rather than inferred from the
-posture tag, which is how the two-person set's "running" clips were found to be a scramble for a
-chair at 1.8 m/s while an actual sprint sustains 3.2.
-"""
+"""The recipe-driven library bake: which trials become clips."""
 
 from __future__ import annotations
 

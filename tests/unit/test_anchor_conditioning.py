@@ -1,22 +1,4 @@
-"""A skeleton of nobody is not conditioning — it is a scheduler switch.
-
-`_conditioning_for_frame`'s own docstring warns that "the number of slots selects the whole
-editing recipe", because upstream branches on `len(ref_images) == 1`. It names one way in: a run
-whose identity sheet was missing. This is the other way in, and it is the one that bit.
-
-Measured on `audio-picture-story` 2026-09-10. Six anchors of "one open pine cone on a plain grey
-slate" came back covered in white speckle. The marker said `references: 1`, the single slot a
-`pose_skeleton` — and the bundle's one "subject" was `subj_hands0001`, the motion_plan compiler's
-**builtin hand-gesture fixture**, carrying joints for two wrists and two index fingers and
-labelled with the pine cone's own subject line. So a skeleton of two hands was drawn over an
-object and then sent as the anchor's only reference, which is upstream's `is_editing` branch, and
-that routes the dev recipe onto `flow_match`. `skills/image/hidream/server.py` has the number for
-what that costs: speckle at 0.175 of pixels above a luma gradient of 60, against 0.0004 on
-`flash`. The same prompt with no references renders clean on the same server at either aspect.
-
-The switch is therefore the *shot's* character list, not the bundle's subject list — the bundle
-has a subject either way.
-"""
+"""A skeleton of nobody is not conditioning — it is a scheduler switch."""
 
 from __future__ import annotations
 
@@ -45,16 +27,7 @@ PNG = (
 
 
 def _bundle(tmp: Path) -> ControlBundle:
-    """The bundle `audio-picture-story` actually compiles, built the way that lane builds it.
-
-    This read `output/overnight/ps1-pinecone/.../bundle.json` until 2026-09-12 — a *run output*,
-    git-ignored, and therefore a test that could only ever pass on the machine that happened to
-    hold that run. Deleting the runs is what surfaced it.
-
-    Built from `sample_motion_plan` through the real compiler instead, which is the stronger test:
-    it asserts the builtin fixture is *still* two hands today, rather than that it was two hands
-    once.
-    """
+    """The bundle `audio-picture-story` actually compiles, built the way that lane builds it."""
     plan = sample_motion_plan()
     subject = plan.subjects[0].model_copy(update={"label": SUBJECT_LINE})
     plan = plan.model_copy(update={"subjects": (subject,)})

@@ -70,28 +70,16 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "T20"]
-"python/content_factory/qc/media.py" = ["S607"]  # ffmpeg/ffprobe resolved from PATH by design
-"python/content_factory/ingest/convert.py" = ["S607"]  # ffmpeg from PATH, argument arrays only
-"python/content_factory/audio/mix.py" = ["S603", "S607"]  # typed ffmpeg wrapper, argument arrays only
-"python/content_factory/audio/detect.py" = ["S603", "S607"]  # ffprobe/ffmpeg decode, argument arrays only
-"python/content_factory/audio/restore.py" = ["S603", "S607"]  # ffmpeg + uv from PATH, argument arrays only
-"python/content_factory/audio/condition.py" = ["S603", "S607"]  # ffmpeg/ebur128, argument arrays only
-"python/content_factory/media/video_generate.py" = ["S607"]  # ffmpeg/ffprobe from PATH by design
-"python/content_factory/workflows/stages.py" = ["S607"]  # ffmpeg + uv from PATH by design
-"skills/video/manim/render.py" = ["S607"]  # ffmpeg from PATH inside the opt-in skill env
-"skills/video/blender_scene/**" = ["S603", "S607", "T20", "E501", "N813"]  # blender via argv array; JSON summary on stdout; OpenImageIO as oiio
-"skills/video/postchain/**" = ["S603", "S607", "T20", "E501"]  # tool interpreters via argv arrays; JSON summary on stdout
-"skills/audio/sfx/**" = ["S603", "S607", "T20", "E501"]
-"skills/audio/music/**" = ["S603", "S607", "T20", "E501"]
-"skills/audio/resemble_enhance/**" = ["S603", "S607", "T20", "E501"]
-"skills/audio/clearervoice/**" = ["S603", "S607", "T20", "E501"]
-"python/content_factory/qc/audio.py" = ["S603", "S607"]
-"python/content_factory/qc/delivery.py" = ["S607"]
-"python/content_factory/qc/accessibility.py" = ["S607"]
+"scripts/**" = ["T20", "S603", "S607"]  # operator harnesses: ffmpeg/ffprobe from PATH, argument arrays only
+"skills/**" = ["T20", "S105", "S603", "S607", "E501"]  # executors print their interface; special tokens are not secrets
+"skills/video/blender_scene/**" = ["N813"]  # OpenImageIO as oiio
+"skills/audio/qwen3tts/samples.py" = ["RUF001"]  # Chinese sample text uses fullwidth punctuation
+"python/content_factory/audio/*.py" = ["S603", "S607"]  # ffmpeg/ffprobe from PATH, argument arrays only
+"python/content_factory/qc/*.py" = ["S603", "S607"]
 "python/content_factory/sequences/engine.py" = ["S603", "S607"]
-"scripts/**" = ["T20"]
-"scripts/generate_holding_hands.py" = ["S603", "S607"]  # typed ffmpeg/ffprobe argument arrays
-"skills/**" = ["T20", "S105"]  # executor scripts print their interface; special tokens, not secrets
+"python/content_factory/ingest/convert.py" = ["S607"]
+"python/content_factory/media/video_generate.py" = ["S607"]
+"python/content_factory/workflows/stages.py" = ["S607"]
 
 [tool.pyright]
 pythonVersion = "3.12"
@@ -99,14 +87,14 @@ typeCheckingMode = "standard"
 include = ["python", "apps", "tests", "scripts"]
 venvPath = "."
 venv = ".venv"
+# scripts/ is not a package; the harnesses put it on sys.path themselves, so pyright needs it here.
+extraPaths = ["scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "python"]
 pythonpath = ["."]
-# The core suite, defined ONCE. `just test`, CI and scripts/gate-clean-checkout.sh all rely on
-# this default; an explicit -m on the command line overrides it (that is how `just
-# test-integration` and the CI integration step select their own subsets).
-addopts = '-m "not integration and not gpu and not live and not blender"' 
+# The core suite, defined once; an explicit -m on the command line overrides it.
+addopts = '-m "not integration and not gpu and not live and not blender"'
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [

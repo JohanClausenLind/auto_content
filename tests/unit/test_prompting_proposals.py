@@ -1,10 +1,4 @@
-"""Prompt guidance learns from review verdicts and never edits itself.
-
-The safety property under test is narrow and load-bearing: a system that rewrites its own
-instructions from its own output has no check on it — one bad inference becomes a rule, the rule
-shapes the next output, and the evidence for the rule is now circular. So the learner may only
-write a proposal, and applying one requires a named person and an unchanged file.
-"""
+"""Prompt guidance learns from review verdicts and never edits itself."""
 
 from __future__ import annotations
 
@@ -102,8 +96,7 @@ def test_proposing_never_touches_the_guidance_file(tmp_path: Path) -> None:
 
 
 def test_applying_requires_an_attribution(tmp_path: Path) -> None:
-    """The guidance updates itself now, so nobody is asked first — but a change still has to be
-    attributable, or the audit log records that something happened and not who or what did it."""
+    """The guidance updates itself now, so nobody is asked first."""
     skill = _skill(tmp_path)
     lessons = lessons_from_review(
         [_batch(("continuity", "advisory", False, 61.0), ("continuity", "advisory", False, 58.0))]
@@ -115,8 +108,7 @@ def test_applying_requires_an_attribution(tmp_path: Path) -> None:
 
 
 def test_the_unattended_path_applies_and_records_its_diff(tmp_path: Path) -> None:
-    """auto_apply asks nobody, so the audit trail is the only thing standing between a
-    self-applied rule and an unexplained one. It has to carry the diff and the evidence."""
+    """auto_apply asks nobody, so the audit trail must carry the diff and the evidence."""
     import json
 
     from content_factory.prompting import auto_apply
@@ -140,8 +132,7 @@ def test_the_unattended_path_applies_and_records_its_diff(tmp_path: Path) -> Non
 
 
 def test_a_stale_proposal_is_refused_rather_than_clobbering(tmp_path: Path) -> None:
-    """If the guidance moved on, the diff no longer describes what would happen — applying it
-    would silently discard whatever changed in between."""
+    """If the guidance moved on, the diff no longer describes what would happen."""
     skill = _skill(tmp_path)
     lessons = lessons_from_review(
         [_batch(("continuity", "advisory", False, 61.0), ("continuity", "advisory", False, 58.0))]

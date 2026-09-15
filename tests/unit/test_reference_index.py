@@ -94,9 +94,7 @@ def test_fts5_is_available() -> None:
 
 def test_schema_declares_the_underscore_tokenizer() -> None:
     assert "USING fts5(" in SCHEMA
-    # The full tokenizer, not just the underscore half. remove_diacritics 2 has to match the query
-    # side, whose normalize() folds NFKD and drops combining marks: without it an accented caption
-    # word can never match the folded query word.
+    # The full tokenizer, not just the underscore half.
     assert """tokenize = "unicode61 remove_diacritics 2 tokenchars '_'\"""" in SCHEMA
     assert "prefix = '2 3'" in SCHEMA
     for column in FTS_COLUMNS:
@@ -350,11 +348,7 @@ def test_read_library_needs_a_built_index(tmp_path: Path) -> None:
     not Path("/mnt/fast/reference").is_dir(), reason="reference library not on this host"
 )
 def test_baked_clip_measurements_survive_the_index(tmp_path: Path) -> None:
-    """A two-person baked clip carries closest_wrists_m, so the column is never NULL for one.
-
-    A solo clip has nobody to measure a gap to, and NULL is the honest value there rather than a
-    zero that would read as touching.
-    """
+    """A two-person baked clip carries closest_wrists_m, so the column is never NULL for one."""
     import json
 
     manifest = Path("/mnt/fast/models/blender-assets/clips/manifest.json")

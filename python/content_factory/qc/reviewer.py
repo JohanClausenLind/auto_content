@@ -1,25 +1,4 @@
-"""Who reviews this run's pictures — and, when it is an agent, what it has to do to say yes.
-
-Both review stages park on a person, because passing measurements is necessary and never
-sufficient: the faults this pipeline actually produced were two characters standing back to back,
-four figures where two were staged, "honey-coloured" drawn as jars of honey. None of that is
-measurable, all of it is obvious in the picture.
-
-But a run started from a Claude Code session has an agent sitting right there, and 27 runs on this
-machine were parked at ``review_frames`` with their drawings finished and nobody coming. So the
-gate now asks *who is reviewing*, and when the answer is an agent it writes a request addressed to
-it: every image by path, every measurement, and the one command that answers.
-
-**The agent still has to look.** That is enforced rather than trusted: an agent verdict must name
-every frame it decided (see ``missing_decisions``), so ``--accept-all`` — a reviewer saying yes to
-a batch without opening it — is not available to one. A person keeps it, because a person is
-looking at a contact sheet that shows all the frames in one image.
-
-Detection is by ``CLAUDECODE``, which Claude Code sets in every command it runs. That makes "I
-started this run with Claude" the actual trigger the operator asked for, rather than a flag
-somebody has to remember. An explicit parameter always wins, and ``CF_REVIEWER`` overrides the
-detection for a shell that wants a person in the loop anyway.
-"""
+"""Who reviews this run's pictures — and, when it is an agent, what it has to do to say yes."""
 
 from __future__ import annotations
 
@@ -39,12 +18,7 @@ OVERRIDE_ENV = "CF_REVIEWER"
 def intended_reviewer(
     param: str | None = None, env: Mapping[str, str] | None = None
 ) -> ReviewerKind:
-    """Who should review this run: an explicit choice, then the environment, then a person.
-
-    Order matters and the default matters more: an unrecognised value falls through to
-    ``operator`` rather than raising, because a typo in a reviewer name must not be able to skip
-    a human review — the failure mode has to be "a person is asked" and never "nobody is".
-    """
+    """Who should review this run: an explicit choice, then the environment, then a person."""
     environ = os.environ if env is None else env
     for candidate in (param, environ.get(OVERRIDE_ENV)):
         if candidate in {"operator", "agent", "vlm"}:
@@ -57,19 +31,7 @@ def intended_reviewer(
 def missing_decisions(
     frames: Sequence[FrameRecord], accepted: set[str], rejected: set[str]
 ) -> list[str]:
-    """Frames an agent's verdict did not mention and which nobody has decided yet, in frame order.
-
-    This is what makes "review every image" a rule rather than a hope. A person reviews from a
-    contact sheet — one image showing all of them — and may reasonably say "all fine". An agent
-    reads them one at a time, so a verdict that does not name a frame is a frame it did not open,
-    and the gate says which ones instead of accepting the batch.
-
-    A frame that already carries a verdict is not one of them. The batch reaching here is merged,
-    and `merge_verdict` only carries a decision when the digest is unchanged — so such a frame is a
-    picture somebody has already looked at and which has not been redrawn since. Requiring it to be
-    named again would mean one rejected drawing costs a re-review of the whole set; `image-set`'s
-    own note promises the opposite, and until anchors could actually be redrawn nobody could tell.
-    """
+    """Frames an agent's verdict did not name and nobody has decided yet."""
     decided = accepted | rejected
     return [f.frame_id for f in frames if f.verdict == "unreviewed" and f.frame_id not in decided]
 
@@ -82,18 +44,11 @@ def request_markdown(
     frames: Sequence[FrameRecord],
     consistency: ConsistencyReport,
 ) -> str:
-    """The review request an agent reads: what to look at, what was measured, how to answer.
-
-    Written as Markdown next to the images rather than printed, because the run that produced it
-    has usually exited by the time anyone reads it, and a file survives that. Every image is
-    listed with its own path — an agent opens them one at a time, and the contact sheet is for
-    judging them *together*.
-    """
+    """The review request an agent reads: what to look at, what was measured, how to answer."""
     outliers = consistency["outliers"]
     worst = consistency["worst_pair"]
-    # Only what is actually outstanding. A resumed run carries forward the verdicts on frames that
-    # were not redrawn, and listing those again told a reviewer to open six pictures when three
-    # were settled and unchanged.
+    # Only what is outstanding: a resumed run carries forward verdicts on frames not redrawn, and
+    # listing those again told a reviewer to open six pictures when three were settled.
     frames = [f for f in frames if f.verdict == "unreviewed"] or list(frames)
     lines = [
         f"# Frame review — {deliverable}",

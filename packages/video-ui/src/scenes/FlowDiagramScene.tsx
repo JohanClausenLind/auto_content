@@ -5,19 +5,7 @@ import { useCurrentFrame } from "remotion";
 import { enter, motionFrames, progress } from "../motion";
 import { Lines, SceneFrame, useFittedText, useSceneGeometry, type SceneProps } from "./common";
 
-/**
- * Longest-path layers: a node sits one step after the deepest thing that feeds it.
- *
- * Pure, total and cycle-safe. Relaxing every edge `n` times is Bellman-Ford's bound and settles a
- * DAG exactly; a cycle — which the contract does not forbid, because `flow_diagram` and
- * `relationship_diagram` share one node/edge shape — stops at the same bound with every node
- * placed somewhere rather than looping forever. Order inside a layer is declaration order, so the
- * same plan always draws the same picture: this renderer's determinism rule reaches layout too.
- *
- * Edges naming an unknown node are ignored here and drawn by nobody, which is the honest reading:
- * an edge to a node that does not exist is not a shape, and inventing a node for it would put a
- * box on screen that the plan never asked for.
- */
+/** Longest-path layers: a node sits one step after the deepest thing that feeds it. */
 export function flowLayers(nodes: readonly DiagramNode[], edges: readonly DiagramEdge[]): string[][] {
   const known = new Set(nodes.map((n) => n.node_id));
   const real = edges.filter((e) => known.has(e.from_id) && known.has(e.to_id) && e.from_id !== e.to_id);
@@ -49,14 +37,7 @@ export interface NodeBox {
 }
 
 /** Boxes for every node inside a plot box; `axis` is the direction the flow runs. */
-/**
- * How much wider the gap between layers is than the seam between siblings.
- *
- * An arrow is the only thing that carries causation in this scene, and an arrow needs length to be
- * one: with a single gap for both axes the layer-to-layer arrows came out as flat stubs a few
- * pixels long, reading as boxes that happen to be stacked rather than boxes that lead to each
- * other.
- */
+/** How much wider the gap between layers is than the seam between siblings. */
 export const FLOW_GAP_RATIO = 3;
 
 export function flowBoxes(
@@ -106,15 +87,7 @@ export function edgePath(from: NodeBox, to: NodeBox, axis: "horizontal" | "verti
   return `M ${x1} ${y1} C ${x1} ${y1 + bend}, ${x2} ${y2 - bend}, ${x2} ${y2}`;
 }
 
-/**
- * Frames per reveal step, paced off the scene's own length rather than a motion token.
- *
- * The first version paced it off `theme.motion.duration.countUp`, and on a 48-frame beat that put
- * the last arrow's reveal past the end of the scene: the final link in the chain was drawn at
- * 55 % with no arrowhead and simply stopped in mid-air. A diagram's reveal has to finish inside
- * the beat that shows it, so the beat's duration is what sets the cadence — the same reasoning as
- * `bulletRevealFrame`. `steps` is layers plus the arrows after them: one more than the layers.
- */
+/** Frames per reveal step, paced off the scene's own length rather than a motion token. */
 export function flowRevealStep(layers: number, durationInFrames: number, introFrames: number, tailFrames: number): number {
   const usable = durationInFrames - introFrames - tailFrames;
   return Math.max(1, Math.floor(usable / Math.max(1, layers + 1)));
@@ -159,18 +132,7 @@ function NodeCard({ box, label, delay, terminal }: { box: NodeBox; label: string
   );
 }
 
-/**
- * A mechanism: boxes in longest-path layers with the arrows between them drawn in.
- *
- * `flow_diagram` is how an explainer says "this causes this causes this", and the arc's
- * `mechanism` section is built around it — so with no component, the one scene kind that carries
- * causation rendered as a grey placeholder card. Landscape runs the flow left to right; portrait
- * runs it top to bottom, because a four-layer flow across a 1080-wide frame gives each box 250 px.
- *
- * Nodes appear layer by layer and each arrow draws itself over the gap it spans, so a viewer reads
- * the chain in the order it happens rather than being shown a finished graph. The reveal is
- * `progress(frame, …)`, not a CSS transition: the frame stays the only clock.
- */
+/** A mechanism: boxes in longest-path layers with the arrows between them drawn in. */
 export function FlowDiagramScene({ scene }: SceneProps<Spec>): ReactElement {
   const frame = useCurrentFrame();
   const { theme, safe, scale, fps, portrait, align, durationInFrames } = useSceneGeometry();

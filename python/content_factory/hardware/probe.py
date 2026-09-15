@@ -83,7 +83,7 @@ def probe_hardware() -> HardwareInventory:
 
 
 def mock_inventory(profile: str) -> HardwareInventory:
-    """Deterministic profiles for tests and CI: 'cpu_only', 'rtx3090', 'rtx4060_8gb', 'a100_80gb'."""  # noqa: E501
+    """Deterministic profiles for tests and CI: 'cpu_only', 'rtx3090', 'rtx4060_8gb'."""
     base = dict(
         os="Linux",
         os_version="mock",

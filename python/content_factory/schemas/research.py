@@ -1,9 +1,4 @@
-"""Research, evidence, and claims contracts (2.4, 2.14, section 10).
-
-Four linked structures: sources and captured evidence; claims and verification status; narrative
-statements (TextRef.claim_ids); scenes/datasets (DataRef.claim_id). A model never decides whether
-a deterministic check passed and never silently repairs a number.
-"""
+"""Research, evidence, and claims contracts (2.4, 2.14, section 10)."""
 
 from __future__ import annotations
 

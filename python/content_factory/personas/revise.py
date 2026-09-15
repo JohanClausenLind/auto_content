@@ -1,6 +1,4 @@
-"""persona.revise (14.1): plain language → typed PersonaRevisionDiff, shown before apply, plus
-retroactive consistency proposals over queued/unpublished work. Published content is never touched.
-Deterministic mapper (the production model role sits behind the same contract)."""
+"""persona.revise: plain language to a typed PersonaRevisionDiff."""
 
 from __future__ import annotations
 

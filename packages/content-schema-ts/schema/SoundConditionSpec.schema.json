@@ -2,7 +2,7 @@
   "$defs": {
     "AudioArtifactThresholds": {
       "additionalProperties": false,
-      "description": "Where \"this asset has a problem\" begins. One place, so the detector, the QC gate and the\nprocessing chains all agree on the same numbers.\n\nUse :meth:`for_profile` rather than the bare defaults: the defaults are the speech ones, and\napplying them to a sound effect would flag rain as hiss and a whoosh as harsh.",
+      "description": "Where \"this asset has a problem\" begins.",
       "properties": {
         "band_limit_hz_min": {
           "default": 14000.0,
@@ -63,7 +63,7 @@
       "type": "object"
     },
     "AudioProfile": {
-      "description": "What kind of material this is, which decides what counts as a defect.\n\nThe same numbers mean different things: a flat spectrum is hiss in a narration take and it is\nthe entire point of a rain bed. Nothing here is cosmetic — the profile selects which checks run\nand at what limits, and (in :mod:`content_factory.audio.condition`) which processing is even\nallowed to touch the audio.",
+      "description": "What kind of material this is, which decides what counts as a defect.",
       "enum": [
         "speech",
         "sound_effect",
@@ -76,7 +76,7 @@
   "$id": "https://content-factory.local/schema/SoundConditionSpec.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "How a *generated non-speech* asset is conditioned before it reaches the mix.\n\nSame shape as the speech chain — measure, repair only what is broken, normalise, cap the true\npeak, land at the delivery rate, same length out as in — and deliberately none of its models.\nMeasured on this host 2026-09-07, on sounds from ``assets/sfx``:\n\n* ClearerVoice ``MossFormer2_SE_48K`` (speech enhancement) left **0.5-1.0 %** of the energy of\n  a whoosh, a rain bed and an impact. To a speech enhancer a sound effect *is* the noise.\n* Resemble Enhance took a 2 s whoosh from -24.0 to -73.4 dBFS with a waveform correlation of\n  **0.002** against its input — it did not restore the sound, it replaced it with unrelated\n  sub-200 Hz rumble.\n\nSo there is no field here for either of them, and there will not be one. What non-speech\nmaterial actually needs is damage repair and a predictable level, which is what this does.",
+  "description": "How a *generated non-speech* asset is conditioned before it reaches the mix.",
   "properties": {
     "declick": {
       "default": true,

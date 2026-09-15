@@ -1,9 +1,4 @@
-"""Dormant enterprise identity: auth.mode=oidc (3.2). Ships disabled; local mode never needs it.
-
-Standard OIDC authorization-code flow with PKCE against a discovery document; ID tokens are
-verified against the IdP's JWKS (signature, iss, aud, exp, nonce) via Authlib. Role mapping and
-just-in-time provisioning are pure functions. SAML and SCIM are separate standards and separate
-(schema-only) modules — never conflated with this one."""
+"""Dormant enterprise identity: auth.mode=oidc (3.2)."""
 
 from __future__ import annotations
 

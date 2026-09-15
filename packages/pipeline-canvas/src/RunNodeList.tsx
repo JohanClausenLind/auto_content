@@ -32,10 +32,7 @@ function StepContent({ node }: { node: RunNode }) {
   );
 }
 
-/**
- * Plain, screen-reader-friendly rendering of the same run nodes the canvas
- * shows. Selection stays in sync with the canvas through `selectedNodeId`.
- */
+/** Plain, screen-reader-friendly rendering of the same run nodes the canvas shows. */
 export function RunNodeList({ nodes, onSelect, selectedNodeId = null, "aria-label": ariaLabel = "Pipeline steps" }: RunNodeListProps) {
   return (
     <ol className="cf-runlist" aria-label={ariaLabel}>

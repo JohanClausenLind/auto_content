@@ -1,5 +1,4 @@
-"""Cutie: propagate the Blender segmentation seed (indexed PNG, 0 = background) through a clip.
-params: {"seed_mask": path, "max_internal_size": 480, "mem_every": 5, "timeout_s": 1800}"""
+"""Cutie: propagate the Blender segmentation seed (indexed PNG, 0 = background) through a clip."""
 
 from __future__ import annotations
 

@@ -1,11 +1,4 @@
-"""The finisher that puts a noise floor back, and the properties that make it safe to cache.
-
-Every generated set on this host measures 86-95 % dead-flat tiles — no texture anywhere — where a
-photograph runs under 10 %. This module is what closes that gap. It is a finisher and not a fix:
-grain on a faceted render is a grainy faceted render, and these tests are careful not to claim
-otherwise. What they pin is that it is deterministic, that it is the identity when asked to be,
-and that it moves the measurement it exists to move.
-"""
+"""The finisher that puts a noise floor back, and the properties that make it safe to cache."""
 
 from __future__ import annotations
 
@@ -33,8 +26,7 @@ def _gradient_png(size=(256, 256)) -> bytes:
 
 
 def test_it_is_deterministic_so_it_can_sit_in_a_cache_key() -> None:
-    """Byte-identical for one seed. Without this the stage's input_hash would be a lie and every
-    rerun would regenerate every frame."""
+    """Byte-identical for one seed."""
     png = _gradient_png()
     assert apply_film_response(png, FilmResponse(seed=7)) == apply_film_response(
         png, FilmResponse(seed=7)
@@ -42,8 +34,7 @@ def test_it_is_deterministic_so_it_can_sit_in_a_cache_key() -> None:
 
 
 def test_the_seed_actually_changes_the_grain_field() -> None:
-    """Frames of one sequence must not share a field, or the noise reads as a static overlay
-    sitting on top of the film rather than as grain in it."""
+    """Frames sharing a field read as a static overlay on the film rather than grain in it."""
     png = _gradient_png()
     assert apply_film_response(png, FilmResponse(seed=1)) != apply_film_response(
         png, FilmResponse(seed=2)
@@ -69,8 +60,7 @@ def test_it_moves_the_measurement_it_exists_to_move() -> None:
 
 
 def test_grain_is_exposure_weighted_not_a_flat_field() -> None:
-    """A uniform field over a black sky is the most obvious tell of added noise. Film is quiet in
-    the toe and the shoulder, so the deepest black must stay much quieter than mid grey."""
+    """A uniform field over a black sky is the most obvious tell of added noise."""
     mid = dead_flat_fraction(apply_film_response(_flat_png(colour=(128, 128, 128))))[1]
     black = dead_flat_fraction(apply_film_response(_flat_png(colour=(2, 2, 2))))[1]
     assert black < mid / 2

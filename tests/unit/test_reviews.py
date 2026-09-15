@@ -1,8 +1,4 @@
-"""Both review gates: a built sculpture and a batch of generated frames must pass before use.
-
-These tests encode the failures that actually happened. Every check here exists because something
-was obviously wrong in a picture and completely fine to the code.
-"""
+"""Both review gates: a built sculpture and a batch of generated frames must pass before use."""
 
 from __future__ import annotations
 
@@ -121,8 +117,7 @@ def test_a_good_asset_passes_its_checks_but_is_not_usable_unapproved(tmp_path: P
 
 
 def test_a_mirrored_rig_is_caught_by_symmetry(tmp_path: Path) -> None:
-    """A rig with both sides on one side renders a plausible-looking clay figure and ruins every
-    skeleton downstream. Nothing else in the pipeline notices."""
+    """A rig with both sides on one side renders a plausible-looking clay figure."""
     asset_dir = _build_asset(tmp_path, "man_mirrored", symmetric=False)
     check = check_bilateral_symmetry(asset_dir)
     assert check.passed is False and check.severity == "blocker"
@@ -160,14 +155,7 @@ def test_approval_binds_to_the_built_mesh() -> None:
 
 
 def test_the_approve_command_writes_where_the_gate_reads() -> None:
-    """The gate's own error message names a command. That command has to open the gate.
-
-    It did not: ``assets approve`` defaulted to ``output/asset-reviews/approvals`` while
-    ``review_assets`` looked in ``<project_dir>/reviews/approvals``, so following the instruction
-    printed by the block left the run blocked with no way to tell why. One setting now answers
-    for both, and it lives outside any run because an approval binds to a mesh digest rather than
-    to a film.
-    """
+    """The gate's own error message names a command."""
     import inspect
 
     from content_factory.cli.main import assets_approve
@@ -188,8 +176,7 @@ def test_the_approve_command_writes_where_the_gate_reads() -> None:
 
 
 def test_tonal_collapse_is_measured() -> None:
-    """The charcoal failure: 31 % of pixels crushed to black, 36 % midtones, looked like a
-    photocopy and passed every check that existed at the time."""
+    """The charcoal failure: 31 % of pixels crushed to black, 36 % midtones."""
     flat_black = tonal_findings(_png((4, 4, 4)))
     by = {f.check: f for f in flat_black}
     assert by["midtone_range"].passed is False
@@ -200,8 +187,7 @@ def test_tonal_collapse_is_measured() -> None:
 
 
 def test_a_half_applied_monochrome_instruction_blocks() -> None:
-    """The exact "weird colouring": a style asked for no colour and 39 % of pixels were saturated,
-    so the image was neither a colour image nor a grey one."""
+    """The exact "weird colouring": a style asked for no colour."""
     saturated = colour_findings(_png((10, 90, 200)), expect_monochrome=True)
     assert saturated and saturated[0].passed is False
     assert saturated[0].severity == "blocker"
@@ -209,9 +195,8 @@ def test_a_half_applied_monochrome_instruction_blocks() -> None:
     grey = colour_findings(_png((128, 128, 128)), expect_monochrome=True)
     assert grey and grey[0].passed is True
 
-    # A style that never asked for monochrome is not judged on it.
-    # The other direction: a colour brief that came back grey is the same half-applied style, and
-    # it went unchecked. A saturated frame passes it; a greyscale one does not.
+    # A style that never asked for monochrome is not judged on it. The other direction: a colour
+    # brief that came back grey is the same half-applied style, and it went unchecked.
     colour_ok = colour_findings(_png((10, 90, 200)), expect_monochrome=False)
     assert colour_ok and colour_ok[0].check == "colour_present" and colour_ok[0].passed is True
     colour_missing = colour_findings(_png((128, 128, 128)), expect_monochrome=False)
@@ -281,12 +266,7 @@ def test_reviewer_and_timestamp_must_be_set_together() -> None:
 
 
 def test_a_pillarboxed_frame_is_a_blocker() -> None:
-    """A model asked for 16:9 that draws a narrower picture and pads the sides with flat colour.
-
-    Invisible to every other check here — the bars are mid grey, so nothing is crushed and nothing
-    is blown — and unmistakable once measured. Over one evening's anchors the separation was total:
-    the one pillarboxed frame put 60 % of its width in flat bars and every other frame measured 0.
-    """
+    """A model asked for 16:9 that draws a narrower picture and pads the sides with flat colour."""
     import io
 
     from PIL import Image
@@ -330,13 +310,7 @@ def _load_gradient(size: tuple[int, int]) -> Image.Image:
 
 
 def test_a_frame_a_person_rejected_is_redrawn_rather_than_cache_hit(tmp_path) -> None:
-    """`image-set`'s own note promises "rejecting one drawing costs one drawing, not the film".
-
-    Nothing implemented it: `review_frames` recorded the verdict and `generate_keyframes` never
-    read it, so a rejected frame stayed a cache hit and the gate blocked on the same picture on
-    every rerun. Measured 2026-09-10 on a malachite set — six consistent views of the wrong
-    object, rejected, and the resume printed the identical rejection.
-    """
+    """`image-set`'s own note promises "rejecting one drawing costs one drawing, not the film"."""
     import json
 
     from content_factory.runners.local import make_context
@@ -393,8 +367,7 @@ def test_a_frame_a_person_rejected_is_redrawn_rather_than_cache_hit(tmp_path) ->
     assert _clear_rejected_frames(ctx, ctx.ddir() / "sequence") == []
 
     # And the redraw has to come back *different*: the backend derives its seed from the attempt
-    # number, so a rejection moves the seed. Measured 2026-09-10 — a rejected kilim frame was
-    # redrawn and came back as the drawing that had just been turned down.
+    # number, so a rejection moves the seed.
     from content_factory.workflows.stages import _rejection_seed_offsets
 
     seq = ctx.ddir() / "sequence"
@@ -414,11 +387,7 @@ def test_a_frame_a_person_rejected_is_redrawn_rather_than_cache_hit(tmp_path) ->
 
 
 # --- when Claude started the run, Claude reviews ------------------------------------------------
-#
-# Both gates park on a person because passing measurements is necessary and never sufficient. But
-# a run started from a Claude Code session has an agent present, and 27 runs on this machine sat
-# at `review_frames` with their drawings finished and nobody coming. So the gate asks who is
-# reviewing — and makes an agent look, rather than trusting it to.
+# Both gates park on a person because passing measurements is necessary and never sufficient.
 
 
 def test_a_run_started_from_claude_code_routes_its_review_to_the_agent() -> None:
@@ -434,8 +403,7 @@ def test_a_run_started_from_claude_code_routes_its_review_to_the_agent() -> None
 
 
 def test_an_unrecognised_reviewer_name_asks_a_person_rather_than_raising() -> None:
-    """The failure mode has to be "a person is asked", never "nobody is". `--as overnight-review`
-    once wrote a verdict the next stage then refused; a typo must not be able to skip a gate."""
+    """The failure mode has to be "a person is asked", never "nobody is"."""
     from content_factory.qc.reviewer import intended_reviewer
 
     assert intended_reviewer("claude", {}) == "operator"
@@ -443,9 +411,7 @@ def test_an_unrecognised_reviewer_name_asks_a_person_rather_than_raising() -> No
 
 
 def test_an_agent_verdict_has_to_name_every_frame() -> None:
-    """What makes "review every image" a rule and not a hope. A person reviews from a contact
-    sheet — one image showing all of them — so "all fine" is a real answer. An agent reads them
-    one at a time, so a frame its verdict never mentions is a frame it did not open."""
+    """What makes "review every image" a rule and not a hope."""
     from content_factory.qc.reviewer import missing_decisions
 
     frames = tuple(FrameRecord(frame_id=f"shot_{i}", png_sha256="a" * 64) for i in range(4))
@@ -454,9 +420,7 @@ def test_an_agent_verdict_has_to_name_every_frame() -> None:
 
 
 def test_every_frame_is_compared_with_every_other_not_just_its_neighbour() -> None:
-    """`continuity_finding` compares consecutive frames, which answers "was there a cut here" and
-    cannot answer "do all six belong to one set": a set can drift a little at each step and end
-    somewhere else with every consecutive pair looking fine."""
+    """`continuity_finding` compares consecutive frames."""
     from content_factory.qc.frame_review import consistency_matrix
 
     frames = [(f"f{i}", _gradient_png()) for i in range(6)]
@@ -469,8 +433,7 @@ def test_every_frame_is_compared_with_every_other_not_just_its_neighbour() -> No
 
 
 def test_the_one_frame_that_left_the_set_is_the_one_named() -> None:
-    """Measured on the real thing: one whelk drawing dropped into five pinecone frames reads
-    0.140 against the set's own 0.039, so the threshold sits at 0.11 between them."""
+    """Measured on the real thing: one whelk drawing dropped into five pinecone frames reads."""
     from content_factory.qc.frame_review import consistency_findings, consistency_matrix
 
     frames = [(f"f{i}", _gradient_png()) for i in range(5)]
@@ -485,10 +448,7 @@ def test_the_one_frame_that_left_the_set_is_the_one_named() -> None:
 
 
 def test_a_set_with_no_consistent_core_is_not_six_accusations() -> None:
-    """An outlier is only meaningful against a set that agrees with itself. Measured on
-    `w-iceberg` — an image-set of six deliberately different viewpoints — the median pair sat at
-    0.243 and every frame came back an "outlier", which is both useless and wrong. A set is
-    allowed to be varied on purpose."""
+    """An outlier is only meaningful against a set that agrees with itself."""
     from content_factory.qc.frame_review import consistency_findings, consistency_matrix
 
     frames = [
@@ -519,8 +479,7 @@ def test_consistency_travels_with_the_other_findings() -> None:
 
 
 def test_the_request_names_every_image_and_the_command_that_answers() -> None:
-    """Written as a file beside the images because the run that produced it has usually exited
-    by the time anyone reads it."""
+    """Written as a file beside the images."""
     from content_factory.qc.frame_review import consistency_matrix
     from content_factory.qc.reviewer import request_markdown
 
@@ -561,10 +520,7 @@ def _batch_on_disk(root: Path, frame_ids: list[str]) -> Path:
 def test_a_verdict_the_contract_cannot_read_back_is_refused_before_it_is_written(
     tmp_path: Path,
 ) -> None:
-    """Found by using it. `model_copy(update=...)` does not re-validate in Pydantic v2, so a
-    rejection reason past `reason`'s 400 characters went straight to disk and the next
-    `review_frames` died reading the file it had just been handed. Second time this command has
-    written a verdict the gate then refused — the first was `--as overnight-review`."""
+    """Found by using it."""
     from typer.testing import CliRunner
 
     from content_factory.cli.main import app
@@ -593,8 +549,7 @@ def test_a_verdict_the_contract_cannot_read_back_is_refused_before_it_is_written
 
 
 def test_an_agent_cannot_accept_a_batch_it_did_not_open(tmp_path: Path) -> None:
-    """`--accept-all` is a reviewer saying yes to a batch nobody looked at. Defensible for a
-    person reading one contact sheet; not for an agent reading images one at a time."""
+    """`--accept-all` is a reviewer saying yes to a batch nobody looked at."""
     from typer.testing import CliRunner
 
     from content_factory.cli.main import app
@@ -715,9 +670,7 @@ def _sha(data: bytes) -> str:
 
 
 def test_the_panel_finds_the_picture_behind_every_frame_id_in_both_lanes(tmp_path: Path) -> None:
-    """A frame id is `frame:0007` on the keyframe lanes and `shot_ab54…:0000` on the anchor
-    lanes, and the second one's path is read from the manifest rather than guessed: a lane may
-    write more than one frame per shot."""
+    """A frame id is `frame:0007` on the keyframe lanes."""
     from content_factory.services import frame_reviews
 
     keyframes = _gated_run(tmp_path / "keyframes")
@@ -741,9 +694,7 @@ def test_the_panel_finds_the_picture_behind_every_frame_id_in_both_lanes(tmp_pat
 def test_a_redrawn_frame_is_unreviewed_again_even_though_the_verdict_names_it(
     tmp_path: Path,
 ) -> None:
-    """The whole point of binding a verdict to image digests, and the reason the panel and the
-    gate share one merge: a frame that was regenerated after being accepted must come back as a
-    question. If the panel used frame ids it would show an approved picture nobody has seen."""
+    """The whole point of binding a verdict to image digests, and the reason the panel."""
     from content_factory.services import frame_reviews
 
     deliverable = _gated_run(tmp_path / "run")
@@ -801,8 +752,7 @@ def _texture_png(img: Image.Image) -> bytes:
 
 
 def _smooth_gradient(size: tuple[int, int] = (256, 256)) -> Image.Image:
-    """A clean synthetic gradient: what a render looks like to this measurement. No noise floor,
-    no micro-texture, every tile flat."""
+    """A clean synthetic gradient: what a render looks like to this measurement."""
     w, h = size
     img = Image.new("L", size)
     img.putdata([int(255 * (x / w)) for _ in range(h) for x in range(w)])
@@ -810,8 +760,7 @@ def _smooth_gradient(size: tuple[int, int] = (256, 256)) -> Image.Image:
 
 
 def _grainy(size: tuple[int, int] = (256, 256), amplitude: int = 12) -> Image.Image:
-    """The same gradient with a deterministic noise floor on every pixel, which is what a sensor
-    puts there and what none of this host's generated frames have."""
+    """The same gradient with a deterministic noise floor on every pixel."""
     import random
 
     rng = random.Random(7)
@@ -844,20 +793,15 @@ def test_dead_flat_check_only_fires_for_a_style_that_asked_to_look_photographed(
 
     render = _texture_png(_smooth_gradient())
     checks = {f.check for f in texture_findings(render, expect_photographic=False)}
-    # The refusal and truncation checks run for every style — a grey card is not a watercolour,
-    # and neither is half a canvas — so what the photographic flag gates is only
-    # `texture_dead_flat`.
+    # The refusal and truncation checks run for every style — a grey card is not a watercolour, and
+    # neither is half a canvas — so what the photographic flag gates is only `texture_dead_flat`.
     assert checks == {"texture_noise_floor", "model_returned_a_refusal", "frame_rendered_whole"}
     photographic = {f.check: f.passed for f in texture_findings(render, expect_photographic=True)}
     assert photographic["texture_dead_flat"] is False
 
 
 def test_texture_noise_floor_catches_the_opposite_failure() -> None:
-    """A frame where *nothing* is flat has had its surfaces replaced by noise, not detailed.
-
-    Two of demo-pebble's four keyframes came back this way — ground replaced by 1-px dither, 0.7 %
-    dead-flat against the anchor's 95.4 % — while the other two were clean. No check saw it.
-    """
+    """A frame where *nothing* is flat has had its surfaces replaced by noise, not detailed."""
     from content_factory.qc.frame_review import texture_findings
 
     findings = {
@@ -868,8 +812,7 @@ def test_texture_noise_floor_catches_the_opposite_failure() -> None:
 
 
 def test_texture_is_measured_at_native_size_not_on_the_analysis_downscale() -> None:
-    """Every other check works on a 640x360 downscale. A downscale is a low-pass filter, so
-    measuring texture on one reports the resampler rather than the picture."""
+    """Every other check works on a 640x360 downscale."""
     from content_factory.qc.frame_review import _ANALYSIS_SIZE, dead_flat_fraction
 
     big = _grainy(size=(_ANALYSIS_SIZE[0] * 2, _ANALYSIS_SIZE[1] * 2))
@@ -877,10 +820,7 @@ def test_texture_is_measured_at_native_size_not_on_the_analysis_downscale() -> N
     _, detail_downscaled = dead_flat_fraction(
         _texture_png(big.resize(_ANALYSIS_SIZE, Image.Resampling.LANCZOS))
     )
-    # Resampling averages the noise away. On this synthetic the tiles are still not *flat* either
-    # way, so the dead-flat fraction cannot show it — the median tile detail can, and it more than
-    # halves (6.2 -> 2.6). On a real frame, whose texture is finer than this, the same filtering is
-    # what would push tiles over the flat threshold and report a render as a photograph.
+    # Resampling averages the noise away.
     assert detail_native > 2 * detail_downscaled
 
 
@@ -906,15 +846,7 @@ def _banner_png(text_rows: int = 40, noisy: bool = True) -> bytes:
 
 
 def test_a_flat_grey_card_is_a_refusal() -> None:
-    """Ideogram 4's first refusal mode: no picture at all, median tile detail 0.00.
-
-    The negative case here is a *grainy* frame rather than the smooth gradient used elsewhere in
-    this file, and that is the honest limit of the check: a mathematically perfect gradient has no
-    texture either, so nothing separates it from a grey card. Real output does not look like that —
-    the smoothest generated frame measured on this host still carries 0.09 median tile detail
-    against a refusal card's 0.00 — but the synthetic case would be a false positive and pretending
-    otherwise in a test would hide it.
-    """
+    """Ideogram 4's first refusal mode: no picture at all, median tile detail 0.00."""
     from content_factory.qc.frame_review import is_refusal_frame
 
     assert is_refusal_frame(_texture_png(_grainy())) is False
@@ -922,46 +854,26 @@ def test_a_flat_grey_card_is_a_refusal() -> None:
     assert is_refusal_frame(_texture_png(flat)) is True
 
 
-def test_a_refusal_lettered_over_a_real_photograph_is_also_a_refusal() -> None:
-    """The dangerous mode, and the one a dead-flat check alone passes.
+def test_a_refusal_lettered_over_a_photograph_is_not_caught_automatically() -> None:
+    """The gap this repo has, pinned so nobody re-adds a detector that measures the wrong thing."""
+    from content_factory.qc.frame_review import BANNER_DETECTION_DOES_NOT_WORK, is_refusal_frame
 
-    Measured 2026-09-12: Ideogram 4 returns a plausible photograph with the refusal lettered across
-    it, sometimes garbled ("Imargia afforraberise paricitanaiton" over a perfectly good pine cone).
-    Texture everywhere, so nothing but the banner distinguishes it — and it would otherwise reach a
-    finished film carrying a watermark saying the model refused.
-    """
-    from content_factory.qc.frame_review import has_refusal_banner, is_refusal_frame
-
-    banner = _banner_png()
-    assert has_refusal_banner(banner) is True
-    assert is_refusal_frame(banner) is True
+    lettered = _texture_png(_grainy())  # full texture: whatever is written on it, this passes
+    assert is_refusal_frame(lettered) is False
+    assert "inverts" in BANNER_DETECTION_DOES_NOT_WORK or "invert" in BANNER_DETECTION_DOES_NOT_WORK
 
 
-def test_an_ordinary_grainy_photograph_is_not_a_refusal() -> None:
-    """The margin here is thin — a lit train head-on measured 3.93x the median row against the
-    5.0 threshold — which is why the finding is advisory rather than a blocker."""
-    from content_factory.qc.frame_review import has_refusal_banner
+def test_the_flat_grey_refusal_card_is_still_caught() -> None:
+    """The separable half: median tile detail 0.000 against 0.4-4.9 for a rendered frame."""
+    from content_factory.qc.frame_review import is_refusal_frame
 
-    assert has_refusal_banner(_texture_png(_grainy())) is False
-
-
-def test_a_flat_card_is_not_double_reported_as_a_banner() -> None:
-    """It has no rows to compare against, so the banner test declines it and the detail test owns
-    it. Two checks, one verdict each."""
-    from content_factory.qc.frame_review import has_refusal_banner
-
-    assert has_refusal_banner(_texture_png(Image.new("RGB", (256, 256), (110, 110, 108)))) is False
+    card = _texture_png(Image.new("RGB", (256, 256), (110, 110, 108)))
+    assert is_refusal_frame(card) is True
+    assert is_refusal_frame(_texture_png(_grainy())) is False
 
 
 def _half_rendered(size: tuple[int, int] = (512, 256), drawn: float = 0.45) -> Image.Image:
-    """A picture across the left `drawn` of the canvas and one near-constant field over the rest.
-
-    The shape of `setC/skeleton/0000`: people and a brick wall in the left part, a single flat
-    value over the rest, and a hard vertical border between them. The blank side is given a sparse
-    two-level dither rather than one exact value, because a real truncated render is not
-    mathematically constant -- the measured frame's flat side carried a median tile detail of 0.06,
-    which is what keeps it *above* the refusal floor and out of reach of every existing check.
-    """
+    """A picture across the left `drawn` of the canvas and one near-constant field over the rest."""
     import random
 
     rng = random.Random(11)
@@ -977,11 +889,7 @@ def _half_rendered(size: tuple[int, int] = (512, 256), drawn: float = 0.45) -> I
 
 
 def _flat_but_whole(size: tuple[int, int] = (256, 256)) -> Image.Image:
-    """Mostly flat, but with micro-detail scattered over the WHOLE canvas: an overcast frame.
-
-    The false positive worth preventing. This is 40 % dead-flat tiles, and none of its edges has a
-    large pure band against it, which is the distinction the truncation check turns on.
-    """
+    """Mostly flat, but with micro-detail scattered over the WHOLE canvas: an overcast frame."""
     import random
 
     rng = random.Random(3)
@@ -1001,13 +909,7 @@ def _flat_but_whole(size: tuple[int, int] = (256, 256)) -> Image.Image:
 def test_a_half_rendered_frame_is_caught_where_the_refusal_and_flatness_tests_cannot_see_it() -> (
     None
 ):
-    """HiDream returned this on 2026-09-12 and every existing check passed it.
-
-    It is not a refusal (there is a real picture in the part that drew, and its median tile detail
-    sits above the refusal floor), it has no lettering for the banner test, and its dead-flat
-    fraction is unremarkable beside a legitimately flat frame. What gives it away is that the flat
-    tiles are one block against an edge rather than spread through the picture.
-    """
+    """HiDream returned this on 2026-09-12 and every existing check passed it."""
     from content_factory.qc.frame_review import (
         BLANK_PANEL_MAX,
         blank_panel_fraction,
@@ -1025,11 +927,7 @@ def test_a_half_rendered_frame_is_caught_where_the_refusal_and_flatness_tests_ca
 
 
 def test_a_flat_frame_whose_flatness_is_spread_out_is_not_called_truncated() -> None:
-    """The false positive that would matter: an overcast frame is flat and drew whole.
-
-    Measured on real output, the flattest clean frame on this host (81.6 % dead-flat) scored 0.21
-    against the broken one's 0.65, and that gap is what the threshold sits in.
-    """
+    """The false positive that would matter: an overcast frame is flat and drew whole."""
     from content_factory.qc.frame_review import (
         BLANK_PANEL_MAX,
         blank_panel_fraction,

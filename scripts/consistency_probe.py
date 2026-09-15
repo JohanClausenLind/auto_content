@@ -1,32 +1,10 @@
-"""Does a lane hold ONE world and ONE pair of people across a motion?
-
-    uv run python scripts/consistency_probe.py stage                 # Blender passes, 3 takes
-    uv run python scripts/consistency_probe.py render --lane flux2   # one lane, all three sets
-    uv run python scripts/consistency_probe.py score                 # matrices + contact sheets
-
-The single-frame comparisons this repo has run so far answer "which model draws the best
-picture". They cannot answer the question a film actually asks, which is whether frame 5 is the
-same two people in the same street as frame 0. `qc.frame_review.consistency_matrix` measures the
-world (hue + luma, every pair, not just neighbours) and says plainly that it cannot measure the
-subject -- so the sheets exist to be looked at, and the number is the thing you cite afterwards.
-
-Three CMU two-person takes, six frames sampled evenly across each. The takes are chosen for motion
-the eye can check: a handshake either happens or it does not.
-
-**Run the lanes grouped by GPU tenant, and restart ComfyUI between flux2 and ideogram.**
-`LocalServices.ensure` swaps tenants for you (`exclusive_gpu` is on), so skeleton/hidream ->
-flux2 costs one automatic handover. What it cannot see is a model swap *inside* one tenant: FLUX.2
-and Ideogram 4 are both ComfyUI, and the first one loaded keeps ~18 GB cached in-process, so the
-second OOMs the card. `content-factory services stop --tenant comfyui` between them is the fix.
-
-Wall clock on this box, per frame: HiDream 2m13s (it snaps 1024x576 up to 2560x1440 -- eleven
-fixed ~4 MP resolutions, upstream behaviour, not a setting), FLUX.2 turbo ~80 s, Ideogram ~50 s.
-"""
+"""Does a lane hold ONE world and ONE pair of people across a motion?"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
 import sys
 from collections.abc import Callable
@@ -42,10 +20,8 @@ sys.path.insert(0, str(REPO / "scripts"))
 FRAMES = 6
 WIDTH, HEIGHT = 1024, 576
 
-# clip, camera, and what the pair is doing. `body_fraction` is high on purpose: the mocap shot
-# planner records that HiDream honours a pose skeleton only when the figures are large in frame
-# and ignores it at 33 % body height, and the last batch of single frames came back with the
-# figures small and the interaction unreadable. This is that finding applied.
+# clip, camera, and what the pair is doing. `body_fraction` is high on purpose: HiDream honours a
+# pose skeleton only when the figures are large in frame and ignores it at 33 % body height.
 SETS = {
     "A": {
         "clip": "cmu_18_19_01",
@@ -101,6 +77,29 @@ SETS = {
 }
 
 LANES = ["skeleton", "hidream", "flux2", "ideogram"]
+
+IDEOGRAM_SEEDS = (4242, 4243, 99001, 31337, 7, 811, 20260913, 1, 65537, 424242, 9, 123457)
+"""Seeds tried in order when Ideogram 4 paints a refusal instead of a picture.
+
+Twelve rather than a handful, because the filter is **seed-determined, not content-determined**
+(docs/research/2026-09-12-ideogram-4.md) and a people-in-contact subject refuses about a third of
+the time. Five was measured to be too few on 2026-09-13: set B frame 3 -- two people mid-stride on
+a pavement -- exhausted all five and left a grey card in a finished set. At roughly a third each,
+five seeds still fail about one time in 250 frames, which is a near-certainty across a few
+sequences; twelve puts it under one in 100,000."""
+
+ONE_BOX = bool(os.environ.get("CF_PROBE_IDEOGRAM_ONEBOX"))
+"""Send ONE element spanning both figures instead of one per figure (the shape being replaced).
+
+An experiment switch, not a setting: it exists so the count comparison can be re-run rather than
+remembered."""
+
+STILL_MAX = 0.98
+"""Mean consecutive structural similarity above which a lane did not animate at all.
+
+Measured 2026-09-13 over three takes: the lanes that visibly walk sit at 0.771-0.929 and the one
+that redraws its anchor sits at 0.995-1.000. There is no overlap and nothing in between, which is
+what makes one cut-off honest here rather than a taste call."""
 
 SUBJECT = (
     "Two people walking on a city pavement beside a weathered brick wall, seen from the side. "
@@ -212,9 +211,8 @@ def stage(set_ids: list[str]) -> None:
         (out / "bundle.json").write_text(bundle.model_dump_json(indent=1))
         skel_dir = out / "skeletons"
         skel_dir.mkdir(exist_ok=True)
-        # SubjectTrack.layouts / .poses run the FULL length of the clip and are sparse: only the
-        # rendered frames are filled (controls/bundle.py builds them over range(frame_count)).
-        # Index by clip frame number, never by position in `picked`.
+        # SubjectTrack.layouts / .poses run the FULL clip length with only rendered frames filled:
+        # index by clip frame number, never by position in `picked`.
         boxes: dict[str, dict[str, dict | None]] = {}
         for i, frame in enumerate(got["picked"]):
             poses = [
@@ -276,61 +274,81 @@ def _anchor_prompt(set_id: str) -> str:
     return f"{STYLE_PRESETS['cinematic']}. {SUBJECT} {spec['beats'][0].capitalize()}."
 
 
-BOX_SCALE = 1000
-"""Ideogram's bounding boxes are 0-1000 on BOTH axes, not pixels.
-
-Inferred, and worth saying so: the text encoder is Qwen3-VL, whose boxes are normalised to 0-1000,
-and every worked example in the ComfyUI docs tops out near 1000 on both axes -- one of them is
-`[200, 300, 950, 700]` beside a 1024x576 render, where 700 is past the bottom of the frame in
-pixels and sensible as a fraction. Scaling to the pixel height instead squashes every box into the
-top 58 % of the canvas."""
-
-
-def _pair_box(boxes: dict, i: int) -> list[int]:
-    """The union of the two figures' layout boxes at frame ``i``, as [x0, y0, x1, y1] of 1000."""
-    per = [b for b in boxes[str(i)].values() if b]
-    if not per:
-        return [180, 60, 860, 940]
-    x0 = min(b["x"] for b in per)
-    y0 = min(b["y"] for b in per)
-    x1 = max(b["x"] + b["w"] for b in per)
-    y1 = max(b["y"] + b["h"] for b in per)
-    return [round(v * BOX_SCALE) for v in (x0, y0, x1, y1)]
-
-
 def _ideogram_caption(set_id: str, beat: str, beat_index: int) -> str:
-    """Structured, never prose -- see docs/research/2026-09-12-ideogram-4.md.
+    """Structured, in the key order the model was trained on -- see prompting/ideogram.py."""
+    import sys
 
-    The element box is Blender's own measured layout of the pair at that frame, which is the
-    first time this repo's `layout_boxes` reach a model as coordinates rather than as a
-    rastered rectangle.
-    """
-    from content_factory.sequences.styles import STYLE_PRESETS
+    sys.path.insert(0, str(REPO / "scripts"))
+    import make_mocap_shot_plan as mmsp
 
-    boxes = json.loads((scene_dir(set_id) / "boxes.json").read_text())
-    return json.dumps(
-        {
-            "high_level_description": f"{SUBJECT} {beat.capitalize()}.",
-            "style_description": {"medium": "photograph", "photo": STYLE_PRESETS["cinematic"]},
-            "compositional_deconstruction": {
-                "background": "a city pavement beside a weathered brick wall, softly out of focus",
-                "elements": [
-                    {
-                        "description": f"two adults in winter coats, {beat}",
-                        "bounding_box": _pair_box(boxes, beat_index),
-                    }
-                ],
-            },
-        },
-        indent=1,
+    from content_factory.prompting import ideogram
+    from content_factory.schemas.sequences import Box
+
+    boxes = json.loads((scene_dir(set_id) / "boxes.json").read_text())[str(beat_index)]
+    cast = {cid: asset for cid, asset, _ in SETS[set_id]["cast"]}
+    if ONE_BOX:
+        # The shape this replaced, kept switchable so the comparison can be re-run rather than
+        # remembered: one element spanning the pair, described as a number of people.
+        per = [b for b in boxes.values() if b]
+        x0, y0 = min(b["x"] for b in per), min(b["y"] for b in per)
+        x1 = max(b["x"] + b["w"] for b in per)
+        y1 = max(b["y"] + b["h"] for b in per)
+        pair = Box(x=x0, y=y0, w=min(x1 - x0, 1.0 - x0), h=min(y1 - y0, 1.0 - y0))
+        elements = [ideogram.obj(pair, f"two adults in winter coats, {beat}")]
+        return ideogram.caption(
+            high_level_description=(
+                f"Two people on a city pavement, seen from the side. {beat.capitalize()}."
+            ),
+            background="a city pavement beside a weathered brick wall, softly out of focus, empty",
+            elements=elements,
+            aesthetics="muted naturalistic colour, scuffed and lived-in, anamorphic widescreen",
+            lighting="overcast daylight, lit only by sources inside the scene, deep shadows that "
+            "still hold detail",
+            photo="35 mm, a long lens held wide open so the background falls softly away, fine "
+            "grain, faint halation around the practicals",
+            medium="photograph",
+        )
+    # Foreground last, which is the node's own instruction: the nearer figure is the one whose
+    # box reaches further down the frame.
+    placed = sorted(
+        ((cid, b) for cid, b in boxes.items() if b), key=lambda kv: kv[1]["y"] + kv[1]["h"]
+    )
+    elements = [
+        ideogram.obj(
+            Box(x=b["x"], y=b["y"], w=b["w"], h=b["h"]),
+            f"{mmsp.APPEARANCE[cast[cid]]}, {beat}",
+        )
+        for cid, b in placed
+    ]
+    return ideogram.caption(
+        high_level_description=(
+            f"Two people on a city pavement, seen from the side. {beat.capitalize()}."
+        ),
+        background="a city pavement beside a weathered brick wall, softly out of focus, empty",
+        elements=elements,
+        aesthetics="muted naturalistic colour, scuffed and lived-in, anamorphic widescreen",
+        lighting="overcast daylight, lit only by sources inside the scene, deep shadows that "
+        "still hold detail",
+        photo="35 mm, a long lens held wide open so the background falls softly away, fine grain, "
+        "faint halation around the practicals",
+        medium="photograph",
     )
 
 
-def _backend(lane: str, workdir: Path):
+def _services(endpoint: str = ""):
+    """The GPU tenants, optionally on another host."""
     from content_factory.config import get_settings
     from content_factory.services.local import LocalServices
 
-    services = LocalServices(get_settings().local_services, state_dir=Path(".services"))
+    return LocalServices(
+        get_settings().local_services,
+        state_dir=Path(".services"),
+        comfy_endpoint=endpoint or None,
+    )
+
+
+def _backend(lane: str, workdir: Path, endpoint: str = ""):
+    services = _services(endpoint)
     if lane in {"skeleton", "hidream"}:
         from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
@@ -345,15 +363,7 @@ def _backend(lane: str, workdir: Path):
 def _repair_truncated(
     out: Path, plan, lock, backend, *, frame_instructions, conditioning_for, attempts: int = 3
 ) -> list[int]:
-    """Re-draw any frame the model left half-blank, with a fresh seed. Returns what was repaired.
-
-    `drift_report` is deliberately not the place for this. A truncated render is unconditionally
-    broken rather than a threshold judgement, so it is tempting to make it a drift failure -- but
-    `MockReferenceEditBackend` draws flat rectangles by design, so every mock frame in the test
-    suite would fail and regenerate three times. The repo already settled this shape for Ideogram's
-    refusals: advisory in `qc.frame_review` where a reviewer sees it, and a caller that knows which
-    model it is talking to spends another seed. This is that caller.
-    """
+    """Re-draw any frame the model left half-blank, with a fresh seed."""
     from content_factory.qc.frame_review import BLANK_PANEL_MAX, blank_panel_fraction
     from content_factory.sequences.engine import build_sequence
 
@@ -404,7 +414,7 @@ def _skeleton_conditioning(
     return conditioning
 
 
-def render(lane: str, set_ids: list[str]) -> None:
+def render(lane: str, set_ids: list[str], endpoint: str = "") -> None:
     import time
 
     from content_factory.schemas.sequences import GenerationLock
@@ -422,12 +432,8 @@ def render(lane: str, set_ids: list[str]) -> None:
             width=WIDTH,
             height=HEIGHT,
             seed=4242,
-            # With ONE reference the HiDream backend forwards this as the server's scheduler, and
-            # the server only falls back to its own correct choice when the field is falsy --
-            # `"default"` is truthy, so it would override upstream's editing branch with something
-            # else. `flow_match` IS what upstream picks for a single-reference edit, so naming it
-            # here is the same decision made explicitly. With two references (the skeleton lane)
-            # the backend sends null and the server picks `flash`, which is right for that case.
+            # `flow_match` is upstream's pick for a single-reference edit; the server falls back to
+            # its own choice only when this is falsy, and `"default"` is truthy.
             sampler="flow_match" if lane in {"skeleton", "hidream"} else "euler",
             steps=8 if lane.startswith("flux") else 28,
             guidance=1.0 if lane.startswith("flux") else 0.0,
@@ -437,14 +443,13 @@ def render(lane: str, set_ids: list[str]) -> None:
             background_prompt="a city pavement beside a weathered brick wall",
             reference_asset_sha256="0" * 64,
         )
-        backend = _backend(lane, out)
+        backend = _backend(lane, out, endpoint)
         started = time.monotonic()
 
-        # Ideogram has no edit path in this repo, by design: every frame is an independent
-        # text-to-image with the same seed. That IS the measurement -- whether the model the
-        # operator picked as the main one can hold a world without being shown one.
+        # Ideogram has no edit path here by design: every frame is an independent text-to-image
+        # with the same seed, which measures whether it can hold a world without being shown one.
         if lane == "ideogram":
-            _render_ideogram(set_id, out, spec)
+            _render_ideogram(set_id, out, spec, endpoint)
             print(f"[{lane}/{set_id}] {time.monotonic() - started:.0f}s", flush=True)
             continue
 
@@ -464,14 +469,8 @@ def render(lane: str, set_ids: list[str]) -> None:
             # backend composes anchor-then-skeleton, so identity leads and pose follows.
             conditioning_for = _skeleton_conditioning(skels)
 
-        # The drift gate is RECORDED, not enforced, and that is a deliberate choice for this
-        # probe. `locked_region_similarity_min=0.92` is calibrated for a locked camera where only
-        # the subject moves; every set here is two people walking across the frame, so the
-        # background legitimately changes and the gate rejected every set A skeleton frame it
-        # reached (four of six, at 0.56-0.65 similarity and 0.23-0.26 style delta) -- frames whose
-        # identity and world a reviewer reads as consistent. Three
-        # regeneration attempts at 2m13s each buys nothing when the threshold is the wrong
-        # question. The measured numbers still land in result.json, which is the useful half.
+        # The drift gate is RECORDED, not enforced: 0.92 is calibrated for a locked camera, and two
+        # people walking across the frame fail it at 0.56-0.65 while reading as consistent.
         result = build_sequence(
             plan,
             lock,
@@ -524,30 +523,36 @@ def render(lane: str, set_ids: list[str]) -> None:
         )
 
 
-def _render_ideogram(set_id: str, out: Path, spec: dict) -> None:
-    """Ideogram 4 through ComfyUI, one independent frame per beat, seed held fixed.
-
-    No anchor and no drift gate, because the backend cannot take one. Whatever consistency shows
-    up here is the model's alone -- which is the measurement.
-    """
+def _render_ideogram(set_id: str, out: Path, spec: dict, endpoint: str = "") -> None:
+    """Ideogram 4 through ComfyUI, one independent frame per beat, seed held fixed."""
     import time
 
-    from content_factory.config import get_settings
-    from content_factory.qc.frame_review import is_refusal_frame
+    from content_factory.qc.frame_review import (
+        BLANK_PANEL_MAX,
+        blank_panel_fraction,
+        is_refusal_frame,
+    )
     from content_factory.schemas.sequences import GenerationLock
     from content_factory.sequences.ideogram_backend import Ideogram4Backend
-    from content_factory.services.local import LocalServices
 
-    services = LocalServices(get_settings().local_services, state_dir=Path(".services"))
-    backend = Ideogram4Backend(workdir=out / "_work", endpoint=services.ensure("comfyui"))
+    def unusable(png: bytes) -> str:
+        """Why this frame has to be drawn again, or "" if it is fine."""
+        if is_refusal_frame(png):
+            return "REFUSED"
+        blank = blank_panel_fraction(png)
+        return f"HALF-DRAWN {blank:.0%}" if blank > BLANK_PANEL_MAX else ""
+
+    backend = Ideogram4Backend(
+        workdir=out / "_work", endpoint=_services(endpoint).ensure("comfyui")
+    )
     frames_dir = out / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
     for i, beat in enumerate(spec["beats"]):
         dest = frames_dir / f"{i:04d}.png"
-        if dest.exists() and not is_refusal_frame(dest.read_bytes()):
+        if dest.exists() and not unusable(dest.read_bytes()):
             continue
         caption = _ideogram_caption(set_id, beat, i)
-        for seed in (4242, 4243, 99001, 31337, 7):
+        for seed in IDEOGRAM_SEEDS:
             lock = GenerationLock(
                 workflow_package_id="cns_probe00001",
                 workflow_package_version="1.0.0",
@@ -566,13 +571,12 @@ def _render_ideogram(set_id: str, out: Path, spec: dict) -> None:
             )
             began = time.monotonic()
             dest.write_bytes(backend.text_to_image(caption, lock))
-            blocked = is_refusal_frame(dest.read_bytes())
+            why = unusable(dest.read_bytes())
             print(
-                f"  frame {i} seed {seed:>6} {time.monotonic() - began:5.0f}s"
-                f" {'REFUSED' if blocked else 'ok'}",
+                f"  frame {i} seed {seed:>6} {time.monotonic() - began:5.0f}s {why or 'ok'}",
                 flush=True,
             )
-            if not blocked:
+            if not why:
                 break
 
 
@@ -615,12 +619,7 @@ def sheets(set_ids: list[str], lanes: list[str]) -> None:
 
 
 def clips(set_ids: list[str], lanes: list[str], *, fps: int = 2) -> None:
-    """Each lane's six frames as a slow flipbook, through the engine's own packager.
-
-    Two frames a second, not eight: six pictures of a motion are a flipbook, not footage, and at
-    8 fps the whole take is over in under a second -- too fast to see whether the man's coat
-    changed. The packager also writes a contact sheet and a printable flipbook PDF beside it.
-    """
+    """Each lane's six frames as a slow flipbook, through the engine's own packager."""
     import shutil
 
     from content_factory.sequences.engine import package_sequence
@@ -640,6 +639,7 @@ def clips(set_ids: list[str], lanes: list[str], *, fps: int = 2) -> None:
 
 def score(set_ids: list[str], lanes: list[str]) -> None:
     from content_factory.qc.frame_review import consistency_matrix, dead_flat_fraction
+    from content_factory.sequences.drift import structural_similarity
 
     rows = []
     for set_id in set_ids:
@@ -651,6 +651,12 @@ def score(set_ids: list[str], lanes: list[str]) -> None:
             loaded = [(p.stem, p.read_bytes()) for p in pngs]
             matrix = consistency_matrix(loaded)
             flats = [dead_flat_fraction(b)[0] for _, b in loaded]
+            # Reported BESIDE the consistency median, never without it: flux2 took the best median
+            # (0.026-0.038) at 0.995-1.000 consecutive similarity, six takes of one moment.
+            moved = [
+                structural_similarity(loaded[i][1], loaded[i + 1][1])
+                for i in range(len(loaded) - 1)
+            ]
             rows.append(
                 {
                     "set": set_id,
@@ -661,11 +667,12 @@ def score(set_ids: list[str], lanes: list[str]) -> None:
                     "spread": matrix["spread"],
                     "outliers": matrix["outliers"],
                     "dead_flat_mean": round(statistics.mean(flats), 4),
+                    "held_still": round(statistics.mean(moved), 4) if moved else 1.0,
                 }
             )
     out = REPO / "output" / "consistency" / "scores.json"
     out.write_text(json.dumps(rows, indent=1))
-    print(f"{'set':>4} {'lane':>10} {'frames':>7} {'median':>8} {'worst':>8} {'flat%':>7}  note")
+    print(f"{'set':>4} {'lane':>10} {'median':>8} {'worst':>8} {'flat%':>7} {'still':>7}  note")
     for r in rows:
         worst = r["worst"]["distance"] if r["worst"] else 0.0
         note = (
@@ -673,9 +680,12 @@ def score(set_ids: list[str], lanes: list[str]) -> None:
             if r["spread"]
             else (f"outliers {r['outliers']}" if r["outliers"] else "one world")
         )
+        # A lane can only be called consistent if it was asked to change and did.
+        if r["held_still"] >= STILL_MAX:
+            note = f"REDREW THE ANCHOR: {note} because nothing moved"
         print(
-            f"{r['set']:>4} {r['lane']:>10} {r['frames']:>7} {r['median_distance']:>8.4f}"
-            f" {worst:>8.4f} {r['dead_flat_mean'] * 100:>6.1f}%  {note}"
+            f"{r['set']:>4} {r['lane']:>10} {r['median_distance']:>8.4f}"
+            f" {worst:>8.4f} {r['dead_flat_mean'] * 100:>6.1f}% {r['held_still']:>7.3f}  {note}"
         )
     print(f"\nwritten: {out}")
 
@@ -685,6 +695,15 @@ def main() -> int:
     ap.add_argument("command", choices=["stage", "render", "score", "sheets", "clips"])
     ap.add_argument("--sets", default="ABC")
     ap.add_argument("--lane", default="")
+    ap.add_argument(
+        "--endpoint",
+        default="",
+        help=(
+            "run ComfyUI lanes against another host, e.g."
+            " http://100.82.150.94:8188 -- Ideogram 4 needs ~28 GB of system RAM to stage its two"
+            " transformers and does not fit on a 31 GB box (see docs/gpu-hosts.md)"
+        ),
+    )
     args = ap.parse_args()
     ids = [c for c in args.sets.upper() if c in SETS]
     lanes = [x for x in (args.lane.split(",") if args.lane else LANES) if x]
@@ -692,7 +711,7 @@ def main() -> int:
         stage(ids)
     elif args.command == "render":
         for lane in lanes:
-            render(lane, ids)
+            render(lane, ids, args.endpoint)
     elif args.command == "sheets":
         sheets(ids, lanes)
     elif args.command == "clips":

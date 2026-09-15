@@ -1,18 +1,4 @@
-/**
- * One run, opened over the canvas: what it produced, and what it is waiting for.
- *
- * The run list stays on the left while this is open, so switching from one run to the next is one
- * click and never a navigation — the point of putting all of it in the workspace was that
- * reviewing a batch of drawings should not mean leaving the page that made them.
- *
- * The gate comes first when there is one. A run parked at `review_frames` has its drawings
- * finished and nothing else to give until somebody looks, so the review is the top of the pane and
- * the files are underneath it.
- *
- * Media plays here rather than downloading, because the point is to look at it. The session is a
- * cookie, so `<img src>` and `<video src>` authenticate themselves and the browser does the
- * streaming and caching — no blob URLs, no JS holding a 6 MB film in memory.
- */
+/** One run opened over the canvas: the review gate first when there is one, then the files. */
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -22,8 +8,7 @@ import type { OutputKind, RunOutput } from "../api/types";
 import { FrameReview } from "./FrameReview";
 import { formatBytes, formatCost, formatExact, OUTCOME_LABEL, OUTCOME_TONE, runLabel } from "./runFormat";
 
-/** Debug and intermediate output: kept, because it is what you want when a drawing came out
- * wrong, but folded away so it cannot bury the six pictures that are the actual result. */
+/** Debug and intermediate output: kept, since it is what you want. */
 const DEBUG_ROLES = new Set(["control", "anchor-upscaled", "render", "input", "marker"]);
 
 function OutputGroup({ title, children }: { title: string; children: React.ReactNode }) {

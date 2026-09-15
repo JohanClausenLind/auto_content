@@ -199,11 +199,7 @@ def test_skeleton_adapter_drops_out_of_frame_joints_and_dangling_bones() -> None
 
 
 def test_the_wrong_blender_is_diagnosed_as_the_wrong_blender(monkeypatch) -> None:
-    """A host with two Blenders on it fails in Blender's own Python, forty lines deep, and says
-    only `ModuleNotFoundError: No module named 'OpenImageIO'`. That is not a scene problem and it
-    is not a code problem: the distro package does not bundle the reader the skill needs, and
-    `blender_bin` is a bare name that PATH resolves. So the error says which Blender ran, why it
-    cannot work, and the setting that picks another one."""
+    """The error names the Blender that lacks OpenImageIO and the setting that picks another."""
     from content_factory.controls import blender as blender_mod
 
     def fails_with_oiio(*_args, **_kwargs):
@@ -239,12 +235,7 @@ def test_the_wrong_blender_is_diagnosed_as_the_wrong_blender(monkeypatch) -> Non
 
 
 def test_blender_refuses_a_plan_whose_figures_nobody_described() -> None:
-    """The passes are renders of a bare mesh, so the model draws a bare mesh.
-
-    Measured on `picture-story` (2026-09-10): ten anchors of a grey untextured mannequin in a
-    T-pose standing in a desert, 22 minutes of GPU, every frame unusable — the same failure
-    ADR-0004 records for identity references, arriving through the control passes instead.
-    """
+    """The passes are renders of a bare mesh, so the model draws a bare mesh."""
     from content_factory.schemas.fixtures import sample_shot_plan
     from content_factory.workflows.stages import _refuse_unclothed_staging
 

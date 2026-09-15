@@ -1,52 +1,4 @@
-"""HiDream-O1-Image local server: loads the 8B model once, serves loopback-only generation.
-
-Run inside this skill's own environment:
-    uv run --project skills/image/hidream python skills/image/hidream/server.py
-Defaults resolve inside this repo (override with the env vars):
-    CF_HIDREAM_REPO        <repo>/external/hidream-o1-code
-    CF_HIDREAM_MODEL_PATH  <repo>/models/image_generation/HiDream-O1-Image-Dev
-    CF_HIDREAM_MODEL_TYPE  full | dev   Selects the inference *recipe*, and it must match the
-                           weights: full is 50 steps at guidance 5, dev is 28 steps at guidance 0
-                           with the distilled timestep schedule. The two upstream repos ship
-                           different shards, so the recipe cannot be inferred from the directory
-                           name — verify with content_factory.models.hidream_identity.
-
-Endpoints (127.0.0.1:8801):
-    GET  /healthz            -> {"status": "ok", "model": ..., "model_type": ..., "loaded": bool}
-    POST /generate           -> {"png_b64": ..., "elapsed_s": ..., "refs": n, "layout_boxes": n}
-        body: {"prompt": str,
-               "ref_images_b64": [str, ...]      # ordered reference images: identity refs first
-                                                 # (one per layout box), then structural refs
-                                                 # (rough render, OpenPose skeleton) — upstream
-                                                 # README §4 "IP_skeleton" pattern
-               "ref_image_b64": str|null,        # legacy single reference (still accepted)
-               "layout_bboxes": [[x, y, w, h], ...] | null,   # relative, our convention; converted
-                                                 # to upstream's [x1, x2, y1, y2]; box i colours
-                                                 # reference image i; at most 5
-               "width": int, "height": int,      # advisory in size, exact in shape: upstream
-                                                 # snaps to one of eleven predefined ~4 MP
-                                                 # resolutions by minimising the *ratio*
-                                                 # difference, so 1024x576 and 2560x1440 both
-                                                 # return 2560x1440, 576x1024 returns 1440x2560
-                                                 # and 768x768 returns 2048x2048 — 0.000 % aspect
-                                                 # error. A vertical ShotSpec does get a vertical
-                                                 # anchor; only the pixel count is not the
-                                                 # caller's to choose
-               "seed": int,
-               "steps": int|null,               # overrides the recipe's step count, and on the
-                                                 # dev recipe also drops its pinned 28-entry
-                                                 # timestep schedule, which would otherwise
-                                                 # decide the step count on its own
-               "guidance_scale": float|null, "shift": float|null,
-               "scheduler": "flow_match"|"flash"|null,   # dev: flow_match is upstream's
-                                                 # single-reference editing branch, flash is the
-                                                 # branch it uses for everything else
-               "noise_scale_start": float|null,  # initial pixel-space latent scale; the pipeline
-               "noise_scale_end": float|null,    # defaults to 8.0 and upstream passes 7.5 on the
-               "noise_clip_std": float|null}     # flash branch, where s_noise is actually used
-
-Not imported by the control plane; the factory talks to it over loopback HTTP only.
-"""
+"""HiDream-O1-Image local server: loads the 8B model once, serves loopback-only generation."""
 
 from __future__ import annotations
 
@@ -123,14 +75,7 @@ def _load() -> None:
 
 
 def _merge_lora(model) -> dict:
-    """Fold CF_HIDREAM_LORA into the loaded weights, refusing an adapter for a different base.
-
-    The check is not ceremony. The adapter on this host was trained with
-    `--dit .../hidream-o1-comfy/checkpoints/hidream_o1_image_bf16.safetensors --model_type full`,
-    and this server's default MODEL_PATH is the *dev* repo. The module tree is the same either way,
-    so every key would match and the merge would succeed silently onto distilled weights it was
-    never fit against. `ss_base_model_version` is what upstream records and what this compares.
-    """
+    """Fold CF_HIDREAM_LORA into the loaded weights, refusing an adapter for a different base."""
     from lora import merge, read_metadata
 
     path = Path(LORA_PATH).expanduser()
@@ -188,23 +133,7 @@ def generation_settings(model_type: str, n_refs: int, body: dict) -> dict:
         from models.pipeline import DEFAULT_TIMESTEPS
 
         # Upstream inference.py splits the dev recipe on `is_editing = len(ref_images) == 1`:
-        # exactly one reference runs flow_match on the distilled schedule with no noise arguments,
-        # so the pipeline's NOISE_SCALE default stands, and everything else runs `flash` with
-        # noise_scale_start, noise_scale_end and noise_clip_std passed explicitly. That second
-        # half is reachable now (it never was — this sent everything but one reference to
-        # `default`, which upstream never selects for dev) and it matters because flash is the one
-        # scheduler that actually consumes s_noise; diffusers' FlowMatchEulerDiscreteScheduler
-        # ignores the argument entirely.
-        #
-        # Upstream's rule is the right one, and it took a misread to establish that. Measured on
-        # one staged shot, same seed, skeleton + depth as the references: flow_match keeps the
-        # staged stride but carries the speckle at 0.175 of pixels above a luma gradient of 60,
-        # while flash comes back at 0.0004 — a clean photographic frame, correct side-on stride,
-        # coherent track. Its 0.990 midtone fraction reads as a failure against a threshold built
-        # to catch *missing* midtones in crushed illustration, and is simply what a flat overcast
-        # scene on grey concrete looks like when it is well exposed. With one reference flash does
-        # fail, fusing two bodies and abandoning the brief — which is exactly the `is_editing`
-        # split, so the count is what decides and upstream decides it correctly.
+        # exactly one reference runs flow_match on the distilled schedule with no noise arguments.
         scheduler = body.get("scheduler") or ("flow_match" if n_refs == 1 else "flash")
         settings = {
             "num_inference_steps": 28,
@@ -221,12 +150,8 @@ def generation_settings(model_type: str, n_refs: int, body: dict) -> dict:
             }
     if body.get("steps"):
         settings["num_inference_steps"] = int(body["steps"])
-        # The dev recipe pins an explicit 28-entry timestep schedule, and upstream's
-        # build_scheduler *overwrites* sched.timesteps with it after set_timesteps, so the loop
-        # takes its length from the list and num_inference_steps is discarded. Measured: 28 and 50
-        # steps at the same seed returned a byte-identical PNG (sha256 497564af99cb), so a caller
-        # asking for more steps silently got the distilled schedule. An explicit step count means
-        # "a schedule of this length", so it drops the pinned list rather than being ignored.
+        # The dev recipe pins an explicit 28-entry timestep schedule, and upstream's build_scheduler
+        # *overwrites* sched.timesteps with it after set_timesteps.
         settings["timesteps_list"] = None
     if body.get("guidance_scale") is not None:
         settings["guidance_scale"] = float(body["guidance_scale"])
@@ -246,9 +171,7 @@ def healthz():
             "model": str(MODEL_PATH),
             "model_type": MODEL_TYPE,
             "loaded": _state["model"] is not None,
-            # Which adapter, if any, is baked into the weights being served. A sequence's frames
-            # may be spread over several hosts, so "same endpoint" is not "same model" — this is
-            # how a caller can tell.
+            # Which adapter, if any, is baked into the weights being served.
             "lora": _state["lora"],
         }
     )

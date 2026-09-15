@@ -1,34 +1,4 @@
-"""Conditioning for generated *non-speech* audio: sound effects, ambience beds, generated music.
-
-The same architecture as the speech chain in :mod:`content_factory.audio.restore` —
-
-    measure  ->  repair only what is broken  ->  normalise  ->  cap the true peak
-             ->  land at the delivery rate, exactly as long as it came in
-
-— and deliberately none of its models. That is the whole design decision, and it was made from
-measurements on this host (2026-09-07), not from taste. Running the speech chain on sounds from
-``assets/sfx``:
-
-    ClearerVoice MossFormer2_SE_48K   whoosh   rms -24.0 -> -70.9 dBFS   0.5 % of the energy left
-                                      rain     rms -33.6 -> -73.5 dBFS   1.0 %
-                                      impact   rms -28.0 -> -71.3 dBFS   0.7 %
-    Resemble Enhance                  whoosh   rms -24.0 -> -73.4 dBFS   waveform correlation
-                                                                          0.002 with its input
-
-Both models do exactly what they were trained to do: a speech enhancer treats everything that is
-not a voice as the noise it exists to remove, and a speech restorer rebuilds what it hears as
-speech. A whoosh comes back as unrelated sub-200 Hz rumble. So this module has no field, flag or
-code path for either of them.
-
-What generated non-speech audio actually needs is different and much simpler: the damage a
-generator leaves (a DC step, clipping from an over-hot render, clicks at the seams between
-generated windows), and a *predictable level*, so the bed's place in the mix stops depending on
-how loud the model happened to render this time.
-
-Length is load-bearing here for the same reason it is in speech: a bed is scored against the
-picture frame by frame, so the chain ends by padding or trimming to the exact input length and
-refuses anything that drifted further than the spec allows.
-"""
+"""Conditioning for generated *non-speech* audio: sound effects, ambience beds, generated music."""
 
 from __future__ import annotations
 
@@ -55,11 +25,7 @@ class ConditionError(Exception):
 
 
 def measure_loudness_detail(path: Path) -> dict[str, float]:
-    """Integrated, max-momentary and true-peak loudness in one ebur128 pass.
-
-    ``mix.measure_loudness`` returns the programme summary; a one-shot needs the *momentary*
-    maximum, because its integrated loudness is mostly the silence around it.
-    """
+    """Integrated, max-momentary and true-peak loudness in one ebur128 pass."""
     proc = subprocess.run(
         [
             "ffmpeg",
@@ -117,8 +83,7 @@ def _repair_filters(spec: SoundConditionSpec, before: AudioArtifactReport) -> li
 
 
 def _level_gain_db(spec: SoundConditionSpec, measured: dict[str, float]) -> tuple[float, bool]:
-    """The gain that puts ``measured`` on target, clamped so nothing lifts a noise floor for ever
-    and so the true peak stays under the ceiling. Returns (gain_db, was_limited)."""
+    """Gain that puts ``measured`` on target, clamped by the lift cap and the true-peak ceiling."""
     if spec.loudness_metric == "off":
         return 0.0, False
     key = "integrated_lufs" if spec.loudness_metric == "integrated" else "max_momentary_lufs"

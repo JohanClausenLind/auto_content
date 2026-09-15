@@ -1,6 +1,4 @@
-"""/v1/engagement: the fan-message inbox. Read adapters pull mentions/replies; classification is
-deterministic; the answer-everything ledger requires a reason to skip. Replies are governed
-elsewhere (personas) — this surface never sends anything."""
+"""/v1/engagement: the fan-message inbox."""
 
 from __future__ import annotations
 

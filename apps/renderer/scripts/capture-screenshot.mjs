@@ -1,12 +1,6 @@
 #!/usr/bin/env node
-// Capture a web page to a PNG for ScreenshotScene, with every knob set for repeatability.
-// usage: node scripts/capture-screenshot.mjs --url <url> --out <path.png>
-//        [--width 1440] [--height 900] [--scale 2] [--full-page] [--settle-ms 0]
-// Prints one JSON line {"out","url","width","height","deviceScaleFactor","sha256"}.
-//
-// This is a CAPTURE step, run by an operator before a render — never from a workflow activity and
-// never from `just test`, which is required to run with no internet. The renderer only ever sees
-// the resulting file as a bundle asset. Tests that need a screenshot use a committed fixture PNG.
+// Capture a web page to a PNG for ScreenshotScene (--url --out [--width] [--height] [--scale]
+// [--full-page] [--settle-ms]).
 import { parseArgs } from "node:util";
 
 import { chromium } from "playwright";

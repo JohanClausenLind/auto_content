@@ -1,11 +1,4 @@
-/**
- * Stored keymap state.
- *
- * Only *overrides* are persisted, never the whole table. A binding the operator never touched
- * follows the application default, so shipping a new action — or changing a default — reaches
- * existing accounts instead of being frozen by a snapshot taken on first visit. An explicit `null`
- * means "unbound on purpose" and is distinct from "absent, use the default".
- */
+/** Stored keymap state. */
 
 import { z } from "zod";
 import { MAX_CHORDS_PER_BINDING } from "./chord";

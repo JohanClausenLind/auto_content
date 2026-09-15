@@ -1,14 +1,4 @@
-"""A locale the chosen voice cannot speak is refused by name, before any weights load.
-
-The bug: ``skills/audio/kokoro/run.py`` mapped its language argument with
-
-    lang_code = "a" if args.lang.startswith("en") else "b"
-
-and ``"b"`` is Kokoro's *British English*. Every non-English locale therefore produced a British
-voice reading foreign words as if they were English — a whole film narrated in the wrong language,
-with nothing anywhere in the run reporting it. These tests pin both halves of the fix: the control
-plane refuses before loading, and the skill's own runner refuses if called by hand.
-"""
+"""A locale the chosen voice cannot speak is refused by name, before any weights load."""
 
 from __future__ import annotations
 
@@ -32,11 +22,7 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _kokoro_runner():
-    """The skill's own `run.py`, imported without its skill environment.
-
-    It only imports numpy/soundfile/kokoro *inside* `main`, so the module and its language table
-    load in the control plane's interpreter — which is what makes the mapping testable at all.
-    """
+    """The skill's own `run.py`, imported without its skill environment."""
     path = REPO / "skills" / "audio" / "kokoro" / "run.py"
     spec = importlib.util.spec_from_file_location("kokoro_run_under_test", path)
     assert spec and spec.loader
@@ -81,8 +67,7 @@ def test_a_locale_kokoro_cannot_speak_has_no_code_rather_than_a_default() -> Non
 
 
 def test_the_two_spellings_of_a_language_have_to_agree() -> None:
-    """A run configured for Swedish that tells Qwen 'english' would speak English and label it
-    Swedish, and every consumer of `VoiceIdentity.locale` would believe the label."""
+    """A run configured for Swedish that tells Qwen 'english' would speak English."""
     with pytest.raises(LanguageUnsupportedError, match="disagrees with"):
         check_narration_language("qwen3tts", "de", language="english")
     # `auto` is not a disagreement: it means "take it from the locale", and it resolves to that.
@@ -97,8 +82,7 @@ def test_a_language_name_the_model_does_not_declare_is_refused() -> None:
 
 
 def test_the_mock_speaks_no_language_so_it_accepts_any_locale() -> None:
-    """Tone bursts at the right length produce no phonemes, so nothing can be in the wrong
-    language — and the offline demo must not need a locale table to run."""
+    """Tone bursts at the right length produce no phonemes."""
     assert check_narration_language("mock", "sv-SE").prefix == "sv"
     assert check_narration_language("mock", "xx-YY").qwen_language == "auto"
 
@@ -123,8 +107,7 @@ def test_the_skill_runner_refuses_a_locale_it_cannot_speak() -> None:
 
 
 def test_the_skill_runner_and_the_control_plane_agree_on_every_locale() -> None:
-    """Two tables, one answer. They are in different languages' worth of process boundary, so a
-    test is the only thing that keeps them in step."""
+    """Two tables, one answer."""
     module = _kokoro_runner()
     for locale in ("en", "en-US", "en-GB", "es", "fr", "hi", "it", "pt", "ja", "zh"):
         assert module.lang_code(locale) == kokoro_lang_code(locale), locale

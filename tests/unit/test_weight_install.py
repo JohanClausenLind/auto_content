@@ -1,11 +1,4 @@
-"""One-click install: what it runs, where files land, and what it links afterwards.
-
-Nothing here spawns a process or touches the network — the runner is injected and jobs run inline,
-so the assertions are about the argument arrays and the filesystem effects. The interesting cases
-are the ones the operator hits: a family already on disk (link, do not re-download), a gated repo
-(say so instead of failing anonymously), a transfer that finishes without producing the declared
-files (fail, do not report success), and the links that make a downloaded weight usable.
-"""
+"""One-click install: what it runs, where files land, and what it links afterwards."""
 
 from __future__ import annotations
 

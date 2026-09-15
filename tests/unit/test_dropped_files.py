@@ -1,11 +1,4 @@
-"""Dropping a file on the canvas: what it is, which node holds it, what to offer next.
-
-The suggestions are the part worth guarding. They are offered to an operator as one click that
-spawns a wired node, so every one of them has to name a node type that exists and a slot whose
-type actually accepts what the source node emits — a suggestion that produces a refused link is
-worse than no suggestion at all. The node catalogue fixture (`fixtures/schema/node_catalog.json`,
-generated from the canvas's own definitions) is what makes that checkable from Python.
-"""
+"""Dropping a file on the canvas: what it is, which node holds it, what to offer next."""
 
 from __future__ import annotations
 
@@ -77,10 +70,7 @@ def test_every_suggested_widget_value_is_a_widget_that_node_declares() -> None:
 
 
 def test_a_dropped_recording_is_offered_the_step_that_actually_works_on_it() -> None:
-    """`restore_speech` and `mix_audio` were offered wired straight to the dropped file, and both
-    read `<beat_id>.wav` files that only a voice stage writes — so one click produced a graph that
-    failed on its first stage. Reading the recording is the door: it is what makes the beats, and
-    therefore the repair and the captions, exist."""
+    """Reading the recording is the door: it makes the beats that the repair and captions need."""
     narrow = suggestions_for("audio", {"sample_rate_hz": 16000, "channels": 1})
     assert [s.node_type for s in narrow] == ["transcribe_audio", "qc_deliverable"]
     read = narrow[0]
@@ -161,8 +151,7 @@ def test_materialize_is_idempotent_and_reads_only_the_store(tmp_path: Path) -> N
 
 
 def test_footage_that_is_already_smooth_does_not_lead_with_interpolation() -> None:
-    """A screen recording arrives at 60 fps. Offering "smooth the motion" first would spend a GPU
-    pass on the one thing it does not need, so it moves last and says what it is actually for."""
+    """A screen recording arrives at 60 fps."""
     smooth = suggestions_for("video", {"fps": 60.0, "width": 1920, "height": 1080})
     assert smooth[0].node_type == "upscale_video"
     interpolate = next(s for s in smooth if s.node_type == "interpolate")

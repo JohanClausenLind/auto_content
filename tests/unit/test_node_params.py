@@ -1,10 +1,4 @@
-"""Node parameters: what an operator types into a canvas widget reaches the executor.
-
-Before this, a workspace graph carried only its shape — the widgets were decoration and every
-stage read the process-wide settings, so two graphs on one machine could not differ. The
-parameters ride on the DAG node, enter the node's input hash, and are read by the stages that
-know them.
-"""
+"""Node parameters: what an operator types into a canvas widget reaches the executor."""
 
 from __future__ import annotations
 
@@ -119,12 +113,7 @@ def test_plan_shots_loads_the_love_story_fixture(tmp_path: Path) -> None:
             shot.characters[1].transform.position[0] - shot.characters[0].transform.position[0]
         )
 
-    # They start apart and end within reach. The opening gap is bounded above by the framing floor
-    # (a person must stay big enough for the skeleton to be read), so this checks the shape of the
-    # story, not a magic number: see test_story_fixtures for the floor itself.
-    # The opening gap is bounded above by what an overhead camera can frame with readable bodies,
-    # and the closing gap below by how far two arms actually reach; both come from geometry rather
-    # than taste, so this checks the shape of the story between them.
+    # They start apart and end within reach.
     assert gap(first) > 2.0
     assert gap(last) < 1.5
     assert gap(first) > gap(last) * 1.8
@@ -148,8 +137,7 @@ def test_anchor_lock_takes_its_style_and_seed_from_the_node(tmp_path: Path) -> N
 
 @pytest.mark.parametrize("fixture", [LOVE_SHOTS, LOVE_STORY])
 def test_shipped_fixtures_are_valid_contracts(fixture: str) -> None:
-    """The template points the operator at these paths; a broken fixture must fail here, not
-    twenty minutes into a run."""
+    """The template points the operator at these paths; a broken fixture must fail here."""
     text = (REPO_ROOT / fixture).read_text()
     if fixture == LOVE_SHOTS:
         assert len(ShotPlan.model_validate_json(text).shots) == 30
@@ -160,8 +148,7 @@ def test_shipped_fixtures_are_valid_contracts(fixture: str) -> None:
 
 
 def test_the_anchor_reference_set_is_a_parameter_and_changes_the_cache_key(tmp_path: Path) -> None:
-    """Which control passes reach the image model is the single biggest lever on what it draws,
-    so it is a node parameter, and changing it has to invalidate the anchors it produced."""
+    """Which control passes reach the image model is the single biggest lever on what it draws."""
     from content_factory.controls.bundle import ControlBundle
     from content_factory.workflows.stages import _conditioning_for_frame
 
@@ -192,9 +179,7 @@ def test_the_anchor_reference_set_is_a_parameter_and_changes_the_cache_key(tmp_p
     assert len(nothing.reference_pngs) == 0
     digests = {skeleton_only.sha256(), with_layout.sha256(), nothing.sha256()}
     assert len(digests) == 3, "a different reference set must be a different cache key"
-    # Which slot carried what, in order. Upstream branches on the reference COUNT, so a run whose
-    # identity sheet was missing silently became a one-reference run on another scheduler; the
-    # slots are recorded so that is visible in the marker rather than inferred from a number.
+    # Which slot carried what, in order.
     assert [s["role"] for s in skeleton_slots] == ["pose_skeleton"]
     assert [s["role"] for s in layout_slots] == ["pose_skeleton", "layout_boxes"]
     assert [s["slot"] for s in layout_slots] == [0, 1]
@@ -210,9 +195,7 @@ _PNG_1PX = bytes.fromhex(
 
 
 def test_style_presets_resolve_and_a_typo_is_refused() -> None:
-    """The style is the one string that must be identical for every frame of a film, so it is a
-    named preset. A mistyped name would otherwise be sent to the model as a two-word prompt and
-    quietly produce something unrelated for three GPU-hours."""
+    """The style is the one string that must be identical for every frame of a film."""
     from content_factory.sequences.styles import STYLE_PRESETS, resolve_style
 
     assert "riso" in STYLE_PRESETS and "ink_wash" in STYLE_PRESETS
@@ -236,9 +219,7 @@ def test_changing_the_style_preset_redraws_the_film(tmp_path: Path) -> None:
 
 
 def test_the_style_leads_the_anchor_prompt(tmp_path: Path) -> None:
-    """Position, not cosmetics. With the style clause last — behind the subject and the staging —
-    the image model ignored it and returned its default idiom for every art direction; the same
-    words moved to the front produced the style that was asked for."""
+    """Position, not cosmetics."""
     from content_factory.schemas.shots import ShotPlan
     from content_factory.workflows.stages import _anchor_prompt
 
@@ -263,14 +244,7 @@ def test_the_style_leads_the_anchor_prompt(tmp_path: Path) -> None:
 def test_the_model_widget_picks_the_anchor_backend_and_a_host_setting_still_wins(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """`model` was declared on the canvas and read by nothing, so three lanes said
-    `model: hidream-o1` and every one of them drew mock rectangles.
-
-    The precedence is the design. A machine that has configured `image_sequences.backend` has said
-    something about itself — "no GPU here" — and must be obeyed, or that setting is unenforceable
-    on any lane that pins a model. `model_fields_set` is what separates a *configured* mock from a
-    *defaulted* one; they are the same string and they mean different things.
-    """
+    """`model` was declared on the canvas and read by nothing, so lanes drew mock rectangles."""
     import pytest
 
     from content_factory.config import get_settings
@@ -278,9 +252,7 @@ def test_the_model_widget_picks_the_anchor_backend_and_a_host_setting_still_wins
 
     ctx = make_context(project_dir=tmp_path)
     # This test's whole subject is configured-versus-defaulted, so it sets its own premise rather
-    # than inheriting one: `tests/conftest.py` configures the mock backends for the suite (a lane
-    # definition may now pin a real model, and an offline test must not run it), and "nothing
-    # configured" has to mean nothing configured.
+    # than inheriting one: `tests/conftest.py` configures the mock backends for the suite.
     monkeypatch.delenv("CF__IMAGE_SEQUENCES__BACKEND", raising=False)
     get_settings.cache_clear()  # type: ignore[attr-defined]
     try:

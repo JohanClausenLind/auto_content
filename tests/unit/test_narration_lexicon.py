@@ -1,17 +1,4 @@
-"""The film's own pronunciation list reaches the synthesiser, and the sidechain key is the voice.
-
-Two dead contract fields, both filled here:
-
-* ``NarrationRequest.lexicon`` and ``normalize_for_speech``'s `lexicon` argument have existed
-  since phase 15 and **nothing ever passed one**, so every respelling this repo could express was
-  dead weight. Measured on the narrated-video lane (2026-09-08): Qwen3-TTS read
-  "Energimyndigheten" as *"energym and de hetten"* and "kraftnät" as *"craft name"*, and the
-  alignment gate failed the run at similarity 0.33 with no way for the operator to fix it short of
-  rewriting the display text.
-* ``add_music_bed`` sidechained its bed against whatever it was mixing into. Beds are added one
-  after another, so by the time the effects bed arrived the first input already held the music —
-  and a -18 dB music bed is loud enough to hold the effects ducked for the whole film.
-"""
+"""The film's own pronunciation list reaches the synthesiser, and the sidechain key is the voice."""
 
 from __future__ import annotations
 
@@ -77,8 +64,7 @@ def test_a_malformed_entry_fails_by_name_rather_than_being_skipped(tmp_path: Pat
 
 
 def test_a_respelling_reaches_the_spoken_line() -> None:
-    """`spoken_line` is the only place a respelling can take effect: it is what the synthesiser
-    is handed and what the script is locked with."""
+    """`spoken_line` is the only place a respelling can take effect."""
     beat = sample_story_plan().beats[3]
     assert "Energimyndigheten" in beat.display_text
     plain = spoken_line(beat)
@@ -90,8 +76,7 @@ def test_a_respelling_reaches_the_spoken_line() -> None:
 
 
 def test_a_written_spoken_line_still_gets_the_lexicon() -> None:
-    """`spoken_text` says how a line is *said*; the lexicon says how a word is said. A hand-written
-    spoken line can still contain a proper noun nobody can pronounce."""
+    """`spoken_text` says how a line is *said*; the lexicon says how a word is said."""
     beat = (
         sample_story_plan()
         .beats[0]

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// Render an artboard RenderBundle to a PNG still.
-// usage: node scripts/render-artboard.mjs --bundle <path.json> --out <path.png> [--concurrency N] [--scale N]
+// Render an artboard RenderBundle to a PNG still: --bundle <path.json> --out <path.png> [--concurrency N] [--scale N].
 // Prints one JSON line {"out","width","height","sha256"}; on error {"error"} to stderr, exit 1.
 import { ensureBrowser, renderStill, selectComposition } from "@remotion/renderer";
 import path from "node:path";

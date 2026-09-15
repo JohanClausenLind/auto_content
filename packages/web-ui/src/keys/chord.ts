@@ -1,14 +1,4 @@
-/**
- * Chords and sequences.
- *
- * A *chord* is one keypress, normalised to a string: `"Mod+k"`, `"g"`, `"?"`, `"Shift+Escape"`.
- * A *binding* is a sequence of one or two chords, so Gmail-style `g` then `i` is `["g", "i"]`.
- *
- * `Mod` is the platform's command key — ⌘ on Apple hardware, Ctrl everywhere else — stored as one
- * token so a keymap moved between machines keeps working. Shift is only recorded for keys that do
- * not already carry it in their printed form: the browser reports `?` for Shift+/, so the chord is
- * `"?"` and never `"Shift+?"`, which would be unmatchable.
- */
+/** Chords and sequences. */
 
 export const MAX_CHORDS_PER_BINDING = 2;
 
@@ -34,10 +24,7 @@ export function isApplePlatform(): boolean {
   return /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || "");
 }
 
-/**
- * Normalise a keyboard event to a chord, or null when there is nothing bindable (a bare modifier,
- * or a composition still in progress).
- */
+/** Normalise a keyboard event to a chord, or null when there is nothing bindable. */
 export function eventToChord(event: KeyboardEvent): string | null {
   const key = event.key;
   if (!key || MODIFIER_KEYS.has(key) || event.isComposing) return null;
@@ -86,19 +73,13 @@ export function bindingsEqual(a: readonly string[] | null, b: readonly string[] 
   return a.length === b.length && a.every((chord, i) => chord === b[i]);
 }
 
-/**
- * Does `prefix` start `binding`? A shorter binding that prefixes a longer one shadows it — `g`
- * would fire before `g i` could ever complete — so the editor reports that as a conflict.
- */
+/** Does `prefix` start `binding`? */
 export function isPrefixOf(prefix: readonly string[], binding: readonly string[]): boolean {
   if (prefix.length >= binding.length) return false;
   return prefix.every((chord, i) => chord === binding[i]);
 }
 
-/**
- * Input types that are controls rather than text entry. Focus sitting on a checkbox or a slider is
- * not typing, so shortcuts must still fire there — only text fields get to swallow a bare letter.
- */
+/** Input types that are controls rather than text entry. */
 const NON_TEXT_INPUT_TYPES = new Set([
   "checkbox",
   "radio",
@@ -111,14 +92,7 @@ const NON_TEXT_INPUT_TYPES = new Set([
   "file",
 ]);
 
-/**
- * True when the keyboard is being used for text entry right now.
- *
- * `event.target` alone is not enough: react-aria's Autocomplete (the command palette) handles keys
- * on a wrapper and the event that reaches `window` carries that div as its target, not the focused
- * search field. Consulting the active element as well is what stops typing "create" in the palette
- * from firing the shortcuts bound to c, r and e.
- */
+/** True when the keyboard is being used for text entry right now. */
 export function isTypingContext(event: KeyboardEvent): boolean {
   if (isEditableTarget(event.target)) return true;
   return typeof document !== "undefined" && isEditableTarget(document.activeElement);

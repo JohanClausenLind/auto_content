@@ -1,10 +1,4 @@
-"""Local workflow runner: it reads the definitions, and slicing a run behaves.
-
-The old version of this file asserted that the runner's hand-written stage table agreed with the
-canvas's. There is no second table any more, so what is worth testing is that the runner reads the
-definitions faithfully, that --from and --until slice the real order, and that a lane's own values
-survive the command-line overrides.
-"""
+"""Local workflow runner: it reads the definitions, and slicing a run behaves."""
 
 from __future__ import annotations
 
@@ -58,16 +52,8 @@ def test_run_stages_writes_a_report_and_stops_at_the_first_failure(
     assert all(s["ok"] and s["outputs_hash"] for s in report["stages"])
     on_disk = json.loads((ctx.ddir() / "run.json").read_text())
     assert on_disk["passed"] is True
-    # The stage line, by name, and nothing about what follows it.
-    #
-    # This asserted `logs[0] == "==> plan_shots"` exactly, which is a claim about the forecast:
-    # `services.durations` globs `output/` for finished reports, so whether a header prints above
-    # the first stage and whether a timing bracket prints beside it both depend on what else this
-    # machine has ever run. That equality held only while `output/` happened to carry timings for
-    # both of these stages, and broke twice on 2026-09-12 — once when the runs were deleted, and
-    # again when a new run timed one stage but not the other. What the forecast prints is
-    # `test_run_eta.py`'s subject and it controls its own history; what this test is about is the
-    # report, the ordering, and stopping at the first failure.
+    # The stage line by name and nothing about what follows: a header or timing bracket depends on
+    # what `output/` holds (`services.durations`), which is `test_run_eta.py`'s subject.
     stage_lines = [line for line in logs if line.startswith("==> ")]
     assert stage_lines[0].startswith("==> plan_shots")
 
@@ -107,8 +93,7 @@ def test_run_workflow_resolves_relative_project_dirs(tmp_path: Path, monkeypatch
 
 
 def test_picture_story_orders_picture_before_sound_and_carries_its_parameters() -> None:
-    """Sound design scores the cut, so it cannot run before there is one; the mix cannot run
-    before the sound design it beds. Getting this order wrong fails only at run time, minutes in."""
+    """Sound design scores the cut and the mix beds it; a wrong order fails only at run time."""
     template = load_definitions()["picture-story"]
     lane = [s.value for s in template.stages()]
     assert lane.index("compile_controls") > lane.index("plan_shots")
@@ -126,7 +111,6 @@ def test_picture_story_orders_picture_before_sound_and_carries_its_parameters() 
     assert values["generate_anchor"]["model"] == "hidream-o1"
     # A preset NAME, not the prompt written out: `resolve_style` takes either, but only a name
     # round-trips through `style_name_for`, and that is what keys the per-style drift thresholds.
-    # The lane carried the ink_wash text verbatim and therefore had no name and no override.
     assert values["generate_anchor"]["style"] == "ink_wash"
     assert "watercolour" in resolve_style(str(values["generate_anchor"]["style"]))
 
@@ -169,8 +153,7 @@ def test_run_workflow_passes_the_chosen_film_to_the_stages_that_need_it(tmp_path
 
 
 def test_from_and_until_together_slice_to_the_stages_asked_for(tmp_path: Path) -> None:
-    """--until has to be resolved against the original order. Resolving it after --from indexes
-    the long list into the short one and quietly runs stages past the one you stopped at."""
+    """--until has to be resolved against the original order."""
     from content_factory.runners.local import run_workflow
 
     seen: list[str] = []
@@ -199,8 +182,7 @@ def test_from_and_until_together_slice_to_the_stages_asked_for(tmp_path: Path) -
 
 
 def test_the_local_context_addresses_a_deliverable_the_campaign_has(tmp_path: Path) -> None:
-    """qc_deliverable and the destination packages look their own spec up in the campaign; an
-    invented deliverable id fails them with a bare StopIteration minutes into a run."""
+    """qc_deliverable looks its spec up in the campaign; an invented id fails it minutes in."""
     ctx = make_context(project_dir=tmp_path)
     ids = {d.deliverable_id for d in ctx.campaign.deliverables}
     assert ctx.deliverable_id in ids
@@ -209,8 +191,7 @@ def test_the_local_context_addresses_a_deliverable_the_campaign_has(tmp_path: Pa
 
 
 def test_slicing_takes_a_node_key_and_refuses_an_ambiguous_stage_name(tmp_path: Path) -> None:
-    """A stage that appears twice in a lane cannot be named by stage: the runner says so and names
-    the nodes, instead of quietly picking the first."""
+    """A stage that appears twice cannot be named by stage; the runner names the nodes instead."""
     steps = workflow_steps("picture-story")
     keys = [k for k, _s, _v in steps]
     # Named rather than positional: the lane gained a retrieval step between the story and the
@@ -257,8 +238,7 @@ def test_run_plan_carries_the_node_key_into_the_report(tmp_path: Path, monkeypat
 
 
 def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkeypatch) -> None:
-    """The offline path: fixture story + fixture shots, mock TTS, 2D control compiler, mock video,
-    Remotion replaced by an ffmpeg stand-in. Every stage of the template must complete."""
+    """The offline path: fixtures, mock TTS, 2D controls, mock video, and an ffmpeg stand-in."""
     import subprocess
 
     from content_factory.config import get_settings
@@ -267,11 +247,8 @@ def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkey
     from tests.helpers.real_blender import SKIP_REASON, blender_with_oiio
 
     monkeypatch.setenv("CF__ROUTING__GENERATE_KINDS", '["image"]')
-    # This lane pins `controls.compiler: blender`, so the test runs the real scene skill — and the
-    # skill reads its passes back through Blender's bundled OpenImageIO, which the distro package
-    # does not have. `blender_bin` is the bare name, so PATH decides which Blender that is, and on
-    # a host with both installed this test's result came down to the order of two directories.
-    # Name the one that can do the job instead, and skip where there is none.
+    # This lane pins `controls.compiler: blender`, and the scene skill needs Blender's bundled
+    # OpenImageIO, which the distro package lacks: name a Blender that has it, or skip.
     blender = blender_with_oiio()
     if blender is None:
         pytest.skip(SKIP_REASON)
@@ -319,10 +296,8 @@ def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkey
             project_dir=tmp_path / "prj",
             story="fixtures/story/wind_2024.json",
             shots="fixtures/shots/wind_2024.json",
-            # The definition pins a real narrator and a real speech enhancer, which are right for
-            # a film and wrong for an offline test. Both are overridden here rather than removed
-            # from the definition: what belongs in a lane and what belongs in a test are different
-            # questions, and this test's subject is the FFmpeg-only voice chain.
+            # The definition pins a real narrator and a real speech enhancer. Overridden here, not
+            # removed from the lane: this test's subject is the FFmpeg-only voice chain.
             params={
                 Stage.synthesize_narration: {"voice": "mock"},
                 Stage.restore_speech: {
@@ -335,17 +310,13 @@ def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkey
         )
     finally:
         get_settings.cache_clear()  # type: ignore[attr-defined]
-    # The count tracks the definition rather than a literal: this lane gained research,
-    # verify_claims, compile_datasets and write_copy when the catalogue decided that lanes whose
-    # scripts are drafted from sources carry the research front end.
+    # The count tracks the definition rather than a literal: the lane grows when the catalogue
+    # decides lanes drafted from sources carry the research front end.
     expected = len(load_definitions()["hybrid-video"].stages())
     assert report["passed"] and len(report["stages"]) == expected
     by = {s["stage"]: s for s in report["stages"]}
-    # The voice chain runs on every beat with the FFmpeg tail only, because this run pinned both
-    # model steps off, and leaves the beat exactly as long as it found it. No de-esser: the mock
-    # TTS is tone bursts with nothing in the 5-9 kHz band, and the de-esser is gated on that
-    # measurement now — at an intensity that actually works it takes a third of the band off
-    # material that never needed it.
+    # FFmpeg tail only: both model steps are pinned off. No de-esser: it is gated on 5-9 kHz
+    # energy, and the mock TTS's tone bursts have none there.
     assert by["restore_speech"]["facts"]["steps"] == ["detect", "voice_chain:eq+compress"]
     assert by["route_shots"]["facts"]["generate"] == 2
     assert by["compile_controls"]["facts"]["shots"] == 2  # per-shot bundles from the 2D compiler
@@ -362,10 +333,7 @@ def test_hybrid_workflow_runs_end_to_end_on_mock_backends(tmp_path: Path, monkey
 
 
 def test_the_lane_brief_replaces_the_fixture_and_subject_overrides_its_topic() -> None:
-    """Every local run used to carry ``sample_campaign()`` unchanged, so a film about two people on
-    a plaza was generated under "How much of Sweden's electricity came from wind in 2025?" — the
-    demo fixture's brief topic, which reached the image model through ``_anchor_prompt`` and the
-    video model through two fallbacks in ``generate_video`` (STATUS 1370, 1678)."""
+    """``sample_campaign()`` unchanged put the demo fixture's brief topic into every prompt."""
     from content_factory.runners.local import _brief_for, make_context
     from content_factory.schemas.fixtures import sample_campaign
 
@@ -401,12 +369,7 @@ def test_an_empty_brief_topic_is_named_rather_than_defaulted() -> None:
 def test_a_single_clip_lane_with_no_subject_fails_before_any_server_starts(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """The single-clip path has no ShotSpec to compile a prompt from, so it needs a subject stated
-    for it. It used to take the brief topic — a research question — as the whole LTX prompt.
-
-    The failure has to land before a GPU tenant is started: a run refused after ComfyUI has been
-    warmed has already evicted whatever the other tenant on the card was doing.
-    """
+    """The single-clip path needs a stated subject, refused before a GPU tenant is started."""
     from content_factory.runners.local import make_context
     from content_factory.workflows import stages as st
 
@@ -436,13 +399,7 @@ def test_a_single_clip_lane_with_no_subject_fails_before_any_server_starts(
 
 
 def test_a_resume_runs_the_configuration_the_run_was_started_with(tmp_path: Path) -> None:
-    """`--from` used to silently reconfigure the run it was resuming.
-
-    Measured 2026-09-10: an `image-set` resumed to redraw one rejected frame lost
-    `--set generate_keyframes.drift_profile=uncalibrated`, met the mock-calibrated 0.92 default
-    that no frame from a real diffusion backend reaches, and was BLOCKED after three attempts at
-    a measured 0.8491 — a number the profile it was started with passes easily.
-    """
+    """`--from` used to silently reconfigure the run it was resuming."""
     import json
 
     from content_factory.runners.local import recorded_values, resolved_steps

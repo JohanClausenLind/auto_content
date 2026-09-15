@@ -1,5 +1,4 @@
-"""Web Push for ActionItems (2.16, 20.5): VAPID-signed notifications that inform and deep-link.
-Push never approves anything, and push failure never erases the ActionItem."""
+"""Web Push for ActionItems (2.16, 20.5): VAPID-signed notifications that inform and deep-link."""
 
 from __future__ import annotations
 
@@ -22,8 +21,7 @@ class PushError(Exception):
 
 
 def generate_vapid_keys() -> dict[str, str]:
-    """One ES256 keypair for the deployment; stored in env (VAPID_KEYS), never in the repo.
-    The private key uses py_vapid's raw base64url form (what pywebpush consumes directly)."""
+    """One ES256 keypair for the deployment; stored in env (VAPID_KEYS), never in the repo."""
     key = ec.generate_private_key(ec.SECP256R1())
     raw_private = key.private_numbers().private_value.to_bytes(32, "big")
     private_b64 = base64.urlsafe_b64encode(raw_private).rstrip(b"=").decode()

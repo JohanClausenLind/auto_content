@@ -80,11 +80,7 @@ async def approve_run(
 
 
 async def open_run_ids(*, task_queue: str | None = None) -> list[str]:
-    """Every ProductionWorkflow Temporal still has running, newest first.
-
-    Temporal is asked rather than the runs table because Temporal is what is still executing:
-    a row can say PRODUCING because the process that would have corrected it was killed.
-    """
+    """Every ProductionWorkflow Temporal still has running, newest first."""
     client = await temporal_client()
     query = 'WorkflowType = "ProductionWorkflow" AND ExecutionStatus = "Running"'
     if task_queue:
@@ -103,22 +99,7 @@ async def stop_run(
     graceful: bool = False,
     wait_s: float = 15.0,
 ) -> dict[str, Any]:
-    """Stop one durable run: ask it to stop, and cut it off if it does not.
-
-    Three rungs, because each one can fail to land and "stop" has to mean stop:
-
-    1. **Signal.** The clean path: the workflow closes itself at the next node boundary, resolves
-       what it was asking a person for, and records CANCELLED itself.
-    2. **Cancel**, when a node already inside a GPU stage will not reach that boundary for
-       minutes. This kills the activity, and the workflow usually still closes itself CANCELLED.
-    3. **Terminate**, when even that does not land. Cancellation is a *request a worker has to
-       process*, and by then there may be no worker — ``just stop`` kills it in the same breath,
-       and a dev Temporal accumulates runs whose worker is long gone. Terminate is server-side
-       and needs nobody's cooperation.
-
-    The row is corrected from here after 2 and 3, because a workflow that was cut off cannot be
-    relied on to run one more activity to write its own state down.
-    """
+    """Stop one durable run: ask it to stop, and cut it off if it does not."""
     from temporalio.service import RPCError, RPCStatusCode
 
     client = await temporal_client()
@@ -149,8 +130,7 @@ async def stop_run(
 
 
 async def _closed_within(handle: Any, seconds: float) -> bool:
-    """Poll until the workflow is no longer running. Polling (rather than awaiting the result)
-    keeps a run that closes normally and one that is cancelled on the same code path."""
+    """Poll until the workflow is no longer running."""
     from temporalio.client import WorkflowExecutionStatus
 
     deadline = asyncio.get_running_loop().time() + max(seconds, 0.0)
@@ -164,12 +144,7 @@ async def _closed_within(handle: Any, seconds: float) -> bool:
 
 
 async def record_cancelled(run_id: str, *, actor: str, reason: str = "") -> dict[str, int]:
-    """Write CANCELLED over a run whose workflow was cut off, and close what it left open.
-
-    Only ever called after the workflow is gone. A node left at ``running`` is recorded failed
-    with the reason, because nothing is running: the alternative is a canvas that spins for ever
-    on a node whose activity died with the worker.
-    """
+    """Write CANCELLED over a run whose workflow was cut off, and close what it left open."""
     from sqlalchemy import update as sa_update
 
     from content_factory.db.base import utcnow
@@ -205,16 +180,13 @@ async def record_cancelled(run_id: str, *, actor: str, reason: str = "") -> dict
     }
 
 
-# The run views poll every couple of seconds; dag.json is written once at compile time, so a
-# parse cached by (path, mtime_ns) turns each poll into a single stat instead of a full
-# read+parse of the DAG on the event loop's thread pool.
+# The run views poll every couple of seconds; dag.json is written once at compile time, so a parse
+# cached by (path, mtime_ns) turns each poll into a single stat.
 _dag_edges_cache: dict[str, tuple[int, list[dict[str, str]]]] = {}
 
 
 def dag_edges(project_dir: Path) -> list[dict[str, str]] | None:
-    """The run's real dependency edges from the compiled dag.json, or None when unavailable.
-    The file is the workflow's own artifact, so the canvas can draw truth instead of guessing
-    chains from node order (hand-drawn workspace graphs are not chains)."""
+    """The run's real dependency edges from the compiled dag.json, or None when unavailable."""
     path = project_dir / "dag.json"
     try:
         mtime_ns = path.stat().st_mtime_ns
@@ -239,11 +211,8 @@ def dag_edges(project_dir: Path) -> list[dict[str, str]] | None:
     return edges
 
 
-# Node states that will not move on their own. `complete`, `failed` and `skipped` are over and
-# carry a real `duration_ms`, so estimating them would replace a measurement with a guess.
-# `blocked` belongs here too and the reason is different: the stage *has* run — it generated,
-# checked its own output and handed the decision to a person — so its remaining cost is a human
-# looking at it, not seconds, and "~42 s" is the one thing that is certainly wrong.
+# Node states that will not move on their own. `complete`, `failed` and `skipped` are over and carry
+# a real `duration_ms`, so estimating them would replace a measurement with a guess.
 _SETTLED = {NodeState.complete, NodeState.failed, NodeState.skipped, NodeState.blocked}
 
 
@@ -265,12 +234,7 @@ def _read_durations_in_background(build) -> None:
 
 
 def _elapsed_seconds(node: RunNode, now: datetime) -> float:
-    """How long a running node has been running, from the transition that set it running.
-
-    `updated_at` is the row's last write and a running node's last write is the transition into
-    `running`, so this is the start of the stage. Naive timestamps come back from SQLite, which
-    stores what it was given without a zone; they are UTC by construction here.
-    """
+    """How long a running node has been running, from the transition that set it running."""
     stamp = node.updated_at
     if stamp is None:
         return 0.0
@@ -282,22 +246,12 @@ def _elapsed_seconds(node: RunNode, now: datetime) -> float:
 def _run_forecast(
     nodes: Sequence[RunNode], workflow: str | None, now: datetime
 ) -> dict[str, Any] | None:
-    """The run-level "done at", from the stages that have not finished.
-
-    Built here rather than in the browser because the history lives on this machine, and computed
-    from node *state* rather than from position in the list: a DAG runs several branches at once,
-    so "everything after the running one" is not a thing the list order knows.
-
-    None once every node is over — a zero the UI has to translate back into "done" is a worse
-    contract than an absent field.
-    """
+    """The run-level "done at", from the stages that have not finished."""
     if all(n.state in _SETTLED for n in nodes):
         return None
     queued = [n.stage for n in nodes if n.state == NodeState.queued]
     # Several stages can be in flight at once (a DAG's branches overlap), and those run
-    # concurrently, so the run waits on the *slowest* of them rather than on their sum. Whichever
-    # has the most left is the one to charge; a node with no history has no claim to be the
-    # longest, so it cannot displace one that does.
+    # concurrently, so the run waits on the *slowest* of them rather than on their sum.
     in_flight: tuple[str, float] | None = None
     most_left = -1.0
     for node in nodes:
@@ -337,12 +291,7 @@ def _node_eta(node: RunNode, workflow: str | None, now: datetime) -> dict[str, A
 
 
 def _run_workflow_name(run: ProductionRun) -> str | None:
-    """The lane this run is, when the report names one.
-
-    `generate_anchor` is 32 s on `image-set` and ten minutes on `audio-picture-story`; without a
-    lane name the estimate falls back to the median across every lane, which is the right answer
-    to a question that has no better one.
-    """
+    """The lane this run is, when the report names one."""
     report = run.report
     name = report.get("workflow") if isinstance(report, dict) else None
     return name if isinstance(name, str) and name else None
@@ -369,13 +318,8 @@ async def run_view(db: AsyncSession, workspace_id: str, run_id: str) -> dict[str
     )
     now = datetime.now(UTC)
     workflow = _run_workflow_name(run)
-    # The estimate is skipped entirely until the history has been read in the background, and
-    # never built on this thread. Doing it here — even inside `to_thread` — cost 410 ms of
-    # GIL-holding YAML parsing on a view the UI polls every two seconds, and in a process that
-    # also hosts a Temporal worker that starved the worker's activity heartbeats: it failed
-    # `test_run_stop::..._cancels_the_node_in_flight` reproducibly with "Heartbeat timeout" and
-    # passed as soon as this work left the request path. One poll without an ETA is nothing; a
-    # cancelled run is not.
+    # The estimate is skipped entirely until the history has been read in the background, and never
+    # built on this thread.
     warm = durations.is_warm()
     if not warm:
         _read_durations_in_background(durations.warm)

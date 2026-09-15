@@ -1,7 +1,4 @@
-/**
- * The "g …" indicator. Without it a sequence prefix looks like a dropped keypress: you press `g`,
- * nothing happens, and there is no way to tell the shell is waiting for the second chord.
- */
+/** The "g …" indicator. */
 
 import { formatChord, isApplePlatform } from "./chord";
 import { useOptionalKeymap } from "./KeymapProvider";

@@ -1,17 +1,4 @@
-/**
- * Blocks: the parts of a lane you add to the graph you are already editing.
- *
- * What has to be true of every block, checked for every block rather than for one:
- *
- * - its nodes are real node types and its wires connect slots that exist and whose types fit —
- *   otherwise it is a fragment that looks fine on a card and cannot be inserted;
- * - inserting it is ONE undoable edit that leaves the graph valid apart from the inputs it is
- *   waiting to be given;
- * - what lands is folded into exactly one group, because the whole point is that a graph gains a
- *   step called "Clean up the voice" rather than three nodes to recognise;
- * - and the block's own description of what it takes and gives matches the graph, so a card
- *   cannot promise a boundary the nodes do not have.
- */
+/** What must hold for every block: real node types and slots, one undoable insert. */
 
 import { describe, expect, it } from "vitest";
 import {
@@ -106,8 +93,7 @@ describe("workflow blocks", () => {
         `${block.id}: ${errors.map((e) => e.message).join("; ")}`,
       ).toBe(0);
       // The folded node's ports are what an operator wires to, so the card's "takes" has to be
-      // the same set — a card that promised a boundary the nodes do not have would be a lie
-      // nobody could act on.
+      // the same set.
       const ports = groupPorts(graph, workspaceCatalog, graph.groups[0]!);
       const byKey = new Map(graph.nodes.map((n, i) => [n.id, block.nodes[i]?.key ?? n.id]));
       const open = new Set(

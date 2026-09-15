@@ -1,62 +1,4 @@
-"""SBU Kinect ingest: 282 two-person gestures, 15 Kinect joints each, named as OpenPose-18.
-
-SBU is the only source on disk that gives a labelled skeleton for *both* people in the same frame,
-which is why it earns a real pose pass here rather than an index row. Everything else about it is
-small: 21 pairs of students in one corridor, eight staged actions, sequences of 10 to 46 frames.
-
-Four things in this module are measured rather than assumed, and each one changes the output.
-
-**The normalisation.** ``skeleton_pos.txt`` holds 91 comma-separated values per line: a frame index
-plus two people times fifteen joints times (x, y, z). The dataset's own README documents the
-conversion as ``x = 1280 - 2560 * x_file``, ``y = 960 - 1920 * y_file`` and
-``z = z_file * 10000 / 7.8125``; the copy of that formula on disk is
-``external/ISTA-Net/feeders/feeder_sbu.py``, which cites the README URL. Read literally, the first
-two put most joints far outside a 640x480 frame and invert the body vertically, so the formula only
-makes sense as a coordinate centred on the image with y pointing up, over a 2560x1920 space: that
-reading gives ``x_fraction = 0.5 + x_px / 2560 = 1 - x_file`` and
-``y_fraction = 0.5 - y_px / 1920 = y_file``, i.e. unit gain and a horizontal flip. The unit gain is
-what the disk says too: fitting the head joint of 584 separated frames against the head of the
-matching blob in ``depth_*.png`` gives ``u = -633 * x_file + 633`` and ``v = 475 * y_file - 26``,
-against 640 and 480 for a frame-sized gain. Applied this way, 13.75 % of all 204660 joint
-observations fall outside 0..1, which is the number the contract's ``ReferenceJoint`` docstring
-carries, and they are left outside rather than clamped.
-
-**The flip belongs to the stored images, not to the geometry.** The RGB and depth PNGs are mirrored
-with respect to the skeleton: over all 282 sequences, projecting with ``1 - x_file`` lands a median
-14.6 px from the depth foreground centroid while projecting with ``x_file`` lands 100.6 px away.
-The skeleton is the physical view, and only the physical view is self-consistent: SBU subjects shake
-hands with the joint the README names ``r_hand`` in 16 of the 18 handshake runs, and that joint is
-on the anatomical right only when x is read unmirrored. Read that way, the shoulder that is nearer
-the lens is the one the naming predicts from which way the subject faces in 85.2 % of 5742 profile
-frames; read mirrored, in 14.8 %, i.e. left-handed handshakes throughout. So this module emits
-``x = x_file``, keeping
-(x, y, z) a right-handed camera frame in which the left and right joint names are the subject's own,
-and a consumer who wants to overlay a key pose on the frame it names must flip it: ``u = (1 - x) *
-width``. Chirality is worth more than pixel alignment here, because the usage class is
-``pose_derivable``: these 640x480 corridor frames are not a look reference, the poses are the point.
-
-**Depth is millimetres, not metres.** ``z_file * 10000 / 7.8125`` is 1280 * z_file, i.e. the Kinect
-depth in mm. Taking it as metres shrinks the subjects: the median head-to-lowest-foot extent comes
-out 1.15 m, a child. With the factor applied it is 1.47 m, which is an adult head-centre to a foot
-joint that is often extrapolated below the frame. Every metric number here also needs a transverse
-scale, and no calibration ships with the dataset, so the standard Kinect v1 640x480 intrinsic
-``_FOCAL_PX`` is used and named: anything in ``measured`` inherits it, while ``z`` does not.
-
-**Contact is measured per class, not read off the label.** ``class_maps.json`` was verified by eye
-and fixes the label and the affection of each action id, and this module refuses to emit a class
-whose label or affection it disagrees with. What the label does not say is whether the two bodies
-touch, so that comes from the geometry: at the closest frame a hand reaches the other's chest to
-within a median 0.19 m when hugging and 0.24 m when pushing, but stops 0.41 m away when punching,
-and a kicking foot stops 0.66 m away. Punching and kicking therefore carry ``ContactTag.none``, and
-say so in the caption. The vocabulary also has no foot or leg contact, so the kick could not have
-been described accurately even if it had landed.
-
-The Kinect 15-joint set has no nose, eyes or ears. ``head`` fills the ``nose`` slot because it is
-the only head point there is, and ``l_eye``, ``r_eye``, ``l_ear`` and ``r_ear`` are simply absent
-from every emitted pose: an invented eye would be indistinguishable from a measured one downstream.
-``torso`` is the other side of the same coin, a real Kinect joint with no OpenPose-18 slot to go in,
-so it drives the hug contact measurement and is then dropped.
-"""
+"""SBU Kinect ingest: 282 two-person gestures, 15 Kinect joints each, named as OpenPose-18."""
 
 from __future__ import annotations
 
@@ -95,11 +37,8 @@ _PEOPLE: Final = 2
 _JOINTS: Final = 15
 _COLUMNS: Final = 1 + _PEOPLE * _JOINTS * 3
 
-# 15 fps is the rate the SBU authors state for the capture and nothing on disk timestamps a frame,
-# so it is the dataset's number rather than a measured one. It is at least the only rate that makes
-# the frame counts behave: the frame indices in skeleton_pos.txt step by exactly 1 in all 6540
-# consecutive pairs, and the mean 24-frame sequence is a 1.6 s gesture at 15 fps and a 0.8 s twitch
-# at 30.
+# The authors' stated rate, not measured (nothing on disk timestamps a frame); it is the only rate
+# at which the mean 24-frame sequence is a 1.6 s gesture rather than a 0.8 s twitch.
 _NATIVE_FPS: Final = 15.0
 
 # Documented: z_file * 10000 / 7.8125 is the Kinect depth in mm, so this is the same factor in m.
@@ -109,24 +48,15 @@ _Z_METRES: Final = 10000.0 / 7.8125 / 1000.0
 # the two transverse axes of a measured distance depend on it; z is metric on its own.
 _FOCAL_PX: Final = 525.0
 
-# Fallback frame size, used only when a sequence's first RGB frame is missing. Every PNG in the
-# 282 sequences that were checked is 640x480; the size is still read per sequence rather than
-# assumed, because width and height are emitted on the clip.
+# Fallback for a sequence whose first RGB frame is missing; every PNG in the 282 sequences checked
+# is 640x480, but the size is still read per sequence because it is emitted on the clip.
 _FRAME_SIZE: Final = (640, 480)
 
 _MEASURED_DP: Final = 4
 _JOINT_DP: Final = 6
 
-# The dataset's joint order, and the OpenPose-18 slot each Kinect joint fills. This tuple is the
-# mapping table: the left column is what column triple 0..14 of a person means, the right column is
-# the name the joint is emitted under, and None means the joint has no OpenPose-18 slot at all.
-#   head       -> nose      the Kinect head point is the head centre, not the nose. It is the only
-#                           head joint SBU has, and the nose slot is the only slot it can fill.
-#   neck       -> neck      one to one.
-#   torso      -> None      OpenPose-18 has no mid-spine joint. Used for measurement, then dropped.
-#   l/r hand   -> l/r wrist the Kinect hand point sits a hand's length past the wrist.
-#   l/r foot   -> l/r ankle the Kinect foot point sits a foot's length past the ankle.
-# Left and right are the subject's own, which holds in the unmirrored frame this module emits.
+# Kinect joint order -> OpenPose-18 slot; None means no slot (torso is measured, then dropped).
+# Head fills nose, hand fills wrist, foot fills ankle; left and right are the subject's own.
 _KINECT15_TO_OPENPOSE18: Final = (
     ("head", "nose"),
     ("neck", "neck"),
@@ -198,9 +128,7 @@ class _ClassSpec(NamedTuple):
     note: str
 
 
-# Keyed by the action id in the directory name. Labels and affection must match class_maps.json,
-# which was verified by looking at a frame per class; the tags, contact and key-pose rule are this
-# module's, and the geometry behind each contact choice is in the module docstring.
+# Keyed by the action id in the directory name.
 _SPECS: dict[str, _ClassSpec] = {
     "01": _ClassSpec(
         label="approaching",
@@ -282,10 +210,8 @@ _SPECS: dict[str, _ClassSpec] = {
     ),
 }
 
-# Verified by eye in _index/sheets/sbu_actions.png and written down in
-# _index/measured/viewing_notes.md: one corridor with a wooden door, two students, flat indoor
-# light. Both subjects stand in profile facing each other in front of a fixed Kinect, so the pair
-# is seen from the side and from nowhere else.
+# Verified by eye (_index/sheets/sbu_actions.png, _index/measured/viewing_notes.md): both subjects
+# stand in profile facing each other before a fixed Kinect, so the pair is seen only from the side.
 SETTING: Final = "indoor corridor, flat overhead light"
 CAMERA_ANGLES: Final = ("side",)
 USAGE: Final = UsageClass.pose_derivable
@@ -299,14 +225,7 @@ _AFFECTION_BY_MAP_VALUE: Final = {
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every SBU sequence this source contributes, plus one line per thing skipped and why.
-
-    Guarantees: clips are sorted by ``clip_id``; the same ``root`` and ``ingested_at`` produce
-    byte-identical clips, because every number is computed from the bytes on disk in a fixed order
-    and nothing is read from the clock; no clip is emitted whose label or affection disagrees with
-    ``class_maps.json``; every emitted key pose carries both people, OpenPose-18 joint names, and
-    no joint the Kinect 15-joint skeleton cannot supply.
-    """
+    """Every SBU sequence this source contributes, plus one line per thing skipped and why."""
     index, failure = _load_index(root / "_index" / "measured")
     if index is None:
         return [], [failure or "sbu: the measured index could not be read"]
@@ -324,11 +243,7 @@ def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[s
 
 
 def _load_index(measured: Path) -> tuple[dict[str, Any] | None, str | None]:
-    """The measured JSON this ingester reads, or a reason it could not be read.
-
-    A host without ``/mnt/fast/reference`` is a normal condition for this repo, so a missing index
-    is one readable line in the library manifest rather than a traceback in the build driver.
-    """
+    """The measured JSON this ingester reads, or a reason it could not be read."""
     out: dict[str, Any] = {}
     for name in _INDEX_FILES:
         path = measured / name
@@ -342,14 +257,7 @@ def _load_index(measured: Path) -> tuple[dict[str, Any] | None, str | None]:
 
 
 def _verified_specs(class_maps: Any) -> tuple[dict[str, _ClassSpec], list[str], frozenset[str]]:
-    """The action ids whose label and affection agree with the verified class map.
-
-    Guarantees: an id this module has a spec for but the map disagrees with is left out and
-    reported, so a relabelled dataset can never quietly retag a clip; an id in the map with no spec
-    here is also reported, because a new SBU action is a decision for a person to make. The third
-    return value is every id these lines already account for, so a sequence whose action id appears
-    in neither the map nor the specs can still be reported once per sequence rather than dropped.
-    """
+    """The action ids whose label and affection agree with the verified class map."""
     classes = {}
     if isinstance(class_maps, dict):
         section = class_maps.get(_CLASS_MAP_KEY)
@@ -478,12 +386,7 @@ def _clip(
 
 
 def _read_frames(path: Path) -> tuple[tuple[_Frame, ...] | None, str | None]:
-    """Every normalised skeleton row of one sequence, or None and a reason it was unusable.
-
-    Guarantees: x and y are image fractions of the physical view and are not clamped, z is metres,
-    joint order is the dataset's own, and a row with anything other than 91 values fails the whole
-    sequence rather than being padded, because a short row would silently move a joint.
-    """
+    """Every normalised skeleton row of one sequence, or None and a reason it was unusable."""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -503,8 +406,7 @@ def _read_frames(path: Path) -> tuple[tuple[_Frame, ...] | None, str | None]:
             tuple(
                 _Joint(
                     # The documented normalisation, read as a centred 2560x1920 coordinate: unit
-                    # gain, and the stored PNGs are the mirror of this frame, not the other way
-                    # round. See the module docstring.
+                    # gain, and the stored PNGs are the mirror of this frame.
                     x=values[1 + person * _JOINTS * 3 + joint * 3],
                     y=values[2 + person * _JOINTS * 3 + joint * 3],
                     z=values[3 + person * _JOINTS * 3 + joint * 3] * _Z_METRES,
@@ -539,11 +441,7 @@ def _sequence_frame_size(
 
 
 def _png_size(path: Path) -> tuple[int, int] | None:
-    """Width and height from a PNG's IHDR, or None when the file is missing or not a PNG.
-
-    Reads 24 bytes: a frame is only needed for its size here, and decoding the 13644 PNGs these
-    sequences hold would make an ingest pass cost minutes for two integers.
-    """
+    """Width and height from a PNG's IHDR, or None when the file is missing or not a PNG."""
     try:
         with path.open("rb") as handle:
             header = handle.read(24)
@@ -558,11 +456,7 @@ def _png_size(path: Path) -> tuple[int, int] | None:
 
 
 def _metric_people(frame: _Frame, width: int, height: int) -> _PeopleMetres:
-    """One frame's joints as camera-space metres, for distances between the two bodies.
-
-    Guarantees: z is the source's own metric depth; x and y are scaled by ``_FOCAL_PX``, so every
-    distance derived from this inherits that one assumed intrinsic and nothing else.
-    """
+    """One frame's joints as camera-space metres, for distances between the two bodies."""
     return tuple(
         tuple(
             (
@@ -583,12 +477,7 @@ def _chest(person: tuple[_Point, ...]) -> _Point:
 
 
 def _distances(metres: tuple[_PeopleMetres, ...]) -> dict[str, list[float]]:
-    """Per-frame inter-person distances in metres, one list per rule a key frame can be picked by.
-
-    Guarantees: every list has one entry per frame, in frame order, so an index into any of them
-    means the same frame; ``joints`` is the closest joint pair of any kind, which is the measure
-    that says whether the two bodies met at all.
-    """
+    """Per-frame inter-person distances in metres, one list per key-frame rule."""
     out: dict[str, list[float]] = {
         "hands": [],
         "torsos": [],
@@ -621,10 +510,7 @@ def _distances(metres: tuple[_PeopleMetres, ...]) -> dict[str, list[float]]:
 
 
 def _key_row(rule: str, gaps: dict[str, list[float]]) -> int:
-    """The row index of the closest-contact frame under one rule.
-
-    Guarantees: ties go to the earliest frame, so the choice does not depend on iteration order.
-    """
+    """The row index of the closest-contact frame under one rule."""
     series = gaps[rule]
     best = 0
     for index in range(1, len(series)):
@@ -647,11 +533,7 @@ def _travel_m(metres: tuple[_PeopleMetres, ...]) -> float:
 
 
 def _out_of_frame_fraction(frames: tuple[_Frame, ...]) -> float:
-    """The share of this sequence's joint observations that fall outside the frame.
-
-    The contract keeps such joints as measured rather than clamping them, so the share is recorded
-    per clip: a clip whose skeletons mostly left the frame is then findable instead of surprising.
-    """
+    """The share of this sequence's joint observations that fall outside the frame."""
     total = len(frames) * _PEOPLE * _JOINTS
     outside = sum(
         1
@@ -670,13 +552,7 @@ def _measured(
     key_row: int,
     rule: str,
 ) -> dict[str, float | list[float]]:
-    """The clip's own numbers, in the baker's vocabulary where one already exists.
-
-    Guarantees: every distance is metres and every key is present on every SBU clip, so a query can
-    compare clips and find one whose tags disagree with its geometry. ``key_pose_source_frame`` is
-    the Kinect frame number, because ``ReferenceKeyPose.frame_index`` is a row index and the PNGs
-    on disk are named by the other one.
-    """
+    """The clip's own numbers, in the baker's vocabulary where one already exists."""
     return {
         "closest_wrists_m": round(min(gaps["hands"]), _MEASURED_DP),
         "root_gap_m": round(min(gaps["torsos"]), _MEASURED_DP),
@@ -694,14 +570,7 @@ def _measured(
 
 
 def _key_pose(frames: tuple[_Frame, ...], key_row: int, spec: _ClassSpec) -> ReferenceKeyPose:
-    """The one moment of a sequence worth sampling, as an OpenPose-18 pose for both people.
-
-    Guarantees: ``frame_index`` is the row index, so it indexes ``frame_count`` as the contract
-    requires; joint names are OpenPose-18 and only the fourteen a Kinect 15-joint skeleton can
-    fill are present, with no eye, ear or mid-spine joint invented; x and y are unclamped image
-    fractions and ``in_frame`` records whether each one landed inside the frame; ``bones`` is the
-    OpenPose-18 limb list restricted to the joints that exist.
-    """
+    """The one moment of a sequence worth sampling, as an OpenPose-18 pose for both people."""
     people = []
     for index, person in enumerate(frames[key_row].people):
         joints = {}
@@ -744,12 +613,7 @@ def _digested(root: Path, rel: str, role: FileRole) -> ReferenceFile:
 def _rgb_file(
     root: Path, rel: str, number: int, where: str, skipped: list[str]
 ) -> ReferenceFile | None:
-    """The one RGB frame the key pose was read from, digested, or None with a reason.
-
-    Only this frame is listed and digested. The 282 sequences hold 6822 RGB and 6822 depth PNGs,
-    one of each per skeleton row, and a consumer who wants the rest can name them from
-    ``pose_root`` and the frame numbers in ``skeleton_pos.txt``.
-    """
+    """The one RGB frame the key pose was read from, digested, or None with a reason."""
     frame_rel = f"{rel}/rgb_{number:06d}.png"
     if not (root / frame_rel).is_file():
         skipped.append(

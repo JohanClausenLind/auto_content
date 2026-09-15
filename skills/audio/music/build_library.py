@@ -1,15 +1,4 @@
-"""Build the background-music library from library.json into assets/music/.
-
-    uv run --project skills/audio/music python skills/audio/music/build_library.py [--only id,id]
-
-Starts the HOT-Step engine against models/music/MiniMax-Music3-GGUF if it is not already running,
-renders each track through POST /mm3/synth, levels it, measures it and writes 24-bit FLAC plus a
-sha256-pinned manifest.json and a browsable README.md -- the same shape as assets/sfx/.
-
-Deterministic: every track carries a fixed seed, so the library is reproducible from library.json.
-
-Rationale for every number here: docs/research/2026-09-07-background-music-library.md
-"""
+"""Build the background-music library from library.json into assets/music/."""
 
 from __future__ import annotations
 
@@ -32,12 +21,7 @@ SILENT_DBFS = -40.0
 
 
 def render(spec: dict, lib: dict, port: int, seed: int, log=print):
-    """One take: generate, then all the DSP except levelling.
-
-    The requested duration is only a CAP on the AR loop -- MM3 is not conditioned on length at all
-    and stops when it stops (measured: 19-62% of the cap for these captions, and no sampler setting
-    moves it). So we ask for `cap_s`, take what arrives, and fit the loop to it.
-    """
+    """One take: generate, then all the DSP except levelling."""
     sr = mm3.SAMPLE_RATE
     d = lib["defaults"]
     loop = spec.get("loop")
@@ -64,10 +48,7 @@ def render(spec: dict, lib: dict, port: int, seed: int, log=print):
         # take can support, capped at what the entry asks for.
         body = raw[:, int(d["lead_in_s"] * sr) : raw.shape[-1] - int(d["tail_pad_s"] * sr)]
         cf = float(loop["crossfade_s"])
-        # Leave slack so best_loop_window has somewhere to slide. Taking the longest loop the take
-        # can support leaves exactly one candidate window, which is how the first attempt ended up
-        # with a 7 dB level jump across the wrap: for a pad, a shorter loop with a clean seam beats
-        # a longer one that pumps every cycle.
+        # Leave slack so best_loop_window has somewhere to slide.
         slack = float(loop.get("search_slack_s", 8.0))
         avail = body.shape[-1] / sr - cf
         length = min(float(loop["max_length_s"]), max(avail - slack, float(loop["min_length_s"])))
@@ -83,21 +64,10 @@ def render(spec: dict, lib: dict, port: int, seed: int, log=print):
 
 
 def score(spec: dict, x, qc: dict, sr: int) -> float:
-    """Lower is better. Loops and one-shot cues are judged on different things.
-
-    A **cue** is judged on length first, because length is the one property no request field
-    controls (see the research doc G1-G2): a 55 s bed covers a segment, a 20 s one is barely a
-    sting. Presence-band energy and harshness are tie-breakers.
-
-    A **loop** is not judged on length at all -- it wraps, so it is as long as the editor wants.
-    What matters is that the wrap is inaudible and the material stays put: seam level match, then
-    how little it travels, then how much it stays out of the narrator's band.
-    """
+    """Lower is better."""
     if spec.get("loop"):
         # Length is not the goal for a loop, but it is not irrelevant either: a short take leaves
-        # best_loop_window no offsets to choose between, which is how two textures ended up as 14 s
-        # loops with a level jump across the wrap. A mild length term buys the search room without
-        # letting length outrank the seam.
+        # best_loop_window no offsets to choose between.
         return (
             2.0 * abs(qc["seam_rms_delta_db"])
             + 1.0 * qc["event_prominence_db"]

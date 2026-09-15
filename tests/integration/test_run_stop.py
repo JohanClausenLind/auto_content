@@ -1,14 +1,4 @@
-"""Stopping a durable run (integration: compose postgres + temporal).
-
-Two ways a run is stopped, and both have to leave the same truthful state behind:
-1. parked waiting for approval — the signal alone closes it, no cancellation needed;
-2. mid-production with a node in flight — the signal cannot land until the node lets go, so the
-   workflow is cancelled and the row is corrected from the client, because a cancelled workflow
-   cannot run one more activity to correct it itself.
-
-What is asserted in both: the run says CANCELLED with who stopped it, nothing is left asking a
-person for something, and no node is left claiming to be running.
-"""
+"""Stopping a durable run (integration: compose postgres + temporal)."""
 
 from __future__ import annotations
 
@@ -170,8 +160,7 @@ async def run_view_now(run_id: str) -> dict:
 
 
 def test_a_run_whose_workflow_was_cut_off_has_its_row_corrected() -> None:
-    """The backstop for a hard cancel: Temporal has stopped executing, so nothing inside the run
-    is left to write down what happened to it. Idempotent, because a stop can be pressed twice."""
+    """The backstop for a hard cancel: Temporal has stopped executing."""
     asyncio.run(_reconcile_flow())
 
 

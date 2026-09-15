@@ -1,10 +1,4 @@
-"""Ideogram 4's graph: the dual-transformer guider, the late CFG lift, and the three recipes.
-
-The shape worth pinning is the one that makes this model unlike the other two image packages here.
-There is no negative *prompt*: the negative branch is a second transformer, and what feeds it is a
-zeroed copy of the positive conditioning. Wire that to a `CLIPTextEncode` of its own and the graph
-still runs -- it just stops being the recipe the model was published with.
-"""
+"""Ideogram 4's graph: the dual-transformer guider, the late CFG lift, and the three recipes."""
 
 from __future__ import annotations
 

@@ -1,5 +1,4 @@
-"""Upload ingestion (4.2): checksums, MIME/magic validation, immutable originals. Uploaded files
-are hostile inputs; only allowlisted, sniffed types are accepted, and SVG is never rasterized."""
+"""Upload ingestion (4.2): checksums, MIME/magic validation, immutable originals."""
 
 from __future__ import annotations
 
@@ -34,12 +33,7 @@ class UploadRejectedError(Exception):
 
 
 def sniff_mime(path: Path) -> str:
-    """What the bytes say this file is. The only answer anything here trusts.
-
-    Defined once because two callers need it *before* ingesting: the upload endpoint and the
-    ingest stage both have to know whether a file needs converting first, and a second opinion
-    from a filename would be exactly the mistake this repo refuses to make.
-    """
+    """What the bytes say this file is."""
     return magic.from_file(str(path), mime=True)
 
 

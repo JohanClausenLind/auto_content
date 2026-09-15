@@ -1,11 +1,4 @@
-"""Editorial style kit: the channel's visual identity as data, not prose.
-
-Semantic palette, typography, and motion rules for the "technical editorial motion graphics"
-look. Renderers and prompt builders consume these tokens; factual labels, equations, numbers
-and captions stay deterministic vector/text overlays (Remotion/Manim) and are never baked into
-AI images. Font names here are identity only — renders keep using the pinned local font files
-(BrandTokens) until the named families are bundled and pinned the same way.
-"""
+"""Editorial style kit: the channel's visual identity as data, not prose."""
 
 from __future__ import annotations
 

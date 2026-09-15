@@ -1,5 +1,4 @@
-"""Originality engine fixtures (28): exact copies, paraphrases, swapped nouns, shared factual
-language, templates, intended adaptations, perceptual image matches, companion mass production."""
+"""Originality engine fixtures (28): exact copies, paraphrases, swapped nouns."""
 
 from __future__ import annotations
 

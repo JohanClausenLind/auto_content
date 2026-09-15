@@ -4,8 +4,7 @@ import { coerceThemeState, DEFAULT_THEME_STATE, THEME_PRESETS } from "../src/ind
 describe("coerceThemeState", () => {
   it("repairs the partial row found in the dev database instead of dropping it", () => {
     // Verbatim from account_preferences: written by an earlier build, missing every field added
-    // since. Feeding it straight into state left customThemes undefined and crashed the
-    // customizer on `.length` as soon as Settings opened.
+    // since.
     const stored = { preset: "midnight", scale: 1.1 };
     const out = coerceThemeState(stored);
 

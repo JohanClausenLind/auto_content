@@ -1,10 +1,4 @@
-/**
- * The editor's state: one graph, its history, and the current selection.
- *
- * It is a reducer on purpose. Every mutation is a pure transition over
- * {graph, history, selection}, so a burst of edits in one tick can never read a stale graph, and
- * a double-invoked updater (StrictMode) can never apply an edit twice.
- */
+/** The editor's state: one graph, its history, and the current selection. */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import {
@@ -143,16 +137,7 @@ export interface GraphEditor {
 
   select(nodeIds: readonly string[]): void;
   addNode(type: string, position: { x: number; y: number }, values?: Record<string, WidgetValue>): string;
-  /**
-   * Add a node and, in the same atomic commit, wire `from` into one of its inputs — what
-   * dropping a link on empty canvas and picking a node from the search does.
-   *
-   * One commit rather than addNode-then-connect on purpose: `connect` reads the graph this
-   * render closed over, so a caller that adds and then connects is asking about a node that
-   * does not exist yet. `toSlot` names the intended input (a suggestion knows which one it
-   * means); without it, or when that input cannot take the link, the first compatible input
-   * wins, and `values` are set on the new node in the same commit.
-   */
+  /** Add a node and, in the same atomic commit, wire `from` into one of its inputs. */
   addConnectedNode(
     type: string,
     position: { x: number; y: number },
@@ -175,14 +160,7 @@ export interface GraphEditor {
   setWidth(nodeId: string, width: number | null): void;
   setMode(nodeId: string, mode: NodeMode): void;
   renameGraph(name: string): void;
-  /**
-   * Apply a batch of prepared operations as one undoable edit.
-   *
-   * The seam for composites the host builds and the editor cannot know about — inserting a block
-   * of five nodes, their wires and the group over them is one gesture and must be one undo. Ops
-   * are validated by `applyOp` exactly as every other edit is, so this widens what can be
-   * expressed and not what is allowed.
-   */
+  /** Apply a batch of prepared operations as one undoable edit. */
   apply(ops: readonly GraphOp[], label: string): void;
 
   // --- folded groups: a view over the same flat graph -----------------------------------------
@@ -217,9 +195,8 @@ export function useGraphEditor(catalog: NodeCatalog, options: UseGraphEditorOpti
     selection: [] as readonly string[],
   }));
 
-  // No latest-ref dance here: writing a ref during render is not safe under concurrent
-  // rendering, and it is not needed — `lastNotified` already makes a re-run for a changed
-  // callback identity a no-op, so `options.onChange` can be a plain dependency.
+  // No latest-ref dance here: writing a ref during render is not safe under concurrent rendering,
+  // and it is not needed.
   const lastNotified = useRef(state.graph);
   const notify = options.onChange;
   useEffect(() => {

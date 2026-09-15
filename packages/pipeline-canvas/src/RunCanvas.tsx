@@ -18,10 +18,7 @@ export interface RunCanvasProps {
 
 const nodeTypes = { stage: StageNode };
 
-/**
- * Left-to-right run DAG rendered with React Flow, positioned by ELK (layered).
- * Pair it with `<RunNodeList>` for screen readers and small screens.
- */
+/** Left-to-right run DAG rendered with React Flow, positioned by ELK (layered). */
 export function RunCanvas({ nodes, edges = null, onSelect, selectedNodeId = null, "aria-label": ariaLabel = "Pipeline graph" }: RunCanvasProps) {
   const graph = useMemo(() => buildGraph(nodes, edges), [nodes, edges]);
   const [layout, setLayout] = useState<LaidOutGraph | null>(null);

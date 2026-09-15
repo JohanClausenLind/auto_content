@@ -434,7 +434,7 @@
       "type": "object"
     },
     "ControlKind": {
-      "description": "Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest\nare rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec.",
+      "description": "Per-frame control signals.",
       "enum": [
         "pose_skeleton",
         "layout_boxes",
@@ -917,7 +917,7 @@
     },
     "SegmentClipPose": {
       "additionalProperties": false,
-      "description": "A ``cf.clip.v2`` motion clip: captured world segment directions, aimed onto whatever rig is\nloaded at render time.\n\n``ClipPose`` stores a quaternion per bone, which makes a clip specific to the body it was\nsolved on: MPFB fits its rig to each character mesh, so the same quaternions land up to 22.6\ndegrees wrong on a different character (measured across the four built assets). Directions are\na property of the motion, so one clip is exact on every body.\n\n``actor`` selects which performer of a multi-person clip this character plays. A two-person\ncapture is one clip with both actors on one timeline, so two ``CharacterSpec`` entries pointing\nat the same clip with different actors reproduce the captured contact instead of staging two\nsolo clips near each other.",
+      "description": "A ``cf.clip.v2`` motion clip: captured world segment directions.",
       "properties": {
         "actor": {
           "default": "a",

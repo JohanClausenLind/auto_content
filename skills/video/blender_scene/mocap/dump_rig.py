@@ -1,13 +1,4 @@
-"""Dump a character's rest rig to JSON, for retarget tests that must not open Blender.
-
-Run inside Blender:
-
-    blender --background --factory-startup --python mocap/dump_rig.py -- \
-        /mnt/fast/models/blender-assets/characters/man_01/man_01.blend out.json
-
-The rest matrices are what the aim solve needs, and they differ per character because MPFB fits the
-rig to each mesh. Dumping them means the cross-character correctness test can run in plain pytest.
-"""
+"""Dump a character's rest rig to JSON, for retarget tests that must not open Blender."""
 
 from __future__ import annotations
 

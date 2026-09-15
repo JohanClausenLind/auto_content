@@ -1,5 +1,4 @@
-"""FastAPI dependencies: DB session, current session/account, workspace scope, RBAC, step-up,
-and the app's Settings."""
+"""FastAPI dependencies: DB session, current account, workspace scope, RBAC, step-up, Settings."""
 
 from __future__ import annotations
 

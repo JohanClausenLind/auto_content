@@ -1,9 +1,4 @@
-"""Deterministic shot planner: one shot per story beat, camera preset by scene kind.
-
-This is the first-version planner. An LLM-planned variant (``planner="llm"``) is deliberately not
-implemented yet; when it is, it produces the same ``ShotPlan`` contract and is validated the same
-way, so nothing downstream changes.
-"""
+"""Deterministic shot planner: one shot per story beat, camera preset by scene kind."""
 
 from __future__ import annotations
 
@@ -97,11 +92,7 @@ _LENS_BY_PRESET: dict[CameraPreset, float] = {
 
 
 def _azimuth_for(shot_id: str) -> float:
-    """A camera angle that varies per shot but is the same every run.
-
-    Derived from the shot id rather than a counter, so inserting a beat does not reframe the shots
-    after it, and rather than randomly, so a rerun of the same plan is the same film.
-    """
+    """A camera angle that varies per shot but is the same every run."""
     digest = hashlib.sha256(shot_id.encode()).digest()
     return -150.0 + (digest[0] / 255.0) * 300.0
 
@@ -159,14 +150,7 @@ def _count_word(n: int) -> str:
 
 
 def _clip_verb(match: dict) -> str:
-    """What the retrieved clip shows, in an everyday word, from the lexicon that found it.
-
-    The match already carries the closed-vocabulary interaction tags the query hit, and the
-    committed lexicon maps those back to the words a person would use. Going through the table
-    rather than prettifying the tag keeps one spelling per tag and keeps it in the file that is
-    hashed into every answer. Falls back to the bare tag with its underscores opened out, and to a
-    neutral clause when the match names no interaction at all.
-    """
+    """What the retrieved clip shows, in an everyday word, from the lexicon that found it."""
     from content_factory.reference.lexicon import phrase_for
 
     tags = [str(t) for t in match.get("matched_interaction") or () if t]
@@ -190,13 +174,7 @@ def plan_shots_from_story(
     with_character: bool = True,
     lighting_preset: LightingPreset = "studio",
 ) -> ShotPlan:
-    """One shot per beat, in beat order. Pure: same story and arguments -> same plan.
-
-    ``with_character`` is for a lane that stages nobody. The staged figure is named in the shot's
-    *description*, which is the sentence the image model is given — so on a lane whose controls
-    compiler is the 2D motion plan, that sentence asked for a person nothing had staged, and a
-    recording about the sky came back as six drawings of a man standing on open ground.
-    """
+    """One shot per beat, in beat order."""
     if fps not in (24, 25, 30, 60):
         msg = f"unsupported fps {fps}"
         raise ValueError(msg)
@@ -215,26 +193,12 @@ def plan_shots_from_story(
         else ()
     )
     # The ShotSpec defaults, named here because the description is compiled from them: what the
-    # prompt says about light and place has to be what Blender actually stages, or the image model
-    # is told one scene and conditioned on another.
-    # `studio` was the only reachable value and it is the wrong default for a still life.
-    # "even studio light from a single soft key, shadows contained" is product-photography light,
-    # and measured across three subjects on 2026-09-10 it renders everything as smooth glazed
-    # ceramic on a soft ground: a pine cone that looks turned from clay, a whelk that looks like a
-    # painted porcelain ornament, an amber that reads as moulded resin. The two best stills the
-    # project has made went the other way — `bee.png` at 9 on ordinary light, `n-amber` at 8.5 on
-    # "warm raking light" — and `LIGHTING_CLAUSE` has carried `exterior_dusk` ("low warm dusk light
-    # raking across the scene, long shadows") the whole time with no way for a caller to ask for it.
+    # prompt says about light and place has to be what Blender actually stages.
     lighting = LightingSpec(preset=lighting_preset)
     environment = EnvironmentSpec()
     specs: list[ShotSpec] = []
     # The preset comes from the scene kind, which is right when the kinds differ and produces one
-    # film of N identical shots when they do not. A plan cut from a recording is every beat the
-    # same kind, so `audio-picture-story` staged six shots whose camera, lens, framing and
-    # description were byte-identical and drew the same picture six times — measured on a six-beat
-    # recording. Where the kinds carry no variation the *order* does: a fixed rotation of framings,
-    # by beat index, so the film moves from wide to close and back the way a cut film does. Still
-    # pure: index in, preset out, same plan every time.
+    # film of N identical shots when they do not.
     kinds = [_scene_kind_for(story, b.beat_id) for b in beats]
     uniform = len(set(kinds)) <= 1 and len(beats) > 1
     for i, beat in enumerate(beats):
@@ -267,9 +231,7 @@ def plan_shots_from_story(
                 ),
                 characters=characters,
                 anchor_frames=anchor_frames_for(preset, frames),
-                # Never the beat's own words. ``display_text`` is narration: it is written to be
-                # spoken over a picture, and handed to an image model it asks for an illustration
-                # of an argument. Both strings are compiled from the staging instead.
+                # Never the beat's own words.
                 motion_prompt=progression_sentence(preset=preset)[:2000],
                 description=state_sentence(
                     preset=preset,
@@ -306,19 +268,7 @@ def plan_shots_from_reference(
     with_character: bool = True,
     cast: tuple[tuple[str, str], ...] = (("man", "man_01"), ("woman", "woman_01")),
 ) -> ShotPlan:
-    """One shot per beat, each staged from the reference clip retrieval chose for that beat.
-
-    This is the step that makes the reference library change a film rather than only describe one.
-    A beat whose best match is a baked ``cf.clip.v2`` mocap clip gets one character per performer
-    in that clip - two for a two-person take, so the contact on screen is the contact that was
-    captured; one for a solo take such as a run. A beat with no such match falls back to the preset
-    planner's single idle character and says so in its description, because inventing a two-person
-    staging from nothing is what produced the interpenetrating hands this whole path exists to
-    avoid.
-
-    ``selection`` is the document ``Stage.find_reference`` writes. Pure: the same story and the same
-    selection give the same plan.
-    """
+    """One shot per beat, each staged from the reference clip retrieval chose for that beat."""
     if fps not in (24, 25, 30, 60):
         msg = f"unsupported fps {fps}"
         raise ValueError(msg)
@@ -343,10 +293,6 @@ def plan_shots_from_reference(
         with_character=with_character,
     )
     # `characters: none` is a lane saying it stages nobody, and it has to mean that here too.
-    # It was honoured only on the preset branch, so `picture-story --set
-    # plan_shots.characters=none` still staged five figures and the Blender compiler refused the
-    # plan (measured 2026-09-10). Retrieval's whole job is to find a captured *interaction*, so
-    # with nobody to stage there is nothing for it to contribute and the preset plan is the plan.
     if not chosen or not with_character:
         return fallback.model_copy(update={"planner": "reference"})
 
@@ -358,10 +304,7 @@ def plan_shots_from_reference(
             continue
         clip, verb = picked
         doc = json.loads((CLIPS_DIR / f"{clip}.json").read_text())
-        # As many characters as the clip has performers, never more. A solo clip - the running
-        # trials are solo, because no two-person take in the library holds a sustained run - can
-        # answer for actor "a" and nothing else, and handing a character an actor id the clip does
-        # not carry fails at render time inside Blender rather than here.
+        # As many characters as the clip has performers, never more.
         actors = [str(a["actor_id"]) for a in doc.get("actors", [])] or ["a"]
         characters = tuple(
             CharacterSpec(
@@ -373,10 +316,7 @@ def plan_shots_from_reference(
             )
             for i, ((cid, asset), actor) in enumerate(zip(cast, actors, strict=False))
         )
-        # The camera has to be re-solved, not inherited. The preset planner aims at one subject
-        # standing at the origin; a mocap clip moves the pair, so an inherited camera lets a
-        # character walk through the near plane, which degenerates the depth pass and kills
-        # postprocess on a NaN. Measured on cmu_20_21_02, which travels 2.2 m.
+        # The camera has to be re-solved, not inherited.
         lens = _LENS_BY_PRESET.get(spec.camera.preset, 50.0)
         azimuth = _azimuth_for(spec.shot_id)
         clip_fps = float(doc.get("fps", spec.fps))
@@ -401,25 +341,14 @@ def plan_shots_from_reference(
             azimuth_deg=azimuth,
         )
         keyframes: tuple[CameraKeyframe, ...] = (_keyframe(0, framing),)
-        # Decide on the measurement, not on the solve's own target. They disagree, and the gap is
-        # the whole problem: one camera covering everywhere the actors ever go is aimed at the
-        # middle of the path, so at the ends of it the bodies are further away and smaller than the
-        # solve nominally asked for. On cmu_16_36 in a square frame the solve reports 0.33 and the
-        # first frame actually delivers 0.26. Deciding on the number that gets reported means the
-        # planner cannot claim a shot is legible and stage an illegible one.
+        # Decide on the measurement, not on the solve's own target.
         worst = _worst_body_fraction(doc, keyframes, **measure)
         track_note = ""
         # Below the cliff the pose skeleton is ignored, so staging from a real take has bought
-        # nothing. Track instead: keyframe the camera on where the bodies are, holding the azimuth
-        # so the shot keeps one look. Measured over the 57-clip library at 0.62 target height - no
-        # clip needs this in 16:9, and 30 of 57 do in 9:16, because a portrait frame is narrow
-        # enough that holding two bodies apart pushes the camera back on its own.
+        # nothing.
         if _under_cliff(worst):
             # The anchor frames are the ones handed to the image model, so they are the ones that
-            # have to be legible. The ends are added because a camera keyframed only at frame 0
-            # holds still while the bodies walk away from it - and towards the near plane, which is
-            # the NaN this module already exists to prevent. The whole cast is tracked together,
-            # never one half of a pair, or the partner leaves frame.
+            # have to be legible.
             tracked = solve_framing_tracking(
                 doc,
                 tuple(round(f * clip_fps / spec.fps) for f in shot_frames),
@@ -433,17 +362,12 @@ def plan_shots_from_reference(
             )
             candidate = tuple(_keyframe(f, t) for f, t in zip(shot_frames, tracked, strict=True))
             improved = _worst_body_fraction(doc, candidate, **measure)
-            # Only if it is actually better. Tracking is the right move for a pair that walks and
-            # no help at all for a pair that stands too far apart to fit the frame, and in that
-            # second case a moving camera would be churn dressed up as a fix.
+            # Only if it is actually better.
             if improved > worst:
                 keyframes, worst = candidate, improved
                 track_note = f", tracking {len(actors)} over {len(keyframes)} keyframes"
         camera = spec.camera.model_copy(update={"keyframes": keyframes})
-        # The clip is what the shot is *of*, so it names the action. What the retrieval measured —
-        # the clip id, the solved body fraction, whether the camera tracks — moves to
-        # ``staging_note``, which no prompt reads: an image model handed "staged from
-        # cmu_20_21_02, framed at 0.62 body height" draws whatever it makes of that.
+        # The clip is what the shot is *of*, so it names the action.
         action = f"the {_count_word(len(characters))} {verb} exactly as in the captured take"
         note = f"staged from {clip}, framed at {worst:.2f} body height{track_note}"
         specs.append(
@@ -482,8 +406,7 @@ def _under_cliff(body_fraction: float) -> bool:
 
 
 def _keyframe(frame_index: int, framing: Framing) -> CameraKeyframe:
-    """A camera keyframe from a solved framing. The focus distance is the solved distance, so
-    depth of field lands on the subject rather than on whatever the preset last guessed."""
+    """A camera keyframe from a solved framing."""
     return CameraKeyframe(
         frame_index=frame_index,
         position=framing.position,
@@ -504,17 +427,7 @@ def _worst_body_fraction(
     height: int,
     sensor_width_mm: float,
 ) -> float:
-    """The smallest the cast gets at any of ``sample_frames``, as a fraction of frame height.
-
-    Sampling the keyframes alone is not enough, and a render proved it: a static camera solved for
-    everywhere a pair walks reported 0.42 at frame 0 and the rendered boxes fell to 0.216 by the
-    end of the shot, because the pair had walked away from a camera that never moved. So the ends
-    and the anchors are sampled too, whether or not a keyframe sits on them.
-
-    Each sample takes the camera from the last keyframe at or before it, which is exact where it
-    matters: a static camera holds one position for every frame, and a tracking camera is
-    keyframed on the anchors and the ends, so those samples land on keyframes.
-    """
+    """The smallest the cast gets at any of ``sample_frames``, as a fraction of frame height."""
     clip_fps = float(doc.get("fps", fps))
     ordered = sorted(keyframes, key=lambda k: k.frame_index)
     worst = 1.0
@@ -538,14 +451,7 @@ def _worst_body_fraction(
 
 
 def underframed_shots(plan: ShotPlan) -> tuple[tuple[str, float], ...]:
-    """``(shot_id, worst_body_fraction)`` for staged shots whose subject is under the cliff.
-
-    Measured off the finished plan rather than predicted, so it holds for any planner. Empty is
-    the good answer. A shot in here will render its control passes and be ignored by the image
-    model, which is worth knowing before paying for the retarget: the usual cause is a portrait
-    frame too narrow to hold two bodies apart at a legible size, and the fix is a wider frame or a
-    clip where the pair stands closer, neither of which a camera solve can do anything about.
-    """
+    """``(shot_id, worst_body_fraction)`` for staged shots whose subject is under the cliff."""
     out: list[tuple[str, float]] = []
     for spec in plan.shots:
         if not spec.characters or not spec.camera.keyframes:
@@ -560,9 +466,7 @@ def underframed_shots(plan: ShotPlan) -> tuple[tuple[str, float], ...]:
         path = CLIPS_DIR / f"{poses[0].name}.json" if poses else None
         if path is None or not path.is_file():
             # No clip to read a hip height out of, so the cast is modelled standing where it was
-            # placed. This is the preset planner's shots, and they need checking most: their camera
-            # distances are fixed multiples of subject height with no aspect in the calculation, so
-            # a vertical frame puts every one of them under the cliff.
+            # placed.
             centre, _radius, top = standing_extent(
                 tuple(c.transform.position for c in spec.characters)
             )

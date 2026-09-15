@@ -130,14 +130,7 @@ def json_schema_for(name: str) -> dict[str, Any]:
 
 
 def _normalize(node: Any) -> Any:
-    """Make the emitted schema match what the serializer actually produces and what Ajv (strict)
-    requires:
-
-    * Strict models always serialize every field, so every property of a closed object
-      (``additionalProperties: false``) is ``required`` — including fields with defaults such as
-      the ``op``/``kind`` discriminator tags and ``schema_version``.
-    * ``discriminator`` needs an explicit ``type: object`` sibling under Ajv strictTypes.
-    """
+    """Make the emitted schema match what the serializer actually produces and what Ajv."""
     if isinstance(node, list):
         return [_normalize(n) for n in node]
     if not isinstance(node, dict):

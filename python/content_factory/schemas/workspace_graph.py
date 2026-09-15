@@ -1,13 +1,4 @@
-"""Workspace graph contract (the node-graph editor's document).
-
-This is the same document the TypeScript editor serialises — field for field — so a graph saved
-from the browser round-trips through this contract byte-compatibly. Node ``type`` values are
-either a pipeline :class:`~content_factory.schemas.dag.Stage` name or one of the editor's
-non-stage node types (``input.brief``, the ``input.audio``/``image``/``video`` file inputs,
-``utility.note``, ``publish.social``); the compiler in ``content_factory.workspace`` decides what
-each one means for execution. ``groups`` are folded views over the same flat nodes and links: the
-canvas draws a group as one node, and nothing downstream of the canvas knows they exist.
-"""
+"""Workspace graph contract (the node-graph editor's document)."""
 
 from __future__ import annotations
 
@@ -56,17 +47,7 @@ class WorkspaceLink(SchemaModel):
 
 
 class WorkspaceGroup(SchemaModel):
-    """A named set of nodes the canvas can draw as one.
-
-    Purely a view: the nodes and links stay in the flat graph exactly as they were, so the
-    compiler, the runner and execution order never see a group at all. It exists because half of
-    every lane is the same few steps — clean up the voice, finish the picture, check and package —
-    and an operator changing one prompt should not have to read all of them. Folded, the canvas
-    draws one node with the group's boundary slots; opened, it draws the members in a frame with
-    every widget available.
-
-    ``members`` order is meaningful: it decides the order of a folded group's ports.
-    """
+    """A named set of nodes the canvas can draw as one."""
 
     id: str = Field(min_length=1, max_length=64)
     name: str = Field(min_length=1, max_length=80)

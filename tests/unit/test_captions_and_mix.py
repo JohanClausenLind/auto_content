@@ -145,11 +145,7 @@ def _tone(path: Path, *, seconds: float) -> Path:
 
 
 def test_the_mux_holds_the_last_frame_rather_than_cutting_the_narration(tmp_path: Path) -> None:
-    """`-shortest` made a film end when its picture did, and the mix always ends later than the
-    beats: it lays the narration out with a lead-in, a pause between beats and a tail. So a lane
-    whose picture is exactly as long as its beats lost its ending to a flag — measured on a real
-    run as "audio shorter than the narration it should carry", raised by the composer's own QC.
-    """
+    """`-shortest` cut the narration's tail when the picture was exactly as long as its beats."""
     from content_factory.audio.mix import _media_ms, mux
 
     picture = _silent_clip(tmp_path / "picture.mp4", seconds=2.0)
@@ -168,9 +164,7 @@ def test_the_mux_holds_the_last_frame_rather_than_cutting_the_narration(tmp_path
 
 
 def test_a_picture_that_already_carries_the_words_is_copied_not_re_encoded(tmp_path: Path) -> None:
-    """The old path, kept, and it is what every timeline lane takes: the compiler sizes the picture
-    to the speech, so what -shortest cuts there is the stem's trailing silence. Holding costs a
-    re-encode and there is nothing to save."""
+    """Every timeline lane takes this path: -shortest only cuts the stem's trailing silence."""
     from content_factory.audio.mix import _media_ms, mux
     from content_factory.qc.media import ffprobe
 
@@ -186,13 +180,7 @@ def test_a_picture_that_already_carries_the_words_is_copied_not_re_encoded(tmp_p
 
 
 def test_a_master_that_overshoots_the_ceiling_is_trimmed_back_under_it(tmp_path: Path) -> None:
-    """`loudnorm` in linear mode does not limit; its `TP` argument only informs the gain it picks.
-
-    Measured on `audio-picture-story` (2026-09-10): the master landed on -14.2 LUFS, right on
-    target, with a true peak of -0.8 dBTP against a -1.0 ceiling, and `mix_audio` refused the run
-    at stage nine of twenty rather than deliver it. A second linear gain of exactly the overshoot
-    moves the peak by the same dB and the programme by the same dB — a fifth of a decibel here.
-    """
+    """`loudnorm` in linear mode does not limit: its `TP` only informs the gain it picks."""
     import math
     import struct
     import wave
@@ -226,10 +214,8 @@ def test_a_master_that_overshoots_the_ceiling_is_trimmed_back_under_it(tmp_path:
     assert report.passed, report
     assert not (tmp_path / "mastered-trim.wav").exists()  # the scratch file is not left behind
 
-    # And it lands *below* the delivery ceiling, by roughly the encode headroom: the AAC encode
-    # raises inter-sample peaks, and every master tonight sat exactly on -1.0 dBTP while its
-    # `final.mp4` came back at -0.80 to -0.88 (finding 60). The report still states the delivery
-    # ceiling, because that is the number a caller's gate is about.
+    # Below the delivery ceiling by the encode headroom: AAC lifts inter-sample peaks (finding 60).
+    # The report still states the delivery ceiling: that is the number a caller's gate is about.
     spec = MasterChainSpec(target_lufs=-14.0)
     assert spec.master_true_peak_dbtp == pytest.approx(-1.3)
     assert report.target_true_peak_dbtp == -1.0

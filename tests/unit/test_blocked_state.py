@@ -1,16 +1,4 @@
-"""BLOCKED: a run that stopped on judgement rather than on a defect.
-
-`RunState.BLOCKED` has been in `db/models.py` since the run state machine was written and nothing
-ever set it (STATUS 2992). Everything a stage could not finish was a `RuntimeError`, so a run that
-had generated a frame three times, checked it three times and been handed three unusable pictures
-looked exactly like a run with a bug in it — same exception, same FAILED state, same invitation to
-retry, which is three more GPU-minutes per frame for the same answer.
-
-The other half is that the deterministic checks were running too late. `review_frames` measures
-tonal collapse and a half-applied monochrome instruction, and it runs when a person is already
-looking at the contact sheet — so a thirty-anchor run spent three GPU hours and then showed a
-reviewer four frames whose style instruction the code could have caught the moment each arrived.
-"""
+"""BLOCKED: a run that stopped on judgement rather than on a defect."""
 
 from __future__ import annotations
 
@@ -100,8 +88,7 @@ def test_an_unusable_anchor_is_regenerated_then_blocks_with_its_candidates(
 def test_a_frame_that_passes_first_time_costs_one_attempt_and_the_locks_own_seed(
     ctx: StageContext,
 ) -> None:
-    """The ordinary case has to stay exactly what it was: one call, the lock's seed, no extra
-    files. A check that changes the picture when it passes is not a check."""
+    """A check that changes the picture when it passes is not a check."""
     out = stage_generate_anchor(ctx)
     assert out.facts["attempts"] == 1
     marker = json.loads((ctx.ddir() / "anchors" / "anchor.done.json").read_text())
@@ -137,8 +124,7 @@ def test_the_runner_reports_a_block_as_a_block_not_a_failure(ctx: StageContext) 
 
 
 def test_the_cli_labels_it_block_and_exits_five(tmp_path: Path, monkeypatch) -> None:
-    """Exit 5, deliberately not 1: a wrapper script has to be able to tell "needs a human" from
-    "is broken" without parsing text, and 4 is already the human-review gate."""
+    """Exit 5, not 1: a wrapper must tell "needs a human" from "is broken" without parsing text."""
     from typer.testing import CliRunner
 
     from content_factory.cli.main import app
@@ -169,8 +155,7 @@ def test_the_cli_labels_it_block_and_exits_five(tmp_path: Path, monkeypatch) -> 
 
 
 def test_the_durable_path_turns_it_into_a_non_retryable_blocked_outcome() -> None:
-    """The workflow has to recognise a block through Temporal's wrapping, and must not retry it:
-    the stage already spent every attempt, so a retry is GPU time for the same answer."""
+    """A block must survive Temporal's wrapping and never retry: the stage spent every attempt."""
     from temporalio.exceptions import ActivityError, ApplicationError
 
     from content_factory.workflows.blocked import BLOCKED_FAILURE_TYPE

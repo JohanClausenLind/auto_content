@@ -1,11 +1,4 @@
-"""POST /v1/uploads: a dropped file is identified from its bytes, stored, and described.
-
-What matters here is that the answer is derived rather than repeated back: the kind comes from
-the sniff and not from the filename or the client's content type, the stored key is
-content-addressed, and the node type and suggestions that come back are what the canvas acts on.
-A file type the allowlist does not carry is refused with a reason, and the reason says the sniff
-decided it.
-"""
+"""POST /v1/uploads: a dropped file is identified from its bytes, stored, and described."""
 
 from __future__ import annotations
 
@@ -161,8 +154,7 @@ def a_matroska(path: Path, *, seconds: int = 2) -> Path:
 async def test_a_screen_recording_arrives_as_mkv_and_is_stored_as_mp4(
     upload_client, sessionmaker, tmp_path: Path
 ):
-    """The case the operator hit: dropping `2026-09-09 13-35-29.mkv` used to answer "file type
-    'video/x-matroska' is not accepted" and send them to a terminal."""
+    """The operator's case: an `.mkv` drop used to be refused as an unaccepted file type."""
     await seed(sessionmaker)
     await upload_client.post("/v1/session", json={"username": "owner", "password": PW})
 
@@ -185,8 +177,6 @@ async def test_a_screen_recording_arrives_as_mkv_and_is_stored_as_mp4(
     assert body["conversion"]["to_mime"] == "video/mp4"
     assert "no re-encode" in body["conversion"]["detail"]
     # Measured after conversion, so the facts describe the stored file.
-    # Approximate on purpose: MP4's timebase reports 15 fps as 15.008, which is what a remux
-    # into this container does and not something to "fix".
     assert body["facts"]["width"] == 320 and abs(body["facts"]["fps"] - 15.0) < 0.05
     assert body["node_type"] == "input.video"
     assert {s["node_type"] for s in body["suggestions"]} >= {"interpolate", "upscale_video"}
@@ -224,9 +214,7 @@ def an_mp4_of_black(path: Path, *, seconds: int = 2) -> Path:
 async def test_a_recording_in_an_mp4_lands_on_the_audio_node_and_says_why(
     upload_client, sessionmaker, tmp_path: Path
 ):
-    """The other half of the screen-recording case. A phone and a meeting tool write MP4 around
-    an hour of black, so the bytes say `video/mp4` and the canvas used to hand the operator a
-    Video node their audio lane would not take. The picture decides instead of the container."""
+    """The other half of the screen-recording case."""
     await seed(sessionmaker)
     await upload_client.post("/v1/session", json={"username": "owner", "password": PW})
 
@@ -248,8 +236,7 @@ async def test_a_recording_in_an_mp4_lands_on_the_audio_node_and_says_why(
 async def test_a_film_dropped_on_the_canvas_is_still_a_film(
     upload_client, sessionmaker, tmp_path: Path
 ):
-    """The measurement has to be able to say no. A clip with something in it stays a video, and
-    `blank_picture` comes back null rather than absent, so the canvas can tell the two apart."""
+    """The measurement has to be able to say no. A clip with something in it stays a video."""
     await seed(sessionmaker)
     await upload_client.post("/v1/session", json={"username": "owner", "password": PW})
 

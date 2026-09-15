@@ -1,5 +1,4 @@
-"""Evaluation harness (18.9): versioned packs per capability; approval is per model x skill.
-Deterministic scorers only; escalation is never based on a model's self-reported confidence."""
+"""Evaluation harness (18.9): versioned packs per capability; approval is per model x skill."""
 
 from __future__ import annotations
 

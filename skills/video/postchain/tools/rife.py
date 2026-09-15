@@ -1,5 +1,4 @@
-"""Practical-RIFE 4.25: fast interpolation. params: {"factor": 2|4|8, "scale": 1.0, "fp16": false,
-"timeout_s": 1800}. Weights live in the checkout (train_log/flownet.pkl, manual fetch)."""
+"""Practical-RIFE 4.25: fast interpolation."""
 
 from __future__ import annotations
 

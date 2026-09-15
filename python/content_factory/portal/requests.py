@@ -1,6 +1,4 @@
-"""External request portal (phase 12): branded submission of briefs without editor access.
-A signed, expiring portal token authorizes ONLY brief submission into one workspace; a valid
-submission creates a ProjectBrief + ActionItem, never a run and never any editor capability."""
+"""External request portal (phase 12): branded submission of briefs without editor access."""
 
 from __future__ import annotations
 

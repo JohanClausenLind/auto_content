@@ -1,7 +1,4 @@
-"""Offer supply sources. The default is a deterministic fixture; live provider/broker adapters
-(Vast.ai, Runpod, Shadeform, Prime Intellect, or SkyPilot/dstack catalogs) are added behind the
-same protocol once the operator supplies accounts — never scraped, never invented. Stale quotes
-must be revalidated before purchase; an expired offer is not a candidate."""
+"""Offer supply sources."""
 
 from __future__ import annotations
 

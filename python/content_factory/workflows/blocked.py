@@ -1,20 +1,4 @@
-"""BLOCKED: a run that stopped because the machine could not do it, not because it broke.
-
-There is a real difference between the two and the pipeline had one word for both. A stage that
-raises `RuntimeError` is a failure: something is wrong, retrying it is reasonable, and the operator
-is being asked to fix code or configuration. A stage that has generated a frame three times, run
-the deterministic checks each time and been handed three unusable pictures is not broken — it has
-done its job and the answer is "a person has to look at this". Retrying it burns GPU hours to
-produce a fourth unusable picture.
-
-`RunState.BLOCKED` has existed in `db/models.py` since the run state machine was written and
-nothing ever set it (STATUS 2992). This is what sets it. A `BlockedError` carries three things a
-person needs and an exception message cannot hold: **why**, **how many attempts** were spent, and
-**which candidate images** are on disk to look at. It converts to a non-retryable Temporal outcome
-on the durable path, to `{"ok": false, "blocked": {...}}` in a local run report, and to exit code 5
-with a `BLOCK` label at the CLI — deliberately not the failure code, so a wrapper script can tell
-"needs a human" from "is broken" without parsing text.
-"""
+"""BLOCKED: a run that stopped because the machine could not do it, not because it broke."""
 
 from __future__ import annotations
 
@@ -65,13 +49,7 @@ class BlockedError(RuntimeError):
 
 
 def blocked_details(exc: BaseException | None) -> dict[str, Any] | None:
-    """The blocked payload carried by ``exc`` or anything it wraps, else None.
-
-    Both directions are covered. Locally the exception *is* a ``BlockedError`` (possibly wrapped by
-    ``LocalRunError``); on the durable path it arrives as an ``ActivityError`` around an
-    ``ApplicationError`` whose type is :data:`BLOCKED_FAILURE_TYPE` and whose first detail is the
-    payload. Walking `__cause__` covers both without the workflow code needing to know which.
-    """
+    """The blocked payload carried by ``exc`` or anything it wraps, else None."""
     seen: set[int] = set()
     while exc is not None and id(exc) not in seen:
         seen.add(id(exc))

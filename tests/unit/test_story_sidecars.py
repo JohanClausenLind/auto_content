@@ -1,5 +1,4 @@
-"""A hand-authored story fixture can bring its own datasets and source cards; the timeline bundle
-then renders that story's numbers instead of the demo's."""
+"""A hand-authored story fixture can bring its own datasets and source cards."""
 
 from __future__ import annotations
 
@@ -26,8 +25,7 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def _story_fixture(tmp_path: Path) -> Path:
-    """The sample story rewritten as a fixture with sidecars, inside the repo (fixtures resolve
-    relative to the repo root) under a scratch name."""
+    """The sample story rewritten as a fixture with sidecars, inside the repo."""
     plan = sample_story_plan()
     out_dir = REPO / "fixtures" / "story" / ".pytest-scratch"
     out_dir.mkdir(parents=True, exist_ok=True)

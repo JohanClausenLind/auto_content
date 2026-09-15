@@ -1,31 +1,4 @@
-"""Collect finished deliverables from the other machines that generate for this repo.
-
-Two GPU hosts produce for this project and only one of them is the control plane. A second host
-can serve *drawing* over HTTP — HiDream takes base64 in and hands base64 back, so nothing it makes
-touches its own disk — but the stages that decide how a film ends (the post chain, MMAudio, the TTS
-skills, Blender, ffmpeg) all take absolute local paths and cannot be pointed at an endpoint. The
-moment a second host runs a whole lane, the finished work is on the wrong disk.
-
-**Only the deliverable comes home.** A run writes thousands of control-pass frames, per-frame
-markers and chain steps; the thing worth moving is the film, plus a few hundred KB of evidence that
-makes it diagnosable. What to move is not guessed: ``compile_destination_packages`` already writes
-``destination-packages/packages.json`` naming every shippable file with its role, its
-deliverable-relative path and its sha256, so this reads a manifest a stage produced rather than
-inventing a second idea of what a lane delivers.
-
-The manifest is parsed through :class:`DeliveryPackage` rather than as plain JSON, and that is what
-makes it safe to read from another machine: ``DeliveryFile`` already refuses an absolute path or a
-``..`` segment, and ``extra="forbid"`` means a host on a different commit is reported as skew
-rather than half-transferred. The threat model is a **skewed or buggy** worker, not a hostile one —
-which is why cheap validation is worth it and a sandbox is not.
-
-The direction is always **pull**: the control plane reaches the worker. A worker never needs, and
-is never given, write access to this machine's run directories.
-
-Idempotence has no ledger behind it. A harvested run carries a ``harvest.json`` sidecar written
-*last*, so "already here" is derivable from the bytes on disk, a half-finished harvest is visibly
-half-finished, and ``rm -rf output/harvest/<host>/<slug>`` is a complete and obvious undo.
-"""
+"""Collect finished deliverables from the other machines that generate for this repo."""
 
 from __future__ import annotations
 
@@ -67,9 +40,6 @@ class HarvestError(RuntimeError):
 
 # Read-only probe, sent to the far host over stdin as
 # `python3 - <repo_root> <runs_root> <services_dir>`.
-# Plain stdlib and no import of this repo, deliberately: a worker is routinely a commit or two
-# behind the control plane, and a probe that needed the repo's own code would fail exactly when the
-# drift it exists to report is largest.
 _PROBE = r"""
 import json, os, subprocess, sys
 repo = os.path.expanduser(sys.argv[1])
@@ -174,12 +144,7 @@ class RemoteRun:
 
     @property
     def files(self) -> tuple[DeliveryFile, ...]:
-        """Every distinct file the packages name, in manifest order.
-
-        One package per destination, and destinations overwhelmingly ship the same bytes, so the
-        union is taken rather than the first package's list. A path named twice with two digests is
-        a manifest contradicting itself, and is refused before anything is transferred.
-        """
+        """Every distinct file the packages name, in manifest order."""
         seen: dict[str, DeliveryFile] = {}
         for package in self.packages:
             for entry in package.files:
@@ -196,13 +161,7 @@ class RemoteRun:
 
     @property
     def digest(self) -> str:
-        """Identity of *these bytes*, not of this run name.
-
-        A slug is reused — ``run-local`` writes every run of a lane to the same project directory
-        unless told otherwise — so the name cannot say whether something is new. Built from the
-        files rather than the manifest text so that repacking, which rewrites ``built_at``, does not
-        look like a new deliverable.
-        """
+        """Identity of *these bytes*, not of this run name."""
         material = sorted((f.role, f.path, f.sha256) for f in self.files)
         return hashlib.sha256(json.dumps(material).encode()).hexdigest()
 
@@ -259,11 +218,7 @@ def _run(argv: Sequence[str], *, timeout: int, stdin: str | None = None) -> str:
 
 
 def _held_by(project_dir: str, active: Sequence[dict]) -> str:
-    """Whether a live run on the far host is writing into this project directory.
-
-    Containment, not string equality: a registration on a parent directory is also a reason to
-    leave a run alone, and a resolved path is what the probe returns for exactly that comparison.
-    """
+    """Whether a live run on the far host is writing into this project directory."""
     target = PurePosixPath(project_dir)
     for entry in active:
         if not entry.get("alive") or not entry.get("project_dir"):
@@ -275,21 +230,7 @@ def _held_by(project_dir: str, active: Sequence[dict]) -> str:
 
 
 def discover(host: RemoteHost) -> list[RemoteRun]:
-    """Every run on one host and what state it is in, in one round trip.
-
-    Three things have to be true before a deliverable is collectable, and each rules out a different
-    way of picking something up half-made:
-
-    * ``run.json`` says ``passed``. The report is rewritten after *every* step with ``passed``
-      false, so a run still executing excludes itself without being asked.
-    * ``destination-packages/packages.json`` exists, so there is a manifest to verify against.
-    * no live registration names the project directory. This is the one case the ``passed`` flag
-      misses: a ``--from`` resume leaves the previous pass's ``passed: true`` on disk for the moment
-      between the process starting and its first step writing the report.
-
-    Everything else is still reported, because a run stopped at the human review gate is the normal
-    resting state of an ``image-set`` and silence about it would read as "nothing to collect".
-    """
+    """Every run on one host and what state it is in, in one round trip."""
     settings = get_settings().remote
     raw = _run(
         [
@@ -355,12 +296,7 @@ def discover(host: RemoteHost) -> list[RemoteRun]:
 
 
 def already_harvested(run: RemoteRun, *, repo_root: Path = REPO_ROOT) -> bool:
-    """Whether these exact bytes are already on this machine.
-
-    Derived from the sidecar rather than from a ledger: no second source of truth to fall out of
-    step, and a landing directory with files but no sidecar is a harvest that failed part way and
-    gets redone rather than trusted.
-    """
+    """Whether these exact bytes are already on this machine."""
     sidecar = landing_dir(run.host.name, run.slug, repo_root=repo_root) / SIDECAR
     try:
         return json.loads(sidecar.read_text()).get("digest") == run.digest
@@ -369,16 +305,7 @@ def already_harvested(run: RemoteRun, *, repo_root: Path = REPO_ROOT) -> bool:
 
 
 def fetch_argv(run: RemoteRun, *, list_file: Path, dest: Path, partial: Path) -> list[str]:
-    """The exact rsync invocation, separated out because it is the part worth asserting on.
-
-    ``--files-from`` is the whole design: a directory sync would bring the frames, the control
-    passes and the chain steps, which is the thing this exists not to do.
-
-    ``--from0`` because ``DeliveryFile`` permits a newline in a path and rsync's file list is
-    newline-delimited otherwise — one flag closes the whole class. ``--safe-links`` and no ``-L``
-    because a symlink that arrived as a symlink would be hashed *through*, reading a local file and
-    calling it harvested; :func:`verify` refuses one outright, and this stops it crossing at all.
-    """
+    """The exact rsync invocation, separated out because it is the part worth asserting on."""
     settings = get_settings().remote
     argv = [
         "rsync",
@@ -386,11 +313,7 @@ def fetch_argv(run: RemoteRun, *, list_file: Path, dest: Path, partial: Path) ->
         "--safe-links",
         "--from0",
         # The evidence list is optimistic - which of `sequence/chain.json`, `reviews/frames/*` and
-        # the rest exists depends on the lane - and rsync treats a name it cannot stat in the
-        # source as an ERROR, exiting 23 after transferring everything else. Measured against nova
-        # 2026-09-10: without this the first real harvest refused a run whose files had all
-        # arrived. Missing evidence is normal; missing *manifest* files are still caught, by the
-        # digest check in `verify`.
+        # the rest exists depends on the lane.
         "--ignore-missing-args",
         f"--files-from={list_file}",
         "--partial-dir",
@@ -427,12 +350,7 @@ def fetch(run: RemoteRun, dest: Path) -> None:
 
 
 def verify(run: RemoteRun, staged: Path) -> int:
-    """Re-hash every arrived file against the manifest; return the total bytes.
-
-    A partial transfer is the expected failure — the second host has gone off the network mid-run
-    twice — so nothing is published or recorded until every digest matches. An interrupted pull
-    therefore costs a retry and never a deliverable that looks finished and is not.
-    """
+    """Re-hash every arrived file against the manifest; return the total bytes."""
     total = 0
     for entry in run.files:
         path = staged / entry.path
@@ -460,12 +378,7 @@ def verify(run: RemoteRun, staged: Path) -> int:
 
 
 def commit(run: RemoteRun, staged: Path, total: int, *, repo_root: Path = REPO_ROOT) -> Path:
-    """Move a verified harvest into place, then write the sidecar that says so.
-
-    A directory rename is atomic on one filesystem, so nothing half-transferred is ever visible at
-    the landing path. The sidecar goes last for the same reason: it is the completion marker, and a
-    landing directory carrying bytes without one is a failure the next pass redoes.
-    """
+    """Move a verified harvest into place, then write the sidecar that says so."""
     landing = landing_dir(run.host.name, run.slug, repo_root=repo_root)
     if landing.exists():
         shutil.rmtree(landing)
@@ -494,16 +407,7 @@ def commit(run: RemoteRun, staged: Path, total: int, *, repo_root: Path = REPO_R
 
 
 def publish(run: RemoteRun, landing: Path, *, repo_root: Path = REPO_ROOT) -> str | None:
-    """Put the film where finished films already live, under the run's own name.
-
-    Deliberately *not* prefixed with the host. ``videos/`` is a flat directory of run names and
-    prefixing would sort one machine's work away from the other's; a name already taken by
-    different bytes is a genuine collision — two runs called the same thing — and is reported
-    rather than silently resolved either way.
-
-    A package whose QC failed is brought home and not published: it is evidence, and the gallery is
-    for finished films.
-    """
+    """Put the film where finished films already live, under the run's own name."""
     from content_factory.workflows.stages import primary_film
 
     settings = get_settings().remote
@@ -566,13 +470,7 @@ def harvest(
     dry_run: bool = False,
     repo_root: Path = REPO_ROOT,
 ) -> list[Outcome]:
-    """Collect from every configured host. One host failing never stops the others.
-
-    A host that cannot be reached is reported and skipped, because the common reason for it is the
-    one this project has met twice — the far machine asleep or off the tailnet — and a pass that
-    aborted on the first unreachable host would collect nothing from the ones that are up. Same
-    discipline as ``services/gpu_pool``, and for the same reason.
-    """
+    """Collect from every configured host."""
     hosts = list(hosts if hosts is not None else get_settings().remote.hosts)
     outcomes: list[Outcome] = []
     for host in hosts:

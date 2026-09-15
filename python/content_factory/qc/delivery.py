@@ -1,8 +1,4 @@
-"""Delivery-promise QC (17): an "animated explainer" that renders as static pan-zoom slides fails.
-
-Deterministic: per scene, sample frame pairs and measure residual motion after compensating for
-global translation/zoom (pan-zoom). High residual = real animation; near-zero residual on most
-scenes = a slideshow sold as animation."""
+"""Delivery-promise QC: an "animated explainer" that renders as static pan-zoom slides fails."""
 
 from __future__ import annotations
 
@@ -18,7 +14,7 @@ from content_factory.schemas.scenes import CompiledTimeline
 
 
 def _frame(path: Path, index: int, size: tuple[int, int] = (160, 90)) -> Image.Image:
-    out = subprocess.run(  # noqa: S603
+    out = subprocess.run(
         [
             "ffmpeg",
             "-v",
@@ -49,17 +45,14 @@ def _mean_abs_diff(a: Image.Image, b: Image.Image) -> float:
 
 
 def _moved_fraction(a: Image.Image, b: Image.Image, threshold: int = 18) -> float:
-    """Fraction of pixels whose luminance moved noticeably — catches localized animation
-    (a counting number, a revealing bullet) that a global mean would wash out."""
+    """Fraction of pixels whose luminance moved."""
     hist = ImageChops.difference(a, b).histogram()
     total = sum(hist)
     return sum(c for i, c in enumerate(hist) if i > threshold) / max(1, total)
 
 
 def _residual_after_panzoom(a: Image.Image, b: Image.Image) -> float:
-    """Minimum difference of b against small global translations x zooms of a. If a pan/zoom
-    explains the change, the residual collapses; genuine internal animation does not. A slight
-    blur removes sub-pixel resampling noise so slideshows collapse to ~0."""
+    """Minimum difference of b against small global translations x zooms of a."""
     from PIL import ImageFilter
 
     a = a.filter(ImageFilter.GaussianBlur(1.6))
@@ -108,19 +101,7 @@ the bar — a typeset card that does not animate is not a defect, it is a card."
 
 
 def promised_delivery(intent: str, routes: Mapping[str, int] | None = None) -> str:
-    """What this film promises: `animated_explainer`, `mixed` or `chart_led`.
-
-    Derived from what the film is **made of**, not from prose. The old rule was
-    `spec.intent.startswith("animated")` over a 1000-character free-text field an operator writes
-    a sentence into — so it was false for every real brief and the promise was *always*
-    `chart_led`, which is the one value that makes the check unable to fail. A check that cannot
-    fail is not a check.
-
-    `routes` are `compose.json`'s per-segment route counts (`{"generate": n, "render": m}`). A
-    prose intent that actually names motion still counts, but as one signal rather than the only
-    one: an operator who asked for an animated explainer and got a slideshow should hear about it
-    even if every segment was rendered as a card.
-    """
+    """What this film promises: `animated_explainer`, `mixed` or `chart_led`."""
     words = intent.lower()
     asked_for_motion = any(w in words for w in ("animated", "animation", "motion graphic"))
     counts = dict(routes or {})
@@ -142,19 +123,7 @@ def check_delivery_promise(
     routes_by_scene: Mapping[str, str] | None = None,
     generated_for_real: bool = True,
 ) -> QCResult:
-    """Does the picture move as much as the film promised?
-
-    ``routes_by_scene`` maps scene id -> `compose.json`'s route for that segment. With it, a
-    `mixed` film is judged on its **generated** scenes only: those are the ones that were supposed
-    to move, and requiring half of *all* scenes to animate in a film that is mostly typeset cards
-    measures the edit rather than the delivery.
-
-    ``generated_for_real`` is False when the clips came from the mock backend. The finding is
-    still recorded — a still where a clip should be is worth seeing either way — but it does not
-    block, because on the mock a generated clip *is* a static test pattern and failing the run for
-    that measures the backend rather than the film. Every offline lane run would otherwise fail
-    the check the moment it started working.
-    """
+    """Does the picture move as much as the film promised?"""
     findings: list[Finding] = []
     animated_scenes = 0
     scene_stats: list[dict] = []

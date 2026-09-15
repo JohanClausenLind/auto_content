@@ -1,23 +1,4 @@
-"""The curated sound library, and a deterministic cue sheet cut from a story plan.
-
-``assets/sfx`` has held a curated sound library since 2026-09-07 — 49 sounds then, 670 since the
-Mixkit and local-render packs landed on 2026-09-09 and the rest of the #GameAudioGDC bundle on
-2026-09-10, each loudness-measured to a common bed target,
-each with its provenance and a one-line ``use`` — and when this module was written **nothing
-placed a single one of them**. The only non-speech audio a film could get was a generated MMAudio
-bed over the whole picture, so a chart drawing itself on screen was silent, a hard cut between two
-cards had nothing on it, and the fifteen `ui` sounds written for exactly those moments were unused
-files with a manifest entry.
-
-**The cutter is rules, not a model.** A cue sheet is a deterministic function of the compiled
-timeline and the scene kinds in it, so the same film always gets the same sounds in the same places
-and a diff of two cue sheets is a diff of two edits. That also makes it reviewable: every cue
-carries the reason it exists, and `place_sfx` renders exactly what the sheet says and nothing else.
-
-The rules are deliberately conservative — a documentary is not a game UI. One bed, one soft mark on
-a cut, one accent on a reveal that has something to reveal, nothing at all on a scene kind whose
-sound would be a guess.
-"""
+"""The curated sound library, and a deterministic cue sheet cut from a story plan."""
 
 from __future__ import annotations
 
@@ -72,11 +53,7 @@ class SoundLibrary:
         return tuple(s for s in self.sounds.values() if s.category == category)
 
     def first_with_tag(self, category: str, *tags: str) -> LibrarySound | None:
-        """The first sound in a category carrying every one of `tags`, in manifest order.
-
-        Manifest order, not "best match": the choice has to be the same on every run, and a
-        similarity score over five tag words is a ranking nobody can predict or review.
-        """
+        """The first sound in a category carrying every one of `tags`, in manifest order."""
         wanted = set(tags)
         for sound in self.by_category(category):
             if wanted <= set(sound.tags):
@@ -108,10 +85,8 @@ def load_library(root: Path | None = None) -> SoundLibrary:
     return SoundLibrary(root=directory, sounds=sounds, digest=digest)
 
 
-# Scene kind -> (library id, gain trim, why). Only kinds whose sound is *unambiguous*: a figure
-# counting up ticks, a chart draws, bullets appear one at a time, a section turns a page. A kind
-# absent from this table gets nothing, which is the right default — an invented sound on a quote
-# card is worse than a silent one.
+# Scene kind -> (library id, gain trim, why). Only kinds whose sound is unambiguous; a kind absent
+# here gets nothing, because an invented sound on a quote card is worse than a silent one.
 ACCENTS: dict[str, tuple[str, float, str]] = {
     "big_number": ("data_ticks", -12.0, "the figure counts up here"),
     "chart": ("chart_reveal", -12.0, "the chart draws here"),
@@ -147,15 +122,7 @@ a subject sentence rarely uses either word about itself."""
 
 
 def bed_score(words: frozenset[str], sound: LibrarySound) -> float:
-    """How well a sound's tags describe these words. 0 means "not at all".
-
-    The matched *fraction* of the sound's own subject tags, not the raw count. A sound described
-    by four words one of which is yours is a closer match than one described by six — measured on
-    the demo plan ("a Swedish coastal wind farm under a flat overcast sky"), a raw count tied
-    `park_wind_trees_loop`, `wind_open_loop` and `storm_bed_loop` at one match each and picked the
-    *park*, because `place` is checked before `weather`. The fraction picks `wind_open_loop`
-    (wind, exterior, landscape), which is what a wind farm under an open sky sounds like.
-    """
+    """How well a sound's tags describe these words."""
     subject = [t for t in sound.tags if t not in BED_TAGS_IGNORED]
     if not subject:
         return 0.0
@@ -164,17 +131,7 @@ def bed_score(words: frozenset[str], sound: LibrarySound) -> float:
 
 
 def bed_for(plan: StoryPlan, library: SoundLibrary) -> LibrarySound | None:
-    """The ambience under the whole film, chosen from the plan's own `visual_subject`.
-
-    Word matching against the library's tags, and nothing cleverer: the subject sentence is
-    written by a person (or copied from `--subject`), the tags were written by the person who
-    curated the library, and where they agree the choice is defensible. Where they do not agree
-    the answer is no bed at all rather than a guess — a forest ambience under a film about
-    interest rates is worse than silence.
-
-    Ties break by category order (`place`, then `weather`, then `room-tone`) and then by manifest
-    order, so the same subject always chooses the same bed.
-    """
+    """The ambience under the whole film, chosen from the plan's own `visual_subject`."""
     # A plan with no `visual_subject` — a lane whose film has no world described — gets no bed:
     # there is nothing to match a place ambience against, and a guess is worse than silence.
     subject = plan.visual_subject or ""
@@ -214,17 +171,7 @@ def spans_from_timeline(plan: StoryPlan, timeline: CompiledTimeline) -> list[Sce
 
 
 def spans_from_beats(plan: StoryPlan, beats: Sequence[tuple[str, int, int]]) -> list[SceneSpan]:
-    """Spans from the laid-out narration: ``(beat_id, start_ms, end_ms)`` per beat.
-
-    This, not the compiled timeline, is what the mix has. ``mix_audio`` runs **before**
-    ``compile_timeline`` in every lane that has both — it has to, because the timeline's scene
-    durations are compiled *from* the measured narration — so a cutter that needed a compiled
-    timeline would have found none and placed nothing, on every run, for ever. The measured beat
-    boundaries are the same information the compiler is about to use.
-
-    A beat with no scene contributes nothing; a scene whose beat was not spoken likewise. Both are
-    normal in a partly narrated film and neither is an error.
-    """
+    """Spans from the laid-out narration: ``(beat_id, start_ms, end_ms)`` per beat."""
     scenes_by_beat: dict[str, list[str]] = {}
     kinds = {}
     for scene in plan.scenes:
@@ -235,9 +182,8 @@ def spans_from_beats(plan: StoryPlan, beats: Sequence[tuple[str, int, int]]) -> 
         ids = scenes_by_beat.get(beat_id, [])
         if not ids:
             continue
-        # A beat carrying several scenes splits its span evenly between them: the mix has no
-        # finer information than the beat, and dividing it is closer than stacking every scene's
-        # accent on the beat's first frame.
+        # Several scenes on one beat split its span evenly: the mix knows nothing finer than the
+        # beat, and dividing beats stacking every accent on its first frame.
         each = max(1, (end_ms - start_ms) // len(ids))
         for index, scene_id in enumerate(ids):
             spans.append(

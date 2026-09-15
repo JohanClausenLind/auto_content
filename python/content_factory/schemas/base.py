@@ -72,8 +72,7 @@ def sha256_hex(data: bytes) -> str:
 
 
 def file_sha256(path: Path) -> str:
-    """Streaming file digest (1 MiB chunks) — the on-disk twin of sha256_hex, so large media
-    never has to be read whole into memory just to be hashed."""
+    """Streaming file digest (1 MiB chunks) — the on-disk twin of sha256_hex."""
     h = hashlib.sha256()
     with path.open("rb") as fh:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):

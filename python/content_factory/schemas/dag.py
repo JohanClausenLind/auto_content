@@ -105,9 +105,8 @@ class StageNode(SchemaModel):
     executor: Executor = Executor.deterministic
     resource_class: ResourceClass = "control"
     optional: bool = False
-    # Node parameters frozen at compile time (a workspace graph's widget values). Values are
-    # strings because they come from form controls; each stage parses what it knows and ignores
-    # the rest. They are part of the node input hash, so changing a widget invalidates its cache.
+    # Node parameters frozen at compile time (a workspace graph's widget values). Values are strings
+    # because they come from form controls; each stage parses what it knows and ignores the rest.
     params: dict[str, str] = Field(default_factory=dict)
 
 

@@ -1,27 +1,4 @@
-"""Do the figures a plan puts on screen actually come out of the datasets it cites?
-
-The renderer is deliberately **total**: `chartPoints` maps a non-numeric or missing cell to `0`
-("bad cells become 0, never a crash"), and `resolveNumber` returns `null` for a row or column it
-cannot find, which `formatNumber` draws as an em dash. Both are right for a renderer — a bad row
-must not take a whole film down — and together they mean a `ChartScene` whose `y` column is
-misspelled draws a **flat line along zero** and passes every check there was.
-
-That is the worst kind of wrong output: a plausible chart, of nothing, with a real dataset's name
-under it. This module resolves every `DataRef` in a plan the way the TypeScript does and reports
-the ones that do not land, so QC can fail the film instead of shipping it.
-
-The resolution rules are mirrored from `content-ui/src/format/number.ts:resolveDataRef` — the same
-two conventions, stated once here in Python:
-
-* ``row_key`` matches the value in the first column, or in a column literally named ``key`` or
-  ``row_key``; ``None`` means the first row.
-* ``column`` defaults to the **last** column, which is where a single-measure table puts its
-  measure.
-
-A cross-language test (`tests/unit/test_chart_values.py`) pins them against the TS source, because
-a mirrored rule that drifts is worse than no rule: it would report figures as sound that the
-renderer draws as dashes.
-"""
+"""Do the figures a plan puts on screen actually come out of the datasets it cites?"""
 
 from __future__ import annotations
 
@@ -51,11 +28,7 @@ def key_column(table: DatasetTable) -> str:
 
 
 def resolve_ref(ref: DataRef, datasets: dict[str, DatasetTable]) -> tuple[object, str | None]:
-    """The cell a DataRef points at, and why it does not resolve when it does not.
-
-    Returns ``(value, None)`` on success and ``(None, reason)`` otherwise, so a caller can report
-    the reason rather than guessing from a `None` that also means "the cell is empty".
-    """
+    """The cell a DataRef points at, and why it does not resolve when it does not."""
     table = datasets.get(ref.dataset_id)
     if table is None:
         return None, f"dataset {ref.dataset_id} is not in the bundle"
@@ -92,12 +65,7 @@ def _numeric(value: object) -> float | None:
 
 
 def chart_problems(scene, datasets: dict[str, DatasetTable]) -> list[RefProblem]:
-    """A chart's columns have to exist and its series have to carry numbers.
-
-    The zero-fill is the whole point: a misspelled `y` column draws a flat line at zero, and a
-    flat line is a *finding* about the data if the data is flat and a **lie** if the column is
-    simply not there. Only the second is reported.
-    """
+    """A chart's columns have to exist and its series have to carry numbers."""
     problems: list[RefProblem] = []
     table = datasets.get(scene.data.dataset_id)
     if table is None:

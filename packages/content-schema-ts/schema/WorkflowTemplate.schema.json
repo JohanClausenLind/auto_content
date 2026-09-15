@@ -2,7 +2,7 @@
   "$defs": {
     "ModelRequirement": {
       "additionalProperties": false,
-      "description": "A weight or skill environment a workflow needs before it can run.\n\n``kind=\"comfy\"`` resolves inside ComfyUI's model folders, ``kind=\"path\"`` is a directory in the\nweight store, ``kind=\"skill\"`` is a skill env under ``skills/``. The web panel turns these into\na readiness column and a download command.",
+      "description": "A weight or skill environment a workflow needs before it can run.",
       "properties": {
         "filename": {
           "default": "",
@@ -70,7 +70,7 @@
     },
     "WorkflowGroup": {
       "additionalProperties": false,
-      "description": "Nodes this lane shows as one, and what it calls them.\n\nHalf of every lane in the catalogue is the same few steps — read the recording, clean up the\nvoice, build the captions, check and package. A group is how a definition says \"these are one\nidea\", so opening the lane on the canvas shows a step called *Captions from the voice* instead\nof two nodes an operator has to recognise, and opening the group shows both with every widget\non them. Purely presentation: the runner reads ``order``, which knows nothing about groups.",
+      "description": "Nodes this lane shows as one, and what it calls them.",
       "properties": {
         "collapsed": {
           "default": true,

@@ -1,20 +1,4 @@
-"""One workflow, as data.
-
-A workflow used to live in two hand-written places: the web canvas's template array and the local
-runner's stage table. They drifted, as duplicated definitions do. The canvas had nine templates and
-the runner five, only three ids appeared in both, the same film was called two different things, and
-the runner carried human review gates the canvas had no nodes for, so a canvas run of that film
-silently shipped without them.
-
-This contract is the single definition. It carries what both front doors need: the node graph and
-its wires for the canvas, the per-node widget values, the model requirements, and the linear
-``order`` the runner executes. A validator asserts ``order`` is a topological order of ``wires``,
-which is what makes one file able to serve both honestly rather than approximately.
-
-Order and values key on **node key**, never on stage. A workflow may legitimately use the same
-stage twice - two ``generate_anchor`` nodes with different prompts, say - and a stage-keyed table
-silently collapses them, which is a bug the old runner had.
-"""
+"""One workflow, as data."""
 
 from __future__ import annotations
 
@@ -30,23 +14,16 @@ NodeKey = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,31}$")]
 SlotName = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]{0,31}$")]
 WidgetValue = str | int | float | bool
 
-# The file inputs: a recording, a still or a clip the operator supplies. On the canvas they are
-# what a dropped file becomes; in a lane definition they are the declared entry point — the node
-# that says "your material goes here" — which is what lets a lane whose first stage reads the run
-# directory still show a connected graph instead of an unexplained empty slot.
+# The file inputs: a recording, a still or a clip the operator supplies.
 SOURCE_TYPES: frozenset[str] = frozenset({"input.audio", "input.image", "input.video"})
 
 # Node types the canvas accepts that are not pipeline stages: the campaign brief that starts a
-# graph, the file inputs, a free-text sticky note, the publish terminal, and the deliverables
-# terminal that marks where a lane's files land.
+# graph, the file inputs, a free-text sticky note, the publish terminal.
 NON_STAGE_TYPES: frozenset[str] = frozenset(
     {"input.brief", "utility.note", "publish.social", "output.deliverables"} | SOURCE_TYPES
 )
 
-# Types that carry no work and are skipped by the runner. A note is decoration; a brief is the
-# input the run is started with; a file input is staged into the run's uploads folder before the
-# first stage rather than executed; the deliverables terminal names a folder the run writes to
-# anyway, which is why it is a marker and not a stage.
+# Types that carry no work and are skipped by the runner.
 NON_RUNNABLE_TYPES: frozenset[str] = frozenset(
     {"input.brief", "utility.note", "output.deliverables"} | SOURCE_TYPES
 )
@@ -55,12 +32,7 @@ WorkflowCategory = Literal["image", "video", "audio", "article", "email", "socia
 
 
 class ModelRequirement(SchemaModel):
-    """A weight or skill environment a workflow needs before it can run.
-
-    ``kind="comfy"`` resolves inside ComfyUI's model folders, ``kind="path"`` is a directory in the
-    weight store, ``kind="skill"`` is a skill env under ``skills/``. The web panel turns these into
-    a readiness column and a download command.
-    """
+    """A weight or skill environment a workflow needs before it can run."""
 
     kind: Literal["comfy", "path", "skill"]
     label: str = Field(min_length=1, max_length=120)
@@ -124,14 +96,7 @@ class WorkflowWire(SchemaModel):
 
 
 class WorkflowGroup(SchemaModel):
-    """Nodes this lane shows as one, and what it calls them.
-
-    Half of every lane in the catalogue is the same few steps — read the recording, clean up the
-    voice, build the captions, check and package. A group is how a definition says "these are one
-    idea", so opening the lane on the canvas shows a step called *Captions from the voice* instead
-    of two nodes an operator has to recognise, and opening the group shows both with every widget
-    on them. Purely presentation: the runner reads ``order``, which knows nothing about groups.
-    """
+    """Nodes this lane shows as one, and what it calls them."""
 
     key: NodeKey
     name: str = Field(min_length=1, max_length=80)

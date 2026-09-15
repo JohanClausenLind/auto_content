@@ -1,14 +1,4 @@
-"""`voice.synthesize` skill contract with interchangeable executors (ADR 0004).
-
-* MockTTS      — deterministic offline audio + synthetic timings (core CI).
-* ElevenLabsTTS — premium, character-level alignment → word timings (respx-tested).
-* Qwen3TTS     — the local narration voice: Apache-2.0 weights, nine built-in timbres, style
-                 control, ten languages. It returns **no** timings, so the word boundaries come
-                 from forced alignment against the audio it just produced (ADR-0004 precedence:
-                 provider → forced alignment → ASR).
-* KokoroTTS    — the local fallback: smaller, English-leaning, and the only executor here whose
-                 timings come from the model itself, which makes it the offline-cheap option.
-"""
+"""`voice.synthesize` skill contract with interchangeable executors (ADR 0004)."""
 
 from __future__ import annotations
 
@@ -40,14 +30,7 @@ class TTSError(Exception):
 
 @dataclass(frozen=True)
 class ScriptCheck:
-    """Whether a take said what it was handed, and how that was decided.
-
-    Three outcomes, not two. `passed=True, similarity=None` is the *unchecked* case — the aligner
-    was `even_split`, or the beat carries a pronunciation respelling the aligner cannot score (see
-    `_time_words`) — and it has to read as a pass, because there is nothing to fail it on. Ranking
-    keeps unchecked takes above every scored one for exactly that reason: a take nobody can score
-    must not lose a retake race to a take that scored 0.4.
-    """
+    """Whether a take said what it was handed, and how that was decided."""
 
     similarity: float | None = None
     diff: str = ""
@@ -80,9 +63,7 @@ class TTSExecutor(ABC):
     def synthesize(self, request: NarrationRequest) -> SynthesisResult: ...
 
     def fingerprint(self) -> dict[str, object]:
-        """Everything about this executor that changes the audio or the timings, for the caller's
-        cache key. The ``NarrationRequest`` covers the voice and the text; this covers the rest —
-        a delivery instruction or a different aligner has to re-speak the beat, not reuse it."""
+        """Executor state beyond the request that changes the audio or timings, for the key."""
         return {}
 
 
@@ -97,8 +78,7 @@ def _wav_bytes(samples: list[int], sample_rate: int) -> bytes:
 
 
 class MockTTS(TTSExecutor):
-    """Deterministic: each word becomes a short tone burst whose length follows its syllable count;
-    the same request always yields identical bytes and timings. Never used for real output."""
+    """Deterministic tone bursts, one per word, sized by syllable count; never for real output."""
 
     provider = "mock"
     SAMPLE_RATE = 24000
@@ -256,19 +236,7 @@ class ElevenLabsTTS(TTSExecutor):
 
 
 class Qwen3TTS(TTSExecutor):
-    """Runs `skills/audio/qwen3tts/run.py` in its own uv environment, then times what came back.
-
-    Two things make this different from :class:`KokoroTTS`. The voice is chosen by timbre name
-    (``ryan``, ``serena``, …) with an optional natural-language ``instruct`` for delivery, or
-    cloned from a reference clip on the Base weights. And Qwen3-TTS prints ``tokens: []`` — it has
-    no word timestamps at all — so the timings are measured here by forced alignment and snapped
-    onto the locked script, exactly the way a human recording is timed in
-    :mod:`content_factory.audio.takes`. ``even_split`` is the offline stand-in; it apportions the
-    measured duration by word length and records itself as ``estimated``, never as measured.
-
-    The transcript the aligner produces is also compared with the script, so a beat the model
-    garbled or truncated fails by name instead of shipping with captions that drift against it.
-    """
+    """Runs `skills/audio/qwen3tts/run.py` in its own uv environment, then times what came back."""
 
     provider = "qwen3tts"
 
@@ -279,6 +247,7 @@ class Qwen3TTS(TTSExecutor):
         device: str = "cuda:0",
         language: str = "english",
         instruct: str = "",
+        describe: str = "",
         ref_audio: Path | None = None,
         ref_text: str = "",
         aligner: str = "faster_whisper",
@@ -296,6 +265,9 @@ class Qwen3TTS(TTSExecutor):
         self.takes = max(1, takes)
         self.language = language
         self.instruct = instruct
+        self.describe = describe
+        """VoiceDesign: the voice as a sentence. It has no built-in timbres, so this replaces the
+        speaker rather than shading it."""
         self.ref_audio = ref_audio
         self.ref_text = ref_text
         self.aligner = aligner
@@ -316,25 +288,17 @@ class Qwen3TTS(TTSExecutor):
             # same way, and the seed is what decides that for a sampling model.
             "seed": self.seed,
             "instruct": self.instruct,
+            "describe": self.describe,
             "ref_audio": self.ref_audio.name if self.ref_audio else "",
             "ref_text": self.ref_text,
             "aligner": self.aligner,
             "aligner_model": self.faster_whisper_model if self.aligner != "even_split" else "",
-            # `takes` is deliberately absent. It is how many tries the executor is allowed, not
-            # what it was asked to say: a beat that passed on take 1 is the same audio whether the
-            # budget was one take or five, and putting the budget in the key would re-speak a
-            # whole film's narration the first time somebody raised it.
+            # `takes` is deliberately absent: a budget, not what was said, and keying on it would
+            # re-speak a whole film the first time somebody raised it.
         }
 
     def _take_seed(self, request: NarrationRequest, take: int) -> int | None:
-        """The seed for one take. Take 0 is exactly what the executor was configured with —
-        usually `None`, which lets the model sample freely and keeps every cached take valid.
-
-        A retake has to differ or it is not a retake: re-running the same seed on a sampling model
-        reproduces the same dropped sentence. So take 1 and up are seeded from the beat id, which
-        makes the *retake* deterministic too — the same beat that failed yesterday retries with
-        the same seeds today, and a take that fixed a beat is reproducible rather than lucky.
-        """
+        """The seed for one take."""
         if take == 0:
             return self.seed
         base = self.seed
@@ -362,11 +326,14 @@ class Qwen3TTS(TTSExecutor):
         if self.ref_audio is not None:
             # Base weights: clone the reference voice. It declares no built-in speakers at all.
             cmd += ["--ref-audio", str(self.ref_audio), "--ref-text", self.ref_text]
+        elif self.describe:
+            # VoiceDesign weights, which also declare no speakers: the description is the voice.
+            cmd += ["--describe", self.describe]
         else:
             cmd += ["--speaker", request.voice.voice_id]
             if self.instruct:
                 cmd += ["--instruct", self.instruct]
-        proc = subprocess.run(  # noqa: S603
+        proc = subprocess.run(
             cmd,
             input=request.spoken_text,
             capture_output=True,
@@ -413,22 +380,14 @@ class Qwen3TTS(TTSExecutor):
                 model=self.faster_whisper_model,
                 compute_type=self.compute_type,
                 timeout_s=self.aligner_timeout_s,
-                # What the voice is speaking, not what Whisper would guess from three seconds of
-                # it. `stage_synthesize_narration` resolves the model for this language too — an
-                # English-only checkpoint cannot align German and does not say so, it just
-                # transcribes nonsense and the script gate blames the take.
+                # The spoken language, not Whisper's guess: an English-only checkpoint transcribes
+                # German as nonsense without saying so, and the script gate blames the take.
                 language=locale_prefix(request.voice.locale),
             )
         except TakeError as exc:
             raise TTSError(f"alignment failed for {request.beat_id}: {exc}") from exc
-        # A beat whose script carries a pronunciation respelling cannot be checked this way, and
-        # the check has to be skipped rather than failed. Measured on the narrated-video lane
-        # (2026-09-08): the beat "Sources: Energimyndigheten, Svenska kraftnät." scored **0.33**
-        # with the raw spelling — the model said "energym and de hetten" — and **0.22** with the
-        # respelling that fixed the audio, because the respelling is deliberately not orthographic
-        # and `base.en` transcribed it as "energi mundinghen". Both numbers measure the aligner's
-        # vocabulary, not whether the model obeyed. Skipped, recorded, and every beat without a
-        # respelling is still gated exactly as before.
+        # A respelled beat is skipped, not failed: the score measures the aligner's vocabulary, not
+        # whether the model obeyed (0.22 on a correct take, journal 2026-09-08).
         respelled = tuple(
             e.term for e in request.lexicon if e.respelling and e.respelling in request.spoken_text
         )
@@ -457,19 +416,7 @@ class Qwen3TTS(TTSExecutor):
         )
 
     def synthesize(self, request: NarrationRequest) -> SynthesisResult:
-        """Speak one beat, and keep speaking it until the aligner agrees it was spoken.
-
-        Qwen3-TTS drops material. Measured on the narrated-video lane (2026-09-10): the beat
-        "A pitcher cannot make a ball turn by throwing it harder. The turn comes from the spin."
-        came back as the second sentence alone — similarity **0.76** against a 0.80 gate — and one
-        bad take failed a fourteen-stage run at stage four. The take was not wrong in a way a
-        better prompt fixes; it is a sampling model, and the next sample said the whole thing.
-
-        So the gate stays where it is and the executor gets a budget of :attr:`takes`. Each retake
-        reseeds (see :meth:`_take_seed`), the best-scoring take is kept, and the beat only fails
-        when every take fell short — which is the signal that the *script* is the problem, not the
-        sample. `last_script_check` names the take, so a retake shows up in the run record.
-        """
+        """Speak one beat, and keep speaking it until the aligner agrees it was spoken."""
         best: tuple[ScriptCheck, bytes, dict, list[WordTiming], TimingSource] | None = None
         for take in range(self.takes):
             with tempfile.TemporaryDirectory(prefix="cf-qwen3tts-") as tmp:
@@ -486,13 +433,8 @@ class Qwen3TTS(TTSExecutor):
             raise TTSError(f"{request.beat_id}: no take was generated")
         check, audio, out, words, source = best
         if not check.passed:
-            # The locale is in the message because the first thing a catastrophic score usually
-            # means is that nobody set it. `narration.locale` is global configuration and a
-            # StoryPlan carries no language of its own, so a French script on a default-config
-            # machine is spoken by an English voice and then scored by an English ASR. Measured
-            # 2026-09-10: "trois choses rendent ce bleu" came back as "trasho's rance sublo" at
-            # 0.29, and "todo el proceso" as "ah the toe a processo" — the gate was right both
-            # times and the message sent the reader hunting for a TTS fault instead.
+            # The locale goes in the message: a catastrophic score usually means nobody set it, and
+            # an English voice plus English ASR on a French script reads like a TTS fault.
             hint = ""
             scored = check.similarity if check.similarity is not None else 1.0
             if scored < 0.6 and locale_prefix(request.voice.locale) == "en":
@@ -526,13 +468,7 @@ class Qwen3TTS(TTSExecutor):
 
 
 class KokoroTTS(TTSExecutor):
-    """Runs `skills/audio/kokoro/run.py` in its own uv environment (torch pins never touch the
-    control plane). The script prints one JSON line with wav path + token timestamps.
-
-    Kept as the fallback after Qwen3-TTS took the narration role (2026-09-07): it is 82M
-    parameters against 1.7B, needs no aligner because it times its own tokens, and runs on CPU in
-    seconds — which is exactly what you want when the card is busy or the aligner is unavailable.
-    """
+    """Fallback TTS: `skills/audio/kokoro/run.py` in its own uv env, on CPU, self-timed."""
 
     provider = "kokoro"
 
@@ -547,10 +483,8 @@ class KokoroTTS(TTSExecutor):
         self.skill_dir = skill_dir
         self.python = python
         self.device = device  # cpu by default: the GPU is held by the image/video models
-        # Kokoro's own single-letter G2P code, resolved and validated by the control plane
-        # (`audio.languages.check_narration_language`). Empty leaves the resolution to run.py,
-        # which applies the same table — one of the two has to be authoritative, and it is this
-        # one, because it is the side that can refuse a run before the weights load.
+        # Kokoro's single-letter G2P code, resolved by `audio.languages.check_narration_language`;
+        # the control plane is authoritative because it can refuse a run before the weights load.
         self.lang_code = lang_code
 
     def synthesize(self, request: NarrationRequest) -> SynthesisResult:
@@ -570,7 +504,7 @@ class KokoroTTS(TTSExecutor):
             "--device",
             self.device,
         ]
-        proc = subprocess.run(  # noqa: S603
+        proc = subprocess.run(
             cmd,
             input=request.spoken_text,
             capture_output=True,

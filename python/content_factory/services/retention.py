@@ -1,5 +1,4 @@
-"""Retention jobs (25, phase 13): sweep expired artifacts/audit rows per policy, honouring
-legal hold. Retention 0 = keep forever. Dry-run first; every sweep is itself audited."""
+"""Retention jobs (25, phase 13): sweep expired artifacts/audit rows per policy."""
 
 from __future__ import annotations
 

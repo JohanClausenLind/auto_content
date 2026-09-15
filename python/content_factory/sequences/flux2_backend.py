@@ -1,23 +1,4 @@
-"""FLUX.2-dev multi-reference backend for the sequence engine, driven through local ComfyUI.
-
-The reason this exists beside ``hidream_backend`` is measured rather than architectural. Over
-thirty staged runner anchors HiDream-O1 held the *world* — one track across every frame,
-consecutive-frame churn 9.6 to 19.8 against a threshold of 42 — and did not hold the *character*:
-four outfit combinations, race bibs appearing with different numbers, two frames reading as a
-different person. A single reference is a pose hint. Identity needs several references composed at
-once, which is what FLUX.2-dev's chained ``ReferenceLatent`` conditioning does and what this
-backend reaches.
-
-It talks to ComfyUI rather than to a bespoke server, because that is how LTX-2.5 already runs here:
-one governed ``ComfyWorkflowPackage`` per graph shape, parameters injected only through declared
-bindings, and every image uploaded as a file rather than inlined. The control plane never imports
-torch.
-
-Reference ORDER is the contract, and it is the caller's to keep. Every reference arrives through
-the same node type, so the graph cannot tell an identity sheet from a depth pass —
-``reference_roles`` records what each slot was meant to be so a run's provenance says which sheet
-was in which slot, and a later frame can be conditioned the same way.
-"""
+"""FLUX.2-dev multi-reference backend for the sequence engine, driven through local ComfyUI."""
 
 from __future__ import annotations
 
@@ -44,11 +25,7 @@ DEFAULT_ENDPOINT = "http://127.0.0.1:8188"
 
 
 class Flux2ReferenceBackend(ReferenceEditBackend):
-    """Text plus up to six reference images to one frame, composed by FLUX.2-dev.
-
-    ``workdir`` is where uploaded references and collected outputs land; it must be a real
-    directory because ComfyUI is handed file paths, not bytes.
-    """
+    """Text plus up to six reference images to one frame, composed by FLUX.2-dev."""
 
     name = "flux2-dev"
 
@@ -113,13 +90,7 @@ class Flux2ReferenceBackend(ReferenceEditBackend):
         *,
         attempt: int,
     ) -> bytes:
-        """The anchor leads the reference chain, then whatever else the frame is conditioned on.
-
-        Anchor first is what makes this hub-and-spoke rather than a chain of edits: every frame is
-        composed against the same first image, so drift cannot accumulate frame over frame. The
-        seed moves with the attempt so a drift-failed frame genuinely regenerates instead of
-        returning the same picture.
-        """
+        """The anchor leads the reference chain, then whatever else the frame is conditioned on."""
         refs = (anchor_png, *conditioning.reference_pngs)
         if self.send_control_as_reference and conditioning.control_png:
             refs = (*refs, conditioning.control_png)
@@ -207,9 +178,7 @@ class Flux2ReferenceBackend(ReferenceEditBackend):
             params,
             output_dir=self.workdir / "comfy",
             timeout_s=self.timeout_s,
-            # Never the websocket. ComfyUI runs here with --cache-none for the GGUF stack, which
-            # makes it re-execute every node and go quiet long enough for a socket read to look
-            # like a hang; the LTX path settled on polling /history for the same reason.
+            # Never the websocket.
             collect="history",
         )
         if result.state != ExecutionState.completed or not result.outputs:

@@ -1,14 +1,4 @@
-"""Build a ShotPlan whose characters are driven by baked CMU mocap clips.
-
-    uv run python scripts/make_mocap_shot_plan.py [--out fixtures/shots/two_hander_mocap.json]
-
-Every camera is computed from the clip's own geometry rather than typed by hand. That matters for
-one measured reason: HiDream honours the pose skeleton only when the figures are large in frame and
-ignores it at 33 % body height, so the framing is solved to put the pair at a target height
-fraction instead of being guessed. The solver reads each clip's actual root positions, works out
-how wide the pair gets and how tall a figure is, and places the camera at the distance where the
-taller figure fills the requested fraction of the frame with both people inside it.
-"""
+"""Build a ShotPlan whose characters are driven by baked CMU mocap clips."""
 
 from __future__ import annotations
 
@@ -20,17 +10,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 CLIPS = Path("/mnt/fast/models/blender-assets/clips")
 
-# What each rig looks like once drawn, keyed by asset so it is the SAME description in every shot.
-#
-# Not decoration, and not optional: `compile_controls` refuses a staged plan without it, because
-# the Blender compiler renders depth and normals of the bare MakeHuman mesh and the image model
-# draws exactly that — an untextured grey mannequin, measured over ten anchors. It is also what
-# `shots.prompt_compile.subject_clause` calls "the only thing keeping the model from re-dressing
-# the same character every frame": the mesh carries a body and nothing else, so continuity of
-# clothing across six shots lives here or nowhere.
-#
-# Written as descriptions rather than negations, for the reason `sequences.styles` records: these
-# weights run at guidance 0, where a "no ..." clause is a hint and a description is an instruction.
+# What each rig looks like once drawn, the SAME description in every shot: the bare mesh renders as
+# a grey mannequin, so clothing continuity lives here or nowhere. Descriptions, not negations.
 APPEARANCE: dict[str, str] = {
     "man_01": "a man in his thirties, dark cropped hair, a charcoal wool overcoat over a grey"
     " crew-neck, dark trousers, brown leather boots",
@@ -40,10 +21,8 @@ APPEARANCE: dict[str, str] = {
     " trousers, grey walking shoes",
 }
 
-# Six shots that tell a small story of two people, chosen from the affection half of the library.
-# `azimuth_deg` is where the camera sits relative to the pair's own facing, so a run gets real
-# camera variety instead of six front-on shots. `body_fraction` is the target height of the taller
-# figure in frame.
+# Six shots of two people from the affection half of the library. `azimuth_deg` is the camera's
+# bearing relative to the pair's own facing; `body_fraction` the taller figure's target height.
 SHOTS = [
     {
         "clip": "cmu_18_19_01",
@@ -114,12 +93,7 @@ def load(name: str) -> dict:
 
 
 def pair_bounds(clip: dict) -> tuple[tuple[float, float], float, float]:
-    """``(centre_xy, radius, subject_top_z)`` of everything the pair does, in clip-offset space.
-
-    The vertical extent is taken from the highest hip the clip reaches plus the head-above-hip of
-    a standing figure. A kneeling or sitting clip therefore reports a shorter subject, which is
-    what stops the framing solve from pushing the camera back for a height nobody occupies.
-    """
+    """``(centre_xy, radius, subject_top_z)`` of everything the pair does, in clip-offset space."""
     origin = clip["origin"]
     xs: list[float] = []
     ys: list[float] = []
@@ -138,18 +112,7 @@ def pair_bounds(clip: dict) -> tuple[tuple[float, float], float, float]:
 
 
 def solve_camera(clip: dict, shot: dict) -> dict:
-    """Place the camera so the subject fills ``body_fraction`` of the frame height, whole.
-
-    A subject of height ``h`` at distance ``d`` through a lens of focal length ``f`` on a sensor of
-    height ``sensor_h`` covers ``f * h / (d * sensor_h)`` of the frame. Solve that for ``d``, aim
-    at the MIDDLE of the subject's vertical extent, then push back if the pair is wider than the
-    frame at that distance.
-
-    Aiming at the middle rather than at chest height is the part that matters: a camera aimed at
-    1.05 m has to cover 2.1 m of frame to keep a 1.76 m figure whole, so the same distance that
-    predicts a 0.78 body fraction delivers a measured 0.50 and crops the feet. That was the first
-    version of this solve, and the rendered layout caught it.
-    """
+    """Place the camera so the subject fills ``body_fraction`` of the frame height, whole."""
     (cx, cy), radius, top = pair_bounds(clip)
     lens = float(shot["lens_mm"])
     sensor_h = SENSOR_MM * HEIGHT / WIDTH

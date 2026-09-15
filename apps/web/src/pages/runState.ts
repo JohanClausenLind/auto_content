@@ -39,11 +39,7 @@ export function formatWhen(iso: string): string {
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
 }
 
-/**
- * A finish time as a clock reading: "14:32", or "Thu 14:32" when it is not today. An estimate
- * minutes away is easiest to act on as a time of day, and one that lands tomorrow has to say so
- * or it reads as being twelve hours early.
- */
+/** A finish time as a clock reading: "14:32", or "Thu 14:32" when not today. */
 export function formatFinish(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";

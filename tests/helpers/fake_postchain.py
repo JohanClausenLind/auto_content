@@ -1,5 +1,4 @@
-"""Stand-in for ``uv run … skills/video/postchain/run.py``: reads the job file and writes plausible
-frames so the chain stages can be tested without any of the five tools."""
+"""Stand-in for ``uv run … skills/video/postchain/run.py``: reads the job file."""
 
 from __future__ import annotations
 

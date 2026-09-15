@@ -1,15 +1,4 @@
-/**
- * The run history in the workspace dock, and the frame-review gate answered from it.
- *
- * Everything produced on this machine came from local runs that write no database row, so the
- * app's run list could not see any of it — 226 runs and 35 films reachable only by knowing the
- * path on disk — and the gate those runs park at could only be answered from a terminal.
- *
- * These tests pin what that has to get right: the history is a list on the left that stays put
- * while you look at runs, a run opens over the canvas without leaving the workspace, the drawings
- * waiting for a person are counted where they can be seen, and a verdict recorded here is the same
- * verdict `content-factory frames review` would have written.
- */
+/** The run history in the workspace dock. */
 
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

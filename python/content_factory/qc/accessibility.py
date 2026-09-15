@@ -20,7 +20,7 @@ def check_flashing(
 ) -> QCResult:
     """WCAG 2.3.1-style general flash detection: count large opposing luminance swings."""
     sample = min(frames, fps * 10)
-    out = subprocess.run(  # noqa: S603
+    out = subprocess.run(
         [
             "ffmpeg",
             "-v",

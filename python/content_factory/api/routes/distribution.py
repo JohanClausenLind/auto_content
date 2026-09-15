@@ -1,5 +1,4 @@
-"""/v1/distribution: profiles (immutable authorized revisions) and the kill switch. Both are
-step-up-gated sensitive actions; models can never call these (no MCP tool exists for them)."""
+"""/v1/distribution: profiles (immutable authorized revisions) and the kill switch."""
 
 from __future__ import annotations
 

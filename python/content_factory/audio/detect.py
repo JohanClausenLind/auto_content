@@ -1,19 +1,4 @@
-"""Artifact / noise detection: measure one speech take before deciding what to do to it.
-
-The first step of every generated-audio chain in this repo. It answers three questions with
-numbers rather than taste:
-
-* is the asset usable at all (level, clipping, DC, dead silence)?
-* is it dirty (noise floor, spectral flatness) — i.e. worth a cleanup pass?
-* is it band-limited (a 22/24 kHz TTS has nothing above 11-12 kHz) — i.e. worth band extension?
-
-The measurements are material-agnostic; ``profile`` decides which crossings count as defects, so
-the same code serves a narration beat and a generated rain bed without pretending a flat spectrum
-means the same thing in both.
-
-Everything is derived from one decode of the file: FFmpeg to raw mono float samples, then NumPy.
-No model, no network, deterministic, and cheap enough to run on every beat.
-"""
+"""Artifact / noise detection: measure one speech take before deciding what to do to it."""
 
 from __future__ import annotations
 
@@ -129,11 +114,7 @@ def detect_artifacts(
     profile: AudioProfile = AudioProfile.speech,
     thresholds: AudioArtifactThresholds | None = None,
 ) -> AudioArtifactReport:
-    """Measure ``path`` and record every threshold it crosses.
-
-    The measurements are the same for every kind of material; the ``profile`` decides which
-    crossings are defects. See :meth:`AudioArtifactThresholds.for_profile`.
-    """
+    """Measure ``path`` and record every threshold it crosses."""
     th = thresholds or AudioArtifactThresholds.for_profile(profile)
     samples, sample_rate = decode_mono(path)
     duration_ms = max(1, round(samples.size * 1000 / sample_rate))

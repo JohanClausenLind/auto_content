@@ -1,16 +1,4 @@
-"""Expected-total-cost placement: estimate every feasible action, choose, explain, reserve.
-
-Accounting identity per candidate:
-    expected_total = all_attempt_compute + storage + transfers + requests + licenses + retry
-All-attempt compute bills the ACTUAL billable allocation: useful execution plus other billed
-time (provisioning, image pull, model load, idle retention, drain), with the offer's minimum
-duration and rounding increment applied once. Rates are per allocation — GPU count is never
-multiplied in a second time. Completion time is estimated separately: queue delay and failed
-provisioning delay delivery without being billed.
-
-A running task is never migrated for a slightly cheaper offer: ``should_migrate`` requires the
-expected remaining savings to exceed transfer, restart, and reliability switch costs.
-"""
+"""Expected-total-cost placement: estimate every feasible action, choose, explain, reserve."""
 
 from __future__ import annotations
 
@@ -84,9 +72,7 @@ def choose_placement(
     ledger: CostLedger | None = None,
     policy_version: str = POLICY_VERSION,
 ) -> PlacementDecision:
-    """Deterministic: filter infeasible candidates with reasons, rank the rest by expected total
-    cost (completion time, then id, break ties), then atomically reserve budget when a ledger is
-    given. Budget failure is a typed pause, never a silent downgrade."""
+    """Reject infeasible candidates with reasons, rank the rest by cost, then reserve budget."""
     rejected: list[RejectedPlacement] = []
     feasible: list[CandidateEstimate] = []
     for c in sorted(candidates, key=lambda c: c.candidate_id):

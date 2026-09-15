@@ -1,8 +1,4 @@
-"""Model-backed copywriting for the write_copy stage (local models only, via the gateway).
-
-Off by default (`execution.local_copywriter`); the fixture writer keeps offline runs
-deterministic. When enabled, drafts come from the default local catalog (qwen38-ridge) with the
-gateway's schema-validated retries; operator edit overlays always win over drafted text."""
+"""Model-backed copywriting for the write_copy stage (local models only, via the gateway)."""
 
 from __future__ import annotations
 
@@ -72,16 +68,12 @@ and the two disagreeing is how a reply gets truncated after the model was told i
 CARD_MAX_CHARS = 90
 
 COPY_OPTIONS = GatewayOptions(
-    # The schema is a decoding constraint here, not a paragraph in the prompt, so the model cannot
-    # emit anything but a conforming object and the retry loop is a safety net rather than the
-    # mechanism. Thinking is off because the reasoning tokens come out of the same budget as the
-    # answer, and a caption is not a reasoning problem.
+    # The schema constrains decoding, so the retry loop is only a safety net. Thinking is off
+    # because reasoning tokens share the answer's budget and a caption is not a reasoning problem.
     structured_output=True,
     think=False,
-    # Released the moment the copy is written. A lane that drafts a caption and then generates an
-    # anchor otherwise arrives at HiDream's ~19.4 GB load with 12 GB of text model still resident —
-    # the fragmentation OOM `services.local.free_the_gpu` exists to clean up after. Unloading here
-    # means there is nothing to clean up.
+    # Unload at once: a lane that captions and then generates an anchor otherwise meets HiDream's
+    # ~19.4 GB load with 12 GB of text model still resident (the OOM free_the_gpu cleans up).
     keep_alive=0,
 )
 
@@ -97,13 +89,7 @@ passed through, so a typo cannot become the whole tone instruction."""
 
 
 def gateway_facts(result) -> dict[str, object]:
-    """What one model call cost, in the shape a stage puts in its facts.
-
-    The gateway has returned tokens, wall clock and dollars since it was written and every caller
-    threw all three away, keeping only the model alias. So a run's report said *which* model wrote
-    the copy and never what it cost or how long it took — the two numbers an operator watching a
-    local 8B model on a shared card actually wants (STATUS 1657).
-    """
+    """What one model call cost, in the shape a stage puts in its facts."""
     return {
         "writer": result.model_alias,
         "input_tokens": result.input_tokens,
@@ -198,9 +184,7 @@ def draft_carousel(campaign: ContentCampaign, *, card_count: int, tone: str = "n
 
 
 def draft_hook(campaign: ContentCampaign, *, excerpt_text: str) -> str:
-    """Rewrite a short's opening line as a hook. The rewritten line loses its claim links in the
-    derived plan (a new statement is a new claim), so the model must reframe — never add numbers,
-    names, or facts that are not already in the line."""
+    """Rewrite a short's opening line as a hook."""
     result = _gateway().complete_structured(
         _SKILL,
         PRESETS["private_local"],

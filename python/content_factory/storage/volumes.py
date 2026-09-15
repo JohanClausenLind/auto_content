@@ -1,11 +1,4 @@
-"""Non-destructive volume discovery, stable-identity write guards, and shared-space accounting.
-
-Discovery only reads: mounts, sizes, writability, rotational class. Binding a role writes one
-marker file at the chosen root; verification refuses to write when the expected volume is not
-where it was bound — a reboot that reorders devices, a replacement disk at the same mount path,
-a read-only remount, or a missing drive must queue/fail the affected work, never silently fill
-the boot filesystem. Nothing here formats, repartitions, or deletes existing files.
-"""
+"""Non-destructive volume discovery, stable-identity write guards, and shared-space accounting."""
 
 from __future__ import annotations
 
@@ -58,8 +51,6 @@ class StorageGuardError(Exception):
 
 
 # The kernel's mangle_path escapes exactly space, tab, newline, and backslash as octal.
-# A targeted unescape keeps UTF-8 mount paths intact — decode("unicode_escape") would
-# reinterpret their bytes as latin-1 and mojibake every non-ASCII path.
 _MOUNT_ESCAPE = re.compile(r"\\(040|011|012|134)")
 
 
@@ -87,8 +78,7 @@ def parse_mounts(text: str) -> list[tuple[str, str, str]]:
 
 
 def volume_identity(path: Path) -> str:
-    """Stable volume identity for the filesystem holding ``path``: the filesystem UUID when
-    findmnt can report it, else the device number (stable within a boot, refreshed on bind)."""
+    """Stable volume identity for the filesystem holding ``path``: the filesystem UUID."""
     try:
         proc = subprocess.run(  # noqa: S603
             ["findmnt", "-no", "UUID", "--target", str(path)],  # noqa: S607
@@ -148,8 +138,7 @@ def discover_volumes(mounts_text: str | None = None) -> tuple[VolumeInfo, ...]:
 
 
 def bind_role(assignment: RoleAssignment) -> None:
-    """Explicit setup step: verify the volume identity, create the root, write the marker.
-    Refuses when the mounted volume is not the one the assignment names."""
+    """Explicit setup step: verify the volume identity, create the root, write the marker."""
     root = Path(assignment.root_path)
     probe = root if root.exists() else root.parent
     if not probe.exists():
@@ -179,8 +168,7 @@ class RoleCheck:
 
 
 def verify_role(assignment: RoleAssignment) -> RoleCheck:
-    """Run at worker start and before writes. Never creates the root: an absent volume fails or
-    queues the operation instead of silently writing to whatever is at the path."""
+    """Run at worker start and before writes."""
     root = Path(assignment.root_path)
     if not root.is_dir():
         return RoleCheck(False, f"root {root} is absent — volume not mounted or path removed")
@@ -231,8 +219,7 @@ def safe_child(root: Path, relative: str) -> Path:
 
 @dataclass
 class StorageAccountant:
-    """Free-space reservations accounted per VOLUME, not per role: two roles sharing one
-    filesystem cannot both promise the same bytes. In-memory, thread-safe (mirrors CostLedger)."""
+    """Free-space reservations accounted per VOLUME, not per role."""
 
     volume_free: dict[str, int]  # volume_id -> currently free bytes
     _reserved: dict[str, int] = field(default_factory=dict)  # volume_id -> reserved bytes

@@ -196,9 +196,8 @@ def test_shot_planning_graph_compiles_with_render_cpu_controls() -> None:
 
 
 # --- dropped files ----------------------------------------------------------------------------
-#
-# A source node carries an artifact key, and everything the run needs to know about the file is
-# read out of that key rather than taken on trust from the graph document.
+# A source node carries an artifact key, and everything the run needs to know about the file is read
+# out of that key rather than taken on trust from the graph document.
 
 WS = TEMPLATE.workspace_id
 KEY = f"{WS}/originals-audio/ab/" + "a" * 64 + ".wav"
@@ -301,12 +300,7 @@ def test_the_deliverables_terminal_is_a_marker_not_a_stage() -> None:
 
 
 def test_an_inspector_with_nothing_wired_into_it_is_refused() -> None:
-    """The screenshot case: QC Deliverable and Destination Packages joined only to each other.
-
-    Dependencies come only from links, so an inspector with nothing upstream is not "last" — it
-    is unordered, and would read an empty deliverable folder. The canvas calls that an error; so
-    does the compiler, which is where the CLI and the MCP tool arrive.
-    """
+    """The screenshot case: QC Deliverable and Destination Packages joined only to each other."""
     g = graph(
         node("brief", "input.brief", values={"topic": "a film", "quality": "demo"}),
         node("story", "plan_story"),
@@ -329,9 +323,7 @@ def test_an_inspector_with_nothing_wired_into_it_is_refused() -> None:
 
 
 def test_a_packager_ordered_only_through_qc_is_accepted() -> None:
-    """Ordering is what the wire is for, and it is transitive: a packager whose only link comes
-    from a QC node that depends on the render still runs after the render. Its own deliverable
-    input is a canvas-level requirement, not an ordering one — the stage reads the run folder."""
+    """Ordering is what the wire is for, and it is transitive."""
     g = graph(
         node("brief", "input.brief", values={"topic": "a film", "quality": "demo"}),
         node("story", "plan_story"),
@@ -399,9 +391,7 @@ def _video_graph(groups: tuple[WorkspaceGroup, ...] = ()) -> WorkspaceGraph:
 
 
 def test_folding_a_graph_compiles_to_exactly_the_same_run() -> None:
-    """The property the whole feature rests on. A group is how the canvas *draws* a lane; if it
-    could change what runs, every folded lane would be a different film from the one an operator
-    read, and the compiler would need to learn a second graph format."""
+    """The property the whole feature rests on."""
     flat = compile_graph(_video_graph(), TEMPLATE)
     folded = compile_graph(
         _video_graph(
@@ -422,8 +412,7 @@ def test_folding_a_graph_compiles_to_exactly_the_same_run() -> None:
 
 
 def test_the_publish_node_says_where_it_would_have_gone() -> None:
-    """A compile preview is where an operator checks what a Run does. "Publishing is skipped" is
-    half the answer; the other half is which destinations were lit up on the node."""
+    """A compile preview is where an operator checks what a Run does."""
     g = graph(
         node("brief", "input.brief", values={"topic": "dragons", "quality": "demo"}),
         node("story", "plan_story"),

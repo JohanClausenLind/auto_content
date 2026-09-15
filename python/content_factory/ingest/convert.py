@@ -1,37 +1,4 @@
-"""Converting what an operator actually has into what the pipeline actually reads.
-
-The upload allowlist is deliberately narrow — `mp4`, `mov`, `wav`, `mp3`, `flac`, `png`, `jpg`,
-`webp` — because every stage downstream assumes those. That narrowness was also a wall: an OBS
-screen recording is a Matroska file, so dropping one on the canvas answered *"file type
-'video/x-matroska' is not accepted"*, and the operator's next move was a terminal.
-
-This module is the missing step between those two facts. A handful of extra containers are
-accepted **on the condition that they are converted first**, into the formats the pipeline
-already delivers in: H.264/AAC in MP4 for picture, PCM WAV for sound, PNG for stills.
-
-Three things make it cheap and safe:
-
-* **Remux before re-encode.** A screen recording is usually already H.264 with AAC audio, so the
-  streams are copied into an MP4 container — seconds, and not one pixel re-encoded. Only a file
-  whose codecs cannot be delivered (VP9, Opus, MPEG-4 Part 2) is actually transcoded.
-* **Only the first video and audio stream are mapped.** Matroska carries subtitles, chapters and
-  font attachments that MP4 cannot hold, and a blind ``-c copy`` fails on them. Dropping them is
-  a real loss of information, so it is reported rather than silent.
-* **The type still comes from the bytes.** Nothing here decides what a file is: the caller has
-  already sniffed it through :mod:`content_factory.ingest.uploads`, and only the MIMEs in
-  :data:`CONVERTIBLE` — each verified against ``python-magic`` and against this host's ffmpeg —
-  ever reach a converter. An extension is never consulted.
-
-Not accepted, on purpose: MPEG-TS, whose bytes ``python-magic`` reports as
-``application/octet-stream`` on this host. Accepting that MIME would accept every unidentifiable
-file in exchange for one container.
-
-The module also answers a second question, about files the allowlist already accepts:
-:func:`blank_picture` — *is this MP4 a film, or a recording with nothing to look at?* A phone, a
-meeting recorder and a screen recorder pointed at a blanked display all write MP4, and the bytes
-say ``video/mp4`` whether the picture is an interview or an hour of black. Only the picture can
-tell those apart, so it is measured rather than assumed.
-"""
+"""Converting what an operator actually has into what the pipeline actually reads."""
 
 from __future__ import annotations
 
@@ -46,9 +13,8 @@ from content_factory.qc.media import ffprobe
 Kind = Literal["video", "audio", "image"]
 Action = Literal["none", "remux", "transcode", "rewrite"]
 
-# Sniffed MIME -> what it is. Accepted only because the converter below can turn each into the
-# canonical format for its kind; the MIME strings were read off `magic.from_file(mime=True)` on
-# this host (2026-09-09) rather than assumed.
+# Sniffed MIME -> kind, only for what the converter below can canonicalise; the strings were read
+# off `magic.from_file(mime=True)` on this host (2026-09-09), not assumed.
 CONVERTIBLE: dict[str, Kind] = {
     "video/x-matroska": "video",  # .mkv — OBS, ffmpeg's own default for screen capture
     "video/webm": "video",
@@ -60,9 +26,8 @@ CONVERTIBLE: dict[str, Kind] = {
     "image/bmp": "image",
 }
 
-# What each kind becomes. These are the formats the rest of the repo already assumes: H.264 in
-# MP4 with faststart is what media QC probes and what every destination package carries, PCM WAV
-# is what the audio chain reads, PNG is what the renderer and the sequence engine write.
+# What each kind becomes: the formats the rest of the repo assumes (H.264 MP4 with faststart for
+# QC and packaging, PCM WAV for the audio chain, PNG for the renderer and sequence engine).
 TARGET: dict[Kind, tuple[str, str]] = {
     "video": ("mp4", "video/mp4"),
     "audio": ("wav", "audio/x-wav"),
@@ -290,12 +255,7 @@ def _verify(path: Path, *, expect: Kind) -> None:
 
 
 def convert_media(path: Path, sniffed_mime: str, out_dir: Path) -> Converted:
-    """Convert ``path`` into the canonical format for its kind, or return it untouched.
-
-    ``sniffed_mime`` must be what ``ingest.uploads`` sniffed from the bytes. A MIME that is
-    neither already accepted nor in :data:`CONVERTIBLE` is not this module's business: it returns
-    the file unchanged and lets the allowlist refuse it.
-    """
+    """Convert ``path`` into the canonical format for its kind, or return it untouched."""
     kind = CONVERTIBLE.get(sniffed_mime)
     if kind is None:
         return Converted(
@@ -362,13 +322,7 @@ def _span(seconds: float) -> str:
 
 
 def _grey_frame(path: Path, at_s: float) -> bytes | None:
-    """One frame, seeked to and shrunk to a greyscale thumbnail. ``None`` if it cannot be had.
-
-    Input seeking (``-ss`` *before* ``-i``) so the cost is a seek and a GOP rather than a decode
-    from the start of the file. PNG through Pillow rather than a raw pipe because ``ffmpeg()`` —
-    the repo's one entry point — reads its output as text, which would mangle raw bytes; the same
-    trade ``qc.delivery`` makes for the same reason.
-    """
+    """One frame, seeked to and shrunk to a greyscale thumbnail."""
     from PIL import Image, UnidentifiedImageError
 
     proc = subprocess.run(  # noqa: S603
@@ -408,21 +362,7 @@ def _grey_frame(path: Path, at_s: float) -> bytes | None:
 
 
 def blank_picture(path: Path) -> BlankPicture | None:
-    """Why this video file is really a recording — or ``None`` when it carries a picture.
-
-    An MP4 is the container a phone, a meeting recorder and a screen recorder with a blanked
-    display all reach for, so "the file is video/mp4" answers nothing about whether there is
-    anything to look at. This is the measurement that does answer it, and it is deliberately hard
-    to satisfy: a file qualifies only when it has sound *and* its picture is either absent, one
-    attached still, or unchanging — black or otherwise — everywhere it was sampled.
-
-    A file with no audio is never blank-pictured here even if every frame is black: the whole
-    point of the question is "can the sound stand on its own", and silence cannot.
-
-    The verdict is a reason rather than a boolean because every caller has to say it out loud. An
-    operator whose hour of interview was taken as a recording, or refused as a film, is owed the
-    measurement that decided it.
-    """
+    """Why this video file is really a recording — or ``None`` when it carries a picture."""
     try:
         video, audio, duration = _probe(path)
     except ConversionError:

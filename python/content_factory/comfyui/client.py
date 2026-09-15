@@ -1,9 +1,4 @@
-"""ComfyUIProvider (19.1): typed adapter over the documented ComfyUI HTTP/WS API.
-
-Production jobs submit *validated, allowlisted* API-format workflows from a signed
-:class:`ComfyWorkflowPackage`. Parameter injection is limited to the package's declared bindings —
-never arbitrary node or path mutation. Everything is recorded as :class:`ComfyProvenance`.
-"""
+"""ComfyUIProvider (19.1): typed adapter over the documented ComfyUI HTTP/WS API."""
 
 from __future__ import annotations
 
@@ -181,12 +176,7 @@ def validate_against_object_info(
 
 
 def _read_journal(journal: Path | None) -> dict[str, Any] | None:
-    """The submit journal, or None if there is nothing usable there.
-
-    A module-level function rather than a method so the blocking read is not inside a coroutine:
-    it is one small file and the cost is nil, but a synchronous read in an async body is a smell
-    worth not having, and ruff's ASYNC240 says so.
-    """
+    """The submit journal, or None if there is nothing usable there."""
     if journal is None or not journal.is_file():
         return None
     try:
@@ -331,21 +321,7 @@ class ComfyUIClient:
         poll_interval_s: float = 2.0,
         journal: Path | None = None,
     ) -> ExecutionResult:
-        """Validate -> submit -> wait -> import outputs -> provenance. Cancellable.
-
-        ``collect="websocket"`` streams progress events and reconciles with ``/history``.
-        ``collect="history"`` never opens the socket: it polls ``/history/{prompt_id}`` until the
-        prompt has a status. ComfyUI started with ``--cache-none`` (required for the LTX GGUF stack)
-        suppresses the socket's output events, so that path is the one the video backends use.
-
-        ``journal`` is where the ``prompt_id`` is written the instant the prompt is accepted, and
-        it is what makes a rerun safe. Without it, a process that died after submitting had no
-        record of the job it had queued: a rerun submitted the identical workflow again, and on the
-        LTX GGUF stack that is another forty seconds of GPU — or two prompts racing for a card that
-        fits one. With it, a rerun for the same workflow finds the journal, asks ``/history`` what
-        became of that prompt, and **adopts** it: a finished prompt's outputs are imported without
-        generating anything, and a still-running one is waited on. See :meth:`_adopt_submitted`.
-        """
+        """Validate -> submit -> wait -> import outputs -> provenance."""
         workflow = inject_parameters(package, params)
         info = await self.object_info()
         problems = validate_against_object_info(
@@ -422,10 +398,8 @@ class ComfyUIClient:
             self._record_submitted(journal, prompt_id, package, workflow)
         else:
             prompt_id = adopted
-            # An adopted prompt's events are already gone: the socket only carries what happens
-            # after it connects, and this prompt started in a process that has since exited. So the
-            # watcher will see nothing and `_finish` reconciles against /history, which is where
-            # the answer actually is.
+            # An adopted prompt's events are already gone (the socket only carries what happens
+            # after it connects), so the watcher sees nothing and `_finish` reconciles via /history.
             stop.set()
 
         async def cancel_watch() -> None:
@@ -468,8 +442,7 @@ class ComfyUIClient:
         package: ComfyWorkflowPackage,
         workflow: Mapping[str, Mapping[str, Any]],
     ) -> None:
-        """Write the journal the instant the prompt is accepted. tmp + replace, because a crash
-        halfway through this write is exactly the crash the journal exists for."""
+        """Write the journal the instant the prompt is accepted."""
         if journal is None:
             return
         record = {
@@ -491,13 +464,7 @@ class ComfyUIClient:
     async def _adopt_submitted(
         self, journal: Path | None, workflow: Mapping[str, Mapping[str, Any]]
     ) -> str | None:
-        """The prompt id of a job already queued for this exact workflow, or None.
-
-        Four cases, and each has to be told apart: no journal (submit); a journal for a different
-        workflow (submit, and the old prompt is not ours to adopt); a journal whose prompt ComfyUI
-        has never heard of, because it restarted (submit); and a journal whose prompt is in the
-        history or the queue (adopt, and generate nothing).
-        """
+        """The prompt id of a job already queued for this exact workflow, or None."""
         record = _read_journal(journal)
         if record is None:
             return None
@@ -523,8 +490,7 @@ class ComfyUIClient:
         return prompt_id if prompt_id in queued else None
 
     def _clear_submitted(self, journal: Path | None, state: ExecutionState) -> None:
-        """Drop the journal once the prompt has an outcome. A failed prompt's journal goes too:
-        it has a status in `/history`, so a rerun would adopt it and re-import the same failure."""
+        """Drop the journal once the prompt has an outcome."""
         if journal is None or state == ExecutionState.running:
             return
         journal.unlink(missing_ok=True)

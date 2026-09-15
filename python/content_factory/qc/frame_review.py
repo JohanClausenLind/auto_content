@@ -1,21 +1,4 @@
-"""Deterministic findings about generated frames, and the contact sheet a reviewer looks at.
-
-These checks exist because of specific failures that were obvious in the pictures and invisible
-to the code. Each one is here for a reason that was measured, not imagined:
-
-* **tonal collapse** — an illustration style crushed 31 % of pixels to near-black and left only
-  36 % midtones, where a photograph runs 60-80 %. The frames looked like photocopies.
-* **half-applied colour** — a style saying "monochrome, no colour" still left 39 % of pixels
-  saturated, so the image was neither colour nor grey. That mismatch is what reads as *weird*.
-* **edge intrusion** — figures entering from the frame edges, or a subject cut in half, because
-  the staging did not fit the lens.
-* **background churn** — consecutive frames of one film inventing a new street each time, which
-  is what a sequence looks like when nothing anchors it.
-
-What they cannot judge is whether a frame makes bodily or narrative sense: whether these are the
-same two people as the last frame, whether the pose is anatomically possible, whether there are
-two figures where two were staged. That is what the contact sheet and a reviewer are for.
-"""
+"""Deterministic findings about generated frames, and the contact sheet a reviewer looks at."""
 
 from __future__ import annotations
 
@@ -95,8 +78,7 @@ def _load(png: bytes) -> Image.Image:
 
 
 def _channel_values(img: Image.Image, channel: str | None = None) -> list[int]:
-    """Every pixel of one channel as ints. Goes through ``tobytes`` rather than ``getdata``,
-    which Pillow deprecates in 14, and which pyright cannot type as iterable anyway."""
+    """Every pixel of one channel as ints."""
     band = img.convert("L") if channel is None else img.convert("HSV").getchannel(channel)
     return list(band.tobytes())
 
@@ -129,17 +111,7 @@ def tonal_findings(png: bytes) -> list[FrameFinding]:
 
 @functools.lru_cache(maxsize=8)
 def _tile_detail(png: bytes):
-    """Per-16px-tile high-pass standard deviation, at the frame's NATIVE size.
-
-    Native, and that is the whole point: every other check here works on a 640x360 downscale, and
-    a downscale is a low-pass filter — it destroys exactly the signal this measures. Measuring
-    texture on `_load`'s output would report the resampler's noise, not the picture's.
-
-    Cached because two checks read it and a 4 MP frame costs a full Gaussian blur plus a reshape
-    to produce: `dead_flat_fraction` asks how MUCH of the frame is flat, `blank_panel_fraction`
-    asks WHERE, and computing the same array twice per review is pure waste. Keyed on the PNG
-    bytes, so it can never serve one frame's tiles for another.
-    """
+    """Per-16px-tile high-pass standard deviation, at the frame's NATIVE size."""
     import numpy as np
     from PIL import ImageFilter
 
@@ -192,13 +164,7 @@ BLANK_PANEL_PURITY = 0.97
 
 
 def blank_panel_fraction(png: bytes) -> float:
-    """Largest edge-anchored band of the frame that carries no picture at all, 0-1.
-
-    Edge-anchored, and that is the whole point: a truncated render leaves its blank region against
-    a border, while a legitimately flat frame (an overcast sky, a wall in shade) spreads its flat
-    tiles through the picture and has something drawn against every edge. Scanning bands from all
-    four sides catches a render that stopped early in either axis without needing to know which.
-    """
+    """Largest edge-anchored band of the frame that carries no picture at all, 0-1."""
     detail = _tile_detail(png)
     if detail is None:
         return 0.0
@@ -232,91 +198,55 @@ what makes it survivable: a blocked frame is a retry with a different seed, whic
 the sequence engine's regeneration loop already does for a drift failure."""
 
 
-BANNER_ROW_RATIO = 5.0
-"""How much sharper than the median row a band must be to read as lettering across the frame.
+BANNER_DETECTION_DOES_NOT_WORK = """Structural detection of a lettered refusal: tried, measured,
+and abandoned 2026-09-13.
 
-Measured 2026-09-12 over eight frames, peak row energy in the middle third against the frame's
-median row:
+Ideogram 4 has a second refusal mode and it is the dangerous one: a **plausible photograph with
+the refusal lettered across it**, sometimes garbled -- "THEGPEATIS ABBDNN PHT FOREE CPICAR" over a
+clean street scene, measured on nova at seed 99001. That frame has normal texture everywhere, so
+the flat-card test below passes it, and it would go into a finished film carrying a watermark that
+says the model refused.
 
-    refusal painted over a photo      16.35
-    refusal, garbled lettering         5.71
-    refusal over the amber macro      44.04
-    ------------------------------------------
-    a lit train at the frame centre    3.93   <- the nearest clean frame
-    a night street                     3.68
-    clean Ideogram / FLUX.2 / LoRA     1.7-1.9
+`has_refusal_banner` used to claim to catch it, by looking for a burst of horizontal edge energy
+in the vertical centre several times the median row. It was calibrated 2026-09-12 on eight frames
+that happened to contain no brickwork. **Mortar courses are horizontal edge energy.** Measured over
+the consistency probe's own output, the classes do not merely overlap, they invert:
 
-5.0 sits in that gap. The margin below it is thin — a lit train head-on is 3.93 — so this is an
-**advisory**, not a blocker: it is the signal for a backend to spend another seed, not grounds for
-throwing a frame away without a person seeing it."""
-BANNER_BAND = (0.35, 0.65)
-"""Where the refusal caption sits: the middle third, vertically centred. Restricting the search
-there is what keeps a genuinely detailed horizon or a shop sign from reading as a banner."""
+    a real lettered refusal (seed 99001)            peak/median  5.03
+    ---------------------------------------------------------------
+    a photograph of a brick wall (setA/skeleton/2)               6.26
+    a photograph of a brick wall (setA/skeleton/1)               5.64
 
+Two further features were tried and neither separates them: peak energy against the rows *outside*
+the centre band (refusal 5.01, brick 5.50 and 5.90 -- inverted again), and the density of
+near-white glyph pixels in the band (refusal 6.15 %, and a clean frame with a bright centre 8.79 %
+-- inverted again).
 
-def has_refusal_banner(png: bytes) -> bool:
-    """Is there a line of lettering painted across the middle of this frame?
-
-    The second refusal mode, and the dangerous one. Ideogram 4 does not only return a flat grey
-    card — it also renders a **plausible photograph with the refusal lettered over it**, sometimes
-    garbled ("Inage clocked by cioie filter", measured 2026-09-12). That frame has normal texture
-    everywhere, so :func:`is_refusal_frame` alone passes it, and it would go into a finished film
-    carrying a watermark that says the model refused.
-
-    Detected structurally rather than by reading it: lettering is a burst of horizontal edge energy
-    confined to a few rows in the vertical centre, several times the median row. No OCR, no
-    language assumption, and it catches the garbled spellings the flat-text approach would miss.
-    """
-    import numpy as np
-    from PIL import ImageFilter
-
-    image = Image.open(io.BytesIO(png)).convert("L")
-    native = np.asarray(image, dtype=np.float32)
-    blurred = np.asarray(image.filter(ImageFilter.GaussianBlur(1.0)), dtype=np.float32)
-    row_energy = np.abs(native - blurred).mean(axis=1)
-    median = float(np.median(row_energy))
-    if median <= 0.01:  # a flat card has no rows to compare; is_refusal_frame owns that case
-        return False
-    height = native.shape[0]
-    band = row_energy[int(height * BANNER_BAND[0]) : int(height * BANNER_BAND[1])]
-    return bool(band.max() >= BANNER_ROW_RATIO * median)
+So there is no automatic detector here, and pretending otherwise was worse than having none: it
+flagged 2 of 18 real photographs, which is how a review gate becomes a rubber stamp. **The lettered
+refusal is caught by a person looking at every frame** -- which is what `docs/gpu-hosts.md` "The
+human review gate is where an image lane actually stops" already requires. The flat-grey card
+below is separable (median tile detail 0.000 against 4.899) and is still detected automatically.
+"""
 
 
 def is_refusal_frame(png: bytes) -> bool:
-    """Did the model return a refusal instead of a picture, in either of its two forms?
-
-    Cheap enough to run on every frame of every backend: one grey rectangle looks the same to this
-    measurement whatever produced it, and a caller that never sees one pays a Gaussian blur.
-    """
+    """Did the model return a refusal instead of a picture, in either of its two forms?"""
     _, median_detail = dead_flat_fraction(png)
-    if median_detail < REFUSAL_DETAIL_MAX:
-        return True
-    return has_refusal_banner(png)
+    return median_detail < REFUSAL_DETAIL_MAX
 
 
 def texture_findings(png: bytes, *, expect_photographic: bool) -> list[FrameFinding]:
-    """Does this frame carry the evidence that a camera made it?
-
-    Two failures, opposite ends of one measurement. A frame with no texture anywhere reads as a 3D
-    render however well composed it is; a frame with texture *everywhere* has had its surfaces
-    replaced by noise. Both were sitting in the output of this host and neither was detectable by
-    any check that existed, which is why the flat one went five days being described as "the model
-    is just like that".
-    """
+    """Does this frame carry the evidence that a camera made it?"""
     flat, median_detail = dead_flat_fraction(png)
     findings = [
-        # Checked first and unconditionally: a refusal card is not a frame with a texture problem,
-        # it is the absence of a frame, and reporting it as "87 % dead-flat" buries the one fact
-        # the operator needs.
+        # First and unconditional: a refusal card is the absence of a frame, and reporting it as
+        # "87 % dead-flat" buries the one fact the operator needs.
         FrameFinding(
             check="model_returned_a_refusal",
             passed=median_detail >= REFUSAL_DETAIL_MAX,
-            # Advisory, not a blocker, for the same reason the banner test is: "no texture at all"
-            # cannot tell a refusal card from a legitimately flat frame. The mock backend draws
-            # solid colours by design and every one of its frames trips this, which is a false
-            # positive a blocker would turn into a broken lane. A backend that knows it is talking
-            # to Ideogram calls `is_refusal_frame` directly and spends another seed; the review
-            # gate only needs to put it in front of whoever is looking.
+            # Advisory: "no texture" cannot tell a refusal card from a legitimately flat frame (the
+            # mock backend trips it on every frame); an Ideogram backend calls is_refusal_frame.
             severity="advisory",
             detail=(
                 f"median tile detail {median_detail:.2f}: the frame carries no picture. Ideogram 4"
@@ -393,17 +323,13 @@ model that has stopped following the prompt, cheaply, before a person is asked t
 
 
 def colour_findings(png: bytes, *, expect_monochrome: bool) -> list[FrameFinding]:
-    """A style that asked for no colour and got some is a half-applied instruction, and looks it.
-
-    So is a style that asked for colour and got none.
-    """
+    """A style that asked for no colour and got some is a half-applied instruction, and looks it."""
     if not expect_monochrome:
         img = _load(png).convert("HSV")
         sat = list(img.getchannel("S").tobytes())
         val = list(img.getchannel("V").tobytes())
-        # Among the pixels bright enough to carry a colour at all. A near-black pixel has no
-        # meaningful hue, so counting the whole frame would mark every legitimately dark picture
-        # as greyscale — an underwater frame lit by one beam is mostly black on purpose.
+        # Only pixels bright enough to carry a colour: a near-black pixel has no meaningful hue,
+        # and counting it would mark every legitimately dark picture as greyscale.
         lit = [s for s, v in zip(sat, val, strict=True) if v > 40]
         coloured = (sum(1 for s in lit if s > 25) / len(lit)) if lit else 1.0
         return [
@@ -448,13 +374,7 @@ flat bars, and every other frame measured **0**.
 
 
 def _flat_run(img: Image.Image, *, vertical: bool, tolerance: int = 6) -> float:
-    """The fraction of the frame taken by bars of **one flat colour** on both opposite edges.
-
-    Flatness alone is not enough to say "bar": every column of a horizontal gradient is flat, and
-    a plain sky is a legitimate picture. What makes a pad a pad is that the runs on the two
-    opposite edges are flat, are the *same* colour as each other, and are not the colour of the
-    picture between them.
-    """
+    """The fraction of the frame taken by bars of **one flat colour** on both opposite edges."""
     width, height = img.size
     span = width if vertical else height
 
@@ -507,8 +427,7 @@ def border_findings(png: bytes) -> list[FrameFinding]:
 
 
 def edge_findings(png: bytes) -> list[FrameFinding]:
-    """Subject matter jammed against the frame border: a figure cut off, or limbs entering from
-    outside, which is what a shot looks like when the staging does not fit the lens."""
+    """Subject matter jammed against the frame border."""
     img = _load(png).convert("L")
     w, h = img.size
     band = max(2, round(min(w, h) * 0.02))
@@ -533,8 +452,7 @@ def edge_findings(png: bytes) -> list[FrameFinding]:
 
 
 def continuity_finding(previous: bytes, current: bytes) -> FrameFinding:
-    """Do consecutive frames share a world? This is the check that would have caught thirty
-    drawings each inventing their own street."""
+    """Do consecutive frames share a world?"""
     a, b = _load(previous).convert("L"), _load(current).convert("L")
     churn = ImageStat.Stat(ImageChops.difference(a, b)).mean[0]
     return FrameFinding(
@@ -572,12 +490,7 @@ world", never "good"."""
 
 
 def _descriptor(png: bytes) -> tuple[list[float], list[float]]:
-    """What "the same world" is measurable as: the palette and the tonal shape.
-
-    A coarse hue histogram (12 buckets, weighted by saturation so a grey wall does not vote on
-    hue) and a 16-bucket luma histogram. Deliberately coarse — this must not fire because a
-    subject moved, only because the *world* changed.
-    """
+    """What "the same world" is measurable as: the palette and the tonal shape."""
     img = _load(png)
     hues = [0.0] * 12
     for hue, saturation in zip(_channel_values(img, "H"), _channel_values(img, "S"), strict=True):
@@ -620,21 +533,7 @@ class ConsistencyReport(TypedDict):
 
 
 def consistency_matrix(pngs: Sequence[tuple[str, bytes]]) -> ConsistencyReport:
-    """Every frame against **every other frame**, not just its neighbour.
-
-    `continuity_finding` compares consecutive frames, which answers "was there a cut here" and
-    cannot answer "do all six of these belong to one set" — a set can drift a little at each step
-    and end somewhere else entirely, with every consecutive pair looking fine. So this is all
-    pairs: 15 comparisons for a six-picture story.
-
-    Each frame gets its **median distance to the others**, which is what identifies the odd one
-    out: one frame that disagrees with everything has a high median, while a set with two equal
-    halves has no outlier and says so instead of blaming one side.
-
-    What it cannot judge, and the reason a reviewer still looks: whether the *subject* is the same
-    subject. Two drawings of different objects in the same palette and light score as consistent,
-    which is precisely the failure this machine produced when "honey-coloured" drew jars of honey.
-    """
+    """Every frame against **every other frame**, not just its neighbour."""
     ids = [frame_id for frame_id, _ in pngs]
     descriptors = [_descriptor(png) for _, png in pngs]
     pairs: list[ConsistencyPair] = []
@@ -650,11 +549,8 @@ def consistency_matrix(pngs: Sequence[tuple[str, bytes]]) -> ConsistencyReport:
         per_frame[frame_id] = round(statistics.median(others), 4) if others else 0.0
     worst = pairs[distances.index(max(distances))] if pairs else None
     median = round(statistics.median(distances), 4) if distances else 0.0
-    # An outlier is only meaningful against a set that agrees with itself. When the *typical* pair
-    # is already past the threshold there is no centre to be far from, and naming every frame an
-    # outlier is both useless and wrong — measured on `w-iceberg`, an image-set of six
-    # deliberately different viewpoints: median 0.243, and all six "outliers". A set is allowed
-    # to be varied on purpose; what it cannot hide is one frame that left the others behind.
+    # An outlier needs a centre: when the typical pair is already past the threshold the set is
+    # varied on purpose (w-iceberg: median 0.243, all six frames flagged), so report spread instead.
     spread = median > SET_DISTANCE_MAX
     return {
         "frames": len(ids),
@@ -740,8 +636,7 @@ def contact_sheet(
     columns: int = 3,
     tile_width: int = 520,
 ) -> bytes:
-    """The sheet a reviewer actually looks at: every frame, in order, labelled, with the count of
-    findings that want attention. Large enough to judge a face, small enough to take in at once."""
+    """The sheet a reviewer looks at: every frame in order, labelled, with its count of findings."""
     if not pngs:
         msg = "no frames to review"
         raise ValueError(msg)

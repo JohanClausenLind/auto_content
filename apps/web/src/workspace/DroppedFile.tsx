@@ -1,18 +1,4 @@
-/**
- * Dropping a file on the canvas.
- *
- * The drop does the work an operator would otherwise do by hand: the file is uploaded and
- * identified from its bytes (never its name), the node that can hold it appears where it was
- * dropped with the stored asset already on it, and the strip below offers the next steps that
- * are actually worth taking on *this* file. A container the pipeline cannot read (a Matroska
- * screen recording, an Opus voice memo) is converted on the way in, and the strip says what was
- * done — the node holds an MP4, not the .mkv that was dropped — with the reason attached, drawn from what was
- * measured. Clicking one spawns that node already wired.
- *
- * Everything specific lives on the server: which node type holds which kind of file, and which
- * suggestions are type-correct, come back with the upload, so the canvas cannot offer a step
- * that produces a link the graph would refuse.
- */
+/** Dropping a file on the canvas: the upload identifies it from its bytes. */
 
 import { useCallback, useState } from "react";
 import type { GraphEditor } from "@content-factory/node-graph";
@@ -43,11 +29,7 @@ export interface DroppedNode {
 /** Two dropped files must not land on top of each other. */
 const STACK_OFFSET = 40;
 
-/**
- * Where the node goes. The canvas resolves the drop point through React Flow, which needs a
- * measured container to do it — before one exists (a canvas that has not been laid out yet) the
- * answer is NaN, and a node at NaN is a node nobody can see or serialise.
- */
+/** Where the node goes; React Flow answers NaN for a drop on a canvas not yet laid out. */
 function landing(position: { x: number; y: number }, index: number): { x: number; y: number } {
   const usable = Number.isFinite(position.x) && Number.isFinite(position.y);
   const base = usable ? position : { x: 120, y: 120 };

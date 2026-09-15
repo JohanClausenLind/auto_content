@@ -261,7 +261,7 @@
     },
     "VolumeInfo": {
       "additionalProperties": false,
-      "description": "One mounted volume, identified stably (filesystem UUID or device identity), never by\nfragile device-order names such as /dev/sdb.",
+      "description": "One mounted volume, identified stably (filesystem UUID or device identity).",
       "properties": {
         "filesystem": {
           "default": "unknown",
@@ -331,7 +331,7 @@
   "$id": "https://content-factory.local/schema/NodeCapabilityReport.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Versioned probe of one enrolled machine. Rechecked on enrollment, reboot, hardware or\ndriver changes, and health events; placement must refuse reports older than its policy.",
+  "description": "Versioned probe of one enrolled machine.",
   "properties": {
     "admitted_roles": {
       "default": [],

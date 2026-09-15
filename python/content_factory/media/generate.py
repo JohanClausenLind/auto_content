@@ -1,6 +1,4 @@
-"""`image.generate` media skill with interchangeable backends (phase-5 gate): the same typed
-invocation runs through a ComfyUI workflow package or a mock cloud API unchanged. Generated
-images are editorial assets, never evidence; every result carries full provenance."""
+"""`image.generate` media skill: one typed invocation runs through ComfyUI or a mock cloud API."""
 
 from __future__ import annotations
 
@@ -61,7 +59,7 @@ class MediaBackend(ABC):
 def run_media_skill(
     request: GeneratedMediaRequest, backend: MediaBackend, *, workdir: Path
 ) -> MediaOutput:
-    """The single invocation path (identical whatever the backend): execute → verify → provenance."""  # noqa: E501
+    """The single invocation path (identical whatever the backend)."""
     out = backend.generate(request, workdir=workdir)
     with Image.open(_bytes_io(out.png)) as img:
         if img.format != "PNG":

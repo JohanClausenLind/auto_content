@@ -1,5 +1,4 @@
-"""Controlled fetching (section 10, 25): SSRF defence, redirect/size limits, MIME validation,
-decompression-bomb protection. All fetched content is untrusted data, never instructions."""
+"""Controlled fetching: SSRF defence, redirect/size limits, MIME and decompression-bomb checks."""
 
 from __future__ import annotations
 

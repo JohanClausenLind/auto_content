@@ -1,21 +1,4 @@
-"""Human voice takes: recordings made outside the factory, force-aligned to the locked script.
-
-The ``voice_over`` stage is the twin of ``synthesize_narration`` — it produces exactly the same
-``NarrationSegment`` per beat, so captions, the timeline compiler, the mix and the final mux never
-learn whether a machine or a person spoke. What differs is where the audio comes from and where the
-timings come from:
-
-* audio: ``<takes_dir>/<beat_id>.wav`` (or ``<beat_id>.<speaker>.wav`` for a two-hander), never
-  synthesized. A missing take fails the stage by name instead of quietly substituting a voice.
-* timings: forced alignment (ADR-0004 precedence — whisperx, else faster-whisper), each in its own
-  environment behind :data:`SUBPROCESS_RUN`; ``even_split`` apportions the measured duration by
-  word length and is the offline stand-in the core suite runs on.
-
-The transcript is compared with the locked script through the same
-:func:`content_factory.human_tasks.validation.validate_take` an operator's take review uses, so a
-mislabelled or re-read take is rejected here for the same reason and with the same diff it would
-show in the UI — improvisation inside the tolerance is accepted as performed and recorded as such.
-"""
+"""Human voice takes: recordings made outside the factory, force-aligned to the locked script."""
 
 from __future__ import annotations
 
@@ -55,17 +38,7 @@ class Take:
 def discover_takes(
     takes_dir: Path, beat_ids: Sequence[str], *, also: Sequence[Path] = ()
 ) -> dict[str, Take]:
-    """One take per beat: ``<beat_id>.wav`` or ``<beat_id>.<speaker>.wav``.
-
-    Two speakers in one beat is a directing decision, not a file-naming one — record the beat as
-    two beats. Here, more than one candidate for a beat is an error rather than a coin flip.
-
-    ``also`` are further directories to look in, searched after ``takes_dir``. The run's uploads
-    folder is passed there by the stage, because "the material goes in ``<project>/uploads``" is
-    the one rule every other lane follows and a take set had been the single exception: an
-    operator who used ``--input`` or dropped the files on the canvas put them exactly where this
-    function did not look.
-    """
+    """One take per beat: ``<beat_id>.wav`` or ``<beat_id>.<speaker>.wav``."""
     roots = [takes_dir, *also]
     found: dict[str, list[Take]] = {b: [] for b in beat_ids}
     for root in roots:
@@ -124,8 +97,7 @@ def wav_facts(path: Path) -> tuple[int, int, int]:
 
 
 def even_split(words: Sequence[str], duration_ms: int) -> list[WordTiming]:
-    """Apportion the measured duration by word length. Deterministic, offline, and honest about
-    what it is: the segment is real audio, the per-word boundaries are estimates."""
+    """Apportion the measured duration by word length."""
     weights = [max(1, len(w)) for w in words]
     total = sum(weights)
     out: list[WordTiming] = []
@@ -141,12 +113,7 @@ def even_split(words: Sequence[str], duration_ms: int) -> list[WordTiming]:
 def snap_to_script(
     script_words: Sequence[str], measured: Sequence[tuple[float, float]], duration_ms: int
 ) -> list[WordTiming]:
-    """Forced alignment gives measured spans for what was *heard*; the script says what the words
-    *are*. Shared by the recorded-take path and by any TTS that returns no timings of its own.
-
-    When the counts agree, each script word takes the matching span; when they do not, the script
-    is apportioned across the measured speech span so the captions still land in the right place
-    instead of failing the beat."""
+    """Give script words the measured spans; on a count mismatch apportion them over the speech."""
     if len(measured) == len(script_words):
         out: list[WordTiming] = []
         prev_end = 0
@@ -173,16 +140,7 @@ def snap_to_script(
 def faster_whisper_words(
     wav: Path, *, model: str, compute_type: str, timeout_s: int, language: str = ""
 ) -> tuple[list[str], list[tuple[float, float]]]:
-    """Transcribe with word timestamps in an isolated environment (no torch in this process).
-
-    faster-whisper 1.2.1 is the ADR-0004 fallback aligner and the one installed on this host; it
-    runs CPU int8, so it costs no VRAM while the image models hold the card.
-
-    ``language`` is the ISO subtag of what is being *spoken*, and it is told rather than detected:
-    this is forced alignment against a script somebody already wrote, so the language is known and
-    letting Whisper guess it from a 3-second beat only adds a way to be wrong. Empty keeps the
-    detection, for a recording whose language nobody declared.
-    """
+    """Transcribe with word timestamps in an isolated environment (no torch in this process)."""
     script = (
         "import json,sys\n"
         "from faster_whisper import WhisperModel\n"

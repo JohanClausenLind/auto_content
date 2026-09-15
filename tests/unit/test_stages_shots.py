@@ -64,12 +64,8 @@ def test_plan_shots_fixture_planner(ctx: StageContext, settings_env) -> None:
     settings_env(CF__SHOTS__PLANNER="fixture")
     out = stage_plan_shots(ctx)
     assert out.outputs_hash == sample_shot_plan().content_hash()
-    # staged_from lists the mocap clips retrieval put on characters. Empty here, because the
-    # fixture planner stages by hand and does not consult the reference library.
-    # A fixture plan is checked like any other, and this one has something to report: its opening
-    # push-in starts far enough back that the figure measures 0.3427 of frame height even in 16:9,
-    # and the estimate runs about 0.02 optimistic against rendered boxes. A hand-authored plan does
-    # not get the benefit of the doubt.
+    # staged_from lists the mocap clips retrieval put on characters. Empty here, because the fixture
+    # planner stages by hand and does not consult the reference library.
     assert out.facts == {
         "shots": 2,
         "planner": "fixture",
@@ -79,9 +75,8 @@ def test_plan_shots_fixture_planner(ctx: StageContext, settings_env) -> None:
         "frames": 194,
         "staged_from": [],
         "underframed": [{"shot_id": "shot_fixture0001", "body_fraction": 0.3427}],
-        # No styled identity sheet has been built for this asset in this test's style, so the
-        # plan names none. Whether a film needs one is anchor_references' business, and
-        # review_assets is the gate — a plan is not the place to decide it.
+        # No styled identity sheet has been built for this asset in this test's style, so the plan
+        # names none.
         "identity_sheets": [],
     }
 

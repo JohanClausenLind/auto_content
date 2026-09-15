@@ -5,10 +5,7 @@ import { THEME_PAINT_KEY, THEME_STORAGE_KEY, themeBootScript } from "./boot";
 
 export { THEME_PAINT_KEY, THEME_STORAGE_KEY, themeBootScript };
 
-/**
- * Pre-computed CSS for instant first paint. When following the system we store both
- * schemes so the boot script can pick without any theme logic.
- */
+/** Pre-computed CSS for instant first paint. */
 interface PaintCache {
   light: { vars: Record<string, string>; attrs: Record<string, string>; scheme: string };
   dark: { vars: Record<string, string>; attrs: Record<string, string>; scheme: string };

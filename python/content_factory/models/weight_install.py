@@ -1,24 +1,4 @@
-"""Installs a declared weight family from the browser, and links it where the code looks for it.
-
-The registry (:mod:`content_factory.models.weights`) says what a family is and where it comes
-from; this module is the only thing that acts on it. One click in the Models page becomes:
-
-1. ``hf download <repo> <files> --revision <sha> --local-dir <store>/<family>`` per pinned source,
-   or a pinned release asset over https, or ``uv sync`` for a skill environment.
-2. flatten a declared ``strip_prefix`` (Comfy-Org publishes under ``split_files/``),
-3. create the ``<repo>/models/<category>/<Name>`` index symlink,
-4. symlink every file that ComfyUI loads into ComfyUI's own ``models/<folder>`` tree.
-
-Steps 3 and 4 are the difference between a downloaded weight and a usable one: the skills resolve
-their weights through the index link and ComfyUI only sees what is inside its own models tree, so
-an installer that stops after the transfer leaves 30 GB on disk that nothing can find. They are
-also idempotent and safe to run on their own, which is what the relink call is for.
-
-What this module will not do: download from anywhere but the pinned sources (the argument arrays
-are built from validated registry fields, never from request bodies or model output), overwrite a
-file that is already there, or claim success it has not verified — a job ends ``complete`` only
-when every file the family declares is present at its declared minimum size.
-"""
+"""Installs a declared weight family from the browser, and links it where the code looks for it."""
 
 from __future__ import annotations
 
@@ -51,9 +31,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 JobState = Literal["running", "complete", "failed", "already_installed", "needs_access"]
 FileState = Literal["present", "missing", "partial"]
 
-# Recognisable Hub refusals. A gated repo answers 401/403 and there is nothing to retry: the
-# operator has to accept the terms (or be granted access), so the job says that instead of
-# reporting a generic failure the UI cannot act on.
+# Hub refusals for a gated repo: nothing to retry, the operator has to accept the terms, so the
+# job says so instead of a generic failure the UI cannot act on.
 _ACCESS_MARKERS = (
     "401 client error",
     "403 client error",
@@ -222,11 +201,7 @@ def hf_binary(repo_root: Path = REPO_ROOT) -> str:
 
 
 def store_space(store: Path) -> tuple[int, int]:
-    """(free, total) bytes on the filesystem holding the weight store, 0 when it cannot be read.
-
-    Shown next to a family's size because these downloads are tens of gigabytes: an operator
-    about to click Install on 41 GB should be able to see whether 41 GB is there.
-    """
+    """(free, total) bytes on the filesystem holding the weight store, 0 when it cannot be read."""
     probe = store
     while not probe.exists() and probe != probe.parent:
         probe = probe.parent
@@ -372,8 +347,7 @@ def ensure_index_link(package: WeightPackage, *, store: Path, repo_root: Path = 
 
 
 def _required_models(package: WeightPackage, store: Path) -> list[RequiredModel]:
-    """The ComfyUI-visible files as RequiredModels, so linking reuses services.local's rules
-    (existing files untouched, GGUF also linked into the legacy loader folders)."""
+    """The ComfyUI-visible files as RequiredModels, so linking reuses services.local's rules."""
     source = (
         f"https://huggingface.co/{package.hf[0].repo_id}"
         if package.hf
@@ -497,11 +471,7 @@ class WeightInstaller:
 
     # -- starting
     def start(self, key: str, *, hf_token: str | None = None) -> InstallJob:
-        """Begin (or return) the install of one family or skill env. Idempotent per key.
-
-        ``hf_token`` is the operator's stored Hugging Face token, when there is one: gated
-        repositories (LTX-2.5, Stable Audio, SAM 3.1) answer 401 without it.
-        """
+        """Begin (or return) the install of one family or skill env."""
         if hf_token:
             self._hf_token = hf_token
         with self._lock:

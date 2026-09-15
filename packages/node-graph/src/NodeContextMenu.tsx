@@ -1,7 +1,4 @@
-/**
- * The node right-click menu — the litegraph staple: title, then the verbs. Every action routes
- * through the same editor ops as the keyboard and panels, so undo covers all of it.
- */
+/** The node right-click menu; every verb routes through the editor ops, so undo covers all of it. */
 
 import type { ReactElement } from "react";
 import { groupById, groupOf, nodeById, type NodeMode } from "./graphModel";
@@ -14,11 +11,7 @@ export interface NodeContextMenuProps {
   onClose(): void;
 }
 
-/**
- * The menu for a folded group. Right-clicking one used to show nothing at all: the menu looked
- * its target up as a node, a group id is not one, and it returned null — so the only object on
- * the canvas that stands for several nodes was the one object with no verbs.
- */
+/** The menu for a folded group, whose id is not a node id and used to resolve to no menu at all. */
 function GroupMenu({
   editor,
   groupId,

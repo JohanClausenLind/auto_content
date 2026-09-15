@@ -1,5 +1,4 @@
-"""GIMM-VFI: quality-tier interpolation. params: {"factor": 2 (N frames between = factor-1 -> N=factor),
-"model": "gimmvfi_r_arb", "ds_factor": 1.0, "timeout_s": 3600}. Reads a frame dir, writes frames."""
+"""GIMM-VFI: quality-tier interpolation."""
 
 from __future__ import annotations
 

@@ -1,10 +1,4 @@
-"""ModelGateway (18.2, 18.3): logical aliases in, validated structured output out.
-
-Selection is `routing.decide` (policy, quality floors, hardware, budget); execution goes through
-LiteLLM (Anthropic / OpenAI-compatible / Ollama, bring-your-own credentials) with Instructor-style
-schema-validated retries. `local_only` provably makes zero cloud calls: the executor is only ever
-invoked with the chosen candidate, and cloud candidates never survive the policy filter.
-"""
+"""ModelGateway (18.2, 18.3): logical aliases in, validated structured output out."""
 
 from __future__ import annotations
 
@@ -93,18 +87,7 @@ pictures, and the gateway's whole job is to be the single place a model call goe
 
 
 def _with_system_instruction(messages: list[Message], instruction: str | None) -> list[Message]:
-    """Prepend the shared system instruction, unless the caller supplied its own or opted out.
-
-    **In the gateway, not at each call site**, because a call site can forget and this one did:
-    when Ollama's constrained decoding went in, the schema stopped being pasted into a system
-    message and the system message went with it — so the shared rules about inventing figures and
-    about house style were, for a while, sent to nobody. A rule that every role must follow cannot
-    depend on every role remembering to attach it.
-
-    A caller that has already written a system message keeps it, with the shared text prepended:
-    the shared part is the floor, not a replacement. `system_instruction=""` opts out entirely,
-    which is what a probe measuring the raw model wants.
-    """
+    """Prepend the shared system instruction, unless the caller supplied its own or opted out."""
     from content_factory.prompting import SYSTEM_INSTRUCTION
 
     text = SYSTEM_INSTRUCTION if instruction is None else instruction
@@ -112,9 +95,8 @@ def _with_system_instruction(messages: list[Message], instruction: str | None) -
         return messages
     if messages and messages[0].get("role") == "system":
         own = messages[0].get("content", "")
-        # A system message is always plain text, even on a vision call: the images ride on the
-        # user turn, and prepending to a list of content parts would produce a message shape
-        # neither provider accepts.
+        # A system message is plain text even on a vision call: prepending to a list of content
+        # parts gives a shape neither provider accepts.
         merged = f"{text}\n\n{own}" if isinstance(own, str) else text
         return [{"role": "system", "content": merged}, *messages[1:]]
     return [{"role": "system", "content": text}, *messages]
@@ -122,14 +104,7 @@ def _with_system_instruction(messages: list[Message], instruction: str | None) -
 
 @dataclass(frozen=True)
 class GatewayOptions:
-    """Everything one model call can be asked for, in one object.
-
-    It exists because these five settings are not independent. A schema sent as a *constraint*
-    needs no schema in the prompt; thinking left on eats the token budget the answer needed (a
-    verified 80-token call returned an empty string with thinking on and valid JSON with it off);
-    and ``num_ctx`` decides whether the prompt the caller assembled arrived at all. Passing them
-    one at a time is how three of the five ended up never being passed.
-    """
+    """Everything one model call can be asked for, in one object."""
 
     structured_output: bool = True
     """Send the response schema as a decoding constraint where the provider supports one. The
@@ -252,9 +227,8 @@ class ModelGateway:
         enforce = bool(opts.structured_output and endpoint.supports_json_schema)
         convo = _with_system_instruction([*messages], opts.system_instruction)
         if not enforce:
-            # The fallback: describe the schema in the system message and hope. Kept for providers
-            # that cannot constrain decoding — it is what every call used to do, and it is why a
-            # reasoning model's <think> block had to be stripped out of the answer afterwards.
+            # Fallback for providers that cannot constrain decoding: describe the schema and hope,
+            # which is why a reasoning model's <think> block is stripped afterwards.
             sys_suffix = (
                 "\nReturn ONLY a JSON object matching this JSON Schema"
                 " (no prose, no code fences):\n" + str(schema)
@@ -367,11 +341,7 @@ class ModelGateway:
 def _num_ctx_for(
     opts: GatewayOptions, model: ModelDescriptor, endpoint: EndpointConfig
 ) -> int | None:
-    """The context window to ask for, clamped to what the model actually has.
-
-    Only for providers that take one. A cloud endpoint sizes its own window and would reject the
-    parameter; Ollama silently uses 4096 unless told, which is the truncation this exists to stop.
-    """
+    """The context window to ask for, clamped to what the model actually has."""
     if not endpoint.supports_think and not endpoint.supports_json_schema:
         # Neither Ollama-shaped capability: not an Ollama-shaped endpoint either.
         return opts.num_ctx

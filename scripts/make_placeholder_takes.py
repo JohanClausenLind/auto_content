@@ -1,16 +1,4 @@
-"""Render a scratch track for a story fixture: one placeholder wav per beat, named for its take.
-
-    uv run python scripts/make_placeholder_takes.py fixtures/story/love_story.json out/takes/love
-    uv run python scripts/make_placeholder_takes.py <story.json> <dir> --voice kokoro
-
-A scratch track is what an animation cut runs on before the real voices arrive: it holds the
-timing so the picture can be cut, and it is replaced take by take. These files sit exactly where
-the ``voice_over`` stage looks (``<dir>/<beat_id>.wav``), so replacing one with a real recording is
-a file copy — nothing else in the graph changes.
-
-The audio is synthesized and is **not** the operator's voice. Every file written here is recorded
-in ``scratch.json`` beside them, so a run can say plainly which beats are still scratch.
-"""
+"""Render a scratch track for a story fixture: one placeholder wav per beat, named for its take."""
 
 from __future__ import annotations
 

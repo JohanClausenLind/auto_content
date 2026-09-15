@@ -263,10 +263,7 @@ export interface RunSummary {
   created_at: string;
 }
 
-/**
- * When the run will be done, estimated from the durations this machine has already measured for
- * these stages (`services/durations.py`). Null once nothing is left to wait for.
- */
+/** When the run will be done, estimated from durations this machine measured for these stages. */
 export interface RunEta {
   /** Seconds of work left: the queued stages plus what remains of the one in flight. */
   remaining_seconds: number;
@@ -295,14 +292,10 @@ export interface RunDetail extends RunSummary {
 }
 
 // --- Run history (local runs on this machine) ---
-//
-// The counterpart to RunSummary: those are durable Temporal runs from the database, these are the
-// runs made with `content-factory make`, which write no database row and whose outputs — every
-// film, drawing and narration on this machine — were unreachable from the app before this.
+// Counterpart to RunSummary (durable Temporal runs): these are `content-factory make` runs, which
+// write no database row.
 
-/** What a run is, or the state it ended in. `running` comes from the run registry rather than
- *  the report: a report only carries `passed` at the very end, so mid-flight a healthy run is
- *  indistinguishable from one whose last stage gave up — and read as `failed`. */
+/** What a run is or ended in; `running` comes from the run registry. */
 export type RunOutcome = "running" | "complete" | "review" | "blocked" | "stopped" | "failed";
 
 /** What kind of thing a file is, which decides whether it gets a player, a grid or a link. */
@@ -318,22 +311,14 @@ export interface RunOutput {
   role: string;
   bytes: number;
   content_type: string;
-  /** The lane's key for the step that made it — `anchor`, `spokes` — or null when neither the
-   *  run's own record nor the path table could place it. */
+  /** The lane's key for the step that made it (`anchor`, `spokes`), or null. */
   node: string | null;
   stage: string | null;
   /** `recorded` when the run observed which step wrote this, `inferred` when the path said so. */
   attribution: Attribution | null;
 }
 
-/**
- * One step of a local run: what it did, and what it produced.
- *
- * Named `RunStep`, not `RunNode`, because `RunNode` is already the durable pipeline's DAG node
- * (imported from `pipeline-canvas` above) and the two are not the same thing: that one is a
- * database row in a Temporal run, this one is a step in a `run.json` on disk. The two run worlds
- * have no join, and giving them one name is how somebody would come to believe they do.
- */
+/** One step of a local run (a `run.json` on disk); not `RunNode`. */
 export interface RunStep {
   /** The lane's own key, which is what `GraphNode.key` carries — this is the join. */
   node: string;
@@ -343,8 +328,7 @@ export interface RunStep {
   pinned: boolean;
   /** Stopped for a person, not because it broke. */
   blocked: boolean;
-  /** Whether this run has a record at this node at all. False for the nodes before a `--from`
-   *  resume point: not a failure, a step that did not happen this time. */
+  /** Whether this run has a record at this node at all. */
   ran: boolean;
   seconds: number;
   error: string | null;
@@ -359,10 +343,7 @@ export interface RunStep {
 export interface HistoryRun {
   /** The run's directory under `output/`, with "/" written "~" — e.g. `overnight~ps1c-pinecone`. */
   run_id: string;
-  /** What the run was rendering, in the operator's own words, or null.
-   *
-   *  On the cheap list as well as the detail, because without it the history is 241 directory
-   *  names: `a20-imageset-owl` says which lane ran and nothing about what came out of it. */
+  /** What the run was rendering, in the operator's own words, or null; on the cheap list too. */
   subject: string | null;
   workflow: string | null;
   outcome: RunOutcome;
@@ -376,8 +357,7 @@ export interface HistoryRun {
   project_dir: string;
   deliverable_id: string | null;
   outputs_total: number;
-  /** Drawings this run is waiting on somebody to look at. Not the same as `outcome === "review"`:
-   *  a run whose frames were all rejected is parked at the gate too, and it needs a redraw. */
+  /** Drawings waiting on somebody to look at them; not `outcome === "review"`. */
   awaiting_review: number;
 }
 
@@ -389,16 +369,13 @@ export interface HistoryRunDetail extends HistoryRun {
   film: string | null;
   /** One image to represent the run — never a control map. */
   poster: string | null;
-  /** Files no step claimed. Reported rather than hidden: on a run that predates per-node
-   *  recording it is the difference between "this node made nothing" and "nobody wrote down
-   *  which node made this". Markers are not counted. */
+  /** Files no step claimed, markers not counted. */
   unattributed: number;
 }
 
 // --- The frame-review gate ---
 
-/** One measured property of one drawing. Advisory findings inform the reviewer; a blocker fails
- *  the frame on its own, whatever anybody says about it. */
+/** One measured property of one drawing; an advisory finding informs the reviewer. */
 export interface ReviewFinding {
   check: string;
   passed: boolean;
@@ -415,14 +392,12 @@ export interface ReviewFrame {
   verdict: FrameVerdict;
   /** What is wrong with the picture. The record, and what the guidance proposals are built from. */
   reason: string;
-  /** What it should show instead, stated positively. This is the part appended to the prompt when
-   *  the frame is redrawn — see FrameRecord.redirect. */
+  /** What it should show instead, stated positively; appended to the prompt. */
   redirect: string;
   /** Relative to the run directory — fetched through the same files route as any other output. */
   image: string | null;
   png_sha256: string;
-  /** Whether the file still hashes to what the batch decided on. False means the picture was
-   *  regenerated after the gate ran, so this is not what a verdict would bind to. */
+  /** Whether the file still hashes to what the batch decided on. */
   on_disk: boolean;
   blocked: boolean;
   findings: ReviewFinding[];
@@ -453,17 +428,13 @@ export interface RunReviewPage {
   /** A verdict unblocks the gate; it does not restart the stages after it. This is what does. */
   resume_command: string;
   reviews: RunReview[];
-  /** The vision model's stored opinion per deliverable, when one has been asked for. Served with
-   *  the gate so the panel knows whether one exists before offering to spend the GPU. */
+  /** The vision model's stored opinion per deliverable, served with the gate. */
   ai_reviews: Record<string, AiSetReview>;
 }
 
 // --- The vision model's second opinion ---
-//
-// An opinion and never a verdict. It answers what the measurements cannot — whether the subject
-// is the same subject — and the operator is still the only reviewer that can accept or reject a
-// frame. `shows` is first in the UI for the same reason it is first in the prompt: it is how a
-// reader tells whether the model looked at the picture or at the brief.
+// An opinion, never a verdict: only the operator accepts or rejects a frame. `shows` comes first so
+// a reader can tell whether the model looked at the picture or at the brief.
 
 export type OpinionSeverity = "fine" | "minor" | "wrong";
 
@@ -491,8 +462,7 @@ export interface AiSetReview {
   reviewed_at: string;
   model_alias: string;
   model_id: string;
-  /** The story and per-frame context the model was given, verbatim. A judgement is worth what
-   *  the judge was told, and this is the only way to tell a wrong picture from a missing brief. */
+  /** The story and per-frame context the model was given, verbatim. */
   intent: string;
   frames: FrameOpinion[];
   set: SetOpinion;

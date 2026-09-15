@@ -1,10 +1,4 @@
-"""Storage roles mapped to stable volume identities — never to fragile device-order paths.
-
-The operator picks which volumes and folders each role may use and how much space it may
-consume. Roles may share a volume, but shared free space is accounted once (the accountant
-reserves per volume, not per role), and a backup role must not share the archive's volume:
-partitions on one device are one failure domain, not independent copies.
-"""
+"""Storage roles mapped to stable volume identities — never to fragile device-order paths."""
 
 from __future__ import annotations
 

@@ -1,12 +1,4 @@
-"""Apply a real clip to a real character inside Blender and measure whether it landed.
-
-    blender --background --factory-startup --python mocap/verify_in_blender.py -- \
-        <character.blend> <clip.json> <actor_id> <frame> [out.json]
-
-Reports Blender's own view of each aimed bone's world direction against the clip's target, so the
-number is not the solver grading its own homework: if the maths and Blender's pose evaluation
-disagree, this is where it shows.
-"""
+"""Apply a real clip to a real character inside Blender and measure whether it landed."""
 
 from __future__ import annotations
 

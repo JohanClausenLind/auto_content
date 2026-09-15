@@ -73,9 +73,8 @@ export function makeRunDetail(overrides: Partial<RunDetail> = {}): RunDetail {
 }
 
 // --- local run history ---
-//
 // Three runs shaped like the real ones: a finished picture story with a film, one parked at a
-// human review gate with its drawings done, and one that actually broke.
+// review gate, and one that broke.
 
 export function makeHistoryRun(overrides: Partial<HistoryRun> & Pick<HistoryRun, "run_id">): HistoryRun {
   return {
@@ -109,8 +108,7 @@ export const HISTORY_RUNS: HistoryRun[] = [
   makeHistoryRun({ run_id: "local-runs~single-image", workflow: "single-image", subject: "a wet river pebble, banded grey and rust, studio light", outcome: "failed", stages_ok: 1, stages: 4, seconds: 56.7, outputs_total: 2 }),
 ];
 
-/** One file of a run, with the step that made it. `node` is the lane's key, which is the join
- *  onto the canvas — see `workspace/nodeOutputs.ts`. */
+/** One file of a run, with the step that made it; `node` is the lane's key. */
 function output(overrides: Partial<RunOutput> & Pick<RunOutput, "path" | "kind">): RunOutput {
   return {
     role: "other",
@@ -169,11 +167,7 @@ export const HISTORY_DETAIL: HistoryRunDetail = {
   ],
 };
 
-/** What the vision model said about the amber set: one frame is a different object.
- *
- * Shaped like a real answer, including the thing that makes one useful — `shows` describing what
- * is in the picture rather than repeating the brief, which is how a reader tells the model looked.
- */
+/** What the vision model said about the amber set (one frame is a different object). */
 export const AI_REVIEW: AiSetReview = {
   deliverable_id: "dlv_short0000001",
   reviewed_at: "2026-09-11T09:28:43.627613+00:00",
@@ -210,11 +204,7 @@ export const AI_REVIEW: AiSetReview = {
   flagged: ["shot_d3f50497205c:0000"],
 };
 
-/** The frame-review gate of the run parked at it: two drawings, one measurement flagged.
- *
- * Shaped like the real thing — ids as `review_frames` writes them, each frame resolved to a file
- * under the run directory, and a resume command, because a verdict unblocks the gate and makes
- * nothing. */
+/** The frame-review gate of the parked run: two drawings, one measurement flagged. */
 export const REVIEW_PAGE: RunReviewPage = {
   run_id: "overnight~ps2c-amber",
   workflow: "audio-picture-story",

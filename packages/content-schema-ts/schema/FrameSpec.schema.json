@@ -2,7 +2,7 @@
   "$defs": {
     "ControlAsset": {
       "additionalProperties": false,
-      "description": "One compiled per-frame control image plus provenance (deterministic: same plan, same bytes).",
+      "description": "One compiled per-frame control image plus provenance.",
       "properties": {
         "compiler": {
           "default": "motion_plan",
@@ -75,7 +75,7 @@
       "type": "object"
     },
     "ControlKind": {
-      "description": "Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest\nare rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec.",
+      "description": "Per-frame control signals.",
       "enum": [
         "pose_skeleton",
         "layout_boxes",

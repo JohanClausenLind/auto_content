@@ -1,20 +1,4 @@
-"""Every downloaded data library on this host, declared: what it is, what reads it, where it
-is indexed.
-
-The shape deliberately mirrors :mod:`content_factory.models.weights`. A ``DataLibrary`` names a
-directory under a host store, the ``datasets/<category>/<Name>`` symlink that makes it
-discoverable from the repo, a ``probe`` that decides presence (so a half-finished transfer reads
-as absent rather than installed), and — the field weights do not need — ``read_by``.
-
-``read_by`` is the point of this file. It names the code that consumes the data, as import paths
-or settings keys, and an empty tuple is a claim: *nothing in this repo reads this*. That is not a
-lint failure, it is a fact worth being able to state, and :func:`unreached` states it. Three of
-the four libraries on this host were in that condition and it took reading 236 runs' facts to
-discover it.
-
-Sizes are what ``du -sh`` reported on 2026-09-12 and are documentation, not a contract — nothing
-compares them.
-"""
+"""Every downloaded data library on this host: what it is, what reads it (``read_by``)."""
 
 from __future__ import annotations
 
@@ -67,8 +51,7 @@ class DataLibrary(SchemaModel):
 
 LIBRARIES: tuple[DataLibrary, ...] = (
     # ---- human interaction -------------------------------------------------------------------
-    # Seven sources behind one SQLite index. The index is what the pipeline talks to, so the
-    # sources are declared individually (a missing one is a real gap) and the index separately.
+    # Seven sources behind one SQLite index; each source is declared (a missing one is a real gap).
     DataLibrary(
         key="cmu-mocap",
         name="CMU-Mocap",
@@ -277,10 +260,5 @@ def by_category() -> dict[str, tuple[DataLibrary, ...]]:
 
 
 def unreached() -> tuple[DataLibrary, ...]:
-    """Libraries nothing in this repo reads.
-
-    Not an error and not a warning — a question the registry can now answer without grepping a
-    run's facts. A library that is deliberately raw input to a build step names that step in
-    ``read_by`` (the sound libraries do), so what is left here is genuinely unconsumed.
-    """
+    """Libraries nothing in this repo reads."""
     return tuple(lib for lib in LIBRARIES if not lib.read_by)

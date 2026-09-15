@@ -3,11 +3,7 @@ import { api } from "../api/client";
 import type { PrefsSyncAdapter } from "./PrefsProvider";
 import { parseAppPrefs, type AppPrefs } from "./schema";
 
-/**
- * Both ride the generic account preference store (`/v1/prefs/{key}`). Anything the server hands
- * back that no longer fits the schema is treated as absent rather than crashing the shell — the
- * local copy then wins and is pushed back on the next change.
- */
+/** Both ride the generic account preference store (`/v1/prefs/{key}`). */
 
 export const KEYMAP_PREF_KEY = "keymap";
 export const APP_PREFS_KEY = "appearance";

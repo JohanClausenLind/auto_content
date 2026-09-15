@@ -1,8 +1,4 @@
-"""Compile a ContentCampaign into a pruned DeliverableDAG (2.12, section 7).
-
-Deterministic: same campaign → same DAG. Only branches the selected deliverables require exist;
-everything else is recorded as a typed ``NotRequired`` with its policy reason.
-"""
+"""Compile a ContentCampaign into a pruned DeliverableDAG (2.12, section 7)."""
 
 from __future__ import annotations
 
@@ -55,10 +51,8 @@ _BRANCHES: dict[str, tuple[tuple[Stage, ResourceClass, Executor], ...]] = {
         (Stage.email_preview_qc, "render-cpu", Executor.deterministic),
     ),
     "sequence": (
-        # Shots and controls come first: the anchor is conditioned on the rendered control passes
-        # (rough RGB, layout boxes, skeleton) and neither compiler needs the generation lock.
-        # Retrieval first: a shot can name the mocap clip it was staged from, so the choice has
-        # to be made before the shots are planned.
+        # Retrieval, then shots and controls, before the lock: a shot names the mocap clip it was
+        # staged from, and the anchor is conditioned on the rendered control passes.
         (Stage.find_reference, "control", Executor.deterministic),
         (Stage.plan_shots, "control", Executor.deterministic),
         (Stage.compile_controls, "render-cpu", Executor.deterministic),
@@ -121,9 +115,8 @@ _EXTRA_STAGES: dict[Stage, tuple[ResourceClass, Executor]] = {
     # Both reviews park on a human: passing measurements is necessary and never sufficient.
     Stage.review_assets: ("control", Executor.human),
     Stage.review_frames: ("control", Executor.human),
-    # Reading words off a recording is the one audio stage that produces text, and it is
-    # the first step of a lane rather than a branch of one: nothing standard ingests
-    # speech, so it lives here with the other hand-drawn stages.
+    # The one audio stage that produces text, and the first step of a lane rather than a branch:
+    # nothing standard ingests speech, so it lives with the hand-drawn stages.
     Stage.transcribe_audio: ("inference-audio", Executor.ai),
     Stage.voice_over: ("inference-audio", Executor.deterministic),
     Stage.sound_design: ("inference-audio", Executor.ai),
@@ -131,22 +124,14 @@ _EXTRA_STAGES: dict[Stage, tuple[ResourceClass, Executor]] = {
 
 
 def human_gate_stages() -> frozenset[str]:
-    """Stage names that wait for a person rather than failing.
-
-    One definition, because three callers now need it and they must agree: `make` labels the line
-    GATE instead of FAIL (a gate must not invite `--force`), the run history calls the run
-    "awaiting review" instead of "failed", and the compiler assigns the executor. A stage that
-    parked on a human is not broken — six of seven overnight image sets sat at `review_frames`
-    with their drawings finished, and reporting those as failures is both wrong and demoralising.
-    """
+    """Stage names that wait for a person rather than failing."""
     return frozenset(
         stage.value for stage, (_rc, ex) in stage_defaults().items() if ex is Executor.human
     )
 
 
 def stage_defaults() -> dict[Stage, tuple[ResourceClass, Executor]]:
-    """Default (resource class, executor) per stage — the same values compile_dag assigns,
-    consumed by the workspace-graph compiler so a hand-drawn node runs identically."""
+    """Default (resource class, executor) per stage, the same values compile_dag assigns."""
     defaults: dict[Stage, tuple[ResourceClass, Executor]] = {}
     for stage, rc in _SHARED_CHAIN:
         defaults[stage] = (rc, Executor.deterministic)

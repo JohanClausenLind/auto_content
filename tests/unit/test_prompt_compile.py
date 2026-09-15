@@ -1,16 +1,4 @@
-"""The prompt path: what the image model is told, what the video model is told, and which of the
-two a change re-generates.
-
-This is the most-measured defect in the repo (STATUS 1627, 1704). The planner used to copy a
-beat's ``display_text`` — narration, written to be spoken over a picture — into ``motion_prompt``,
-and the anchor prompt put that in front of the image model along with a "beat N" label. Two things
-followed. The pictures were illustrations of an argument rather than descriptions of a frame, and
-inserting a beat mid-story renumbered every later beat and re-generated a whole film's worth of
-anchors that had not changed.
-
-So the tests here are about *separation*: the still gets one instant, the clip gets the
-progression, and each regenerates only for its own reasons.
-"""
+"""The prompt path: what the image model is told, what the video model is told."""
 
 from __future__ import annotations
 
@@ -180,12 +168,7 @@ def _run_to_anchors(ctx: StageContext, story: StoryPlan) -> None:
 def test_restaging_a_shot_leaves_every_anchor_cached_and_regenerates_the_clip(
     ctx: StageContext,
 ) -> None:
-    """(a) The action and the progression belong to the clip alone.
-
-    Rewriting what happens *during* a shot cannot change what its first frame looks like, so the
-    anchors must all come back from cache. The clip must not: it is the thing that was told the
-    old progression.
-    """
+    """(a) The action and the progression belong to the clip alone."""
     _run_to_anchors(ctx, _story(beats=2))
     before = stage_generate_video(ctx)
     plan_path = ctx.ddir() / "shots" / "plan.json"
@@ -218,12 +201,7 @@ def test_restaging_a_shot_leaves_every_anchor_cached_and_regenerates_the_clip(
 def test_inserting_a_beat_mid_story_leaves_the_other_shots_anchors_untouched(
     ctx: StageContext,
 ) -> None:
-    """(b) The regression this whole item exists for.
-
-    The description used to say "title scene for beat 3". Insert a beat at the front and every
-    later beat renumbers, so every later anchor prompt changes and a film's worth of GPU time is
-    spent regenerating frames that are identical.
-    """
+    """(b) The regression this whole item exists for."""
     _run_to_anchors(ctx, _story(beats=3))
     before = _anchor_markers(ctx)
     assert len(before) == 3
@@ -241,8 +219,7 @@ def test_inserting_a_beat_mid_story_leaves_the_other_shots_anchors_untouched(
 
 
 def test_a_style_change_redraws_the_picture_and_leaves_the_words_alone(ctx: StageContext) -> None:
-    """(c) The style belongs to the picture. Narration, captions and the timeline are text and
-    timing, and no art direction may invalidate them."""
+    """(c) The style belongs to the picture."""
     from content_factory.workflows.stages import (
         stage_align_words,
         stage_compile_captions,
@@ -305,17 +282,7 @@ class _MockName:
 
 
 def test_a_shot_with_no_figures_does_not_assert_a_ground_the_subject_did_not_ask_for() -> None:
-    """ "Standing on open level ground" is a sentence about a body, and it overrode a subject.
-
-    Measured on `audio-picture-story` 2026-09-10: "one open pine cone on a plain grey slate" came
-    back six times as a cone on **wet outdoor gravel**, the slate gone, the background thrown into
-    bokeh by the preamble's "shallow depth of field", and the whole picture covered in specular
-    glints I first mistook for sensor noise — and then for paper texture from the illustration
-    style, which was wrong too. The cause was this clause outranking the subject line's own ground.
-
-    A room still gets named, because a room is a place rather than a surface the subject may have
-    brought with it.
-    """
+    """ "Standing on open level ground" is a sentence about a body, and it overrode a subject."""
     from content_factory.schemas.shots import EnvironmentSpec, WallsSpec
     from content_factory.shots.prompt_compile import environment_clause, state_sentence
 

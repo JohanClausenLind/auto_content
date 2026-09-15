@@ -1,9 +1,4 @@
-"""The MCP server (ADR 0007): the ONLY external-agent surface.
-
-Agents connect with a scoped token (CF_MCP_TOKEN); they never receive OAuth tokens, never widen
-publish scope, and every write lands in the same audit/approval machinery as the UI. Run it with
-`content-factory mcp` (stdio) — see integrations/mcp/README.md.
-"""
+"""The MCP server (ADR 0007): the ONLY external-agent surface."""
 
 from __future__ import annotations
 
@@ -85,7 +80,7 @@ def create_server() -> MCPServer:
 
     @mcp.tool()
     async def create_campaign(quality: str = "demo") -> dict[str, str]:
-        """Start the fixture demo campaign as a durable production run (package-only; no publishing)."""  # noqa: E501
+        """Start the fixture demo campaign as a durable production run."""
         _guard()
         if quality not in {"smoke", "demo"}:
             msg = "quality must be smoke or demo"
@@ -134,9 +129,7 @@ def create_server() -> MCPServer:
     async def run_graph(
         graph_id: str, quality: str = "demo", workspace_id: str = "ws_demo00000001"
     ) -> dict[str, Any]:
-        """Compile a saved workspace graph onto the production DAG and start a durable run.
-        Refused (with per-node reasons) when any node cannot execute; the run then parks at
-        WAITING_FOR_APPROVAL like every production run — approve with approve_preflight."""
+        """Compile a saved workspace graph onto the production DAG and start a durable run."""
         _guard()
         if quality not in {"smoke", "demo"}:
             msg = "quality must be smoke or demo"
@@ -182,8 +175,7 @@ def create_server() -> MCPServer:
 
     @mcp.tool()
     async def get_run_outputs(run_id: str, workspace_id: str = "ws_demo00000001") -> dict[str, Any]:
-        """Locate a run's produced artifacts on disk (videos, audio masters, animation frames,
-        captions). Paths are inside the project directory; nothing is uploaded anywhere."""
+        """Locate a run's produced artifacts on disk; paths stay inside the project directory."""
         _guard()
         from content_factory.db.session import session_scope
         from content_factory.services.runs import projects_root, run_view
@@ -194,11 +186,8 @@ def create_server() -> MCPServer:
             msg = f"no run {run_id!r} in workspace {workspace_id!r}"
             raise ValueError(msg)
         project_dir = projects_root() / view["project_id"]
-        # The delivery candidates, not a second list. This had its own four patterns and they had
-        # drifted: a `single-image` run delivers `anchors/anchor.png` and an `image-set` run
-        # delivers `sequence/contact-sheet.png`, so both reported **no outputs at all** through
-        # this tool while their packages carried files. `compile_destination_packages` had the
-        # same hole and was fixed the same night (2026-09-10); one list is the fix for both.
+        # One list shared with compile_destination_packages: a private copy drifted and reported
+        # no outputs for single-image and image-set runs (journal 2026-09-10).
         from content_factory.workflows.stages import DELIVERY_CANDIDATES
 
         outputs = [
@@ -211,9 +200,8 @@ def create_server() -> MCPServer:
             "run_id": run_id,
             "state": view["state"],
             "project_dir": str(project_dir),
-            # An empty list means two different things and the caller cannot tell them apart:
-            # the run produced nothing, or the directory is not there at all (a durable run whose
-            # project dir was a temporary one, which is most of the rows in a dev database).
+            # Tells "produced nothing" apart from "the project dir is gone" (a durable run whose
+            # dir was temporary, which is most rows in a dev database); an empty list cannot.
             "project_dir_exists": project_dir.is_dir(),
             "outputs": outputs,
         }
@@ -222,7 +210,7 @@ def create_server() -> MCPServer:
     async def approve_preflight(
         run_id: str, revision_hash: str, workspace_id: str = "ws_demo00000001"
     ) -> dict[str, str]:
-        """Approve a waiting run. The hash must match the exact preflight revision (stale hashes are refused by the workflow)."""  # noqa: E501
+        """Approve a waiting run."""
         _guard()
         from content_factory.services.runs import approve_run
 
@@ -235,8 +223,7 @@ def create_server() -> MCPServer:
 
     @mcp.tool()
     def submit_revision_feedback(project_id: str, feedback: str) -> dict[str, Any]:
-        """Revision Box: map plain-language feedback to a typed outcome (fix plan, clarifying
-        question, refusal, or gate). Nothing is applied."""
+        """Map feedback to a typed fix plan, question, refusal or gate; nothing is applied."""
         _guard()
         from content_factory.editor.critique import map_feedback
         from content_factory.editor.project_context import load_context

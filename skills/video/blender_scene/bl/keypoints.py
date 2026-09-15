@@ -1,4 +1,4 @@
-"""Per-frame geometry exports: layout boxes for every entity, OpenPose-18 skeletons for characters."""
+"""Per-frame geometry exports: layout boxes for every entity."""
 
 from __future__ import annotations
 

@@ -54,11 +54,7 @@ that is safe to be sure about.
 
 
 def _unhang(groups: list[list[WordTiming]]) -> list[list[WordTiming]]:
-    """Move a trailing binding word onto the next cue, so no cue ends on "a" or "der".
-
-    At most two words per boundary ("and the"), and never the last word a cue has: a cue with
-    one word in it is worse than a cue that ends on an article.
-    """
+    """Move a trailing binding word onto the next cue, so no cue ends on "a" or "der"."""
     for i in range(len(groups) - 1):
         for _ in range(2):
             if len(groups[i]) < 2:
@@ -73,11 +69,7 @@ def _unhang(groups: list[list[WordTiming]]) -> list[list[WordTiming]]:
 def balanced_groups(
     timed_words: list[WordTiming], *, max_chars_per_line: int = 32
 ) -> list[list[WordTiming]]:
-    """Split one beat's words into the number of cues the greedy compiler would need, but with
-    the words spread evenly across them (no one-word straggler at the end).
-
-    A cue also never ends on a word that binds to the next one — see :func:`_unhang`.
-    """
+    """Split a beat into as many cues as the greedy compiler needs, spread evenly (no straggler)."""
     if not timed_words:
         return []
     greedy = compile_captions(
@@ -132,9 +124,7 @@ def balanced_cues(
     language: str = "en",
     max_chars_per_line: int = 32,
 ) -> CaptionTrack:
-    """Like :func:`compile_captions`, but a run of words that needs more than one cue is split into
-    cues of roughly equal length instead of full cues followed by a one-word straggler ("quarter",
-    "total"). Meant for one beat at a time."""
+    """Like :func:`compile_captions` for one beat, but multi-cue runs split evenly, no straggler."""
     if not timed_words:
         msg = "no words to caption"
         raise ValueError(msg)
@@ -159,8 +149,7 @@ def compile_captions(
     language: str = "en",
     max_chars_per_line: int = 32,
 ) -> CaptionTrack:
-    """Words are in absolute timeline ms (already offset by each segment's start). Cues break on
-    character budget (≤ 2 lines), on max duration, and on gaps ≥ 700 ms (sentence pauses)."""
+    """Words are in absolute timeline ms (already offset by each segment's start)."""
     cues: list[CaptionCue] = []
     group: list[WordTiming] = []
 
@@ -240,15 +229,7 @@ def _ass_ts(ms: int) -> str:
 
 
 def wrap_chars_for(width: int, height: int, size_frac: float, configured: int = 0) -> int:
-    """Characters per caption line for this frame, or ``configured`` when it is set.
-
-    One number has to serve the SRT/VTT cue grouping and the burn-in wrap, or the file and the
-    picture disagree about where a cue breaks. A fixed 22 is the vertical calibration: 22
-    characters of 58 px type fills 71 % of a 1080 px frame's usable width. On a 1920 px one the
-    same 22 is a line a third of the frame wide and the block stacks four deep in the middle of
-    the picture, so the count is derived from the frame instead and comes out at 39 there and at
-    22 — unchanged — on the phone frame it was tuned on.
-    """
+    """Characters per caption line for this frame, or ``configured`` when it is set."""
     if configured > 0:
         return configured
     cap = max(12, round(size_frac * min(width, height)))
@@ -286,42 +267,7 @@ def to_ass(
     hook_size_frac: float = 0.0711,
     hook_top_frac: float = 0.14,
 ) -> str:
-    """Burn-in captions as ASS: one event per spoken word, the whole cue visible and the current
-    word in the highlight colour (colour only — no scale, no bounce), plus an optional headline
-    over the opening seconds.
-
-    **Text sizes are fractions of the frame's shorter side, not of its height.** They used to be
-    fractions of the height, with a docstring claiming "the same fractions hold for 9:16 and 16:9"
-    — which is exactly what they do not do. Every default here was calibrated on a 1080x1920
-    vertical frame, so on a 1920x1080 one the same fraction of height produced captions at 32 px
-    instead of 58 and a hook headline at 43 px instead of 77: 55 % of the size they were designed
-    to be, measured on a rendered landscape film. The shorter side is 1080 either way, so one
-    fraction now means one physical size in both orientations, and the vertical output is
-    unchanged to the pixel (0.0533 x 1080 rounds to the same 58 px that 0.03 x 1920 did).
-
-    **No box by default.** ``box_alpha`` was 0.55, which put a translucent dark slab behind every
-    caption — legible anywhere, and the reason the burn-in read as a subtitle track bolted onto the
-    picture rather than part of it. It is 0.0 now: the type is carried by an outline and a soft
-    drop shadow instead, which stays readable over a bright sky or a white wall without covering
-    any of it. The parameter is kept rather than deleted, because a film graded so flat that an
-    outline disappears into it is a real case and the box is the answer to it.
-
-    ``pop`` and ``fade_ms`` are the animation. The house rule recorded on 2026-09-10 for the
-    Remotion scenes is "flat colours, no gradients/glow/bounce", and the highlight here followed
-    it — colour only. The operator asked for movement on 2026-09-12, so the active word now rises
-    to ``1 + pop`` of its size over 90 ms and settles back, and each cue fades in and out over
-    ``fade_ms``. Set ``pop=0`` and ``fade_ms=0`` to get exactly the old behaviour back. It is a
-    *scale on the word already being read*, not a bounce on the line: the block never moves, so
-    nothing below it reflows and the eye keeps its place.
-
-    ``max_chars_per_line`` of 0 derives the wrap from the frame: the same share of the usable
-    width the vertical calibration used (22 characters of 58 px type inside a 1080 px frame is
-    71 % of it), which is 22 on a phone frame and 39 on a landscape one. A fixed 22 on 16:9 is a
-    line a third of the frame wide, and the block stacks four deep in the middle of the picture.
-
-    Positions are still fractions of the height, because they are about the frame and not about
-    the type: ``bottom_frac`` exists to clear the platform UI band at the bottom of a phone.
-    """
+    """Burn-in ASS captions: type scales with the shorter frame side, positions with the height."""
     short = min(width, height)
     cap_size = max(12, round(size_frac * short))
     margin_v = round(bottom_frac * height)
@@ -355,20 +301,13 @@ def to_ass(
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, "
         "BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, "
         "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-        # BorderStyle 3 is the box; 1 is outline-and-shadow. With `box_alpha` at 0 the type has to
-        # carry itself, so the outline is what makes it legible over a bright sky and the shadow
-        # is what lifts it off a busy one. Both scale with the type.
-        #
-        # The box padding (the Outline field, under BorderStyle 3) has to stay under half the
-        # leading, or a two-line cue's boxes overlap and the overlap composites darker: a
-        # horizontal dark band straight through the middle of the block. libass advances a line by
-        # about 1.2x the size, so the gap between glyph boxes is ~0.2x and the padding gets half.
+        # BorderStyle 3 is the box, 1 outline-and-shadow. Under 3 the Outline field is box padding
+        # and must stay under half the leading (~0.1x size), or a two-line cue's boxes overlap dark.
         f"Style: Cap,{font},{cap_size},{white},{white},{edge},{shadow_colour},"
         f"-1,0,0,0,100,100,0,0,{border_style},{border_width},{shadow_depth},2,"
         f"{margin_h},{margin_h},{margin_v},1",
-        # The highlight layer: the same font, size, margins and alignment as Cap, so a word lands
-        # exactly on its twin below -- and the same outline, or the white edge of the twin would
-        # halo around the coloured word. See the loop below for why the colour cannot go on Cap.
+        # Highlight layer: identical layout and outline to Cap so a word lands on its twin without
+        # a white halo. The colour cannot go on Cap itself: see the loop below.
         f"Style: CapHL,{font},{cap_size},{white},{white},{edge},{shadow_colour},"
         f"-1,0,0,0,100,100,0,0,1,{outline_px},{shadow_depth},2,"
         f"{margin_h},{margin_h},{margin_v},1",
@@ -405,8 +344,7 @@ def to_ass(
             words: list[WordTiming] = group,
             line_breaks: set[int] = breaks,
         ) -> str:
-            """One cue laid out identically however each word is rendered, so two layers of the
-            same cue break in the same places and stay in register."""
+            """Same layout however each word renders, so the two layers stay in register."""
             out: list[str] = []
             for j, other in enumerate(words):
                 if j in line_breaks:
@@ -422,13 +360,8 @@ def to_ass(
             end = group[i + 1].start_ms if i + 1 < len(group) else cue_end
             if end <= start:
                 end = start + 1
-            # The cue, boxed, with no override tag anywhere in it. A `{\1c}` mid-line makes libass
-            # draw the BorderStyle-3 box **per span**, and adjacent spans overlap by the box
-            # padding -- so a translucent box composited over itself came out as two hard dark
-            # bars either side of whichever word was highlighted, on every frame of every film.
-            # The fade goes on the first and last word of the cue only. Fading every word would
-            # blink the whole block on every syllable, because each word is its own Dialogue line
-            # covering the same text.
+            # No override tag in the boxed cue: a mid-line `{\1c}` makes libass box each span, and
+            # the overlaps composite dark. Fade only the first and last word, or the block blinks.
             fade = ""
             if fade_ms > 0 and (i == 0 or i == len(group) - 1):
                 fade_in = fade_ms if i == 0 else 0
@@ -436,13 +369,8 @@ def to_ass(
                 fade = f"{{\\fad({fade_in},{fade_out})}}"
             lines.append(f"Dialogue: 0,{_ass_ts(start)},{_ass_ts(end)},Cap,,0,0,0,,{fade}{plain}")
             if hl:
-                # The current word alone, in the highlight colour, on a boxless style laid out
-                # identically -- so it lands exactly on its white twin underneath. Every other
-                # word is transparent and still occupies its space, which is what keeps the two
-                # layers in register.
-                # The active word rises to (1 + pop) and settles back over ~190 ms. Scale only,
-                # on the word itself: the line's layout is unchanged, so nothing reflows and the
-                # block does not move under the reader's eye.
+                # The other words stay transparent but keep their space, so the highlight lands on
+                # its white twin; pop scales the word only, so the line never reflows.
                 grow = ""
                 settle = ""
                 if pop > 0:

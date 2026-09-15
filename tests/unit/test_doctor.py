@@ -14,14 +14,7 @@ def test_doctor_reports_every_check_with_plain_language_fix() -> None:
 
 
 def test_the_pcie_counters_that_saw_the_card_leave_the_bus_are_a_check(tmp_path, monkeypatch):
-    """A GPU that falls off the PCIe bus takes the desktop with it and looks like a frozen PC.
-
-    Measured on vegaserv 2026-09-10 03:12: `AER: Uncorrectable ... TLP UnsupReq` on the card's
-    root port, `Xid 79, GPU has fallen off the bus`, then Xorg spinning forever inside the dead
-    driver. Nothing in software prevents that, so what `doctor` owes the operator is the early
-    warning — the root port's AER counters, which are readable without root and which no other
-    check looks at.
-    """
+    """A GPU that falls off the PCIe bus takes the desktop with it and looks like a frozen PC."""
     from content_factory import doctor
 
     port = tmp_path / "0000:00:01.0"
@@ -51,8 +44,7 @@ def test_the_pcie_counters_that_saw_the_card_leave_the_bus_are_a_check(tmp_path,
 
 
 def test_both_dropout_mitigations_are_reported_as_unapplied_until_they_are(tmp_path, monkeypatch):
-    """ASPM off and a power cap under the stock ceiling. Neither is something a repo can set —
-    both need root — so the job here is to keep saying so until somebody has."""
+    """ASPM off and a power cap under the stock ceiling."""
     from content_factory import doctor
 
     port = tmp_path / "0000:00:01.0"

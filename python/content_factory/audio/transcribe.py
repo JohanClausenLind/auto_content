@@ -1,27 +1,4 @@
-"""What a recording says, and the story it can be cut into.
-
-Every other lane in this factory starts from something written: a brief, a research pass, a
-StoryPlan fixture. This is the other direction — the material arrives as sound and the words have
-to be read off it before anything can be planned. Two things live here, because they are two
-halves of one idea:
-
-* :func:`transcribe` reads a recording into a :class:`SpeechTranscript`: the text, and where each
-  word is in the audio. ``faster_whisper`` measures the timings; ``fixture`` takes a transcript
-  the operator already has and apportions it across the duration, which is the offline path the
-  core suite runs on and the honest answer for a recording whose script is known.
-* :func:`story_plan_from_transcript` cuts that transcript into beats at sentence boundaries and
-  builds the typed :class:`StoryPlan` the rest of the pipeline consumes. Each beat's duration is
-  **measured**, not planned: it is exactly the span of the words it owns, so the picture drawn for
-  that beat is on screen for exactly as long as those words are spoken.
-
-:func:`beat_spans` is what makes the audio side work: given a plan built this way (or any plan
-whose beats are spans of the same words in order), it says which milliseconds of the recording
-each beat owns, so ``voice_over`` can cut per-beat takes out of one continuous recording instead
-of asking an operator to record their interview again beat by beat.
-
-Nothing here loads a model in this process: faster-whisper runs in its own environment behind
-``takes.SUBPROCESS_RUN``, which is also the seam the tests replace.
-"""
+"""What a recording says, and the story it can be cut into."""
 
 from __future__ import annotations
 
@@ -64,11 +41,7 @@ _SENTENCE_END = re.compile(r"[.!?…]['\")\]]*$")
 
 
 def normalise_recording(src: Path, dest: Path, *, sample_rate: int = 24000) -> tuple[int, int, int]:
-    """The dropped file as the mono PCM WAV the audio chain assumes; ``(rate, channels, ms)``.
-
-    The same normalisation ``voice_over`` applies to a take, for the same reason: everything after
-    this point measures, cuts and mixes PCM, and an m4a from a phone is not that.
-    """
+    """The dropped file as the mono PCM WAV the audio chain assumes; ``(rate, channels, ms)``."""
     if not src.is_file():
         msg = f"no recording at {src}"
         raise TakeError(msg)
@@ -86,20 +59,14 @@ def transcribe(
     language: str = "en",
     fixture_text: str = "",
 ) -> SpeechTranscript:
-    """Read ``wav`` into a transcript. ``wav`` must already be normalised PCM.
-
-    ``fixture`` needs ``fixture_text``: a transcript nobody measured is text with estimated
-    boundaries, and it says so in ``timing_source`` rather than passing itself off as measured.
-    """
+    """Read ``wav`` into a transcript."""
     if engine not in ENGINES:
         msg = f"unknown transcriber {engine!r}; known: {list(ENGINES)}"
         raise TakeError(msg)
     rate, _channels, duration_ms = wav_facts(wav)
     if engine == "fixture":
-        # Whitespace tokens, not normalised ones: the punctuation the operator typed is what the
-        # beat splitter reads sentence boundaries from, and stripping it here would turn a
-        # six-sentence transcript into one unpunctuated run and cost every downstream cut its
-        # boundaries. `tokenize_words` is still what decides whether there is anything here.
+        # Whitespace tokens, not normalised ones: the beat splitter reads sentence boundaries from
+        # the operator's punctuation. `tokenize_words` still decides whether there is anything here.
         words = [w for w in fixture_text.split() if w.strip()]
         if not tokenize_words(fixture_text):
             msg = "the fixture transcriber needs the transcript text; none was given"
@@ -136,16 +103,7 @@ def transcribe(
 def _clamp_words(
     heard: Sequence[str], spans: Sequence[tuple[float, float]], duration_ms: int
 ) -> list[WordTiming]:
-    """Measured spans as contract-legal timings: ordered, non-overlapping, inside the recording.
-
-    faster-whisper returns seconds as floats and occasionally overlaps two words by a few
-    milliseconds or runs the last one a hair past the end of the file. The contract refuses the
-    second and ``audio.alignment`` calls an overlap over 40 ms a critical finding — so a beat cut
-    from a transcript would fail its own alignment check over a rounding artefact. Each word
-    therefore starts no earlier than the previous one ended: a start nudged forward by
-    milliseconds is inaudible, and refusing the transcript would mean no lane could use a real
-    recording.
-    """
+    """Measured spans as contract-legal timings: ordered, non-overlapping, inside the recording."""
     out: list[WordTiming] = []
     cursor = 0
     for word, (start_s, end_s) in zip(heard, spans, strict=True):
@@ -160,12 +118,7 @@ def _clamp_words(
 
 
 def sentences(transcript: SpeechTranscript) -> list[tuple[str, int, int]]:
-    """``(text, start_ms, end_ms)`` per sentence, from the word timings.
-
-    Sentence boundaries come from the punctuation the transcriber emitted. A recording with no
-    punctuation at all (some models emit none) is one sentence, which the beat splitter then
-    divides by duration — a worse cut, and still a cut, rather than a failure.
-    """
+    """``(text, start_ms, end_ms)`` per sentence, from the word timings."""
     if not transcript.words:
         return [(transcript.text, 0, transcript.duration_ms)]
     out: list[tuple[str, int, int]] = []
@@ -181,16 +134,7 @@ def sentences(transcript: SpeechTranscript) -> list[tuple[str, int, int]]:
 
 
 def split_beats(transcript: SpeechTranscript, *, beats: int) -> list[tuple[str, int, int]]:
-    """Cut the transcript into at most ``beats`` spans, ``(text, start_ms, end_ms)``.
-
-    Sentences are grouped by where they sit in the *spoken duration*, not by sentence count: a
-    picture that has to hold for a 20-second digression and one that holds for a three-word aside
-    are the same amount of drawing, and the long one is where a viewer notices a still picture. So
-    each sentence goes to the beat its own midpoint falls in, which spreads the drawings evenly
-    over the recording instead of over the punctuation. A transcript with fewer sentences than
-    beats yields one beat per sentence rather than an invented split — the recording said what it
-    said.
-    """
+    """Cut the transcript into at most ``beats`` spans, ``(text, start_ms, end_ms)``."""
     if beats < 1:
         msg = "a story needs at least one beat"
         raise ValueError(msg)
@@ -236,17 +180,7 @@ def story_plan_from_transcript(
     fps: int = 24,
     visual_subject: str | None = None,
 ) -> StoryPlan:
-    """The transcript as a typed plan: one beat per span, one callout scene per beat.
-
-    ``callout`` is the scene kind on purpose. The scene kind is what the shot planner reads to
-    choose a camera move, and a callout is a slow push in — a drawing that breathes while a line
-    is spoken over it. It is also the only kind that needs neither a dataset nor a stored asset,
-    which matters because the picture for this beat does not exist yet: it is about to be drawn
-    from the staging, and an ``image`` scene would have to name an asset id nothing has produced.
-
-    Beat durations are measured spans of the recording, so a shot plan built from this holds each
-    drawing for exactly its own words.
-    """
+    """The transcript as a typed plan: one beat per span, one callout scene per beat."""
     spans = split_beats(transcript, beats=beats)
     visual_beats: list[VisualBeat] = []
     scenes: list[SceneSpec] = []
@@ -260,10 +194,8 @@ def story_plan_from_transcript(
                 display_text=display,
                 measured_start_ms=start_ms,
                 measured_end_ms=end_ms,
-                # Both, deliberately. The measured pair says where the words are in the recording;
-                # planned_duration_ms is what the shot planner and the silent-cut path read, and a
-                # plan that carried only the measurement would give every drawing the default
-                # length.
+                # Both: the measured pair says where the words are; planned_duration_ms is what the
+                # shot planner and the silent-cut path read, else every drawing gets the default.
                 planned_duration_ms=max(200, end_ms - start_ms),
                 words=tuple(w for w in transcript.words if start_ms <= w.start_ms < end_ms),
             )
@@ -309,31 +241,7 @@ whatever the speaker actually left there."""
 
 
 def beat_spans(transcript: SpeechTranscript, plan: StoryPlan) -> dict[str, tuple[int, int]]:
-    """``beat_id -> (start_ms, end_ms)`` in the recording, matched by walking the words.
-
-    The plan's beats are spans of these same words in order, so matching is a single forward walk
-    rather than a search: consume the transcript's words while they keep matching the beat's, and
-    the beat owns from the first match to the last. Comparison is on the normalised token, so
-    punctuation and casing the transcriber attached to a word cannot break the walk, and a word
-    the plan dropped (an editor's tidy-up) is skipped rather than ending the beat early.
-
-    A beat that matches nothing at all keeps its own measured span when it has one; failing that
-    it is reported by name, because a beat whose audio nobody can locate must not silently become
-    the whole recording.
-
-    **The spans abut, and that is the point.** A beat used to end at the ASR's ``end_ms`` for its
-    last word and the next began at its own first word, so every pause between sentences was
-    discarded and the mix concatenated hard-cut clips. Measured on `ps2b-amber` 2026-09-10, six
-    beats with five gaps of 520-1140 ms: **4.24 s of breath thrown away**, and each beat truncated
-    mid-decay because a word's nominal end is where the transcriber stopped counting, not where
-    the sound stopped. What that sounds like is a voice cut off at the end of every line and
-    jumping into the next — which is exactly how it was reported.
-
-    So a boundary now falls *inside* the gap rather than on a word edge: the next beat takes at
-    most :data:`HEAD_LEAD_MS` of run-up and the rest stays as the previous beat's tail. Nothing is
-    discarded, consecutive beats join sample-for-sample, and every cut lands in silence, which is
-    also why no fade is needed to hide it.
-    """
+    """``beat_id -> (start_ms, end_ms)`` in the recording, matched by walking the words."""
     words = transcript.words
     normalised = [[t.lower() for t in tokenize_words(w.word)] for w in words]
     flat = [(i, t) for i, tokens in enumerate(normalised) for t in tokens]
@@ -347,9 +255,8 @@ def beat_spans(transcript: SpeechTranscript, plan: StoryPlan) -> dict[str, tuple
         probe = cursor
         for token in wanted:
             hit = None
-            # A small window: the next few transcript tokens. Unbounded search would let a beat
-            # whose text was rewritten match a word from much later in the recording and produce
-            # a span that runs backwards over the next beat.
+            # A small window: an unbounded search lets a rewritten beat match a word from much
+            # later and produce a span that runs backwards over the next beat.
             for offset in range(probe, min(probe + 8, len(flat))):
                 if flat[offset][1] == token:
                     hit = offset
@@ -380,23 +287,15 @@ def beat_spans(transcript: SpeechTranscript, plan: StoryPlan) -> dict[str, tuple
 def _close_the_gaps(
     spans: dict[str, tuple[int, int]], order: Sequence[str], duration_ms: int
 ) -> dict[str, tuple[int, int]]:
-    """Move every boundary off a word edge and into the silence beside it.
-
-    Takes the beat ids in story order rather than the plan, because the order is the only thing it
-    needs — which keeps it pure, testable against a bare list, and honest about its dependency.
-    Spans that already overlap are left alone rather than reordered: a beat matched out of order is
-    a different fault, and silently resolving it here would hide it from the caller that reports it.
-    """
+    """Move every boundary off a word edge and into the silence beside it."""
     ordered = [beat_id for beat_id in order if beat_id in spans]
     if not ordered:
         return spans
     starts = {b: spans[b][0] for b in ordered}
     ends = {b: spans[b][1] for b in ordered}
 
-    # One boundary per adjacent pair, placed inside the gap and then used as BOTH the end of the
-    # earlier beat and the start of the later one. Computing it once is what makes the beats abut
-    # sample-for-sample; moving each edge independently leaves a sliver between them, which is the
-    # same hard cut in miniature.
+    # One boundary per adjacent pair, used as both the earlier end and the later start: moving
+    # each edge independently leaves a sliver between them, a hard cut in miniature.
     for index in range(len(ordered) - 1):
         this_id, next_id = ordered[index], ordered[index + 1]
         gap = spans[next_id][0] - spans[this_id][1]
@@ -418,13 +317,7 @@ def _close_the_gaps(
 
 
 def cut_beat(source: Path, dest: Path, *, start_ms: int, end_ms: int) -> None:
-    """One beat's audio out of a continuous recording, as its own mono PCM WAV.
-
-    Sample-accurate re-encode rather than a stream copy: the beats have to abut exactly, and a
-    copy would snap each cut to the nearest packet boundary and lose or repeat a few milliseconds
-    at every one of them. The recording is already PCM by the time this runs, so there is no
-    generation loss to weigh against that.
-    """
+    """One beat's audio out of a continuous recording, as its own mono PCM WAV."""
     from content_factory.audio.mix import ffmpeg
 
     if end_ms <= start_ms:
@@ -458,17 +351,7 @@ def segment_from_transcript(
     display_text: str,
     span: tuple[int, int],
 ) -> NarrationSegment:
-    """A beat cut out of a transcribed recording, as the same segment a take would produce.
-
-    The word timings are the transcript's own, shifted to be relative to this beat's WAV, so
-    nothing re-runs an aligner: the recording was measured once, whole, and a beat is a window on
-    that measurement. ``timing_source`` is carried over rather than re-asserted — an estimated
-    transcript yields estimated beats, and a caption cue built from it must not claim to be
-    measured.
-
-    The words are clamped to the beat's own duration because the WAV's length is decided by
-    FFmpeg's resampler and can land a millisecond short of the span that asked for it.
-    """
+    """A beat cut out of a transcribed recording, as the same segment a take would produce."""
     from content_factory.schemas.audio import NarrationSegment, VoiceIdentity
 
     rate, _channels, duration_ms = wav_facts(wav)

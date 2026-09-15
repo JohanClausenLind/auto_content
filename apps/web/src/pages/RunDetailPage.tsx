@@ -86,12 +86,7 @@ function RunDetailInner({ runId }: { runId: string }) {
   );
 }
 
-/**
- * The run's own answer to "when is it done". Live: the query polls, so the number counts down and
- * the finish time settles as each stage lands. It says what it is made of, because an estimate
- * from one past run and one from three hundred are worth believing differently and the difference
- * is invisible in the number alone.
- */
+/** The run's live answer to "when is it done", saying what it is made. */
 function EtaBanner({ eta }: { eta: RunEta }) {
   // Three readings, because "0 seconds left" means something different from "4 minutes left" and
   // from "already past its usual time", and one phrasing for all three misleads in two of them.

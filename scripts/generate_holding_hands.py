@@ -1,16 +1,4 @@
-"""Generate the holding-hands sequence: two people, hands slowly meeting, clipped into a video.
-
-Anchor (text-to-image) + hub-and-spoke reference edits via the local HiDream-O1 server, then the
-keyframes are blended into a slow 30 fps clip with ffmpeg.
-
-    1. terminal A:  uv run --project skills/image/hidream python skills/image/hidream/server.py
-                    (weights default to <repo>/models/image_generation/HiDream-O1-Image-Dev;
-                    CF_HIDREAM_MODEL_PATH
-                    overrides)
-    2. terminal B:  uv run python scripts/generate_holding_hands.py --workdir output/holding-hands
-
-Requires only loopback HTTP; nothing leaves the machine.
-"""
+"""Generate the holding-hands sequence: two people, hands slowly meeting, clipped into a video."""
 
 from __future__ import annotations
 
@@ -136,9 +124,8 @@ def main() -> int:
         backend,
         args.workdir,
         frame_instructions=instructions,
-        # First real-model run: drift QC observes but barely gates; calibrate before tightening.
-        # The pair is named in sequences/drift.py rather than written out here, so there is one
-        # uncalibrated profile in the repo instead of a different pair of floats per script.
+        # Drift QC observes but barely gates until calibrated; the pair lives in sequences/drift.py
+        # so there is one uncalibrated profile in the repo, not a pair of floats per script.
         max_regen_attempts=1,
         locked_region_similarity_min=UNCALIBRATED[0],
         style_delta_max=UNCALIBRATED[1],

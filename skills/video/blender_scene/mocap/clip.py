@@ -1,20 +1,4 @@
-"""Bake a CMU trial into a ``cf.clip.v2`` motion clip.
-
-``cf.clip.v1`` stores a quaternion per bone per frame. That was measured to be the wrong thing to
-store: quaternions solved on ``man_01`` are wrong on the other three MPFB characters by a mean of
-11.4 degrees and up to 22.6 degrees, because MPFB fits the rig to each mesh, so rest bone
-orientations differ per character. A clip baked for one body is not a clip.
-
-``cf.clip.v2`` stores, per frame, the **world direction of each anatomical segment** plus the root
-translation and a ground offset. Directions are a property of the motion, not of the skeleton
-performing it, so one clip drives every character; the aim solve happens at render time against
-whatever rig is loaded (``bl/retarget.py``). It is also smaller: 24 segments x 3 floats beats 35
-bones x 4.
-
-Two-person clips are baked as one file. CMU's A/B subjects are the same take recorded twice and
-share one world frame, so ``actors`` holds both and their contact is preserved exactly as captured
-rather than reconstructed by staging two clips next to each other.
-"""
+"""Bake a CMU trial into a ``cf.clip.v2`` motion clip."""
 
 from __future__ import annotations
 
@@ -31,10 +15,8 @@ from mocap.asf_amc import Posed, Skeleton, fk, parse_amc, parse_asf, to_blender,
 CLIP_SCHEMA = "cf.clip.v2"
 BAKER_VERSION = "0.1.0"
 
-# The anatomical segments a clip carries. These are CMU bone names, chosen because every one of
-# them has a direction that a humanoid rig can be aimed along. Fingers, thumbs and toes are left
-# out: CMU's hand data is a single rigid "lhand" and the MPFB hand has 20 bones, so aiming them
-# from this source would invent detail. Segment -> the MPFB bones it drives lives in bl/retarget.py.
+# The anatomical segments a clip carries. These are CMU bone names, chosen because every one of them
+# has a direction that a humanoid rig can be aimed along.
 SEGMENTS: tuple[str, ...] = (
     "lowerback",
     "upperback",
@@ -84,11 +66,7 @@ def _round3(v: np.ndarray) -> list[float]:
 
 
 def _root_yaw_deg(posed: Posed) -> float:
-    """Facing direction in the Blender XY plane, degrees, from the pelvis-to-shoulder frame.
-
-    Stored so a retrieval query can ask for a camera angle relative to where the actor faces
-    without loading the whole clip.
-    """
+    """Facing direction in the Blender XY plane, degrees, from the pelvis-to-shoulder frame."""
     forward = posed.rotation["root"] @ np.array([0.0, 0.0, 1.0])
     f = to_blender(forward)
     return round(math.degrees(math.atan2(f[1], f[0])), 2)
@@ -164,12 +142,7 @@ def bake_trial(
     name: str | None = None,
     loop: bool = False,
 ) -> dict[str, Any]:
-    """One ``cf.clip.v2`` document from one CMU trial.
-
-    ``pairs`` is ``[(actor_id, subject), ...]`` — one entry for a solo clip, two for a two-person
-    trial where subject A and subject B are the same take. Every actor is decimated with the same
-    step so the two tracks stay frame-aligned.
-    """
+    """One ``cf.clip.v2`` document from one CMU trial."""
     if not pairs:
         raise ValueError("bake_trial needs at least one (actor_id, subject) pair")
     root = Path(mocap_root)
@@ -198,17 +171,7 @@ def bake_trial(
     # One ground offset for the whole clip, so a two-person clip cannot have its actors on
     # different floors.
     ground = round(max(t.ground_offset for t in tracks), 5)
-    # One origin for the whole clip: the mean of the actors' frame-0 roots, projected to the
-    # floor. Root translation is consumed as a displacement FROM this point, never as an absolute
-    # position, for two reasons. A capture's absolute coordinates are wherever the CMU lab put its
-    # origin, so applying them would teleport the characters and discard the shot's own staging.
-    # And both actors must be measured from the SAME origin, or the distance between them - the
-    # whole point of a two-person clip - changes with where each one happened to start.
-    # The z component matters as much as x and y, and for a different reason: a rig already stands
-    # with its root at hip height, so adding the capture's absolute hip height on top lifts the
-    # figure a metre off the floor - which is exactly what the first render showed, legs filling
-    # the frame and heads cut off. Anchoring z at the frame-0 hip height makes the vertical channel
-    # a CHANGE in hip height: about zero while standing, negative when the actor sits or kneels.
+    # One origin for the whole clip: the mean of the actors' frame-0 roots, projected to the floor.
     first = [t.frames[0]["root_translation"] for t in tracks]
     origin = [
         round(sum(p[0] for p in first) / len(first), 5),
@@ -257,11 +220,7 @@ def write_clip(doc: dict[str, Any], clips_dir: str | Path) -> Path:
 
 
 def contact_gap(doc: dict[str, Any], a: str, b: str, segment_a: str, segment_b: str) -> list[float]:
-    """Per-frame distance between two actors' segment tails. Used to verify a contact clip.
-
-    Positions are reconstructed from root translation plus the chained directions, which is exactly
-    what the renderer will do, so a small gap here means a small gap on screen.
-    """
+    """Per-frame distance between two actors' segment tails."""
     actors = {act["actor_id"]: act for act in doc["actors"]}
     fa, fb = actors[a]["frames"], actors[b]["frames"]
     return [

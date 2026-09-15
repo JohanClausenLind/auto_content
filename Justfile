@@ -90,6 +90,7 @@ fmt:
 lint:
     uv run ruff format --check .
     uv run ruff check .
+    uv run python scripts/style_check.py
     pnpm run lint
 
 typecheck:
@@ -101,10 +102,7 @@ typecheck:
 test:
     uv run pytest -q
     pnpm -r --if-present run test
-    # The app build is part of the gate. `lint`, `typecheck` and the vitest suites all pass on
-    # CSS that lightningcss then refuses to minify, so a syntax error in a stylesheet is invisible
-    # to every other check — that is exactly how `.cf-templates__grid` lost its selector to a
-    # mangled comment and stayed broken across sessions.
+    # The build is part of the gate: a CSS syntax error passes lint, typecheck and vitest.
     pnpm -r --if-present run build
 
 # Blender scene skill: pure-module tests (no Blender) — the live render test is `-m blender`

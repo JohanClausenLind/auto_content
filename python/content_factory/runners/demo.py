@@ -1,10 +1,4 @@
-"""Offline demo runner: fixture campaign → pruned DAG → deliverables → QC → run report.
-
-quality "smoke": silent single-scene video render (fast).
-quality "demo":  full narrated pipeline — mock TTS per beat, measured word timings, narrated
-timeline, full render, mastered stem (-14 LUFS / -1 dBTP), mux, captions (SRT + WebVTT),
-alignment + audio + video QC. No network, no models, no credentials.
-"""
+"""Offline demo runner: fixture campaign → pruned DAG → deliverables → QC → run report."""
 
 from __future__ import annotations
 

@@ -1,14 +1,4 @@
-"""Assets have to reach the renderer, and non-measured figures have to be labelled.
-
-Two gaps this closes, both of the same shape — a field the contract carried and no code read:
-
-* ``RenderBundle.assets`` was filled by nothing and served from nowhere, so `image`, `screenshot`
-  and `map` scenes could not resolve a file even when ``ingest`` had stored one. The renderer
-  resolves an asset path through Remotion's ``staticFile()``, which is relative to the bundle's own
-  public directory, so an absolute path to an operator's upload is a 404 with no error on screen.
-* ``ChartScene.source_ids`` and ``background_asset_id`` are new here; the tests below are the
-  fixtures for them.
-"""
+"""Assets have to reach the renderer, and non-measured figures have to be labelled."""
 
 from __future__ import annotations
 
@@ -75,8 +65,7 @@ def _bundle(assets: dict[str, str], scenes_: tuple = ()) -> RenderBundle:
 
 @pytest.fixture
 def public_assets(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Stage into a temporary directory. The real one lives inside the renderer app, and a unit
-    test has no business writing into the source tree."""
+    """Stage into a temporary directory."""
     target = tmp_path / "public" / "assets"
     monkeypatch.setattr(video_render, "PUBLIC_ASSETS", target)
     return target
@@ -100,8 +89,7 @@ def test_a_local_file_is_staged_by_content_hash_into_the_renderers_public_direct
 def test_staging_is_idempotent_and_independent_of_where_the_project_lives(
     tmp_path: Path, public_assets: Path
 ) -> None:
-    """Two copies of one file in two places stage to one name, so a render's own hash does not
-    change when a project moves. That is a property a provenance record should have."""
+    """Two copies of one file in two places stage to one name."""
     a = tmp_path / "one" / "shot.png"
     b = tmp_path / "two" / "other-name.png"
     for p in (a, b):
@@ -167,8 +155,7 @@ def test_no_uploads_json_means_no_assets_not_a_crash(tmp_path: Path) -> None:
 
 
 def test_a_comparison_scene_needs_the_datasets_its_two_figures_point_at() -> None:
-    """The bundle validator collected `value` and `data` and not the comparison's own two refs, so
-    a bundle could promise a side-by-side against a table it did not carry."""
+    """The bundle validator collected `value` and `data` and not the comparison's own two refs."""
     comparison = sc.ComparisonScene(
         scene_id="scn_compare0001",
         beat_id="beat_000000001",

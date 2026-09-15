@@ -1,9 +1,4 @@
-"""The scenario generator: every film it emits is a valid contract that frames its own subjects.
-
-These are the two mistakes that only show up after a render — a shot whose people fall outside the
-lens, and a pose built on the wrong rig axis — so they are checked here, where they cost a second
-instead of ninety.
-"""
+"""The scenario generator: every film it emits is a valid contract that frames its own subjects."""
 
 from __future__ import annotations
 
@@ -28,9 +23,7 @@ _spec.loader.exec_module(gen)
 
 SCENARIOS = {s.slug: s for s in gen.SCENARIOS}
 # The two-handers stage a pair facing each other under an overhead camera; the runner stages one
-# figure under an orbiting camera. Invariants about facing, reach distance and the framing floor
-# are properties of the *two-hander* staging, so they are parametrised over those alone rather
-# than weakened to accommodate a film they were never about.
+# figure under an orbiting camera.
 TWO_HANDERS = {slug: s for slug, s in SCENARIOS.items() if s.camera_program == "topdown"}
 ORBITERS = {slug: s for slug, s in SCENARIOS.items() if s.camera_program == "orbit"}
 
@@ -53,8 +46,7 @@ def test_every_scenario_builds_valid_contracts(slug: str) -> None:
 
 @pytest.mark.parametrize("slug", sorted(TWO_HANDERS))
 def test_both_people_stay_inside_the_frame(slug: str) -> None:
-    """The camera looks straight down from ``height``; a lens of ``f`` on a 36 mm sensor sees
-    ``36 h / f`` metres across and 9/16 of that down. Both bodies must fit, with margin."""
+    """The camera looks straight down from ``height``."""
     plan = gen.build_shots(SCENARIOS[slug])
     for shot in plan.shots:
         key = shot.camera.keyframes[0]
@@ -67,12 +59,7 @@ def test_both_people_stay_inside_the_frame(slug: str) -> None:
 
 
 def test_poses_swing_about_the_axis_a_profile_render_confirmed() -> None:
-    """Every limb swings about the bone's local X, and nothing else. Verified in profile renders,
-    not inferred: +75 deg on ``upperarm01`` reaches ahead of the body and -75 deg reaches behind
-    it, and +-26 deg on ``upperleg01`` is a stride. An earlier version added an 80 deg local-Z
-    rotation to "bring the arms down" — diagnosed from a top-down clay render where foreshortening
-    made the shoulders look splayed — which pushed every figure into a starfish and, composed
-    ahead of the swing, sent the reach backwards."""
+    """Every limb swings about the bone's local X, and nothing else."""
     for pose in (gen.standing(), gen.stride(0.25), gen.reaching(1.0)):
         for name, rotation in pose.items():
             q = rotation.rotation_quaternion
@@ -89,9 +76,7 @@ def test_poses_swing_about_the_axis_a_profile_render_confirmed() -> None:
 
 
 def test_the_pair_face_each_other() -> None:
-    """yaw -90 faces -X, verified in a profile render, so the character standing on the -X side
-    must be yawed +90. These signs were swapped, which stood the pair back to back in every frame
-    of every film and pointed the reach away from the person it was for."""
+    """yaw -90 faces -X, verified in a profile render."""
     for scenario in TWO_HANDERS.values():
         for shot in gen.build_shots(scenario).shots:
             left, right = sorted(shot.characters, key=lambda c: c.transform.position[0])
@@ -100,8 +85,7 @@ def test_the_pair_face_each_other() -> None:
 
 
 def test_hands_can_actually_reach_each_other() -> None:
-    """Two facing people with ~0.62 m arms cannot touch fingertips closer than about 1.2 m between
-    centres — below that the arms cross and the hands interpenetrate into a tangle."""
+    """Two facing people with ~0.62 m arms cannot touch fingertips closer than about 1.2 m."""
     arm_span = 2 * 0.62
     for scenario in TWO_HANDERS.values():
         reaching = [a for a in scenario.acts if a.kind == "reach"]
@@ -122,10 +106,7 @@ def test_the_shipped_fixtures_match_what_the_generator_produces() -> None:
 
 @pytest.mark.parametrize("slug", sorted(TWO_HANDERS))
 def test_nobody_is_drawn_too_small_for_the_skeleton_to_be_read(slug: str) -> None:
-    """Measured floor, not taste. The fraction is computed from a person's OVERHEAD footprint —
-    what a camera looking straight down actually sees — because using their head-to-foot height
-    here is the mistake that put every camera 3.2x too high and made every figure a third of its
-    intended size."""
+    """Measured floor, not taste."""
     plan = gen.build_shots(SCENARIOS[slug])
     for shot in plan.shots:
         key = shot.camera.keyframes[0]
@@ -137,8 +118,7 @@ def test_nobody_is_drawn_too_small_for_the_skeleton_to_be_read(slug: str) -> Non
 
 
 def test_the_generator_refuses_a_gap_it_cannot_frame_readably() -> None:
-    """A scenario that stages people too far apart fails here, naming the shot — not silently
-    three GPU-hours later in drawings that ignore their staging."""
+    """A scenario that stages people too far apart fails here, naming the shot."""
     from dataclasses import replace
 
     scenario = SCENARIOS["love_story"]
@@ -149,8 +129,7 @@ def test_the_generator_refuses_a_gap_it_cannot_frame_readably() -> None:
 
 @pytest.mark.parametrize("slug", sorted(ORBITERS))
 def test_an_orbiting_camera_actually_moves(slug: str) -> None:
-    """Thirty near-identical cameras is a slideshow with extra steps, and it is the one thing the
-    rubric's camera-variety criterion can catch before any GPU time is spent."""
+    """Thirty near-identical cameras is a slideshow with extra steps."""
     import math
     from itertools import pairwise
     from statistics import median
@@ -167,8 +146,7 @@ def test_an_orbiting_camera_actually_moves(slug: str) -> None:
 
 
 def test_the_rubric_scores_measurements_and_cannot_be_re_based() -> None:
-    """The rubric's whole value is that raising a score means changing the work. If thresholds
-    were adjustable per run, 8.5/10 would mean nothing."""
+    """The rubric's whole value is that raising a score means changing the work."""
     from content_factory.controls import rubric
 
     assert rubric.TARGET == 8.5
@@ -187,12 +165,7 @@ def test_the_rubric_scores_measurements_and_cannot_be_re_based() -> None:
 
 
 def test_the_film_score_and_the_per_shot_scores_answer_different_questions() -> None:
-    """A film scored on its worst shot per criterion cannot tell you whether a change worked.
-
-    Measured on the two-hander lane: one shot went 5.45 to 6.10 across a change while the film sat
-    at 4.65 and 4.71, because the worst readability belonged to a shot the change did not touch. So
-    the report carries both, and names the shots that fail on their own.
-    """
+    """A film scored on its worst shot per criterion cannot tell you whether a change worked."""
     from content_factory.controls import rubric
 
     def shot(value: float) -> list[rubric.Score]:

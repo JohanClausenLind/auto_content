@@ -1,12 +1,4 @@
-/**
- * Joining a run to a graph — and refusing to when the answer would be a guess.
- *
- * The canvas and a run name the same step differently: a graph node has a generated id, a run
- * records what each step produced under the lane's own key. `GraphNode.key` is the join, and
- * everything worth testing here is a case where getting it wrong would point at the wrong node —
- * which is worse than pointing at none, because the wrong node is where somebody will look for
- * the cause of a fault that is somewhere else.
- */
+/** Joining a run to a graph through `GraphNode.key`, and refusing to when the answer would point at the wrong node. */
 
 import { makeNode } from "@content-factory/node-graph";
 import type { GraphNode } from "@content-factory/node-graph";

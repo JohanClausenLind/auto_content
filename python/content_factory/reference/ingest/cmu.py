@@ -1,25 +1,4 @@
-"""CMU Graphics Lab mocap, the source that actually drives a shot.
-
-Two kinds of clip come out of here and they are not the same material.
-
-The baked clips in ``/mnt/fast/models/blender-assets/clips`` come first: 55 two-person takes plus
-the solo trials the recipe asks for by name, all retargeted to ``cf.clip.v2`` world segment
-directions and already tagged in this contract's vocabulary by the baker. A ShotSpec can name one
-of them directly, so these are the clips retrieval exists to find. The solo ones exist because the
-two-person set holds no sustained run - its fastest "running" clip is a two-metre scramble for a
-chair - so a beat that needs somebody actually running has to reach a single-subject sprint trial.
-
-The rest are the single-person trials: one skeleton, one AMC of joint angles, and CMU's own
-one-line description. They carry no interaction, and they say so with ``no_contact`` rather than
-with a guess. They are here because they are the largest pile of real human motion on disk and
-because a query for a posture should be able to reach them.
-
-Two honesty rules shaped this module. Frame counts are parsed, never estimated from file size: an
-AMC numbers its frame blocks from 1 with no gaps, which was checked against a full line count for
-all 2514 files on disk, so the last number in the file is the count and the tail is enough to read
-it. And a trial CMU never indexed has no frame rate anywhere, not in the AMC and not on the index
-page, so it is skipped by name instead of being handed an invented 120.
-"""
+"""CMU Graphics Lab mocap, the source that actually drives a shot."""
 
 from __future__ import annotations
 
@@ -178,11 +157,7 @@ _CAMEL_BOUNDARY = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
 
 def _words(text: str) -> str:
-    """One CMU description, lowercased, with runs like "NormalWalk" split into words.
-
-    212 trials are named in camel case, so without the split "SlowWalk" names no posture at all.
-    This is a spelling normalisation and nothing more: no word is added or renamed.
-    """
+    """One CMU description, lowercased, with runs like "NormalWalk" split into words."""
     return _CAMEL_BOUNDARY.sub(" ", text).lower()
 
 
@@ -194,12 +169,7 @@ actually shows stays in the caption, which is what retrieval scores."""
 
 
 def postures_from_text(text: str) -> tuple[Posture, ...]:
-    """The postures named in one CMU description, sorted and unique.
-
-    Guarantees: only whole-word matches from ``_POSTURE_WORDS`` count, the result is sorted by
-    enum value so it satisfies ``ReferenceClip``, and it is never empty - text that names no
-    posture yields ``FALLBACK_POSTURE``.
-    """
+    """The postures named in one CMU description, sorted and unique."""
     lowered = _words(text)
     found = {posture for posture, pattern in _POSTURE_PATTERNS if pattern.search(lowered)}
     if not found:
@@ -208,23 +178,12 @@ def postures_from_text(text: str) -> tuple[Posture, ...]:
 
 
 def posture_outside_vocabulary(text: str) -> bool:
-    """True when the text names a posture ``Posture`` cannot express: climbing, hanging, swimming,
-    crawling, tumbling.
-
-    Guarantee: only used to skip a trial, never to tag one. A caller that gets True has a trial
-    whose only honest posture is a word the contract does not have.
-    """
+    """True when the text names a posture ``Posture`` cannot express; used only to skip a trial."""
     return bool(_OFF_FEET_PATTERN.search(_words(text)))
 
 
 def amc_frame_count(path: Path, *, window: int = 8192) -> int | None:
-    """The exact number of frames in an AMC file, or None when it holds no frame block.
-
-    Guarantee: this is a parse, not an estimate. AMC numbers its frame blocks from 1 with no gaps,
-    so the last bare integer in the file is the frame count; that was verified against a full line
-    count for every one of the 2514 trials on disk, and reading the tail instead of the whole file
-    is the difference between 0.3 s and 11 s over the corpus.
-    """
+    """The exact number of frames in an AMC file, or None when it holds no frame block."""
     size = path.stat().st_size
     read = window
     while True:
@@ -246,11 +205,7 @@ def amc_frame_count(path: Path, *, window: int = 8192) -> int | None:
 
 
 def _digest(path: Path, cache: dict[Path, tuple[str, int]]) -> tuple[str, int]:
-    """sha256 and size of one file, computed once per path.
-
-    The cache matters: 112 ASF skeletons are shared by 2514 trials, so without it the same
-    skeleton would be hashed twenty times.
-    """
+    """sha256 and size of one file, computed once per path."""
     hit = cache.get(path)
     if hit is not None:
         return hit
@@ -273,12 +228,7 @@ def _load_json(path: Path) -> object | None:
 
 
 def _two_person_subjects(root: Path, skipped: list[str]) -> frozenset[str]:
-    """The CMU subjects recorded as A/B pairs, from the verified class map.
-
-    Guarantee: a subject in this set never becomes a single-person clip. Half of a two-person take
-    is not a one-person trial, so if no baked clip covers it the trial is skipped rather than
-    described as somebody alone.
-    """
+    """The CMU subjects recorded as A/B pairs, from the verified class map."""
     data = _load_json(root / CLASS_MAPS_JSON)
     pairs = None
     if isinstance(data, dict):
@@ -303,11 +253,7 @@ def _tag[T: StrEnum](value: object, kind: type[T]) -> T | None:
 
 
 def _measured(measured: dict[str, object]) -> dict[str, float | list[float]]:
-    """The baker's numbers, flattened to the floats and float lists the contract allows.
-
-    ``travel_m`` and ``yaw_range_deg`` are per actor in the manifest, so they are split into an
-    ``_a`` and a ``_b`` key rather than averaged: which actor walked two metres is the point.
-    """
+    """The baker's numbers, flattened to the floats and float lists the contract allows."""
     out: dict[str, float | list[float]] = {}
     for key in ("closest_wrists_m", "ground_offset"):
         value = measured.get(key)
@@ -326,9 +272,8 @@ def _measured(measured: dict[str, object]) -> dict[str, float | list[float]]:
                 out[f"{key}_{actor}"] = float(value)
             elif isinstance(value, list) and all(isinstance(v, (int, float)) for v in value):
                 out[f"{key}_{actor}"] = [float(v) for v in value]
-    # speed_mps is per actor AND nested ({actor: {peak, sustained_1s}}), so it needs its own pass.
-    # It is worth carrying: the posture tag says "running", this says how fast, which is the
-    # difference between a sprint and a hurried walk.
+    # speed_mps is per actor and nested ({actor: {peak, sustained_1s}}), so it needs its own pass;
+    # it is what tells a sprint from a hurried walk.
     speeds = measured.get("speed_mps")
     if isinstance(speeds, dict):
         for actor in ("a", "b"):
@@ -349,12 +294,7 @@ def _baked_clips(
     skipped: list[str],
     cache: dict[Path, tuple[str, int]],
 ) -> tuple[list[ReferenceClip], set[tuple[str, str]]]:
-    """The baked clips, plus the (subject, trial) pairs they cover.
-
-    Most are two-person takes; an entry naming one subject is a solo clip (the running trials),
-    which is why ``cast`` is a list rather than a pair. A trial covered here is never also
-    ingested as a raw AMC by ``_solo``: the baked clip is the stageable form of it.
-    """
+    """The baked clips, plus the (subject, trial) pairs they cover."""
     library = root / CLIP_LIBRARY
     manifest = _load_json(library / CLIP_MANIFEST)
     if not isinstance(manifest, dict) or not isinstance(manifest.get("clips"), list):
@@ -573,9 +513,8 @@ def _trial_clips(
                 # One body alone. Affection describes an interaction, and with nobody to interact
                 # with the measured answer is neutral rather than a reading of the description.
                 affection=Affection.neutral,
-                # No second person, so no interaction, which the contract spells "no_contact" and
-                # allows to stand with no contact tag at all. A vague description like "greeting"
-                # does not earn a handshake tag here.
+                # No second person, so no interaction: the contract spells that "no_contact", and
+                # a vague description like "greeting" does not earn a handshake tag.
                 interaction_tags=(InteractionTag.no_contact,),
                 contact_tags=(),
                 postures=postures,
@@ -596,14 +535,7 @@ def _trial_clips(
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every clip CMU contributes, plus one string per thing skipped and why.
-
-    Guarantees: clips are sorted by ``clip_id`` and every ``clip_id`` is unique; every
-    ``ReferenceFile.path`` is relative to ``root`` and its ``sha256`` is the digest of the bytes on
-    disk; nothing is read from the clock, so the same bytes and the same ``ingested_at`` produce
-    byte-identical output; a two-person take appears once, as the baked clip, and never also as
-    two solo trials.
-    """
+    """Every clip CMU contributes, plus one string per thing skipped and why."""
     skipped: list[str] = []
     cache: dict[Path, tuple[str, int]] = {}
     two_person = _two_person_subjects(root, skipped)

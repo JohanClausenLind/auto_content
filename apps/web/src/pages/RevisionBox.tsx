@@ -82,10 +82,7 @@ function OutcomeView({ outcome, onConfirm, applying }: { outcome: RevisionOutcom
   }
 }
 
-/**
- * Persistent free-text feedback box. Submitting proposes a revision and renders
- * the typed outcome; confirming a fix plan starts a targeted rebuild run.
- */
+/** Persistent free-text feedback box; submitting proposes a revision. */
 export function RevisionBox({ projectId }: RevisionBoxProps) {
   const inputId = useId();
   const [feedback, setFeedback] = useState("");

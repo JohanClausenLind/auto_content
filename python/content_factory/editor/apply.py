@@ -1,9 +1,4 @@
-"""Apply a FixPlan to a project as a versioned edit overlay; undo restores the prior revision.
-
-The overlay is the deterministic input surface the workflow stages read; applying a plan writes a
-new overlay revision under edits/history/ (append-only) plus edits/overlay.json (current). The
-next run of the same project rebuilds exactly the dependency closure of the changed units.
-"""
+"""Apply a FixPlan to a project as a versioned edit overlay; undo restores the prior revision."""
 
 from __future__ import annotations
 

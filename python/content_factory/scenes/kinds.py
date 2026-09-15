@@ -1,18 +1,4 @@
-"""Which scene kinds the renderer actually draws, in one place both languages can check.
-
-The scene grammar declares twenty-one kinds. The Remotion switch draws fourteen of them and sends
-the other seven to a labelled placeholder — and a placeholder passes QC, so a plan can name
-``ranking`` today and the film ships with a grey card saying "ranking" on it where a chart was
-meant to be. Nothing compared the two lists, in either direction.
-
-So the list lives here, `tests/unit/test_scene_kinds.py` asserts it against the actual TypeScript
-switch, and two things read it: the script writer, which may not ask for a kind that cannot be
-drawn, and `qc_deliverable`, which now fails a deliverable whose plan names one.
-
-Adding a scene is therefore a three-line change with a test that enforces the order: write the
-component, add it to the switch, add it here. Doing the first two and forgetting the third leaves a
-kind the writer will not use; doing the third alone fails the test.
-"""
+"""Which scene kinds the renderer actually draws, in one place both languages can check."""
 
 from __future__ import annotations
 

@@ -1,19 +1,4 @@
-"""Camera presets: pure arithmetic from (preset, frame_count, subject height, frame shape).
-
-Conventions: metres, Blender Z-up. The subject stands at the origin facing -Y (Blender's front
-view), so a camera on the -Y side sees its face. Two keyframes (first and last frame) are enough
-for every preset because the easing lives on the keyframe; ``static`` needs one.
-
-The distances here were calibrated by eye on a 16:9 frame, and a fixed multiple of subject height
-is only a framing on the aspect it was chosen for. A 35 mm lens sees much more vertically in a
-portrait frame, so the same distance leaves the figure at a fraction of the height it had in
-widescreen: measured on a rendered vertical film, every preset shot opened at 0.216 of frame
-height, under the 0.33 where the image model stops reading the pose skeleton. So the whole camera
-rig is scaled about its own look-at point by :func:`aspect_scale`. Scaling about the look-at point
-rather than the distance alone is what keeps a preset a preset: every angle, every sweep and every
-crane arc is preserved exactly, and only the distance changes. 16:9 scales by one, so nothing on
-that aspect moves at all.
-"""
+"""Camera presets: pure arithmetic from (preset, frame_count, subject height, frame shape)."""
 
 from __future__ import annotations
 
@@ -55,14 +40,7 @@ _REFERENCE_ASPECT = 16.0 / 9.0
 
 
 def aspect_scale(width: int, height: int) -> float:
-    """Factor to scale a camera's offset from its look-at point by, for a ``width`` x ``height``
-    frame.
-
-    A subject of height ``h`` at distance ``d`` through lens ``f`` on a sensor of height
-    ``sensor_h`` fills ``f * h / (d * sensor_h)`` of the frame, and ``sensor_h`` is the sensor width
-    times ``height / width``. Holding that fraction constant while the aspect changes means scaling
-    ``d`` by the ratio of sensor heights, which reduces to this. One on 16:9, about 0.32 on 9:16.
-    """
+    """Factor to scale a camera's offset from its look-at point by."""
     if width <= 0 or height <= 0:
         msg = "frame width and height must be positive"
         raise ValueError(msg)
@@ -95,12 +73,7 @@ def camera_keyframes(
     width: int = 1024,
     height: int = 576,
 ) -> tuple[CameraKeyframe, ...]:
-    """Keyframes for ``preset`` framing a subject of ``subject_height_m`` standing at the origin,
-    in a ``width`` x ``height`` frame.
-
-    The frame shape defaults to 16:9, which is the aspect these distances were chosen on, so a
-    caller that does not care gets exactly what this function has always returned.
-    """
+    """Keyframes for ``preset`` framing a subject of ``subject_height_m`` at the origin."""
     if frame_count < 1:
         msg = "frame_count must be >= 1"
         raise ValueError(msg)
@@ -112,12 +85,7 @@ def camera_keyframes(
     scale = aspect_scale(width, height)
 
     def _fit(pos: tuple[float, float, float]) -> tuple[float, float, float]:
-        """Move a camera position towards its look-at point so the framing survives the aspect.
-
-        Scaling the whole offset, not just the ground distance, is the point: it holds the camera's
-        elevation and azimuth exactly, so a crane still cranes through the same arc and a pan still
-        pans through the same angle. Only how far away it does it changes.
-        """
+        """Move a camera position towards its look-at point so the framing survives the aspect."""
         return tuple(target[i] + (pos[i] - target[i]) * scale for i in range(3))  # type: ignore[return-value]
 
     def two(
@@ -172,14 +140,7 @@ one needs a camera change or nothing.
 
 
 def anchor_frames_for(preset: CameraPreset, frame_count: int) -> tuple[int, ...]:
-    """Which frames of a ``preset`` shot should get a generated anchor image.
-
-    The last frame is the obvious second anchor and it is the wrong one for a push-in: the move
-    ends closer than a whole figure fits, so the anchor handed to the image model has a cropped
-    body and fewer joints for the pose skeleton to place. The camera is left alone - a push-in that
-    ends tight is a real choice, and the tail of the shot is the video model's job anyway - and the
-    anchor is placed back where the whole figure is still in frame.
-    """
+    """Which frames of a ``preset`` shot should get a generated anchor image."""
     if frame_count < 1:
         msg = "frame_count must be >= 1"
         raise ValueError(msg)

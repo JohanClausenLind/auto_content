@@ -1,15 +1,4 @@
-"""A scene that names a source the bundle does not carry prints the raw id on screen.
-
-Measured on `f02-penny` (2026-09-10), the first film this repo made with a quote card in it: the
-card shipped reading **"Source: src_authored000001"** under the quotation, and all seven checks
-in `qc_deliverable` passed. The renderer is doing what it was told — `bundle.sources[id]` misses,
-so it falls back to printing the id — and nothing upstream of it said no.
-
-`scenes/kinds.py` already names the stake: *"a quote attributed to a source that does not exist
-is a fabricated citation."* The script writer is held to that. A hand-authored story goes round
-the writer, which is exactly how the placeholder films got out, and there was a check for the
-other kind of dangling reference (`scene_assets_present`) but not for this one.
-"""
+"""A scene that names a source the bundle does not carry prints the raw id on screen."""
 
 from __future__ import annotations
 
@@ -106,8 +95,7 @@ def test_the_same_citation_passes_once_the_source_is_in_the_bundle(tmp_path: Pat
 
 
 def test_source_ids_plural_is_checked_too(tmp_path: Path) -> None:
-    """`source_id` is a quote or a screenshot; `source_ids` is a source card or a chart. Both
-    dangle the same way and both print the raw id."""
+    """`source_id` is a quote or a screenshot; `source_ids` is a source card or a chart."""
     story = dict(STORY)
     story["scenes"] = [
         {
@@ -141,8 +129,7 @@ def test_source_ids_plural_is_checked_too(tmp_path: Path) -> None:
 
 
 def test_a_lane_with_no_bundle_is_not_asked(tmp_path: Path) -> None:
-    """A generative lane cuts its own frames and writes no timeline bundle. There is nothing to
-    check against, and inventing a failure there would be worse than staying quiet."""
+    """A generative lane cuts its own frames and writes no timeline bundle."""
     from content_factory.runners.local import make_context
     from content_factory.workflows.stages import stage_qc_deliverable
 

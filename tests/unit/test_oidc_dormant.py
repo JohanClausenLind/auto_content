@@ -1,5 +1,4 @@
-"""Dormant OIDC module (3.2): fixture IdP only — discovery, PKCE begin, ID-token validation
-(signature/iss/aud/exp/nonce), role mapping deny-by-default, module refuses when not enabled."""
+"""Dormant OIDC module (3.2): fixture IdP only — discovery, PKCE begin, ID-token validation."""
 
 from __future__ import annotations
 

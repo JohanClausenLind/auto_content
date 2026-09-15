@@ -1,20 +1,4 @@
-"""Stable Audio 3 Small-SFX: offline model loading, loop wrapping, loudness, QC.
-
-Imported by `run.py` (one prompt) and `build_library.py` (the whole library). Never imported by
-the control plane — this module lives in the skill's own uv environment (torch 2.7.1 + cu126).
-
-Design rationale and every sourced number are in
-`docs/research/2026-09-07-video-sfx-and-ambience-library.md`. The short version:
-
-* small-sfx is a *post-trained* checkpoint, so `cfg_scale` and `negative_prompt` do nothing. All
-  steering lives in the positive prompt.
-* Loops are made by the "flip-flop" wrap: generate longer than needed, then fold the tail back over
-  the head with an equal-power (cos/sin) crossfade. The wrap point is a continuous span of the
-  original generation, so there is no splice and nothing to click.
-* Every filter here is zero-phase and circular (rFFT), which is what keeps a wrapped loop loopable.
-* Level is set with a single constant scalar. No compressor, no limiter, no ffmpeg `loudnorm`
-  dynamic mode — time-varying gain would destroy the seam the wrap just built.
-"""
+"""Stable Audio 3 Small-SFX: offline model loading, loop wrapping, loudness, QC."""
 
 from __future__ import annotations
 
@@ -45,14 +29,7 @@ def load_model(
     device: str = "cuda",
     half: bool = True,
 ):
-    """Load small-sfx entirely from local disk.
-
-    `StableAudioModel.from_pretrained("small-sfx")` resolves through `hf_hub_download`, which we do
-    not want. `T5GemmaConditioner` accepts `model_path`, which takes precedence over `repo_id`, so
-    rewriting the conditioner config to point at the checkout's `t5gemma-b-b-ul2/` subfolder and
-    calling `load_diffusion_cond()` directly loads the DiT, the SAME-S autoencoder and the text
-    encoder with no network access at all. HF_HUB_OFFLINE is set as a belt-and-braces guard.
-    """
+    """Load small-sfx entirely from local disk."""
     code = Path(os.environ.get("CF_SA3_REPO", code_dir or DEFAULT_CODE)).expanduser()
     mdir = Path(os.environ.get("CF_SA3_SFX_MODEL_PATH", model_dir or DEFAULT_MODEL)).expanduser()
     if not (code / "stable_audio_3").is_dir():
@@ -95,7 +72,7 @@ def generate(model, prompt: str, duration_s: float, seed: int, steps: int = 8) -
 
 
 def _rfft_filter(x: np.ndarray, sr: int, mag) -> np.ndarray:
-    """Zero-phase, circular magnitude filter. Circular is the point: a wrapped loop stays wrapped."""
+    """Zero-phase, circular magnitude filter."""
     n = x.shape[-1]
     freqs = np.fft.rfftfreq(n, 1.0 / sr)
     spec = np.fft.rfft(x, axis=-1)
@@ -115,7 +92,7 @@ def highpass(x: np.ndarray, sr: int, fc: float) -> np.ndarray:
 
 
 def highpass_linear(x: np.ndarray, sr: int, fc: float) -> np.ndarray:
-    """High-pass for non-looping material: zero-pad so circular wrap cannot fold a tail onto a head."""
+    """High-pass for non-looping material: zero-pad."""
     n = x.shape[-1]
     pad = min(n, int(sr * 0.5))
     padded = np.pad(x, ((0, 0), (pad, pad)))
@@ -125,16 +102,7 @@ def highpass_linear(x: np.ndarray, sr: int, fc: float) -> np.ndarray:
 def loop_wrap(
     x: np.ndarray, sr: int, length_s: float, crossfade_s: float, law: str = "equal_power"
 ) -> np.ndarray:
-    """Fold the tail back over the head with an equal-power crossfade.
-
-        head = x[0:C]   body = x[C:L]   tail = x[L:L+C]
-        out  = concat(tail*cos(pi/2*t) + head*sin(pi/2*t), body)      t: 0 -> 1 over C
-
-    The result is exactly `length_s` long. Its last sample is x[L-1] and its first is tail[0] = x[L],
-    so the join is a continuous span of the source: there is no splice to click on. cos/sin (rather
-    than a linear fade) holds RMS flat across the overlap, which is correct for the noise-like,
-    uncorrelated material every bed in this library is made of.
-    """
+    """Fold the tail back over the head with an equal-power crossfade."""
     lo, cf = round(length_s * sr), round(crossfade_s * sr)
     if x.shape[-1] < lo + cf:
         raise ValueError(
@@ -151,9 +119,7 @@ def loop_wrap(
     out = np.concatenate([joined, body], axis=-1)
 
     # The wrap is continuous by construction: out[-1] is x[lo-1] and out[0] is tail[0] = x[lo],
-    # which are adjacent samples of the source. Assert it rather than measure it -- a statistical
-    # "does the seam click" test cannot tell a splice artefact from a real transient that happens
-    # to sit at the join, and will happily flag a perfectly good loop.
+    # which are adjacent samples of the source.
     assert np.allclose(out[:, 0], x[:, lo]) and np.allclose(out[:, -1], x[:, lo - 1]), (
         "loop_wrap: seam is not sample-adjacent in the source"
     )
@@ -169,14 +135,7 @@ def trim_oneshot(
     tail_pad_ms: float = 60.0,
     fade_ms: float = 3.0,
 ) -> np.ndarray:
-    """Trim to the event, then apply short fades so the file cannot click on trigger.
-
-    The head threshold is deliberately much higher than the tail one. The model frequently lays
-    down low-level room tone before the actual event and places the event late in the requested
-    duration; a -60 dB gate sees that room tone as signal and leaves a one-shot with a half-second
-    of dead air in front of it, which is useless for a UI cue that has to land on a frame. -35 dB
-    relative to peak finds the onset while still keeping the quiet first note of a multi-note cue.
-    """
+    """Trim to the event, then apply short fades so the file cannot click on trigger."""
     env = np.max(np.abs(x), axis=0)
     peak = float(env.max())
     if peak <= 0:
@@ -213,19 +172,7 @@ _TPK_RE = re.compile(r"\bTPK:\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)")
 
 
 def measure(x: np.ndarray, sr: int) -> dict:
-    """EBU R128 via ffmpeg: integrated LUFS, loudness range, true peak, max momentary.
-
-    Max momentary is what one-shots are levelled to. Integrated LUFS is meaningless for a 0.3 s
-    click (BS.1770 gates on 400 ms blocks and discards quiet ones); momentary is not.
-
-    Two ffmpeg details that are easy to get wrong:
-      * `framelog=info` is required. `framelog=verbose` means "log frames at VERBOSE level", which
-        is invisible at the default loglevel — the per-frame `M:` values simply never appear.
-      * ebur128's momentary window is 400 ms, so a file shorter than that yields no `M:` reading at
-        all. We zero-pad the measurement copy to 1 s. Padding changes nothing: the loudest 400 ms
-        window still contains the same audio, silence falls below the -70 LUFS absolute gate so the
-        integrated value is untouched, and true peak is unaffected.
-    """
+    """EBU R128 via ffmpeg: integrated LUFS, loudness range, true peak, max momentary."""
     if x.shape[-1] < sr:
         x = np.pad(x, ((0, 0), (0, sr - x.shape[-1])))
     with tempfile.TemporaryDirectory() as td:
@@ -271,10 +218,7 @@ def measure(x: np.ndarray, sr: int) -> dict:
 def normalize(
     x: np.ndarray, sr: int, metric: str, target_lufs: float, ceiling_dbtp: float
 ) -> tuple[np.ndarray, dict, dict]:
-    """Apply ONE constant gain: whichever of (loudness target, true-peak ceiling) is quieter.
-
-    Constant gain only. Any dynamic processing would move the loop seam built by loop_wrap().
-    """
+    """Apply ONE constant gain: whichever of (loudness target, true-peak ceiling) is quieter."""
     before = measure(x, sr)
     want_db = target_lufs - before[metric]
     headroom_db = ceiling_dbtp - before["true_peak_dbtp"]
@@ -303,13 +247,7 @@ def spectrum(x: np.ndarray, sr: int, nfft: int = 8192) -> tuple[np.ndarray, np.n
 
 
 def tone_qc(x: np.ndarray, sr: int) -> dict:
-    """Cheap stand-ins for the psychoacoustic metrics that predict unpleasantness.
-
-    `harsh_band_ratio` is 2-5 kHz energy over 20 Hz-20 kHz energy — a proxy for Zwicker sharpness,
-    which weights high frequencies and whose rise is what "sensory pleasantness decreases with an
-    increase in Sharpness" refers to. It is a proxy, not an acum measurement; it exists so a harsh
-    outlier gets flagged and regenerated instead of shipped.
-    """
+    """Cheap stand-ins for the psychoacoustic metrics that predict unpleasantness."""
     f, p = spectrum(x, sr)
     band = (f >= 20) & (f <= 20000)
     total = float(p[band].sum()) or 1e-20
@@ -317,10 +255,8 @@ def tone_qc(x: np.ndarray, sr: int) -> dict:
     sub = (f >= 20) & (f < 120)
     air = (f > 8000) & (f <= 20000)
 
-    # Spectral flatness (Wiener entropy): geometric mean over arithmetic mean of the power
-    # spectrum. ~1 for white noise, ~0 for anything with structure. Measured on the existing
-    # library it is the one metric that cleanly separates a designed one-shot (0.000) from a
-    # failed generation that came back as broadband hiss (0.24-0.64).
+    # Spectral flatness (Wiener entropy): geometric mean over arithmetic mean of the power spectrum.
+    # ~1 for white noise, ~0 for anything with structure.
     q = np.maximum(p[(f >= 50) & (f <= 16000)], 1e-20)
     flatness = float(np.exp(np.log(q).mean()) / q.mean())
 
@@ -340,12 +276,7 @@ def tone_qc(x: np.ndarray, sr: int) -> dict:
 
 
 def band_focus_db(x: np.ndarray, sr: int, lo: float, hi: float) -> float:
-    """How far the intended band is below holding all the energy. 0 = everything is in band.
-
-    Used to steer candidate selection towards a sound that is what its name says: an airy whoosh
-    should peak in the mids, a sub drop at the bottom. Both can be flawless generations; only one
-    of them is the sound that was asked for.
-    """
+    """How far the intended band is below holding all the energy."""
     f, p = spectrum(x, sr)
     total = float(p[(f >= 20) & (f <= 20000)].sum()) or 1e-20
     sel = (f >= lo) & (f < hi)
@@ -353,20 +284,7 @@ def band_focus_db(x: np.ndarray, sr: int, lo: float, hi: float) -> float:
 
 
 def loop_qc(x: np.ndarray, sr: int) -> dict:
-    """Does the wrap actually loop, and is the bed even enough to survive repeating?
-
-    Clicks are not measured here: loop_wrap asserts the seam is sample-adjacent in the source, so
-    a click is impossible by construction. What can still go wrong is a *level* mismatch across the
-    wrap, which pumps once per cycle. `seam_rms_delta_db` compares the 2 s either side -- 200 ms was
-    too short a window to be stable on a bass-heavy bed.
-
-    `event_prominence_db` is the third, different question: the research warning is not about clicks
-    but about "distinct sounds within the ambience ... being noticeably repeated". Crest factor is
-    the wrong test for that -- rain and fire are legitimately high-crest because of very short
-    transients. What a listener actually remembers is an event of some duration, so this measures
-    half-second block RMS and reports the loudest block over the median. `bed_evenness_db` (p95 over
-    median) says how flat the bed is underneath any such event.
-    """
+    """Does the wrap actually loop, and is the bed even enough to survive repeating?"""
     mono = x.mean(axis=0)
     w = min(int(2.0 * sr), mono.size // 4)
     rms_end = float(np.sqrt(np.mean(mono[-w:] ** 2))) or 1e-12

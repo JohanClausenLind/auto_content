@@ -1,5 +1,4 @@
-"""Runs against the compose Temporal dev server (marked integration). Captures a workflow history
-into fixtures/temporal/ so the offline replay test can run in core CI without any server."""
+"""Runs against the compose Temporal dev server (marked integration)."""
 
 from __future__ import annotations
 

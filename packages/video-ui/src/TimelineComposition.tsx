@@ -69,8 +69,7 @@ export function SceneSwitch({ spec, compiled }: { spec: SceneSpec | null; compil
   }
 }
 
-/** Identity by default so tests and SSR need no Remotion host; the renderer app passes a
- * `staticFile()`-backed resolver, exactly as the artboard path does. */
+/** Identity by default so tests and SSR need no Remotion host. */
 const identityAsset: AssetUrlResolver = (_assetId, path) => path;
 
 export interface TimelineCompositionProps {

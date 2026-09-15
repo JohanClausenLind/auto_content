@@ -1,5 +1,4 @@
-"""Resource admission (2.7, 18.5): VRAM/concurrency leases, measured calibration records, and
-quarantine after repeated OOM or corrupt output. In-memory engine; workers integrate in phase 6."""
+"""Resource admission: VRAM/concurrency leases, calibration records."""
 
 from __future__ import annotations
 

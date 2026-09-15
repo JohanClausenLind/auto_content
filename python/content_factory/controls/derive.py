@@ -8,8 +8,7 @@ from content_factory.audio.mix import ffmpeg
 
 
 def pose_video_from_track(shot_dir: Path, *, fps: int, out: Path | None = None) -> Path:
-    """``pose_skeleton/frames/*.png`` -> mp4 (libx264, yuv420p) for Wan-Animate-2's ``pose_video``.
-    Uses a glob so a frame subset (``render.frames``) still encodes."""
+    """Encode ``pose_skeleton/frames/*.png``."""
     frames = sorted((shot_dir / "pose_skeleton" / "frames").glob("*.png"))
     if not frames:
         raise FileNotFoundError(f"no pose_skeleton frames under {shot_dir}")

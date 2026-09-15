@@ -44,9 +44,7 @@ def ctx(tmp_path: Path) -> StageContext:
 
 
 def test_select_music_is_deterministic_and_verified(ctx: StageContext, monkeypatch) -> None:
-    # Pin the fixture library rather than the configured one. The default is `assets/music`, which
-    # is 113 MB of git-ignored generated FLACs and is host-specific — a core suite that asserted a
-    # track id from it would pass here and fail on any checkout without the media.
+    # Pin the fixture library rather than the configured one.
     monkeypatch.setenv("CF__MEDIA_LIBRARY__MUSIC_DIR", str(REPO / "fixtures" / "music"))
     from content_factory.config import get_settings
 

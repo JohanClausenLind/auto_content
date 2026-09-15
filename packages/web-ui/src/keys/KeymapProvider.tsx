@@ -1,8 +1,4 @@
-/**
- * Owns the keymap: stored overrides, the live binding table, and the one global `keydown` listener
- * that dispatches them. Persists locally on every change and to the account (debounced) when a
- * sync adapter is supplied, exactly as the theme does.
- */
+/** Owns the keymap: stored overrides, the live binding table. */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { chordHasModifier, eventToChord, isTypingContext, MAX_CHORDS_PER_BINDING } from "./chord";

@@ -1,13 +1,4 @@
-"""A submitted prompt is written down, and a rerun adopts it instead of queueing a second one.
-
-The failure this closes: `run_package` submitted a prompt and kept the id **only in memory**. A
-process that died after the POST — a Ctrl-C, an OOM, a worker restart — left no record of the job
-it had queued, so a rerun submitted the identical workflow again. On the LTX GGUF stack that is
-another forty seconds of exclusive GPU, and if the first prompt is still running it is two prompts
-competing for a card that fits one.
-
-Runs against the fixture ComfyUI server: no GPU, no real ComfyUI, no network.
-"""
+"""A submitted prompt is written down, and a rerun adopts it instead of queueing a second one."""
 
 from __future__ import annotations
 
@@ -28,8 +19,7 @@ PARAMS: dict[str, int | float | str] = {"width": 32, "height": 16}
 
 
 def _read(path: Path) -> dict:
-    """Synchronous file access, out of the async body: ruff's ASYNC240 is right that a blocking
-    read inside a coroutine is a smell, and a helper says "this is deliberate, and it is a test"."""
+    """Synchronous file access, out of the async body."""
     return json.loads(path.read_text())
 
 
@@ -118,8 +108,7 @@ async def test_a_rerun_adopts_the_prompt_instead_of_submitting_a_second_one(
 async def test_a_journal_for_a_different_workflow_is_not_adopted(
     server: str, tmp_path: Path
 ) -> None:
-    """A rerun that changed one parameter is a different job, and adopting the old prompt would
-    hand back a clip made from the parameter the operator just changed."""
+    """A rerun that changed one parameter is a different job."""
     from content_factory.comfyui.client import inject_parameters
 
     client = ComfyUIClient(server, client_id="journal-test")
@@ -138,8 +127,7 @@ async def test_a_journal_for_a_different_workflow_is_not_adopted(
 async def test_a_prompt_the_server_has_never_heard_of_is_not_adopted(
     server: str, tmp_path: Path
 ) -> None:
-    """ComfyUI restarted: the history and the queue are both empty, so the id is worthless and the
-    only correct move is to submit. Adopting it would wait out the timeout for nothing."""
+    """ComfyUI restarted: the history and the queue are both empty, so the id is worthless."""
     from content_factory.comfyui.client import inject_parameters
 
     client = ComfyUIClient(server, client_id="journal-test")

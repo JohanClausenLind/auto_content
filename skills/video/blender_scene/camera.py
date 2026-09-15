@@ -1,8 +1,4 @@
-"""Camera path math (pure Python, no bpy): easing, look-at quaternions, interpolation, intrinsics.
-
-Conventions: Blender Z-up right-handed world; the camera looks down its local -Z with +Y up.
-Quaternions are (w, x, y, z). Image coordinates are normalised, y down.
-"""
+"""Camera path math (pure Python, no bpy): easing, look-at quaternions, interpolation."""
 
 from __future__ import annotations
 
@@ -199,7 +195,7 @@ def intrinsics(
 def project_camera_point(
     p_cam: Vec3, k: tuple[float, float, float, float], width: int, height: int
 ) -> tuple[float, float, float]:
-    """Camera-space point -> (u_norm, v_norm, depth); depth along the view axis, positive in front."""
+    """Camera-space point -> (u_norm, v_norm, depth); depth along the view axis."""
     fx, fy, cx, cy = k
     depth = -p_cam[2]
     if depth <= 1e-9:

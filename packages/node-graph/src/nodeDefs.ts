@@ -1,10 +1,4 @@
-/**
- * Node definitions: what a node type looks like and what it accepts.
- *
- * A definition is data, not code. The editor renders slots and widgets from it, the model
- * validates against it, and a catalogue is just a list of them, so an app can describe its own
- * node types (this repo's pipeline stages, for one) without touching the editor.
- */
+/** Node definitions: what a node type looks like and what it accepts. */
 
 export type WidgetValue = string | number | boolean;
 
@@ -18,27 +12,10 @@ export type WidgetKind =
   | "toggle"
   | "seed";
 
-/**
- * A condition on sibling widgets' values, keyed by widget name.
- *
- * `{ enhancer: ["resemble_enhance"] }` reads "…when `enhancer` is `resemble_enhance`".
- */
+/** A condition on sibling widgets' values, keyed by widget name. */
 export type DisplayCondition = Readonly<Record<string, readonly WidgetValue[]>>;
 
-/**
- * When to show a widget, as data rather than as a second node type.
- *
- * Half the controls on a busy node are dead most of the time: `restore_speech` shows
- * `enhancer_mode` and `enhancer_nfe` whether or not an enhancer is on, and `generate_video`
- * shows three GGUF filenames that only mean anything to one of its three models. The choices
- * were to render them always (and let the operator guess), or to split the node per backend
- * (and duplicate every shared widget). This is the third option, and it is the one n8n settled
- * on too: the definition says when a control applies, and the editor, the panel and the height
- * estimate all read the same answer.
- *
- * A hidden widget keeps its value — it is not cleared, and a lane that sets it stays valid —
- * but it stops being required, because a control nobody can see must never block a graph.
- */
+/** When to show a widget, as data rather than as a second node type. */
 export interface DisplayOptions {
   /** Show only when every named widget holds one of the listed values. */
   readonly show?: DisplayCondition;
@@ -66,11 +43,7 @@ export interface WidgetSpec {
   readonly help?: string;
   /** A text/textarea/chips widget that must not be left empty for the graph to be valid. */
   readonly required?: boolean;
-  /**
-   * What to put here, in the operator's words, for a required widget that is empty. The twin of
-   * `SlotSpec.hint`: "Audio File: dropped file is empty" says what is wrong and not what to do
-   * about it, and a lane template that opens with an empty file input needs the second thing.
-   */
+  /** What to put here, in the operator's words, for a required widget that is empty. */
   readonly hint?: string;
   /** When this widget applies. Absent means always. */
   readonly displayOptions?: DisplayOptions;
@@ -83,11 +56,7 @@ export interface SlotSpec {
   readonly label?: string;
   /** Inputs only: the node still runs without a link here. */
   readonly optional?: boolean;
-  /**
-   * What to connect, in the operator's words. A required input that is empty shows a red badge
-   * and one line of text; "input deliverable is not connected" says what is wrong and not what
-   * to do about it, which is the difference this carries.
-   */
+  /** What to connect, in the operator's words. */
   readonly hint?: string;
 }
 
@@ -100,23 +69,12 @@ export interface NodeDefinition {
   readonly category: string;
   /** One honest line about what the node does. */
   readonly summary: string;
-  /**
-   * The longer answer, for the panel: what this node reads, what it writes, and what it decides.
-   * A node whose slots are typed `QC` and whose summary is four words is not self-explanatory to
-   * anyone who did not write the pipeline, and the panel is where an operator goes to find out.
-   */
+  /** The longer answer, for the panel: what this node reads, what it writes. */
   readonly help?: string;
   readonly inputs: readonly SlotSpec[];
   readonly outputs: readonly SlotSpec[];
   readonly widgets: readonly WidgetSpec[];
-  /**
-   * Groups of inputs where at least one must be connected, though no single one is required.
-   *
-   * Some nodes take the same thing in two shapes: Compose Video needs a picture, and a picture is
-   * either a frame sequence or a clip. Marking both slots required is a lie a lane then has to
-   * apologise for in its caveat; marking both optional says a node with no picture at all is
-   * fine. This says what is actually true, and the message names the alternatives.
-   */
+  /** Groups of inputs where at least one must be connected, though no single one is required. */
   readonly requires_one_of?: readonly (readonly string[])[];
   /** Header tint. Defaults to the category colour the app's stylesheet assigns. */
   readonly accent?: string;
@@ -148,14 +106,9 @@ export const NODE_TITLE_HEIGHT = 30;
 export const NODE_SLOT_HEIGHT = 20;
 export const NODE_WIDGET_HEIGHT = 20;
 
-/**
- * A size estimate for a node before (or without) DOM measurement — the canvas shows nodes with
- * it until ResizeObserver reports truth, and thumbnails never measure at all.
- */
+/** A size estimate for a node before (or without) DOM measurement. */
 export const NODE_OUTPUT_STRIP_HEIGHT = 96;
-/** The output strip: a row of thumbnails and the row of counts under it. Counted in the estimate
- *  so a node showing what it produced does not paint over the one below it until ResizeObserver
- *  catches up — which at 20% zoom, where a whole lane is on screen, reads as a broken layout. */
+/** The output strip: a row of thumbnails and the row of counts under it. */
 
 export function estimateNodeSize(
   node: {
@@ -183,15 +136,7 @@ export function estimateNodeSize(
   return { width, height };
 }
 
-/**
- * A multi-select widget's value: one comma-separated string, not an array.
- *
- * `WidgetValue` is a string, a number or a boolean in every layer this crosses — the graph
- * document, the Pydantic contract, the DAG node's `params`, the stage's `_param_list` reader —
- * and widening all of them to carry a list would be a contract change in five places for a
- * control that reads back as `"bluesky,mastodon"` either way. So the list lives in the string,
- * and these two functions are the only place that knows it.
- */
+/** A multi-select widget's value: one comma-separated string, not an array. */
 export function parseChips(value: WidgetValue): string[] {
   return String(value)
     .split(",")
@@ -208,13 +153,7 @@ export function formatChips(values: readonly string[], options?: readonly string
   return [...ordered, ...extras].join(",");
 }
 
-/**
- * Does `condition` hold against the node's current values?
- *
- * A widget the node has never set reads as its own default, which is the same resolution the
- * editor uses to render it — otherwise a freshly dropped node would answer differently from the
- * same node one click later.
- */
+/** Does `condition` hold against the node's current values? */
 function conditionHolds(
   condition: DisplayCondition,
   def: NodeDefinition,

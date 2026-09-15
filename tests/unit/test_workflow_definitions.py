@@ -1,10 +1,4 @@
-"""The workflow catalogue: every definition holds together, and the generated files match it.
-
-These tests exist because a workflow used to be defined in two hand-written places that drifted.
-The point of the refactor is that there is now one file per workflow and everything else is
-generated from it, so what has to be guarded is the generation and the honesty of each file, not
-the agreement between two copies.
-"""
+"""The workflow catalogue: every definition holds together, and the generated files match it."""
 
 from __future__ import annotations
 
@@ -62,13 +56,7 @@ def test_every_stage_has_an_executor_or_the_file_says_why_not(path: Path) -> Non
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_every_definition_compiles_to_a_canvas_graph(path: Path) -> None:
-    """`to_workspace_graph` returns the contract now, so constructing it *is* the assertion.
-
-    `WorkspaceGraph`'s validators refuse a duplicate node id, a link to a node that is not in the
-    graph, two links into one input slot, and a node linked to itself — every one of which the old
-    untyped dict could emit and the canvas would then refuse to load. What is left to assert here
-    is the thing the contract cannot know: that this graph is *this* definition.
-    """
+    """`to_workspace_graph` returns the contract now, so constructing it *is* the assertion."""
     template = load_definition_file(path)
     graph = to_workspace_graph(
         template
@@ -85,15 +73,7 @@ def test_every_definition_compiles_to_a_canvas_graph(path: Path) -> None:
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_every_required_input_is_wired(path: Path) -> None:
-    """No lane opens on a required input that nothing feeds — and a caveat can no longer excuse
-    one.
-
-    Four lanes used to. Each of them worked on material the operator supplies, and there was no
-    node type for that material to arrive through, so each declared its first stage's input
-    unwired and apologised in prose. ``input.audio`` / ``input.image`` / ``input.video`` are lane
-    node types now, so the apology has been replaced by a wire and the loader refuses the rest.
-    Asserted here as well as in the loader so a failure names the file.
-    """
+    """No lane opens on a required input that nothing feeds."""
     template = load_definition_file(path)
     catalog = node_catalog()
     fed = {(w.to_key, w.to_slot) for w in template.wires}
@@ -109,9 +89,7 @@ def test_every_required_input_is_wired(path: Path) -> None:
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_every_output_is_consumed_by_something(path: Path) -> None:
-    """A node whose output nothing reads is the canvas's own warning, and in a committed lane it
-    means one of two things: a step whose result is thrown away, or a terminal nobody wired. Both
-    are wiring mistakes, and both were in the catalogue until this test existed."""
+    """A node whose output nothing reads is the canvas's own warning."""
     template = load_definition_file(path)
     catalog = node_catalog()
     used = {w.from_key for w in template.wires}
@@ -125,14 +103,7 @@ def test_every_output_is_consumed_by_something(path: Path) -> None:
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_a_lane_that_needs_material_declares_a_node_for_it(path: Path) -> None:
-    """The prerequisite and the graph have to agree, in both directions.
-
-    There are exactly two ways an operator's material reaches a run, and a lane has to use one of
-    them and say which: a file input node, staged by ``--input`` or by a drop on the canvas; or
-    ``voice_over`` in ``takes`` mode, which reads one recording per beat out of a directory. A
-    lane whose prose promises material and whose graph has neither is the shape that made four
-    lanes unrunnable.
-    """
+    """The prerequisite and the graph have to agree, in both directions."""
     from content_factory.runners.local import workflow_inputs
 
     template = load_definition_file(path)
@@ -153,8 +124,7 @@ def test_a_lane_that_needs_material_declares_a_node_for_it(path: Path) -> None:
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_folded_groups_hold_together_and_reach_the_canvas(path: Path) -> None:
-    """Groups are how a lane is shown, so what has to hold is that they name real nodes, fold more
-    than one, and survive the trip into the canvas document."""
+    """Groups are how a lane is shown, so what has to hold is that they name real nodes."""
     template = load_definition_file(path)
     keys = {n.key for n in template.nodes}
     for group in template.groups:
@@ -174,8 +144,7 @@ def test_folded_groups_hold_together_and_reach_the_canvas(path: Path) -> None:
 
 @pytest.mark.parametrize("path", DEFINITION_FILES, ids=IDS)
 def test_names_are_general_not_about_one_subject(path: Path) -> None:
-    """A workflow is named for what it does to the material. The lane that made a love story makes
-    a fable with a different script, so 'love' does not belong in its name."""
+    """A workflow is named for what it does to the material."""
     template = load_definition_file(path)
     banned = ("love", "romance", "wind", "documentary about", "my ")
     lowered = f"{template.id} {template.name}".lower()
@@ -195,8 +164,7 @@ def test_ids_are_unique_and_files_are_named_after_them() -> None:
 
 
 def test_no_two_workflows_run_the_same_stages_in_the_same_order() -> None:
-    """The dedupe guard. Two lanes differing only by a widget value should be one lane with a
-    parameter, which is what happened to the stills variant and the two single-image templates."""
+    """The dedupe guard."""
     seen: dict[tuple[str, ...], str] = {}
     for wid, template in load_definitions().items():
         key = tuple(s.value for s in template.stages())
@@ -338,9 +306,7 @@ def test_a_note_is_not_runnable_and_stays_out_of_the_order() -> None:
 
 
 def test_a_value_outside_a_combo_widgets_options_is_refused(tmp_path: Path) -> None:
-    """The check that caught six wrong values the moment it existed, including 'animate' where the
-    widget says 'ltx'. A plausible wrong value is worse than a misspelled key: it validates and
-    then silently takes the stage's fallback."""
+    """The check that caught six wrong values the moment it existed, including 'animate'."""
     import yaml
 
     doc = _template(
@@ -372,14 +338,7 @@ def test_a_widget_with_no_options_accepts_any_value(tmp_path: Path) -> None:
 
 
 def test_every_declared_widget_is_one_the_stage_actually_reads() -> None:
-    """A widget that looks bound and does nothing is the bug this guards, and it is a class rather
-    than a one-off: it has cost three renders to find (upscale_video's resolution, and
-    generate_keyframes' two, which the frame count and the generation lock already decided).
-
-    This used to be two assertions naming those nodes, which cannot catch the fourth. It is now a
-    static read of stages.py for all 55 node types at once: every declared widget must reach a
-    ``_param``-family call or a ``ctx.params.get`` somewhere in its executor.
-    """
+    """A widget that looks bound and does nothing is the bug this guards."""
     from content_factory.workflows.widget_audit import (
         WIDGET_EXEMPTIONS,
         stale_exemptions,
@@ -403,13 +362,7 @@ def test_every_declared_widget_is_one_the_stage_actually_reads() -> None:
 
     catalog = node_catalog()
     # `frames` and `seed` were removed here because the stage reads neither; `model` was added
-    # because it reads that one — `_reference_backends` resolves the spoke backend from this
-    # node's own widget, and without it `photo-sequence-video` drew a real anchor and mock
-    # spokes (2026-09-10). The three drift knobs joined them on 2026-09-11: the stage had always
-    # read them and its own comment told the operator to reach for
-    # `--set spokes.drift_profile=uncalibrated`, but nothing declared them, so they were settable
-    # from the command line, invisible on the canvas, and refused if a lane tried to freeze one.
-    # The audit above proves the binding; this pins the intent.
+    # because it reads that one.
     assert catalog["generate_keyframes"]["widgets"] == [
         "model",
         "drift_profile",
@@ -425,21 +378,7 @@ def test_every_declared_widget_is_one_the_stage_actually_reads() -> None:
 
 
 def test_no_new_stage_reads_a_key_its_node_never_declares() -> None:
-    """The mirror of the audit above, and the half that was missing.
-
-    A declared widget nothing reads is a control that looks bound and does nothing. A read key
-    nothing declares is the opposite: reachable from `--set` and from nowhere else. That is how
-    `generate_keyframes` came to read three drift knobs the canvas could not set and a lane could
-    not freeze.
-
-    The rest of this list is **untriaged**, and pinned rather than asserted empty because two
-    legitimate reasons to read an undeclared key already exist in the code — the runner injecting
-    one from a dedicated flag (`--story`, `--subject`, `--shots`), and a stage injecting one
-    itself before reading it back (`stage_lock_generation` takes `style` and `model` from the
-    anchor's recorded marker so a lock can never name art direction the anchor was not drawn in).
-    Telling those from a real gap needs reading each one. Pinning means the backlog can shrink
-    deliberately and cannot grow by accident.
-    """
+    """The mirror of the audit above, and the half that was missing."""
     from content_factory.workflows.widget_audit import undeclared_reads
 
     assert undeclared_reads() == {
@@ -525,11 +464,7 @@ def test_load_definition_names_the_known_ids_when_asked_for_a_missing_one() -> N
 def test_one_broken_definition_does_not_take_down_every_other_lane(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Measured 2026-09-10 05:14: a note in ``image-set.yaml`` was one sentence over the
-    contract's 400-character limit and fifteen queued runs died a second apart - twelve of them
-    ``single-image``, a lane that never reads that file. Whole-catalogue readers still refuse a
-    bad catalogue; running one lane needs only that lane's own file to be right.
-    """
+    """One lane's bad note in ``image-set.yaml`` used to kill fifteen queued runs of other lanes."""
     import shutil
 
     from content_factory.workflows import catalog as catalog_mod
@@ -551,9 +486,7 @@ def test_one_broken_definition_does_not_take_down_every_other_lane(
 
 
 def test_a_truncated_stage_line_cannot_swallow_the_framing_warning() -> None:
-    """The runner truncates a stage's facts to keep a run cheap to read, so a warning arriving as
-    the tail of a cut fact blob is a warning nobody sees. It gets its own line instead, emitted
-    where the untruncated facts are so every front end gets it."""
+    """The runner truncates a stage's facts to keep a run cheap to read."""
     from content_factory.runners.local import stage_warnings
 
     facts = {
@@ -585,15 +518,7 @@ def test_nothing_to_report_prints_nothing() -> None:
 
 
 def test_a_lane_that_requires_a_model_says_which_node_uses_it() -> None:
-    """A lane declaring weights and then drawing mock rectangles is the defect this prevents.
-
-    The backend is resolved from the node's own `model` widget when the setting is not explicitly
-    configured (`_anchor_backend_name`'s documented precedence), and only four of the ten HiDream
-    lanes had the pin. Measured 2026-09-10: `image-set` produced **six red rectangles in three
-    seconds** and then gated for human review on them, on a lane whose preflight had just verified
-    the HiDream weights were on disk. `photo-sequence-video` had pinned the anchor and not the
-    spokes, so it drew a real anchor and mock spokes.
-    """
+    """A lane declaring weights and then drawing mock rectangles is the defect this prevents."""
     from content_factory.workflows.catalog import load_definitions
 
     # Which node types resolve a real backend from their own `model` widget.

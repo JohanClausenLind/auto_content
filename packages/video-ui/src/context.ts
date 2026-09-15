@@ -5,8 +5,7 @@ import { createContext, useContext } from "react";
 export interface SceneEnv {
   bundle: RenderBundle;
   theme: ContentTheme;
-  /** Maps `bundle.assets[assetId]` (a local path) to a URL the host can serve — the same contract
-   * `Artboard` uses. Identity by default, so tests and SSR need no Remotion host. */
+  /** Maps `bundle.assets[assetId]` (a local path) to a URL the host can serve. */
   assetUrl: AssetUrlResolver;
 }
 

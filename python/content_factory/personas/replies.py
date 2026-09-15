@@ -1,5 +1,4 @@
-"""Reply drafting governance (24.2, 24.3): autonomy tiers, variation pressure, schedule-gated
-human-like release. The drafting model is pluggable; the governance here is not."""
+"""Reply drafting governance: autonomy tiers, variation pressure, schedule-gated release."""
 
 from __future__ import annotations
 

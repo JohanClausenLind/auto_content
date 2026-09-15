@@ -1,14 +1,4 @@
-"""The runner staging: thirty stills of one captured sprint, a different camera on each.
-
-Three properties here each cost a render to learn, so each is a test rather than a comment. The
-motion is captured, so the plan must sample thirty distinct clip frames rather than pose one figure
-thirty times. The cameras must come all the way round the body and still leave consecutive stills
-close enough to read as one place - the first version walked the azimuth by the golden angle, which
-covers a circle beautifully and put consecutive cameras a median 13.1 m apart, scoring 0.0 on the
-rubric's camera-variety criterion. And the second framing pass must move a camera in the direction
-the measurement asks for, because the analytic solve models a standing figure while a sprinter
-throws its limbs out.
-"""
+"""The runner staging: thirty stills of one captured sprint, a different camera on each."""
 
 from __future__ import annotations
 
@@ -74,8 +64,7 @@ def test_one_character_because_the_clip_has_one_performer(plan: dict) -> None:
 
 @clip_baked
 def test_a_still_is_asked_for_more_frames_than_it_renders(plan: dict) -> None:
-    """One rendered frame per shot, held for a second by the hold cut. The extra frame_count is
-    what the cut reads as a duration, so it must not become extra renders."""
+    """One rendered frame per shot, held for a second by the hold cut."""
     parsed = ShotPlan.model_validate(plan)
     for shot in parsed.shots:
         assert shot.anchor_frames == (0,)
@@ -122,9 +111,7 @@ def _measured(tmp_path: Path, shot_id: str, height: float, top: float) -> None:
 def test_the_correction_pass_moves_the_camera_the_way_the_measurement_asks(
     plan: dict, tmp_path: Path
 ) -> None:
-    """A figure measured larger than the target means the camera is too close, so it must move
-    away from the aim point, and vice versa. The bug this guards is a sign error, which would
-    double the framing error instead of removing it."""
+    """A figure measured larger than the target means the camera is too close."""
     module = _generator()
     shot = json.loads(json.dumps(plan["shots"][0]))
     target = float(shot["description"].split("framed at ")[1].split(" ")[0])
@@ -148,9 +135,7 @@ def test_the_correction_pass_moves_the_camera_the_way_the_measurement_asks(
 
 @clip_baked
 def test_a_subject_sitting_high_in_frame_raises_the_aim(plan: dict, tmp_path: Path) -> None:
-    """Image y runs down, so a box whose centre is above the middle needs the aim raised to bring
-    it down. Getting this the wrong way round is what clipped a head: the solve already put every
-    runner high, and a sign error here would push them out of frame instead of down into it."""
+    """Image y runs down, so a box whose centre is above the middle needs the aim raised to."""
     module = _generator()
     shot = json.loads(json.dumps(plan["shots"][0]))
     target = float(shot["description"].split("framed at ")[1].split(" ")[0])
@@ -172,9 +157,7 @@ def test_a_subject_sitting_high_in_frame_raises_the_aim(plan: dict, tmp_path: Pa
 
 @clip_baked
 def test_a_second_correction_composes_onto_the_first(plan: dict, tmp_path: Path) -> None:
-    """Raising the camera to centre the subject also raises the elevation, which shrinks it again,
-    so the correction is a fixed-point iteration. A second pass that rebuilt from the analytic
-    camera would throw the first pass away."""
+    """Raising the camera to centre the subject also raises the elevation."""
     module = _generator()
     first = {"shots": [json.loads(json.dumps(plan["shots"][0]))]}
     shot_id = first["shots"][0]["shot_id"]
@@ -215,10 +198,7 @@ def test_asking_for_more_stills_than_the_clip_has_frames_is_refused() -> None:
 
 @clip_baked
 def test_the_shipped_fixture_is_the_generator_plus_its_correction_pass(plan: dict) -> None:
-    """A full comparison is the wrong assertion: the shipped plan is the output of two passes, and
-    the second one needs a rendered controls directory the test does not have. So this pins
-    everything the correction does not touch - which shots there are and what drives them - and
-    checks the cameras were in fact corrected rather than shipped straight from the solve."""
+    """A full comparison is the wrong assertion: the shipped plan is the output of two passes."""
     shipped = json.loads((REPO / "fixtures" / "shots" / "runner_mocap.json").read_text("utf-8"))
     parsed = ShotPlan.model_validate(shipped)
     assert [s["shot_id"] for s in shipped["shots"]] == [s["shot_id"] for s in plan["shots"]]

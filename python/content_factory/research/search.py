@@ -49,8 +49,7 @@ class SearxngSearchProvider(SearchProvider):
 
 
 class FixtureSearchProvider(SearchProvider):
-    """Deterministic offline results from fixtures/research/search.json (query → results).
-    Unknown queries fall back to best token overlap so tests never hit the network."""
+    """Deterministic offline results from fixtures/research/search.json (query → results)."""
 
     def __init__(self, fixture_file: Path) -> None:
         self._data: dict[str, list[dict]] = json.loads(fixture_file.read_text("utf-8"))

@@ -1,9 +1,4 @@
-"""POST /v1/runs/{id}/stop: the product's stop button.
-
-The workflow engine's half of stopping is proven in tests/integration/test_run_stop.py, with a
-worker executing. What this file pins down is the route: who may call it, what it does about a run
-that is not there, and that an engine which has nothing to stop is reported rather than raised.
-"""
+"""POST /v1/runs/{id}/stop: the product's stop button."""
 
 from __future__ import annotations
 
@@ -58,8 +53,7 @@ async def test_stopping_needs_a_session_and_a_run_that_exists(client, sessionmak
 
 
 async def test_a_run_the_engine_no_longer_has_is_reported_not_raised(client, sessionmaker):
-    """The common case for an operator: the run already ended, or the worker is gone. A stop
-    button that 500s on that teaches people not to press it."""
+    """The common case for an operator: the run already ended, or the worker is gone."""
     await seed(sessionmaker)
     await client.post("/v1/session", json={"username": "owner", "password": PW})
     response = await client.post(
@@ -81,10 +75,7 @@ async def test_a_run_the_engine_no_longer_has_is_reported_not_raised(client, ses
 
 
 async def test_the_run_view_carries_the_estimate_over_the_wire(client, sessionmaker, monkeypatch):
-    """GET /v1/runs/{id} is what the canvas polls every two seconds, and the estimate is only
-    useful if it survives the route. The unit tests prove the arithmetic; this proves the field is
-    there, is JSON, and is absent rather than zero once nothing is left to wait for.
-    """
+    """GET /v1/runs/{id} is what the canvas polls every two seconds."""
     from datetime import datetime
 
     from content_factory.db.models import NodeState, RunNode

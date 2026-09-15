@@ -1,10 +1,4 @@
-"""Local model inventory (18.8 companion): what model files exist on disk.
-
-Roots come only from configuration — the settings workspace, comfy-cli's own default workspace
-(when `managed_by_comfy_cli`), and explicitly configured extra roots. Listing is the whole job:
-nothing here downloads, moves, hashes or opens model files, and no caller-supplied path is ever
-scanned, so there is no traversal surface.
-"""
+"""Local model inventory (18.8 companion): what model files exist on disk."""
 
 from __future__ import annotations
 
@@ -78,8 +72,7 @@ def resolve_roots(
 
 
 def scan_models(roots: list[ModelRoot]) -> list[ModelFile]:
-    """Every model file under the given roots, at most MAX_DEPTH levels deep. Names and sizes
-    only; deterministic order (root order, then path)."""
+    """Every model file under the given roots, at most MAX_DEPTH levels deep."""
     files: list[ModelFile] = []
     for root in roots:
         if not root.exists:

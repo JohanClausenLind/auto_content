@@ -1,16 +1,4 @@
-"""Ideogram 4 text-to-image backend for the sequence engine, driven through local ComfyUI.
-
-Deliberately **text-to-image only**. The other two backends here compose reference images --
-HiDream takes one, FLUX.2 chains up to six -- and Ideogram 4 as shipped takes none: its graph is
-two transformers behind a ``DualModelGuider`` with no image path into the conditioning. Rather
-than fake an edit by re-prompting and pretending the result is the same picture, ``edit`` and
-``edit_conditioned`` refuse and say what the caller should reach for instead. A lane that needs a
-frame to be the *same world* as the frame before it cannot be served by this model today.
-
-That refusal is the useful part of the contract: the sequence engine is hub-and-spoke precisely
-because drift has to be measured against something, and a backend that cannot see the anchor has
-nothing to hold. Use it for the first frame, then compose from that frame with FLUX.2.
-"""
+"""Ideogram 4 text-to-image backend for the sequence engine, driven through local ComfyUI."""
 
 from __future__ import annotations
 
@@ -36,11 +24,7 @@ _NO_EDIT = (
 
 
 class Ideogram4Backend(ReferenceEditBackend):
-    """One structured JSON caption to one frame.
-
-    ``workdir`` is where collected outputs land; it must be a real directory because ComfyUI is
-    handed file paths, not bytes.
-    """
+    """One structured JSON caption to one frame."""
 
     name = "ideogram4"
     send_control_as_reference = False

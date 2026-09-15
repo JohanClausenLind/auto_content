@@ -6,9 +6,7 @@ import { useCurrentFrame } from "remotion";
 import { enter, motionFrames, progress } from "../motion";
 import { Lines, minTextPx, SceneFrame, useFittedText, useSceneGeometry } from "./common";
 
-/** Chronology on a spine; events reveal in order as the spine draws. Landscape runs the spine
- * horizontally; portrait runs it down the left edge with the events stacked beside it, which
- * gives each event a full line instead of a squeezed column. */
+/** Chronology on a spine; events reveal in order as the spine draws. */
 export function TimelineScene({ scene }: { scene: Spec; compiled: unknown }): ReactElement {
   const frame = useCurrentFrame();
   const { safe, scale, fps, theme, portrait, align } = useSceneGeometry();
@@ -48,14 +46,6 @@ export function TimelineScene({ scene }: { scene: Spec; compiled: unknown }): Re
   }
 
   // The spine sits in the middle of its own box and the labels hang off it, above and below.
-  // It used to sit at 42 % of the *safe area* inside a box 70 % of the safe area tall, with the
-  // above-labels pushed down by a second fixed fraction — three different references for one
-  // arrangement, and the result measured on a 1920x1080 render (2026-09-10) put every mark in
-  // the top 28 % of the safe box with 72 % of it empty underneath. Anchoring both label bands to
-  // the spine keeps a two-line event tight against the rule wherever the rule is.
-  // ...and the box is what the safe area has left under the title, not a fixed 0.7 of it. The
-  // fraction left the bottom 24 % of the safe area unusable on top of everything else; the title
-  // knows its own height, so there is nothing to guess.
   const plotH = Math.max(
     Math.round(safe.height * 0.5),
     Math.round(safe.height - title.fit.heightPx - 16 * scale),

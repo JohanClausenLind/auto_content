@@ -1,15 +1,4 @@
-"""Which node made which file — recorded by the run, and inferred for the runs that predate it.
-
-The history could group a run's files by file type and could not say which step produced any of
-them, so a bad drawing was five lists away from the stage that drew it. These tests pin both
-halves of the fix: a run now observes what each step leaves behind, and the 241 reports already on
-disk are read through a path table that says when it is guessing.
-
-The honesty rules are what actually matter here, so each has its own test: a file two candidate
-stages could have written is left unattributed rather than hung on the likelier one; a node the
-lane has and this run did not execute is reported as not-run rather than as failed; and a pinned
-node keeps the files of the run that made them instead of appearing to have produced nothing.
-"""
+"""Which node made which file — recorded by the run, and inferred for the runs that predate it."""
 
 from __future__ import annotations
 
@@ -173,11 +162,7 @@ def test_nothing_is_hung_on_a_stage_this_run_never_ran() -> None:
 
 
 def test_a_resumed_run_still_attributes_the_files_its_earlier_slice_made() -> None:
-    """The run somebody opens is the one that needed a resume, and its report is a slice.
-
-    `ps1c-pinecone` resumed at `upscale_video`: read from its stage records alone the lane has no
-    `anchor` node, and every anchor drawing in the run belongs to nobody.
-    """
+    """The run somebody opens is the one that needed a resume, and its report is a slice."""
     resumed = _report(
         workflow="image-set",
         steps=[{"node": key, "stage": "", "values": {}} for key in ("story", "anchor", "lock")],
@@ -270,13 +255,7 @@ def test_the_history_hangs_a_runs_outputs_off_its_nodes(tmp_path: Path) -> None:
 
 
 def test_a_run_in_progress_is_running_and_not_failed(tmp_path: Path, monkeypatch) -> None:
-    """The defect this fixes was visible on screen the first time a run was watched.
-
-    A report is written after every step and only carries ``passed`` at the very end, so mid-flight
-    it is indistinguishable from a run whose last stage gave up — and the workspace's history row
-    for a lane that was busy drawing frames said **failed**, in red. The run registry is the only
-    thing that knows, so the reader asks it.
-    """
+    """The defect this fixes was visible on screen the first time a run was watched."""
     run_dir = tmp_path / "inflight"
     deliverable = run_dir / "deliverables" / "dlv_1"
     deliverable.mkdir(parents=True)
@@ -305,11 +284,7 @@ def test_a_run_in_progress_is_running_and_not_failed(tmp_path: Path, monkeypatch
 
 
 def test_reading_the_history_never_prunes_the_run_registry(monkeypatch) -> None:
-    """This module promises to write nothing. A page refresh must not clean up after a run.
-
-    ``active_runs`` deletes the registry files of dead runs by default, which is right for
-    ``content-factory stop`` and wrong for a reader polled every ten seconds by a browser.
-    """
+    """This module promises to write nothing."""
     seen: list[dict] = []
 
     def spy(**kwargs):

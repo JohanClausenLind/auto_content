@@ -1,11 +1,4 @@
-/**
- * The template browser, laid out the way ComfyUI lays out its Workflow Templates dialog: a left
- * panel of categories, a header with the page title and a search box, and a grid of cards — each
- * card a live thumbnail of the actual graph (drawn from the graph, so it cannot lie) with the
- * model requirements underneath. Requirements are checked against the real local inventory and
- * the model store, and a missing one installs on one click from the card — the pinned source and
- * the destination live in the Python registry, so the card only has to name the family.
- */
+/** The template browser, laid out like ComfyUI's Workflow Templates dialog: category panel. */
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -44,12 +37,7 @@ export function CommandLine({ text }: { text: string }) {
   );
 }
 
-/**
- * One model requirement. A missing one carries the registry key that installs it, so the row's
- * button is the install itself — the panel used to print a command for the operator to run in a
- * terminal, which is the one thing this page exists to avoid. A requirement with no registry
- * entry still shows the command, because inventing a source would be worse.
- */
+/** One model requirement; a missing one with a registry key installs from the row. */
 export function RequirementRow({
   req,
   status,
@@ -180,13 +168,7 @@ function TemplateCard({
   );
 }
 
-/**
- * One block: what it does, what it takes, what it gives back, and the steps it folds away.
- *
- * No thumbnail, deliberately. A block is two or three nodes in a line — a picture of that says
- * nothing a list of the steps does not say better, and the card has to make clear that inserting
- * one adds a *step* to the graph you are editing rather than replacing it with a new lane.
- */
+/** One block card, deliberately without a thumbnail. */
 function BlockCard({ block, onInsert }: { block: WorkflowBlock; onInsert(block: WorkflowBlock): void }) {
   return (
     <article className="cf-block" aria-label={block.name}>

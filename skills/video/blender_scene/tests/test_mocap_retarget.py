@@ -1,14 +1,4 @@
-"""The aim retarget: segment directions -> per-bone quaternions on whatever rig is loaded.
-
-The test that justifies the whole cf.clip.v2 format is
-``test_directions_are_exact_on_every_character`` together with
-``test_baked_quaternions_are_wrong_on_other_characters``. The first shows a direction clip is
-exact on all four MPFB characters; the second shows that a quaternion clip baked on one of them is
-up to 19 degrees wrong on another. That is the difference between a clip and a clip-for-one-body.
-
-The rest matrices come from ``tests/data/rig_*.json``, dumped by ``mocap/dump_rig.py`` inside
-Blender, so these tests need neither Blender nor a GPU.
-"""
+"""The aim retarget: segment directions -> per-bone quaternions on whatever rig is loaded."""
 
 from __future__ import annotations
 
@@ -136,8 +126,7 @@ def test_directions_are_exact_on_every_character(who: str, targets) -> None:
 
 @clips
 def test_baked_quaternions_are_wrong_on_other_characters(targets) -> None:
-    """Why v1 could not carry this. If MPFB ever normalises rest orientations across characters,
-    this test fails and the format could be simplified - which is worth knowing."""
+    """Why v1 could not carry this."""
     baked = solve_aim(rig("man_01"), targets)
     worst = 0.0
     for who in ("man_02", "woman_01", "woman_02"):

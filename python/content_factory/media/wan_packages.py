@@ -1,9 +1,4 @@
-"""Wan-Animate-2 pose-driven package (ComfyUI API graph): the HiDream anchor is the reference
-character, the Blender OpenPose skeleton video drives the motion. Node inputs verified in ComfyUI
-0.33.0 ``comfy_extras/nodes_wan.py`` (WanAnimate2ToVideo) and ``nodes_video.py`` (LoadVideo,
-GetVideoComponents). Two weights are not on this host yet and are declared as RequiredModels:
-``clip_vision_h.safetensors`` and ``wan_2.1_vae.safetensors`` (Comfy-Org repackaged, Apache-2.0).
-"""
+"""Wan-Animate-2 pose-driven package: the anchor is the character, the OpenPose video the motion."""
 
 from __future__ import annotations
 

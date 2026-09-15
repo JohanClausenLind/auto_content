@@ -1,5 +1,4 @@
-"""Text normalization for speech (15): spoken_text is derived from display_text deterministically
-and stored separately. Pronunciation entries are applied as respellings for TTS."""
+"""Speech text normalization: spoken_text derives deterministically from display_text."""
 
 from __future__ import annotations
 
@@ -24,12 +23,8 @@ _ABBREV = {
 def normalize_for_speech(text: str, lexicon: tuple[PronunciationEntry, ...] = ()) -> str:
     out = text
     if lexicon:
-        # ONE pass over the text, longest term first, and not one regex substitution per entry.
-        # Sequential substitutions are not independent: with rules for both "kraft" and "kraftnät",
-        # the long rule correctly produced "kraft-nate" and the short rule then rewrote the inside
-        # of its own output to "KRAFT-nate". A single alternation can only match the original text,
-        # so a respelling is never re-respelled. The alternation is ordered longest-first because
-        # Python's `re` takes the leftmost alternative that matches at a position.
+        # One alternation, longest term first, not one substitution per entry: sequential rules
+        # re-respell each other's output ("kraft" inside "kraft-nate"), and `re` takes the leftmost.
         by_term: dict[str, str] = {}
         for entry in lexicon:
             by_term.setdefault(entry.term, entry.respelling)
@@ -45,7 +40,7 @@ def normalize_for_speech(text: str, lexicon: tuple[PronunciationEntry, ...] = ()
 
 
 def tokenize_words(text: str) -> list[str]:
-    """Words as a TTS/aligner sees them: punctuation stripped, hyphens kept, empty tokens dropped."""  # noqa: E501
+    """Words as a TTS/aligner sees them: punctuation stripped, hyphens kept."""
     return [w for w in (re.sub(r"^[^\w]+|[^\w]+$", "", t) for t in text.split()) if w]
 
 
@@ -106,20 +101,8 @@ def is_number_word(word: str) -> bool:
     return stripped in _NUMBER_WORDS
 
 
-# British and American orthography, folded to one form on **both** sides of a comparison.
-#
-# The same reason `spoken_word_shape` masks numbers: this is two systems rendering the same spoken
-# word differently, and comparing the renderings measures the aligner's dictionary rather than
-# whether the model said the script. Measured on the narrated-video lane (2026-09-09), the beat
-# "Sunlight is white. It carries every colour at once." scored **0.74** against a 0.80 gate and
-# failed — the audio was correct, and `base.en` is an American-English model that writes "color"
-# for a correctly spoken "colour". One orthographic variant in a nine-word line is enough to fail
-# a good take.
-#
-# The fold is symmetric, so it can only ever make two spellings of one word agree; it cannot make
-# two *different* words agree unless they were already homophones, which an ASR transcript is no
-# evidence about either way. That is why the suffix rules below are safe even where they are crude:
-# "four" folding to "for" happens on both sides at once.
+# British and American spelling folded on both sides of a comparison, or an American ASR fails a
+# correct "colour" (0.74 against the 0.80 gate, journal 2026-09-09). Symmetric, so crude is safe.
 _SPELLING_PAIRS: dict[str, str] = {
     # -our / -or, and the forms that keep or drop the u
     "colour": "color",
@@ -249,33 +232,9 @@ def fold_spelling(word: str) -> str:
 
 
 def spoken_word_shape(text: str) -> tuple[list[str], int]:
-    """Words with each *run* of numbers collapsed to one sentinel, and how many runs there were.
-
-    This exists because the alignment gate was failing beats **the model read correctly**. Measured
-    on the wind_2024 fixture and the demo plan (2026-09-09):
-
-    * the script said "40.8 terawatt-hours"; faster-whisper wrote "40 8 terawatt hours" -> 0.73
-    * the script said "twelve hundred" and "four fifty"; faster-whisper wrote "1200" and "450"
-      -> 0.73
-
-    Both are the same figures rendered by two systems with different conventions, so comparing the
-    renderings measured the aligner's number formatting rather than whether the model said the
-    script. Masking them lets the words be compared as words.
-
-    **It deliberately does not parse the numbers into values.** A spoken-number parser gets
-    "twelve hundred and four fifty" wrong in at least two defensible ways (1254? 1200 and 450?),
-    and a mis-parse would make the gate compare wrong values — passing a bad take or failing a
-    good one, with a confident number attached either way. An ASR transcript is not reliable
-    evidence of *which* figure was spoken; it is reliable evidence of how many were, and of the
-    words around them. The run count is returned so a beat that dropped a figure entirely still
-    fails, which is the failure that matters.
-    """
-    # Hyphens are split on both sides, because they are orthography and this is about words
-    # spoken. Measured against the same aligner: a script saying "40.8 terawatt-hours" transcribes
-    # as "40 8 terawatt hours", so masking the number alone still left "terawatt-hours" against
-    # "terawatt hours" — a two-token difference in a three-token line, and the beat scored 0.40.
-    # It also makes "twenty-one per cent" agree with "21 per cent", which is the same fault in the
-    # commonest possible phrase.
+    """Words with each *run* of numbers collapsed to one sentinel, and how many runs there were."""
+    # Hyphens split on both sides: the aligner writes "terawatt hours" for "terawatt-hours", and
+    # masking the number alone still failed the beat (journal 2026-09).
     words = [part for word in tokenize_words(text.lower()) for part in word.split("-") if part]
     shape: list[str] = []
     runs = 0

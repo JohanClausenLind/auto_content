@@ -27,19 +27,7 @@ export function comparisonValues(
   };
 }
 
-/**
- * Two sides, each with an optional figure: side by side in landscape, stacked in portrait.
- *
- * The scene grammar has carried `comparison` since it was written and the switch sent it to a
- * placeholder, so `change_variable` — the editorial arc's counterfactual section, the whole point
- * of "what if it were otherwise" — had no picture. `SCENE_KIND_PRESET` even assigns it a `pan_left`
- * camera, a camera move for a scene nobody could draw.
- *
- * Stacked rather than columnar on a phone, and that is not a cosmetic preference: two columns in a
- * 1080-wide portrait frame leave each side 480 px, under the width the fitter needs for a two-word
- * label at a legible size, so it would shrink the type instead. A vertical split gives each side
- * the full width and spends the frame's spare dimension where portrait actually has one.
- */
+/** Two sides, each with an optional figure: side by side in landscape, stacked in portrait. */
 /** What `Side` needs from the scene it sits in: geometry, motion and the shared number style. */
 type SideLayout = {
   sideWidth: number;
@@ -50,9 +38,7 @@ type SideLayout = {
   numberStyle: CSSProperties;
 };
 
-/** One side's rule, label and figure. Declared at module scope on purpose: a component created
- *  inside ComparisonScene is a new type on every frame, which remounts the subtree each render
- *  instead of updating it. */
+/** One side's rule, label and figure. */
 function Side({
   label,
   fmt,
@@ -110,9 +96,7 @@ export function ComparisonScene({ scene }: SceneProps<Spec>): ReactElement {
   const rightLabel = useFittedText(scene.right.text, labelRole, sideWidth, Math.round(sideHeight * 0.35), 2, "paper");
 
   const values = comparisonValues(scene, bundle.datasets);
-  // The unit comes off the table, not off the scene: a comparison has no unit field, and showing
-  // "12" against "34" for a table measured in per cent drops the only thing that makes the two
-  // numbers mean anything.
+  // The unit comes off the table, not off the scene: a comparison has no unit field.
   const unitOf = (ref: Spec["left_value"]): string => (ref === null ? "" : (bundle.datasets[ref.dataset_id]?.unit ?? ""));
   const leftFmt = formatNumber(values.left, "auto", unitOf(scene.left_value));
   const rightFmt = formatNumber(values.right, "auto", unitOf(scene.right_value));

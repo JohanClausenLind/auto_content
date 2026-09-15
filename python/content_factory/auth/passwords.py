@@ -12,8 +12,7 @@ _hasher = PasswordHasher(
 
 
 def hash_password(password: str, min_length: int | None = None) -> str:
-    """Hash a password, enforcing the configured minimum length (settings.auth.password_min_length,
-    default 12; the settings schema floors it at 4)."""
+    """Hash a password, enforcing ``settings.auth.password_min_length`` (default 12, floor 4)."""
     if min_length is None:
         from content_factory.config import get_settings
 

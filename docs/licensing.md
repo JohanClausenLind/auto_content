@@ -15,6 +15,12 @@ as a paid product/service, a Remotion Company License is required (Creators $25/
 Automators $0.01/render with $100/month minimum, per remotion.dev/license FAQ on 2026-08-27) — or
 switch the `RenderBackend` to Revideo (`@revideo/core` 0.11.0, MIT). The contract is the same.
 
+**5.0 terms, read 2026-09-15** (`docs/research/2026-09-15-explainer-stack.md`): a pipeline whose
+code calls `renderMedia`/`renderStill` programmatically is a "Remotion for Automators" use once the
+licence is no longer free, and part-time staff and independent contractors count toward the
+four-person threshold. Free-licence holders pass `licenseKey: "free-license"` and pay nothing; the
+renderer passes it explicitly so the threshold crossing is a one-line change, not a search.
+
 ## Separate-process copyleft components (never linked, never vendored)
 | Component | License | How it is used |
 |---|---|---|

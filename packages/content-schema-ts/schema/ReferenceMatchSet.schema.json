@@ -310,7 +310,7 @@
   "$id": "https://content-factory.local/schema/ReferenceMatchSet.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "The answer, including what the query was understood to mean.\n\n``expanded_terms`` and ``unmatched_words`` are not diagnostics, they are the answer's honesty:\na caller can see that \"head on shoulder\" was understood, searched for, and found nothing.",
+  "description": "The answer, including what the query was understood to mean.",
   "properties": {
     "absent_terms": {
       "default": [],

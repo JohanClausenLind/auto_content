@@ -10,9 +10,7 @@ from pydantic import Field, model_validator
 from content_factory.schemas.base import SchemaModel, SemVer, Sha256Hex, VersionedModel
 
 
-# Governs a ComfyUI NODE PACKAGE. Deliberately distinct from skills.Lifecycle, which governs
-# signed skill manifests: the two vocabularies coincide today but are separate published
-# contracts and are free to diverge. Do not merge them.
+# Governs a ComfyUI NODE PACKAGE.
 class LifecycleStatus(StrEnum):
     draft = "draft"
     canary = "canary"

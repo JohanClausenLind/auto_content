@@ -1,10 +1,4 @@
-"""Giving the card to the flashcards agent, and getting the render back.
-
-The properties that matter are the ones an operator would be angry about if they broke: a session
-that needs no room stops nothing, a parked run comes back as the film it was rather than as its
-workflow's defaults, a run started mid-session cannot steal the VRAM back, and a crashed tenant
-cannot park a render for ever.
-"""
+"""Giving the card to the flashcards agent, and getting the render back."""
 
 from __future__ import annotations
 
@@ -168,8 +162,7 @@ def test_resume_starts_what_was_parked_and_drops_the_claim(
 
 
 def test_resume_is_safe_to_call_twice(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Both the session hook and a timer may call it; the second must be a no-op,
-    not a second render."""
+    """Both the session hook and a timer may call it; the second must be a no-op, not a render."""
     monkeypatch.setattr(gpu_priority, "SPAWN", lambda *_a: 1)
     assert gpu_priority.resume_gpu().note == "no claim; nothing to resume"
 

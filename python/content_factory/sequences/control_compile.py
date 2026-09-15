@@ -1,9 +1,4 @@
-"""Deterministic control-image compiler (16.6): MotionPlan -> per-frame ControlAssets.
-
-Code — never a model — interpolates keyframes into pose skeletons and layout maps. The output is
-byte-identical for identical plans: fixed canvas, fixed palette, integer geometry, no antialiasing
-randomness, deterministic PNG encoding (no timestamps, fixed compression level).
-"""
+"""Deterministic control-image compiler (16.6): MotionPlan -> per-frame ControlAssets."""
 
 from __future__ import annotations
 
@@ -38,9 +33,7 @@ BUILTIN_KINDS: frozenset[ControlKind] = frozenset(
     {ControlKind.pose_skeleton, ControlKind.layout_boxes}
 )
 
-# OpenPose BODY_18 (COCO) joint order. Pose-conditioned video models (Wan-Animate, DWPose-trained
-# ControlNets) expect this order and the limb colours below, so the Blender skeleton export and
-# ``render_openpose_pose`` both use these names.
+# OpenPose BODY_18 (COCO) joint order.
 OPENPOSE18: tuple[str, ...] = (
     "nose",
     "neck",
@@ -215,11 +208,7 @@ def render_pose_frame(plan: MotionPlan, frame: int) -> Image.Image:
 
 
 def _pose_ink(points, width: int, height: int) -> tuple[int, int]:
-    """(stroke, joint radius) in pixels for one figure, proportional to how big it is drawn.
-
-    OpenPose's own renderer sizes its ink to the detected person; ours sized it to the frame, so
-    the same skeleton read as a pose in a close shot and as a scatter of baubles in a wide one.
-    """
+    """(stroke, joint radius) in pixels for one figure, proportional to how big it is drawn."""
     xs = [p.x * width for p in points]
     ys = [p.y * height for p in points]
     if len(xs) < 2:
@@ -231,20 +220,12 @@ def _pose_ink(points, width: int, height: int) -> tuple[int, int]:
 
 
 def render_openpose_pose(pose: SkeletonPose, width: int, height: int) -> Image.Image:
-    """Draw one pose with the canonical OpenPose-18 joint colours and limb order.
-
-    Joints named outside OPENPOSE18 are skipped; ``pose.bones`` that are not canonical limbs (e.g.
-    hand bones) are drawn in the colour of their first joint when both ends are known joints.
-    Points are normalised with y down. Output is byte-identical for identical input.
-    """
+    """Draw one pose with the canonical OpenPose-18 joint colours and limb order."""
     img = Image.new("RGB", (width, height), (0, 0, 0))
     draw = ImageDraw.Draw(img)
     joint_colour = {name: _PALETTE[i] for i, name in enumerate(OPENPOSE18)}
     known = {n: p for n, p in pose.joints.items() if n in joint_colour}
-    # Scale the ink to the *person*, not the canvas. A fixed canvas-relative stroke puts 12 px
-    # joint dots on a figure 110 px tall — proportionally a head-sized blob at every joint — and
-    # the image model draws them as physical objects: coloured baubles beside a small figure,
-    # curved tubes beside a larger one. Sized against the pose's own extent they read as a pose.
+    # Scale the ink to the *person*, not the canvas.
     stroke, radius = _pose_ink(known.values(), width, height)
 
     def _line(a: str, b: str, colour: tuple[int, int, int]) -> None:
@@ -284,8 +265,7 @@ def render_openpose_frame(poses: Iterable[SkeletonPose], width: int, height: int
 
 
 def render_layout_boxes(boxes: Iterable[Box | None], width: int, height: int) -> Image.Image:
-    """Filled layout rectangles, one palette colour per subject index (same look as the MotionPlan
-    layout pass), for the Blender compiler's ``layout_boxes`` track."""
+    """Filled layout rectangles, one palette colour per subject index."""
     img = Image.new("RGB", (width, height), (0, 0, 0))
     draw = ImageDraw.Draw(img)
     for i, box in enumerate(boxes):
@@ -358,14 +338,7 @@ def compile_bundle_from_motion_plan(
     shot_id: str | None = None,
     anchor_frames: tuple[int, ...] | None = None,
 ) -> ControlBundle:
-    """Compile a MotionPlan into the shared ``ControlBundle`` layout on disk:
-
-    ``<out_dir>/<kind>/frames/NNNN.png`` + ``NNNN.done.json`` per frame, plus ``bundle.json``.
-    Byte-identical on rerun (same PNG encoder, canonical JSON, sorted kinds).
-
-    ``shot_id`` stands the bundle in for a planned shot (the hybrid workflow's offline path: the
-    2D plan supplies the passes, the shot supplies the identity downstream stages key on);
-    ``anchor_frames`` overrides the plan's keyframe indices (clamped to the plan's frame range)."""
+    """Compile a MotionPlan into the shared ``ControlBundle`` layout on disk."""
     plan_hash = plan.content_hash()
     bundle_shot_id = shot_id or plan.sequence_id
     tracks: list[ControlTrack] = []

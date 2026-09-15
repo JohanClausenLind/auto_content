@@ -1,5 +1,4 @@
-"""Phase-9 scheduling gate: a Temporal Schedule ticks a program on cadence with overlap SKIP and
-a minimal catch-up window; pausing/unpausing never bursts overdue ticks."""
+"""Phase-9 scheduling gate: a Temporal Schedule ticks a program on cadence with overlap SKIP."""
 
 from __future__ import annotations
 

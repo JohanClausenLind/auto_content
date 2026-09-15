@@ -1,6 +1,5 @@
-// Generate ONE TypeScript declaration module from the exported JSON Schemas (source of truth:
-// Pydantic). All per-model `$defs` are merged into a single bundle so every named type is declared
-// exactly once; definitions must be identical across files (Pydantic guarantees this).
+// One declaration module from the exported JSON Schemas (Pydantic is the source of truth). Every
+// per-model `$defs` is merged so each named type is declared once; Pydantic keeps them identical.
 import { compile } from "json-schema-to-typescript";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";

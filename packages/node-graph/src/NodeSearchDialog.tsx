@@ -1,9 +1,4 @@
-/**
- * The add-node search: double-click the canvas (or press the library button) and type. It is the
- * fastest way to add a node, so it opens focused, filters as you type, and Enter takes the top
- * hit. When opened by dropping a link on empty canvas it only offers nodes that can accept the
- * dragged type.
- */
+/** The add-node search: focused on open, Enter takes the top hit; a dropped link filters by its type. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { typesCompatible } from "./datatypes";

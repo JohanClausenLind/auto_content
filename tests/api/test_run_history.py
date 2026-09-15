@@ -1,10 +1,4 @@
-"""/v1/run-history: the day's actual work, made reachable from the product that made it.
-
-Every film in `videos/` came from a local run that writes no `production_runs` row, so the web
-app's run list could not see any of it. These tests pin the two things that make the new route
-safe and useful: it finds runs and classifies them honestly (a review gate is not a failure), and
-it serves files from **inside one run directory and nowhere else**.
-"""
+"""/v1/run-history: the day's actual work, made reachable from the product that made it."""
 
 from __future__ import annotations
 
@@ -92,8 +86,7 @@ async def test_history_needs_a_session(client, output_root):
 async def test_it_lists_local_runs_and_calls_a_review_gate_what_it_is(
     client, sessionmaker, output_root
 ):
-    """A run parked at `review_frames` has its drawings finished and is waiting for somebody to
-    look. 27 real runs on this machine read as "failed" before this distinction existed."""
+    """A run parked at `review_frames` has its drawings finished."""
     write_run(output_root, "done", stages=[("generate_anchor", True)], passed=True)
     write_run(
         output_root,
@@ -138,8 +131,7 @@ async def test_a_run_detail_carries_its_outputs_with_debug_output_ranked_last(
 async def test_it_serves_a_file_from_the_run_and_refuses_everything_outside_it(
     client, sessionmaker, output_root, tmp_path
 ):
-    """The half that must not be wrong. Every refusal is a 404, never a 403: distinguishing
-    "exists but forbidden" from "does not exist" hands the caller a filesystem oracle."""
+    """The half that must not be wrong."""
     write_run(output_root, "served", stages=[("generate_anchor", True)], passed=True)
     (tmp_path / "secret.png").write_bytes(PNG)
     (output_root / "served" / "escape.png").symlink_to(tmp_path / "secret.png")

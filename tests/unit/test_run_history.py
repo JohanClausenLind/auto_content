@@ -1,10 +1,4 @@
-"""Reading a run's outputs off disk, without a database and without leaving the output root.
-
-226 runs and 35 films were on this machine with no way to look at any of them except by knowing
-the path. These tests cover the parts that decide whether the panel is useful or noise: which file
-gets shown first, what counts as bookkeeping rather than output, and that an id cannot name
-somewhere else on the filesystem.
-"""
+"""Reading a run's outputs off disk, without a database and without leaving the output root."""
 
 from __future__ import annotations
 
@@ -39,8 +33,7 @@ def make_run(root: Path, name: str, *, stages: list[tuple[str, bool]], passed: b
 
 
 def test_the_film_and_the_first_real_drawing_are_what_represent_a_run(tmp_path: Path) -> None:
-    """`exports/final.mp4` is the run's own answer to which video is the deliverable, and a
-    history row showing a pose skeleton is a row nobody recognises."""
+    """`exports/final.mp4` is the run's own answer to which video is the deliverable."""
     run = make_run(tmp_path, "story", stages=[("generate_anchor", True)], passed=True)
     d = run / "deliverables" / "dlv_short0000001"
     write(d / "controls" / "shot_a" / "pose_skeleton" / "frames" / "0000.png")
@@ -58,9 +51,7 @@ def test_the_film_and_the_first_real_drawing_are_what_represent_a_run(tmp_path: 
 
 
 def test_done_markers_are_bookkeeping_not_output(tmp_path: Path) -> None:
-    """Measured on a real picture story: 85 of its 125 JSON files were `<frame>.done.json`
-    markers the runner writes so a stage can be re-run safely. Listing those as output made a
-    six-picture story a list of 130 rows of nothing."""
+    """Measured on a real picture story."""
     run = make_run(tmp_path, "markers", stages=[("generate_anchor", True)], passed=True)
     d = run / "deliverables" / "dlv_short0000001"
     for i in range(3):
@@ -80,8 +71,7 @@ def test_done_markers_are_bookkeeping_not_output(tmp_path: Path) -> None:
 
 
 def test_the_manifest_wins_over_the_scan_for_a_packaged_run(tmp_path: Path) -> None:
-    """A run that reached packaging said what it produced, with roles and content types. Where
-    that exists it is the answer — the scan only knows what a path looks like."""
+    """A run that reached packaging said what it produced, with roles and content types."""
     run = make_run(
         tmp_path, "packaged", stages=[("compile_destination_packages", True)], passed=True
     )
@@ -113,8 +103,7 @@ def test_the_manifest_wins_over_the_scan_for_a_packaged_run(tmp_path: Path) -> N
 
 
 def test_a_run_that_never_packaged_still_shows_what_it_drew(tmp_path: Path) -> None:
-    """The case that matters most here: six of seven overnight image sets blocked at review with
-    their drawings on disk and no package at all."""
+    """The case that matters most here."""
     run = make_run(
         tmp_path,
         "parked",

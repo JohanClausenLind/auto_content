@@ -1,27 +1,4 @@
-"""Ideogram 4 text-to-image workflow package (ComfyUI API graph).
-
-The operator's chosen main model for pure text-to-image, and the graph is unlike the other two
-here in one way that decides how it must be called: there is no negative *prompt*. Ideogram 4
-ships as **two** transformers -- a conditional and an unconditional -- and ``DualModelGuider``
-runs the pair, taking the positive conditioning through one and a zeroed copy of it through the
-other. The negative branch is therefore a model, not a text box, and ``ConditioningZeroOut`` is
-what feeds it. ``CFGOverride`` then raises CFG only over the last 30 % of the schedule, which is
-where this model's own recipe puts the detail.
-
-**The caption must be structured JSON, never prose, and that is not a style preference.** The
-text encoder is Qwen3-VL-8B: prose goes through a chat template to an encoder that also
-*generates*, and its refusals are lettered onto the canvas as pixels. Measured 2026-09-12 over the
-same subject, 16 of 17 prose generations refused against 3 of 3 clean as JSON. The caption shape
-(``high_level_description`` / ``style_description`` / ``compositional_deconstruction`` with a
-``bounding_box`` per element) is in docs/research/2026-09-12-ideogram-4.md, and it is also where
-this repo's ``layout_boxes`` finally have a native home instead of being rastered into a rectangle.
-
-What the model will not do reliably is **count**. Measured twice over two sittings, it drew three
-people for a caption and a box that said two, and four for another: a caller that needs an exact
-number of figures must check the result, which is why ``qc.frame_review`` carries both a refusal
-detector and a subject count. Node signatures were read from a running ComfyUI ``/object_info``,
-not from memory.
-"""
+"""Ideogram 4 text-to-image workflow package (ComfyUI API graph)."""
 
 from __future__ import annotations
 
@@ -181,28 +158,30 @@ def _required_models() -> tuple[comfyui.RequiredModel, ...]:
         comfyui.RequiredModel(
             filename=TRANSFORMER,
             relative_path="models/diffusion_models",
-            source_url="https://huggingface.co/Comfy-Org/ideogram4",
+            source_url="https://huggingface.co/Comfy-Org/Ideogram-4",
             license="Ideogram 4 model terms — see model card",
             size_bytes=9_280_741_285,
         ),
         comfyui.RequiredModel(
             filename=TRANSFORMER_UNCOND,
             relative_path="models/diffusion_models",
-            source_url="https://huggingface.co/Comfy-Org/ideogram4",
+            source_url="https://huggingface.co/Comfy-Org/Ideogram-4",
             license="Ideogram 4 model terms — see model card",
             size_bytes=9_280_741_293,
         ),
         comfyui.RequiredModel(
             filename=TEXT_ENCODER,
             relative_path="models/text_encoders",
-            source_url="https://huggingface.co/Comfy-Org/ideogram4",
+            source_url="https://huggingface.co/Comfy-Org/Ideogram-4",
             license="Qwen3-VL-8B terms (Apache-2.0) — see model card",
             size_bytes=10_588_637_512,
         ),
         comfyui.RequiredModel(
             filename=VAE,
             relative_path="models/vae",
-            source_url="https://huggingface.co/Comfy-Org/flux2-dev",
+            # Ideogram-4's own copy of the Flux2 VAE, not Comfy-Org/flux2-dev's: same filename,
+            # 2,264 bytes smaller (336,211,292 vs 336,213,556), so the URL must match size_bytes.
+            source_url="https://huggingface.co/Comfy-Org/Ideogram-4",
             license="FLUX.2-dev non-commercial licence — see model card",
             size_bytes=336_211_292,
         ),

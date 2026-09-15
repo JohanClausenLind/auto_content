@@ -1,10 +1,4 @@
-"""Token vault (22.3, 25): authenticated envelope encryption for provider tokens.
-
-AES-256-GCM with a key ring: `VAULT_MASTER_KEY` holds the current key (base64, 32 bytes) and
-`VAULT_MASTER_KEYS_OLD` an optional comma-separated list of previous keys for rotation. Token
-plaintext exists only inside this module's callers on the server; models, renderers, the browser,
-and logs never see it. Every ciphertext binds its context (workspace, platform, purpose) as AAD,
-so a token copied to another row fails to decrypt."""
+"""Token vault (22.3, 25): authenticated envelope encryption for provider tokens."""
 
 from __future__ import annotations
 

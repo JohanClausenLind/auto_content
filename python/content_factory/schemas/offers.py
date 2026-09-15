@@ -1,11 +1,4 @@
-"""Normalized compute offers: one shape for every supply source, with real billing terms.
-
-Offers come from adapters (fixture adapters by default; live provider/broker adapters are
-separate and need operator accounts). An offer records what is actually billable — minimum
-duration, rounding increment, separate storage/egress charges — because advertised hourly rates
-are not budgets. Unknown reliability is ``None``, never treated as zero interruptions, and
-unknown host identity is not evidence of an independent failure domain.
-"""
+"""Normalized compute offers: one shape for every supply source, with real billing terms."""
 
 from __future__ import annotations
 

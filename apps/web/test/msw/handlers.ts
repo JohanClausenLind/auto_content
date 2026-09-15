@@ -33,11 +33,7 @@ export const COMFY_INVENTORY = {
 };
 
 
-/**
- * The model store as the tests see it: one family installed, one missing and required, one
- * part-downloaded with a broken index link, one behind a manual access gate, and one skill env
- * that has not been built. Every state the page has to render is in here.
- */
+/** The model store as the tests see it, with every state the page has to render: installed. */
 export const MODEL_CATALOG = {
   store: "/mnt/fast/models",
   store_exists: true,
@@ -289,17 +285,10 @@ export const verdictPosts: { runId: string; body: Record<string, unknown> }[] = 
 /** AI reviews the panel asked for, in order. Reset per test via setup.ts. */
 export const aiReviewPosts: { runId: string; body: Record<string, unknown> }[] = [];
 
-/**
- * How the next `POST .../ai-review` answers.
- *
- * `"ok"` returns the stored opinion; `409` is "cannot be asked for" (a run holds the card) and
- * `502` "was asked and did not answer" — the two the UI has to show differently, because one is
- * fixed by waiting and the other by fixing the model stack.
- */
+/** How the next `POST .../ai-review` answers: `"ok"` returns the stored opinion. */
 export const aiReviewMode = { next: "ok" as "ok" | 409 | 502 };
 
-/** Reviews the fixture server has stored, by run id — so a refetch answers with them, the way
- *  the real route does once `reviews/frames/ai-review.json` is on disk. */
+/** Reviews the fixture server has stored, by run id. */
 export const aiReviewStore = new Map<string, Record<string, unknown>>();
 
 export const unauthenticated = () => http.get("*/v1/session", () => HttpResponse.json({ detail: "Not signed in" }, { status: 401 }));
@@ -441,9 +430,8 @@ export const baseHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
   http.post("*/v1/uploads", async ({ request }) => {
-    // jsdom's FormData does not round-trip a File's name through the multipart body (it arrives
-    // as "blob"), and its content does not reach request.text() either. What does survive is the
-    // part's declared Content-Type, so the fixture is chosen from that.
+    // jsdom's FormData does not round-trip a File's name (it arrives as "blob") or its content;
+    // the part's declared Content-Type survives, so the fixture is chosen from that.
     const raw = await request.text();
     const name = raw.includes("svg")
       ? "logo.svg"

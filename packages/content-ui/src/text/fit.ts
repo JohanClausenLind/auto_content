@@ -1,6 +1,5 @@
-// Deterministic text fitting. Widths come from the pinned Inter advance table (no canvas, no DOM),
-// so Node, the headless browser and tests agree byte-for-byte. Kerning is ignored, which only
-// makes the estimate wider than reality; a small safety factor covers hinting/rounding.
+// Deterministic text fitting from the pinned advance tables (no canvas, no DOM), so Node, the
+// browser and tests agree byte-for-byte; kerning is ignored, which only widens the estimate.
 import { INTER_WIDTHS } from "../fonts/inter-widths";
 import { SORA_WIDTHS } from "../fonts/sora-widths";
 import type { FontFamily, FontWeight } from "../fonts";
@@ -124,10 +123,7 @@ export interface FitResult {
   truncated: boolean;
 }
 
-/**
- * Largest integer font size in [minSize, preferredSize] for which the wrapped text fits both
- * `maxLines` and `maxHeight`; otherwise `minSize` with deterministic ellipsis truncation.
- */
+/** Largest size in [minSize, preferredSize] fitting maxLines and maxHeight; else minSize, truncated. */
 export function fitText(opts: FitOptions): FitResult {
   const step = Math.max(1, Math.floor(opts.step ?? 2));
   const start = Math.max(1, Math.floor(opts.preferredSize));

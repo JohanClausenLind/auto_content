@@ -1,12 +1,4 @@
-"""Conditioning for generated non-speech audio, and the reason it is not the speech chain.
-
-The design claim this file defends is that the *architecture* is shared and the *models* are not:
-detection, true-peak safety and the length lock are the same code as the voice chain, while
-ClearerVoice and Resemble Enhance are absent because they were measured to destroy non-speech
-material (numbers in `content_factory.audio.condition`'s docstring). So the tests here check that
-the profile actually changes what counts as a defect, that the speech path is refused outright, and
-that a level the model could not reach is reported rather than clipped into place.
-"""
+"""Conditioning for generated non-speech audio, and the reason it is not the speech chain."""
 
 from __future__ import annotations
 
@@ -57,8 +49,7 @@ def _noise_bed(path: Path, *, seconds: float = 2.0, gain: float = 0.05) -> Path:
 
 
 def _one_shot(path: Path, *, seconds: float = 1.0, peak: float = 0.9) -> Path:
-    """A transient with a long tail: a whoosh or an impact. Mostly silence, one loud moment —
-    which is exactly why its integrated loudness says nothing useful about it."""
+    """A transient with a long tail: a whoosh or an impact."""
     n = int(RATE * seconds)
     out = []
     for i in range(n):
@@ -82,9 +73,7 @@ def test_speech_is_refused_here(tmp_path: Path) -> None:
 
 
 def test_the_spec_has_no_way_to_ask_for_a_speech_model() -> None:
-    """A regression guard on the decision itself: measured on this host, MossFormer2_SE_48K left
-    0.5-1.0 % of a whoosh/rain/impact's energy and Resemble Enhance returned a whoosh with a 0.002
-    waveform correlation to its input. If a field for either appears here, that was undone."""
+    """A regression guard on the decision itself: measured on this host."""
     fields = set(SoundConditionSpec.model_fields)
     assert not {f for f in fields if "enhanc" in f or "clearervoice" in f or "resemble" in f}
     assert "denoise" in fields and SoundConditionSpec().denoise is False
@@ -141,8 +130,7 @@ def test_a_bed_is_normalised_to_its_integrated_target(tmp_path: Path) -> None:
 def test_a_one_shot_that_cannot_reach_its_target_says_so_instead_of_clipping(
     tmp_path: Path,
 ) -> None:
-    """A transient's crest factor means the ceiling is reached long before the loudness target.
-    The honest outcome is a limited gain and a flag, not a squashed sound."""
+    """A transient's crest factor means the ceiling is reached long before the loudness target."""
     src = _one_shot(tmp_path / "hit.wav", peak=0.9)
     out = tmp_path / "hit.cond.wav"
     report = condition_sound(
@@ -172,8 +160,7 @@ def test_loudness_can_be_left_alone(tmp_path: Path) -> None:
 
 
 def test_length_is_preserved_to_the_sample(tmp_path: Path) -> None:
-    """A bed is scored against the picture frame by frame, so this matters as much here as word
-    timings do in speech."""
+    """A bed is scored against the picture frame by frame."""
     src = _noise_bed(tmp_path / "bed.wav", seconds=1.5)
     out = tmp_path / "bed.cond.wav"
     report = condition_sound(src, out, asset_id="bed", workdir=tmp_path / "work")

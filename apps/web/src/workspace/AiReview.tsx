@@ -1,25 +1,4 @@
-/**
- * The vision model's second opinion, next to the pictures it is about.
- *
- * The gate has always had two reviewers — the deterministic checks and a person — and the gap
- * between them is the one this machine's faults fall into: measurements cannot see whether the
- * subject is the same subject. On `w-iceberg`, a set of six, `drift_qc` could only say the set had
- * no consistent core and named no frame; asked the same question, the local vision model named
- * `frame:0003` and said why — a higher camera angle, a smaller iceberg, and a water pattern of
- * regular circles the others do not have.
- *
- * Three things this component is careful about, and each of them is a way it could mislead:
- *
- * * **It never records anything.** "Mark these" fills in the operator's own accept/reject
- *   selection and stops there; the verdict is still the operator's button. A model that mistakes
- *   what it is looking at does so fluently, and nothing here may turn that into a decision.
- * * **`shows` is first and biggest.** It is what the model says is *in* the picture, and reading
- *   it against the thumbnail is how a person tells whether the reviewer looked. A model
- *   describing the brief back is a model that has told you nothing.
- * * **Stale is labelled, loudly.** An opinion binds to the digests of the frames it saw. Once a
- *   frame is redrawn the opinion is about a picture that is gone, and showing it unlabelled next
- *   to the new one would be the worst thing this panel could do.
- */
+/** The vision model's second opinion beside the pictures: it never records a verdict. */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, isApiError } from "../api/client";
@@ -70,16 +49,14 @@ export function AiReview({
   runId: string;
   deliverable: string;
   review: AiSetReview | undefined;
-  /** Pre-mark the frames the model would not pass in the operator's own selection. Nothing is
-   *  recorded: the operator still presses their own button, with the reason they write. */
+  /** Pre-mark the frames the model would not pass in the operator's own selection. */
   onMarkFlagged(frameIds: readonly string[]): void;
 }) {
   const client = useQueryClient();
   const ask = useMutation({
     mutationFn: () => api.history.aiReview(runId, deliverable),
-    // The response *is* the review page, with the stored opinion on it, so it is written into
-    // the cache rather than triggering a refetch: invalidating would throw away an answer that
-    // cost forty seconds of GPU and ask the server for it again.
+    // The response is the review page with the stored opinion on it, so it goes into the cache;
+    // invalidating would throw away an answer that cost forty seconds of GPU.
     onSuccess: (page) => client.setQueryData(queryKeys.runReview(runId), page),
   });
 

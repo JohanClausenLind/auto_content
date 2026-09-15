@@ -87,8 +87,7 @@ class MotionPlan(VersionedModel):
 
 
 class ControlKind(StrEnum):
-    """Per-frame control signals. The first two are compiled by code from a MotionPlan; the rest
-    are rendered by the Blender scene controller (skills/video/blender_scene) from a ShotSpec."""
+    """Per-frame control signals."""
 
     pose_skeleton = "pose_skeleton"
     layout_boxes = "layout_boxes"
@@ -102,7 +101,7 @@ class ControlKind(StrEnum):
 
 
 class ControlAsset(SchemaModel):
-    """One compiled per-frame control image plus provenance (deterministic: same plan, same bytes)."""  # noqa: E501
+    """One compiled per-frame control image plus provenance."""
 
     kind: ControlKind
     frame_index: int = Field(ge=0)

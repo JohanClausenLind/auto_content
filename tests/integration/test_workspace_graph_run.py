@@ -1,7 +1,4 @@
-"""Workspace-graph runs execute end-to-end on the real engine (compose postgres + temporal):
-compile a hand-drawn graph, start the durable workflow with the precompiled DAG, park at the
-approval gate, approve, and watch the new stages (select_music, generate_video,
-render_animation) produce verified artifacts exactly once."""
+"""Workspace-graph runs execute end-to-end on the real engine (compose postgres + temporal)."""
 
 from __future__ import annotations
 
@@ -92,9 +89,7 @@ async def _wait_state(run_id: str, state: str, timeout_s: float = 120) -> dict:
 
 
 def test_workspace_graph_runs_end_to_end(tmp_path: Path, monkeypatch) -> None:
-    # Pin the fixture music library. The configured default is `assets/music`, which is
-    # host-specific git-ignored media; asserting a track id from it would make this test pass on
-    # this machine and fail on a fresh checkout.
+    # Pin the fixture music library.
     repo_root = Path(__file__).resolve().parents[2]
     monkeypatch.setenv("CF__MEDIA_LIBRARY__MUSIC_DIR", str(repo_root / "fixtures" / "music"))
     from content_factory.config import get_settings

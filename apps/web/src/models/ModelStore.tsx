@@ -1,17 +1,4 @@
-/**
- * The model store, as shared parts.
- *
- * One row type serves the Models page and the workspace's Models panel, because they are the
- * same job in two places: see what a weight family is for, whether it is on this machine, and
- * install it if it is not. The install button posts a registry key to `/v1/models/install` — the
- * browser never names a URL, a folder or a filename, so there is exactly one place (the Python
- * registry) that decides where a weight comes from and where it lands.
- *
- * Every state an operator can be in is a state here: absent, part-downloaded, installing with
- * progress, installed but not linked (the repair case), gated behind terms nobody accepted yet,
- * and the two families with no scriptable source at all — which say so instead of showing a
- * button that cannot work.
- */
+/** Shared parts of the model store; install posts a registry key to `/v1/models/install`. */
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -346,13 +333,7 @@ export function MissingModels({ catalog, compact = false }: { catalog: ModelCata
   );
 }
 
-/**
- * Hugging Face access. Three of the families this stack needs are gated — LTX-2.5 behind
- * Lightricks' terms, Stable Audio behind Stability's, SAM 3.1 behind a human decision at Meta —
- * and without a token their install answers 401 and nothing here can fix it. So the token is
- * enterable from the page that needs it, sealed in the same vault as every other credential, and
- * never read back into the browser.
- */
+/** Hugging Face token entry for the gated families (LTX-2.5, Stable Audio, SAM 3.1). */
 function HuggingFaceAccessRow() {
   const access = useQuery(hfAccessQuery);
   const store = useStoreHfToken();

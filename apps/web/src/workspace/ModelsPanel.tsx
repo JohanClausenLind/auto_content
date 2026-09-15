@@ -1,13 +1,4 @@
-/**
- * The Models panel: what is installed (live scan of the comfy workspace and configured roots,
- * grouped the way ComfyUI's model library groups them), what the workflows still need — with the
- * install button right there, the same one the Models page uses — and a paste-a-link box for a
- * one-off huggingface/civitai file that no workflow declares.
- *
- * The missing list comes from the model store (`/v1/models/catalog`), not from matching filenames
- * in the browser: it knows the weight store and the skill environments, which the ComfyUI
- * inventory scan cannot see, and it knows the pinned source for each one.
- */
+/** The Models panel: installed weights from the live scan. */
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";

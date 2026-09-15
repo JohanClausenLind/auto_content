@@ -1,5 +1,4 @@
-"""Edit-instruction compiler (16.6): the frame's declared delta becomes a verbose
-preserve-everything instruction automatically — the operator never hand-writes it."""
+"""Edit-instruction compiler (16.6)."""
 
 from __future__ import annotations
 
@@ -19,12 +18,8 @@ PRESERVE_LIST = (
 
 
 EXEMPT_BY_KIND: dict[str, tuple[str, ...]] = {
-    # A frame that moves or re-poses the subject cannot also preserve where the subject is and
-    # what shape it is in. Measured on a six-view owl set (2026-09-09): three frames asked for
-    # "head turned a quarter to the left", "head tilted up, pale throat exposed" and "leaning
-    # forward, feathers flattened", and all three came back all but identical to the anchor —
-    # because the sentence before them said "Do not alter: ... composition, subject anatomy".
-    # The instruction was contradicting itself, and the model resolved it by preserving.
+    # A frame that moves or re-poses the subject cannot also preserve where the subject is and what
+    # shape it is in.
     "move_subject": ("composition", "subject anatomy"),
     "pose_change": ("composition", "subject anatomy"),
     # An expression is anatomy too, but only of the face: the body should hold, so only the

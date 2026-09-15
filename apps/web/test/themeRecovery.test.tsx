@@ -5,10 +5,7 @@ import { authenticated, themePuts } from "./msw/handlers";
 import { server } from "./msw/server";
 import { renderApp } from "./render";
 
-/**
- * Settings crashed with "can't access property length, state.customThemes is undefined" because
- * /v1/prefs/theme held a row from an earlier build and the adapter passed it through unvalidated.
- */
+/** Settings crashed on "state.customThemes is undefined". */
 describe("a theme preference row that predates the current schema", () => {
   const partial = { preset: "midnight", scale: 1.1 };
 

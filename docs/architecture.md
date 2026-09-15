@@ -1,4 +1,4 @@
-# Architecture (phase 1 snapshot)
+# Architecture
 
 Modular monolith, one repository, four deployable roles:
 
@@ -18,6 +18,8 @@ Invariants kept from day one (see docs/scale-later.md for what is deliberately a
 - Contracts are Pydantic → JSON Schema → TypeScript + Ajv; EditorCore (TS) is the one edit reducer.
 - Immutable safety policy lives in code; config narrows, never weakens.
 
-Directories: `python/content_factory/{api,auth,cli,comfyui,config,db,editor,hardware,logging,models,
-schemas,sequences,services,skills,workflows}`, `packages/{content-schema-ts,editor-core,web-ui}`,
-`apps/{api,cli,web,renderer,workers}`, `skills/`, `docs/adr`, `docs/research`.
+Directories: `python/content_factory/<domain>/` (one package per domain: api, auth, audio, cli,
+comfyui, controls, distribution, editor, models, qc, reference, runners, schemas, sequences,
+services, shots, workflows, workspace, and the rest), `packages/{content-schema-ts,editor-core,
+node-graph,pipeline-canvas,content-ui,video-ui,web-ui}`, `apps/{api,cli,web,renderer,workers}`,
+`skills/` (isolated tool environments), `workflows/` (one YAML per lane), `docs/adr`, `docs/research`.

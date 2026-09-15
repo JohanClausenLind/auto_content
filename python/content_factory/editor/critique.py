@@ -1,10 +1,4 @@
-"""Revision Box critique mapping (16.5) — deterministic fixture mapper.
-
-The production skill ``critique.map_feedback`` uses a model role behind the same interface; this
-module is the deterministic policy layer that (a) provides the offline/fixture implementation and
-(b) enforces the non-negotiables no model may override: policy-violating requests are refused,
-fact/rights/disclosure/publish-scope changes surface a gate, ambiguity asks one question.
-"""
+"""Revision Box critique mapping (16.5) — deterministic fixture mapper."""
 
 from __future__ import annotations
 
@@ -291,10 +285,7 @@ def map_feedback(feedback: str, ctx: ArtifactContext) -> RevisionOutcome:
 
 
 def _invalidation_for(ops: tuple[EditOperation, ...]) -> tuple[InvalidationScope, ...]:
-    """Scopes an edit invalidates, read off the canonical OPERATION_INVALIDATION table.
-
-    First-seen order is preserved so the tuple stays deterministic across ops.
-    """
+    """Scopes an edit invalidates, read off the canonical OPERATION_INVALIDATION table."""
     scopes: list[InvalidationScope] = []
     for op in ops:
         for scope in OPERATION_INVALIDATION[op.op]:

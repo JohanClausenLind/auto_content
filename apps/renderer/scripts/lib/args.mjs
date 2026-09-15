@@ -2,10 +2,7 @@ import { parseArgs } from "node:util";
 
 export const DEFAULT_CONCURRENCY = 4;
 
-/**
- * Parse `--bundle <path> --out <path> [--concurrency N] [--scene id] [--scale N]` with node:util only.
- * @param {{scene?: boolean}} extra
- */
+/** Parse `--bundle <path> --out <path> [--concurrency N] [--scene id] [--scale N]` with node:util only. */
 export function parseCli(extra = {}) {
   const options = {
     bundle: { type: "string" },

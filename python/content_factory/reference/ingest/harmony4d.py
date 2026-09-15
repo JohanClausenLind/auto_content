@@ -1,27 +1,4 @@
-"""Harmony4D: two calibrated 22-camera hug takes, ingested for their geometry.
-
-Harmony4D holds the best two-person contact geometry on disk and the worst pixels. Every exo frame
-has a tripod or a camera body between the lens and the subjects, plus a sofa, whiteboards and lab
-clutter (``_index/measured/viewing_notes.md``), so the usage class is ``pose_derivable`` and never
-``pixels_usable``: the way to use this take is to put its poses on our own characters in our own
-set and re-render, not to look at its frames.
-
-Two numbers in this module are derived rather than asserted, because asserting them would be a
-guess dressed as data.
-
-**The camera angles.** ``cameras.txt`` and ``images.txt`` give each exo camera in the COLMAP frame;
-the poses are in the Aria world frame. ``aria_from_colmap_transforms.pkl`` ships the alignment
-between the two, and this module picks the entry that actually works by reprojecting the frame's
-SMPL joints into all 22 views and comparing against the dataset's own ``poses2d``. At the contact
-frame the ``aria01`` entry lands at a median of 0.008 px (001_hugging) and 0.18 px (002_hugging)
-on a 3840x2160 image, while the ``aria02`` entry lands at 746 px and 569 px, so the choice is
-measured rather than read off a name. When no entry reprojects within
-``_REPROJ_TOLERANCE_PX`` the clip is emitted with no ``camera_angles`` and no ``key_poses``, and the
-reason goes in the skipped list, because a bucket derived from an unverified pose is fiction.
-
-**The contact.** The embrace is found by tracking the distance between the two torso centres over
-every frame, so the key poses sit on measured moments rather than on fractions of the duration.
-"""
+"""Harmony4D: two calibrated 22-camera hug takes, ingested for their geometry."""
 
 from __future__ import annotations
 
@@ -57,17 +34,12 @@ SOURCE = ReferenceSource.harmony4d
 
 _DATASET_DIR: Final = "Harmony4D"
 
-# 20 fps is not stated in any metadata file the dataset ships. The evidence on disk is the encoded
-# exo videos: exo/cam01/images/rgb.mp4 in both takes and exo/cam04/images/rgb.mp4 in 001_hugging
-# all read 3840x2160, r_frame_rate 20/1, 301 frames, 15.05 s, i.e. exactly the frame sequence at
-# 20 fps. (Two other mp4s sit in the takes and are not evidence of a take's length: 002_hugging's
-# exo/cam01/images/output.mp4 is a 5-frame stub, and 001_hugging's four ego rgb.mp4 are the Aria
-# streams, not the exo rig.)
+# Stated in no metadata file; the exo rgb.mp4 files read r_frame_rate 20/1, 301 frames, 15.05 s,
+# i.e. exactly the frame sequence at 20 fps (the ego rgb.mp4 and output.mp4 stub are not evidence).
 _NATIVE_FPS: Final = 20.0
 
-# COCO-17 in the order poses3d stores it, named in the OpenPose-18 vocabulary. "neck" is not in
-# COCO-17 at all: it is derived below as the midpoint of the two shoulders, in 3D before
-# projection, because the fisheye projection is not linear and a 2D midpoint would bend the neck.
+# COCO-17 in poses3d order, named in the OpenPose-18 vocabulary. "neck" is derived as the shoulder
+# midpoint in 3D before projection: the fisheye projection is not linear.
 _COCO17_TO_OPENPOSE: Final = (
     "nose",
     "l_eye",
@@ -100,10 +72,8 @@ _R_HIP: Final = 12
 _WORLD_UP: Final = (0.0, 0.0, 1.0)
 """The pose world frame is z-up: on both takes a nose sits ~1.5 m above the ankles in +z."""
 
-# Azimuth 0 is the direction the first subject's chest faces, so a camera at 0 sees that subject's
-# face and the other subject's back. The pair hugs chest to chest, which makes a single "pair
-# facing" meaningless, so the first subject by name (aria01) is the reference and the buckets are
-# symmetric: what is "front" for one is "back" for the other.
+# Azimuth 0 is where the first subject's (aria01) chest faces; the pair hugs chest to chest, so
+# the buckets are symmetric and "front" for one is "back" for the other.
 _BUCKET_EDGES: Final = (
     ("front", 22.5),
     ("front_3q", 67.5),
@@ -119,20 +89,17 @@ _BUCKET_CENTRES: Final = {
     "back": 180.0,
 }
 
-# Thresholds, each with the measurement that sets it. On both takes the torso gap runs 1.7-2.1 m
-# apart, drops to 0.23-0.25 m at the closest moment, and comes back out; 0.60 m is inside the
-# shoulder of that curve and is roughly two torso half-depths, i.e. chest against chest.
+# On both takes the torso gap runs 1.7-2.1 m and drops to 0.23-0.25 m at the closest moment;
+# 0.60 m is inside the shoulder of that curve, roughly two torso half-depths (chest to chest).
 _EMBRACE_TORSO_M: Final = 0.60
-# At the closest frame the elbows sit 0.26-0.41 m from the other's torso centre, so a forearm lies
-# across the other body; over every frame whose torso gap exceeds 1.5 m the nearest elbow is never
-# closer than 1.32 m, more than twice this threshold, so the two regimes do not overlap.
+# Elbows sit 0.26-0.41 m from the other's torso at the closest frame and never nearer than 1.32 m
+# while the torso gap exceeds 1.5 m, so the two regimes do not overlap.
 _ARM_TORSO_M: Final = 0.60
 # A wrist that is both within 0.45 m of the other's torso centre and past it, along the line
 # joining the two, has reached around the far side of their spine: a hand on the back.
 _BACK_TORSO_M: Final = 0.45
-# 25 px on a 3840x2160 frame is 0.65 % of the width. Measured on the two takes, the working
-# alignment lands at 0.008 px and 0.177 px and the rejected one at 746 px and 569 px, so nothing
-# real sits near this line.
+# 0.65 % of a 3840-wide frame: the working alignment lands at 0.008 and 0.177 px, the rejected one
+# at 746 and 569 px, so nothing real sits near this line.
 _REPROJ_TOLERANCE_PX: Final = 25.0
 
 # A root that covers more than a metre over the take walked; the embrace itself never moves the
@@ -191,13 +158,7 @@ class _Sequence:
 
 
 def ingest(root: Path, *, ingested_at: str) -> tuple[list[ReferenceClip], list[str]]:
-    """Every clip Harmony4D contributes, plus one string per thing skipped and why.
-
-    Guarantees: one ``ReferenceClip`` per take found under ``Harmony4D/<split>/<activity>/<take>``,
-    sorted by ``clip_id``; every path relative to ``root``; every digest computed from the bytes on
-    disk; identical output bytes for identical inputs, since nothing here reads a clock or a random
-    source and every collection is walked in sorted order.
-    """
+    """Every clip Harmony4D contributes, plus one string per thing skipped and why."""
     skipped: list[str] = []
     dataset = root / _DATASET_DIR
     if not dataset.is_dir():
@@ -386,14 +347,7 @@ def _ingest_sequence(
 
 
 def _load_pickled_npy(path: Path) -> object:
-    """One ``.npy`` that holds a python dict, which is how this dataset stores every frame.
-
-    The dataset pickles its frames, so ``allow_pickle`` is required to read them at all. These are
-    local files inside the reference library, never anything fetched. The warning filter is for
-    numpy's own legacy ``numpy.core`` alias inside a 2023-era pickle: the suite promotes
-    DeprecationWarnings raised inside ``content_factory`` to errors, and this one says nothing
-    about the data.
-    """
+    """One ``.npy`` that holds a python dict, which is how this dataset stores every frame."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         return np.load(path, allow_pickle=True).item()
@@ -448,13 +402,7 @@ def _torso_centres(poses: np.ndarray) -> np.ndarray:
 
 
 def _measure(poses: np.ndarray) -> _Geometry:
-    """Every number the clip reports about the embrace, read off the pose track.
-
-    Guarantees: the contact frame is the frame whose two torso centres are closest, and the
-    embrace window runs from the first to the last frame whose torso gap is under
-    ``_EMBRACE_TORSO_M``. On both takes on disk every frame in that span is under the threshold, so
-    the span is the embrace and not two embraces with a gap in the middle.
-    """
+    """Every number the clip reports about the embrace, read off the pose track."""
     centres = _torso_centres(poses)
     gap = np.linalg.norm(centres[:, 0] - centres[:, 1], axis=1)
     contact_frame = int(np.argmin(gap))
@@ -485,11 +433,7 @@ def _measure(poses: np.ndarray) -> _Geometry:
 
 
 def _key_frames(geometry: _Geometry) -> tuple[tuple[int, KeyPoseLabel], ...]:
-    """The frames worth sampling, strictly increasing, each defined by a measurement.
-
-    ``contact`` is the frame where the two torsos are closest. ``release`` is the last frame of the
-    embrace window. ``start`` and ``end`` bracket the take, where the pair is apart.
-    """
+    """The frames worth sampling, strictly increasing, each defined by a measurement."""
     last = geometry.torso_gap.shape[0] - 1
     wanted: list[tuple[int, KeyPoseLabel]] = [
         (0, "start"),
@@ -533,11 +477,7 @@ def _contact_tags(poses: np.ndarray, centres: np.ndarray, frame: int) -> tuple[C
 
 
 def _postures(geometry: _Geometry) -> tuple[Posture, ...]:
-    """Postures the root motion supports, sorted as the contract requires.
-
-    Standing is always there: the embrace itself is stationary. Walking is added only when a root
-    actually covers ground, which on both takes on disk it does, 3.3 m and 4.9 m of it.
-    """
+    """Postures the root motion supports, sorted as the contract requires."""
     postures = [Posture.standing]
     if max(geometry.travel_m) > _WALKING_TRAVEL_M:
         postures.append(Posture.walking)
@@ -547,10 +487,7 @@ def _postures(geometry: _Geometry) -> tuple[Posture, ...]:
 def _clip_contact_tags(
     poses: np.ndarray, centres: np.ndarray, key_frames: tuple[tuple[int, KeyPoseLabel], ...]
 ) -> tuple[ContactTag, ...]:
-    """The union of what the key frames' geometry supports, sorted and unique.
-
-    Derived, never asserted: if a take never closed to an embrace, nothing here would claim one.
-    """
+    """The union of what the key frames' geometry supports, sorted and unique."""
     union: set[ContactTag] = set()
     for frame, _label in key_frames:
         union.update(_contact_tags(poses, centres, frame))
@@ -594,14 +531,7 @@ def _parse_cameras(path: Path) -> dict[int, _Camera]:
 
 
 def _parse_images(path: Path) -> dict[str, _View]:
-    """The exo views in a COLMAP ``images.txt``, one entry per ``cam*`` directory.
-
-    Each exo camera is registered on 4 frames of a static rig. Both takes ship the same
-    images.txt, and within a camera those 4 centres agree to 3.6 mm at worst (1.3 mm mean over the
-    22 cameras) against a rig radius of 1.4-2.2 m, so the first by sorted image name is taken and
-    the rest ignored; the ego (aria*) entries are dropped because a head-mounted camera has no
-    fixed angle.
-    """
+    """The exo views in a COLMAP ``images.txt``, one entry per ``cam*`` directory."""
     best: dict[str, tuple[str, _View]] = {}
     with path.open(encoding="utf-8") as handle:
         for line in handle:
@@ -629,12 +559,7 @@ def _parse_images(path: Path) -> dict[str, _View]:
 
 
 def _load_transforms(path: Path) -> dict[str, np.ndarray]:
-    """The COLMAP-to-world similarity transforms the dataset ships, keyed by ego camera.
-
-    The dataset ships them as a pickle, so a pickle is what this reads: a local file inside the
-    reference library, never anything from the network. Which entry is the one the poses live in is
-    not documented, so the caller decides by reprojection rather than by name.
-    """
+    """The COLMAP-to-world similarity transforms the dataset ships, keyed by ego camera."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         with path.open("rb") as handle:
@@ -650,12 +575,7 @@ def _load_transforms(path: Path) -> dict[str, np.ndarray]:
 
 
 def _project(points_camera: np.ndarray, camera: _Camera) -> np.ndarray:
-    """Normalised image coordinates for camera-space points, OpenCV fisheye model.
-
-    Guarantees: one (x, y) per input point, in fractions of image width and height, and never
-    clamped, so a joint that leaves the frame keeps the coordinate the capture implies. Verified
-    against the dataset's own ``poses2d`` at a median of 0.01 px.
-    """
+    """Normalised image coordinates for camera-space points, OpenCV fisheye model."""
     fx, fy, cx, cy = camera.params[:4]
     k1, k2, k3, k4 = camera.params[4:8]
     depth = points_camera[:, 2]
@@ -677,11 +597,7 @@ def _to_camera(
     centre_world: np.ndarray,
     points_world: np.ndarray,
 ) -> np.ndarray:
-    """World-metre points in a view's camera frame, still in metres.
-
-    The shipped alignment carries a uniform scale; taking the rotation out of it and subtracting
-    the camera centre keeps the camera-space depth metric, which is what ``ReferenceJoint.z`` wants.
-    """
+    """World-metre points in a view's camera frame, still in metres."""
     rotation = view.rotation @ calibration_rotation.T
     return (points_world - centre_world) @ rotation.T
 
@@ -694,13 +610,7 @@ def _camera_centre(view: _View, transform: np.ndarray) -> np.ndarray:
 def _calibrate(
     base: Path, frame: int, names: tuple[str, ...], skipped: list[str], rel: str
 ) -> _Calibration | None:
-    """The exo rig in the pose world frame, or None with a reason in ``skipped``.
-
-    Guarantees: the returned alignment reprojects the frame's own SMPL joints into every exo view
-    within ``_REPROJ_TOLERANCE_PX`` of the dataset's own 2D annotation. Nothing is returned on a
-    guess: an unreadable or unverifiable calibration yields None, and the clip then carries no
-    camera angles.
-    """
+    """The exo rig in the pose world frame, or None with a reason in ``skipped``."""
     workplace = base / "colmap/workplace"
     cameras_txt = workplace / "cameras.txt"
     images_txt = workplace / "images.txt"
@@ -774,11 +684,7 @@ def _reprojection_error(
     transform: np.ndarray,
     joints: dict[str, np.ndarray],
 ) -> float | None:
-    """Median pixel error between projected SMPL joints and the dataset's own ``poses2d``.
-
-    None when no view ships a 2D annotation to compare against, which is the honest answer: an
-    unverifiable alignment is not a verified one.
-    """
+    """Median pixel error between projected SMPL joints and the dataset's own ``poses2d``."""
     errors: list[float] = []
     for view_name, view in sorted(views.items()):
         camera = cameras.get(view.camera_id)
@@ -809,14 +715,7 @@ def _reprojection_error(
 
 
 def _facing(pose: np.ndarray) -> np.ndarray:
-    """The horizontal unit vector this person's chest points along.
-
-    The shoulder line crossed with world up. The pose world frame is z-up and right-handed, so
-    ``cross(l_shoulder - r_shoulder, up)`` comes out of the chest. Measured on both takes: at the
-    closest-torso frame each person's facing has a positive dot product with the direction to the
-    other (0.93 and 0.87 on 001_hugging, 0.86 and 0.79 on 002_hugging), which is what an embrace
-    means and would be negative if the handedness or the shoulder order were the other way round.
-    """
+    """The horizontal unit vector this person's chest points along."""
     shoulder = pose[_L_SHOULDER] - pose[_R_SHOULDER]
     facing = np.cross(shoulder, np.array(_WORLD_UP, dtype=np.float64))
     facing[2] = 0.0
@@ -827,11 +726,7 @@ def _facing(pose: np.ndarray) -> np.ndarray:
 
 
 def _azimuths(calibration: _Calibration, poses: np.ndarray, frame: int) -> dict[str, float]:
-    """Each exo camera's azimuth in degrees around the pair, zero at the first subject's facing.
-
-    Guarantees: signed degrees in (-180, 180], measured in the horizontal plane about the midpoint
-    of the two torso centres at ``frame``, one entry per registered exo view.
-    """
+    """Each exo camera's azimuth in degrees around the pair, zero at the first subject's facing."""
     centres = _torso_centres(poses)
     middle = (centres[frame, 0] + centres[frame, 1]) / 2.0
     facing = _facing(poses[frame, 0])
@@ -892,11 +787,7 @@ def _camera_radii(calibration: _Calibration, poses: np.ndarray, frame: int) -> l
 
 
 def _openpose18_world(pose: np.ndarray) -> tuple[tuple[str, ...], np.ndarray]:
-    """COCO-17 world joints as OpenPose-18, with the derived neck, in the source's own metres.
-
-    Guarantees: 18 named joints in a fixed order. Every COCO-17 joint maps one to one; ``neck`` is
-    derived, as the midpoint of the two shoulders, because COCO-17 does not have one.
-    """
+    """COCO-17 world joints as OpenPose-18, with the derived neck, in the source's own metres."""
     neck = (pose[_L_SHOULDER] + pose[_R_SHOULDER]) / 2.0
     names = (*_COCO17_TO_OPENPOSE, _NECK)
     return names, np.vstack([pose, neck[None, :]])
@@ -909,13 +800,7 @@ def _key_poses(
     names: tuple[str, ...],
     key_frames: tuple[tuple[int, KeyPoseLabel], ...],
 ) -> tuple[ReferenceKeyPose, ...]:
-    """One key pose per measured moment, projected into the front-bucket camera.
-
-    Guarantees: ``x`` and ``y`` are that camera's normalised image coordinates and are never
-    clamped, ``z`` is metric depth along the camera axis, ``in_frame`` says whether the joint landed
-    inside the frame, and the joint names are OpenPose-18 so a reference pose can drive the same
-    control passes a rendered pose does.
-    """
+    """One key pose per measured moment, projected into the front-bucket camera."""
     view = calibration.views[front]
     camera = calibration.cameras[view.camera_id]
     centre = _camera_centre(view, calibration.world_transform)
@@ -935,10 +820,8 @@ def _key_poses(
                     x=round(x, _JOINT_DP),
                     y=round(y, _JOINT_DP),
                     z=round(depth, _JOINT_DP),
-                    # visible stays at the contract default: nothing here measures occlusion.
-                    # Reading it off the SMPL meshes needs the per-joint tolerance table the
-                    # Blender keypoint pass owns, and half-measuring it would put an unearned
-                    # flag in the index.
+                    # visible stays at the contract default: measuring occlusion off the SMPL
+                    # meshes needs the per-joint tolerance table the Blender keypoint pass owns.
                     in_frame=bool(depth > 0.0 and 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0),
                 )
             bones = tuple((a, b) for a, b in OPENPOSE18_LIMBS if a in joints and b in joints)
@@ -983,13 +866,7 @@ def _files(
     key_frames: tuple[tuple[int, KeyPoseLabel], ...],
     skipped: list[str],
 ) -> tuple[ReferenceFile, ...]:
-    """What a consumer of this clip needs, digested for real.
-
-    Not every frame: 13 244 exo jpgs and 1204 pose files across the two takes would be a digest
-    marathon and nobody reads them through this index. The list is the calibration, the pose and
-    SMPL frames the key poses name, the 2D pose and box for one camera per angle bucket, and one
-    representative image per bucket so the operator can see what each angle looks like.
-    """
+    """What a consumer of this clip needs, digested for real."""
     wanted: list[tuple[FileRole, str, str | None]] = []
     if calibration is not None:
         for name in ("cameras.txt", "images.txt", "aria_from_colmap_transforms.pkl"):
@@ -1052,12 +929,7 @@ def _caption(
     people: int,
     contact_tags: tuple[ContactTag, ...],
 ) -> str:
-    """A caption made of measurements, plus the things the closed vocabulary cannot say.
-
-    The phrase describing the embrace comes from the contact tags the geometry supported, so the
-    caption cannot claim arms around a back that the poses do not show. The rest is what the
-    vocabulary has no field for: the Aria headsets, the ego views, and the tripods.
-    """
+    """A caption made of measurements, plus the things the closed vocabulary cannot say."""
     held = []
     if ContactTag.torso in contact_tags:
         held.append("chest to chest")

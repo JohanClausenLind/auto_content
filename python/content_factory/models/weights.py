@@ -1,38 +1,4 @@
-"""The installable weight registry: what each declared model requirement *is*, where it comes
-from, where it lands, and what must be linked once it is there.
-
-Until now three places knew fragments of this and none knew all of it. ``workflows/*.yaml``
-declares requirements (a filename, a folder, a directory substring) so the canvas can show a
-readiness column. ``models/video_stack.py`` knows what a family is for and whether it is on disk.
-``scripts/download_ai_video_stack.sh`` and ``scripts/download_video_stack_extras.sh`` know the one
-thing the UI needed and never had: the repository, the pinned revision, and the destination. That
-split is why the Models panel could tell an operator a weight was missing and then offer nothing
-but "See the skill's README for the fetch command" — the browser held a requirement it had no way
-to satisfy.
-
-This module is the missing half, as data:
-
-* ``store_dir`` — the directory under the weight store (``/mnt/fast/models`` on this host) that
-  holds the family, exactly as the download scripts lay it out.
-* ``hf`` / ``releases`` — pinned sources. Every Hugging Face revision here is a 40-hex commit,
-  either copied from ``download_video_stack_extras.sh`` (verified 2026-09-05) or resolved from
-  the Hub API on 2026-09-09; the licence and gating fields were read off the same API call, not
-  remembered. ``gated="auto"`` means "accept the terms once while logged in", ``"manual"`` means
-  a human has to approve the request, and both are reported to the operator instead of failing
-  with a 401 nobody can interpret.
-* ``provides`` — the files the family puts in the store, with the ComfyUI folder each one has to
-  appear in when ComfyUI is the thing that loads it. Presence is decided by these paths, so a
-  half-finished transfer reads as missing rather than installed.
-* ``index_category`` / ``index_name`` — the ``<repo>/models/<category>/<Name>`` symlink that makes
-  the store readable and is what the skills resolve their weights through. Installing a family
-  and not creating this link leaves the weights invisible to the code that needs them, so the
-  installer always creates it.
-
-Nothing here downloads anything: this is the declaration, and
-:mod:`content_factory.models.weight_install` is the only thing that acts on it. A family with no
-trustworthy scriptable source (Practical-RIFE's Google Drive weights) carries ``manual`` prose
-instead of a fake URL, because inventing a source is worse than admitting there is none.
-"""
+"""The installable weight registry: what each requirement is, its pinned source."""
 
 from __future__ import annotations
 
@@ -45,9 +11,8 @@ from content_factory.schemas.base import SchemaModel
 from content_factory.schemas.workflow_template import ModelRequirement
 
 HF_HOST = "huggingface.co"
-# Release assets come from the project's own GitHub releases (ProPainter, Cutie). Kept separate
-# from the paste-a-URL allowlist in models/install.py: those two hosts are what an operator may
-# type, these are pinned URLs this file declares.
+# Separate from the paste-a-URL allowlist in models/install.py: that is what an operator may
+# type, these are pinned release URLs this file declares.
 RELEASE_HOSTS = ("github.com",)
 
 Gating = Literal["no", "auto", "manual"]
@@ -178,13 +143,9 @@ class SkillEnv(SchemaModel):
 
 
 # --- the registry -------------------------------------------------------------------------------
-#
-# Revisions: the eleven families the extras script already pinned keep its shas verbatim (verified
-# 2026-09-05). The rest were resolved from the Hub API on 2026-09-09 — sha, gating and licence in
-# one call per repo — which is also where the sizes come from. Sizes are the sum of the files
-# actually fetched, not the repository total: Comfy-Org/SeedVR2 is 113 GB and this stack takes
-# 7 GB of it.
 
+# Shas, gating and licence come from the Hub API (journal 2026-09-05, 2026-09-09); sizes are the
+# files fetched, not the repository total (Comfy-Org/SeedVR2 is 113 GB, this stack takes 7 GB).
 WEIGHT_PACKAGES: tuple[WeightPackage, ...] = (
     WeightPackage(
         key="ltx-2.5",
@@ -377,6 +338,130 @@ WEIGHT_PACKAGES: tuple[WeightPackage, ...] = (
         index_category="image_generation",
         index_name="FLUX.2-dev",
         caveat="35.5 GB of weights against a 24 GB card: the two load in sequence",
+    ),
+    WeightPackage(
+        key="ideogram-4-comfy",
+        name="Ideogram 4 (fp8 scaled, ComfyUI)",
+        purpose="The operator's main text-to-image model, driven by media/ideogram_packages.py",
+        store_dir="ideogram-4-comfy",
+        license="other (Ideogram 4 non-commercial model terms — see model card)",
+        approx_bytes=29_486_331_382,
+        provides=(
+            ProvidedFile(
+                store_rel="diffusion_models/ideogram4_fp8_scaled.safetensors",
+                comfy_folder="models/diffusion_models",
+                min_bytes=9_000_000_000,
+            ),
+            ProvidedFile(
+                store_rel="diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors",
+                comfy_folder="models/diffusion_models",
+                min_bytes=9_000_000_000,
+            ),
+            ProvidedFile(
+                store_rel="text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
+                comfy_folder="models/text_encoders",
+                min_bytes=10_000_000_000,
+            ),
+            ProvidedFile(
+                store_rel="vae/flux2-vae.safetensors",
+                comfy_folder="models/vae",
+                min_bytes=300_000_000,
+            ),
+        ),
+        hf=(
+            HuggingFaceSource(
+                repo_id="Comfy-Org/Ideogram-4",
+                revision="bbee2ab2b14b2b5223448d12d6e31e5f9cec0546",
+                files=(
+                    "diffusion_models/ideogram4_fp8_scaled.safetensors",
+                    "diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors",
+                    "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
+                    "vae/flux2-vae.safetensors",
+                ),
+                note="the VAE is this repo's own copy, 2,264 bytes different from flux2-dev's",
+            ),
+        ),
+        index_category="image_generation",
+        index_name="Ideogram-4",
+        caveat=(
+            "~28 GB staged through system RAM at load: nova only. vegaserv runs ideogram-4-sdnq"
+            " instead. Registered after the two hosts drifted apart — vegaserv nested this family"
+            " while nova kept it flat in models/diffusion_models, so one declared filename"
+            " resolved on one box and not the other (reconciled 2026-09-15)"
+        ),
+    ),
+    WeightPackage(
+        key="ideogram-4-sdnq",
+        name="Ideogram 4 (SDNQ 4-bit dynamic hadamard)",
+        purpose="Ideogram 4 that fits a 31 GB host: text-to-image and diffdiff inpaint",
+        store_dir="ideogram-4-sdnq",
+        license="other (Ideogram 4 non-commercial model terms — see model card)",
+        approx_bytes=18_591_772_374,
+        provides=(
+            ProvidedFile(
+                store_rel="transformer/diffusion_pytorch_model-00001-of-00002.safetensors",
+                min_bytes=4_900_000_000,
+            ),
+            ProvidedFile(
+                store_rel="unconditional_transformer/diffusion_pytorch_model-00001-of-00002.safetensors",
+                min_bytes=4_900_000_000,
+            ),
+            ProvidedFile(
+                store_rel="text_encoder/model-00001-of-00002.safetensors",
+                min_bytes=4_900_000_000,
+            ),
+            ProvidedFile(
+                store_rel="vae/diffusion_pytorch_model.safetensors",
+                min_bytes=160_000_000,
+            ),
+        ),
+        hf=(
+            HuggingFaceSource(
+                repo_id="Disty0/Ideogram-4-SDNQ-4bit-dynamic-hadamard",
+                revision="1c5739fb61b0c5b51ccd2e3e5b62a879605ff39b",
+                note="loaded by skills/image/ideogram4/server.py, never by ComfyUI",
+            ),
+        ),
+        index_category="image_generation",
+        index_name="Ideogram-4-SDNQ",
+        caveat=(
+            "the SAME model as ideogram-4-comfy, repacked: 4-bit + leaf-level group offloading is"
+            " what lets it run on vegaserv's 31 GB, where the fp8 pair OOMs at load"
+        ),
+    ),
+    WeightPackage(
+        key="ideogram-4-blocks",
+        name="Ideogram 4 diffusers custom blocks",
+        purpose="The ModularPipeline blocks giving Ideogram 4 img2img and diffdiff",
+        store_dir="ideogram-4-blocks",
+        license="apache-2.0",
+        approx_bytes=65_794,
+        provides=(
+            ProvidedFile(store_rel="custom_blocks/ideogram4_unified.py", min_bytes=1_000),
+            ProvidedFile(store_rel="custom_blocks/ideogram4_differential.py", min_bytes=1_000),
+            ProvidedFile(store_rel="custom_blocks/ideogram4_img2img.py", min_bytes=1_000),
+            ProvidedFile(store_rel="caption_blocks/ideogram4_caption.py", min_bytes=1_000),
+        ),
+        hf=(
+            HuggingFaceSource(
+                repo_id="OzzyGT/ideogram4_custom_blocks",
+                revision="4b77b9e2a006661621bbee2c6539dd35e1000ad8",
+                dest_subdir="custom_blocks",
+            ),
+            HuggingFaceSource(
+                repo_id="OzzyGT/ideogram4_caption_blocks",
+                revision="a78bf56de912015f79710396f234b3101bd239a1",
+                dest_subdir="caption_blocks",
+                note="builds the JSON caption from an image; unused while prompting/ideogram.py"
+                " writes captions, kept because it is 17 KB and the alternative is a re-download",
+            ),
+        ),
+        index_category="image_generation",
+        index_name="Ideogram-4-Blocks",
+        caveat=(
+            "this is CODE, run under trust_remote_code=True — kept in its own store dir, pinned to"
+            " a sha, so what executes is a reviewed revision and not whatever the Hub serves today"
+        ),
     ),
     WeightPackage(
         key="seedvr2-7b",
@@ -942,11 +1027,7 @@ def skill_env_by_key(key: str) -> SkillEnv | None:
 
 
 def package_for_requirement(req: ModelRequirement) -> WeightPackage | None:
-    """The family that satisfies a declared workflow requirement, or None when nothing here does.
-
-    A ``comfy`` requirement names a file and the ComfyUI folder it loads from, so it matches on
-    both; a ``path`` requirement names a directory substring and usually a file inside it.
-    """
+    """The family that satisfies a declared workflow requirement, or None when nothing here does."""
     if req.kind == "comfy":
         wanted_folder = f"models/{req.folder}"
         for package in WEIGHT_PACKAGES:

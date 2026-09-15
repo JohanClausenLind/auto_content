@@ -1,27 +1,4 @@
-"""ClearerVoice-Studio executor: speech enhancement, or 48 kHz speech super-resolution.
-
-Run inside this skill's own environment:
-`uv run --project skills/audio/clearervoice python skills/audio/clearervoice/run.py
-    --in narration.wav --out clean.wav --task enhancement`.
-Not imported by the control plane. The inference code is the published `clearvoice` wheel
-(Apache-2.0, modelscope/ClearerVoice-Studio); the weights (also Apache-2.0) are at
-CF_CLEARERVOICE_MODEL_ROOT (default <repo>/models/speech_restoration).
-
-  enhancement        MossFormer2_SE_48K — removes noise, hum and room from 48 kHz speech.
-  super_resolution   MossFormer2_SR_48K — rebuilds the band a 16/24 kHz TTS never produced.
-
-Both models are 48 kHz. Input is resampled to 48 kHz here and the output is written at 48 kHz —
-upstream's own file writer resamples back to the input rate, which would throw away exactly the
-band super-resolution just created, so this script bypasses it and writes the returned array.
-
-Upstream resolves `checkpoint_dir` relative to the working directory and downloads from Hugging
-Face when it is missing. This script runs in a private temporary directory whose
-`checkpoints/<MODEL>` is a symlink to the pinned local weights, so a production run never reaches
-the network. Both models preserve length exactly; the script still refuses to write a file whose
-duration drifted more than --max-drift-ms.
-
-Prints one JSON line: out path, sample rate, durations, timings, peak VRAM.
-"""
+"""ClearerVoice-Studio executor: speech enhancement, or 48 kHz speech super-resolution."""
 
 from __future__ import annotations
 

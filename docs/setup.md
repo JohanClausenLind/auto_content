@@ -278,10 +278,12 @@ uv sync --project skills/video/manim          # + optional: sudo apt install tex
 | Vega, Vega-Lite, Vega-Embed | not yet imported — kept for declarative statistical charts a hand-built scene would be tedious for (compile to a static SVG, never `vega-embed`) |
 | MapLibre GL | not yet imported — see above |
 
-## The two ways this box goes down, and how to avoid both
+## The three ways this box goes down, and how to avoid each
 
-Both were hit on 2026-09-12. They look identical from the chair — the machine stops — and they
-have nothing in common underneath, so they are worth telling apart.
+All three were hit on 2026-09-12/13. They look identical from the chair — the machine stops — and they
+have nothing in common underneath, so they are worth telling apart. The journal is what separates
+them: an `oom-kill` line means (1) or (2); a boot that simply ends means (2); nothing at all
+means (3).
 
 ### 1. The terminal dies, everything else keeps running (system RAM)
 
@@ -336,9 +338,44 @@ FLUX.2 and Ideogram 4 are both ComfyUI, so `ensure()` sees a healthy server and 
 the first model keeps ~18 GB cached in-process and the second OOMs the card. Stop the tenant
 between them.
 
+### 3. The terminal dies with no trace at all (GPU contention with its own renderer)
+
+No `oom-kill`. No `Failed with result`. No reboot. `journalctl --user` shows the terminal's scope
+starting and then simply never stopping, and a new one appearing when the operator reopens it.
+Nothing was killed, so nothing was logged.
+
+The cause on this box: **wezterm was configured to render through WebGPU on the RTX 3090** — the
+same card the image models saturate.
+
+```lua
+config.front_end = "WebGpu"
+config.webgpu_power_preference = "HighPerformance"
+```
+
+Fill the card and the terminal's own renderer loses the device. The kernel does record the
+pressure, just not a kill: `NVRM: failed to allocate page table!`.
+
+There is no integrated GPU on this machine (`lspci` shows only the 3090; Vulkan offers the 3090 or
+llvmpipe), so there is nowhere else to put a hardware-accelerated renderer. Changed 2026-09-13 to
+`config.front_end = "Software"`, with the previous value kept commented above it and a backup at
+`~/.config/wezterm/wezterm.lua.bak-2026-09-13`. CPU rasterisation on a 20-thread 12900K is
+imperceptible for a terminal and cannot be taken out by a render.
+
+**The general rule this implies:** the card that draws the operator's desktop is not a good place
+to saturate. Heavy generative lanes belong on a host nobody is sitting at — see
+`docs/gpu-hosts.md` and the `--endpoint` flag on `scripts/consistency_probe.py`, which is how the
+Ideogram lane ended up on nova.
+
 ## More than one GPU host, and sharing a card
-See **[docs/gpu-hosts.md](gpu-hosts.md)**: adding a second machine that generates frames alongside
-this one (driver, storage at the identical `/mnt/fast`, weights that no download script fetches,
+
+**Which host a model belongs on is decided by system RAM, not by the card.** vegaserv and nova are
+both RTX 3090s; vegaserv has 31 GB of RAM and nova has 76 GB. A ComfyUI graph whose weights exceed
+the card does not fail — it stages the overflow through system RAM — so Ideogram 4 (≈28 GB staged)
+runs only on nova while HiDream and FLUX.2 run on either. The table is in
+**[docs/gpu-hosts.md](gpu-hosts.md#where-to-run-which-model)**.
+
+See **[docs/gpu-hosts.md](gpu-hosts.md)** for the rest: adding a second machine that generates
+frames alongside this one (driver, storage at the identical `/mnt/fast`, weights that no download script fetches,
 the pinned checkouts, the per-tool venvs, exposing the servers on the tailnet, wiring the endpoint
 pool), and `content-factory gpu yield|resume|status` for giving the card to a higher-priority
 tenant and resuming the parked run afterwards.

@@ -1,8 +1,4 @@
-"""structlog configuration with secret redaction.
-
-Never log token plaintext, passwords, API keys, or full sensitive prompts. The redaction
-processor scrubs well-known key names; callers must still avoid passing secrets in.
-"""
+"""structlog configuration with secret redaction."""
 
 from __future__ import annotations
 

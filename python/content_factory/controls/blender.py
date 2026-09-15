@@ -1,5 +1,4 @@
-"""Runs the headless Blender skill (skills/video/blender_scene) as a subprocess, the way the
-manim skill is run: ``uv run --project <skill> python <skill>/render.py <spec> <out>``."""
+"""Run the headless Blender skill (skills/video/blender_scene) as a subprocess in its own uv env."""
 
 from __future__ import annotations
 
@@ -66,8 +65,7 @@ def run_blender_scene(
     assets_root: Path = Path("/mnt/fast/models/blender-assets"),
     timeout_s: int = 1800,
 ) -> BlenderRun:
-    """Render one ShotSpec's passes into ``out_dir``. Raises ``RuntimeError`` with the skill's own
-    error line when it fails; the skill's exit code is in the message."""
+    """Render one ShotSpec's passes into ``out_dir``."""
     cmd = skill_command(
         spec_path,
         out_dir,
@@ -100,14 +98,7 @@ def run_blender_scene(
 
 
 def _diagnose(message: str, blender_bin: str) -> str:
-    """Name the one failure that is about *which* Blender ran rather than about the scene.
-
-    The data passes are read back out of multilayer EXR with Blender's bundled OpenImageIO. The
-    upstream builds carry it (verified against 5.2.1); the Ubuntu package does not, and
-    ``blender_bin`` defaults to the bare name, so PATH decides — and on a host with both, a
-    forty-line ModuleNotFoundError traceback out of Blender's own Python is the only thing that
-    says so. One line, naming the setting that fixes it, is worth more than the traceback.
-    """
+    """Name the one failure that is about *which* Blender ran rather than about the scene."""
     if "OpenImageIO" not in message:
         return message
     found = shutil.which(blender_bin) or blender_bin

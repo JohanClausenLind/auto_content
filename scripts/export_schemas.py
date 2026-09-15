@@ -1,7 +1,4 @@
-"""Export JSON Schema 2020-12 for every registered contract + fixture instances for TS tests.
-
-Usage: uv run python scripts/export_schemas.py [--check]
-"""
+"""Export JSON Schema 2020-12 for every registered contract + fixture instances for TS tests."""
 
 from __future__ import annotations
 
@@ -22,8 +19,8 @@ def main(argv: list[str]) -> int:
     export_json_schemas(SCHEMA_OUT)
     export_fixtures(FIXTURE_OUT)
     if "--check" in argv:
-        diff = subprocess.run(  # noqa: S603
-            ["git", "status", "--porcelain", "--", str(SCHEMA_OUT), str(FIXTURE_OUT)],  # noqa: S607
+        diff = subprocess.run(
+            ["git", "status", "--porcelain", "--", str(SCHEMA_OUT), str(FIXTURE_OUT)],
             check=True,
             capture_output=True,
             text=True,

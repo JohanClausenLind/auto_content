@@ -1,15 +1,4 @@
-/**
- * Dump the workspace node catalogue to JSON so Python can validate workflow definitions.
- *
- *   node scripts/dump_node_catalog.mjs
- *
- * Writes fixtures/schema/node_catalog.json: per node type, its declared widget names, input slots
- * and output slots. The definitions in workflows/*.yaml are checked against it, which is what turns
- * a typo'd widget key from a silently ignored value into a failed validation.
- *
- * The catalogue is TypeScript with workspace imports, so it is bundled with esbuild (already a
- * dependency of the web app) and imported. Reading it with a regex would be guessing.
- */
+/** Dump the workspace node catalogue to JSON so Python can validate workflow definitions. */
 
 import { createRequire } from "node:module";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
@@ -79,9 +68,8 @@ try {
           .filter((w) => Array.isArray(w.options) && w.options.length > 0)
           .map((w) => [w.name, w.options]),
       ),
-      // When a widget applies, keyed by widget name. Absent means always. Carried through so a
-      // Python-side check can tell "this lane sets a widget that does not exist" (an error) from
-      // "this lane sets a widget its own other values hide" (worth saying, not worth failing on).
+      // When a widget applies, keyed by widget name; absent means always. Lets the Python check
+      // tell a widget that does not exist (an error) from one the lane's other values hide.
       widget_display: Object.fromEntries(
         (def.widgets ?? [])
           .filter((w) => w.displayOptions)

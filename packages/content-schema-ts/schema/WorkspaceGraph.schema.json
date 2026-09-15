@@ -2,7 +2,7 @@
   "$defs": {
     "WorkspaceGroup": {
       "additionalProperties": false,
-      "description": "A named set of nodes the canvas can draw as one.\n\nPurely a view: the nodes and links stay in the flat graph exactly as they were, so the\ncompiler, the runner and execution order never see a group at all. It exists because half of\nevery lane is the same few steps — clean up the voice, finish the picture, check and package —\nand an operator changing one prompt should not have to read all of them. Folded, the canvas\ndraws one node with the group's boundary slots; opened, it draws the members in a frame with\nevery widget available.\n\n``members`` order is meaningful: it decides the order of a folded group's ports.",
+      "description": "A named set of nodes the canvas can draw as one.",
       "properties": {
         "collapsed": {
           "default": true,

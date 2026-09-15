@@ -1,13 +1,4 @@
-"""Shot plans and control bundles for the Blender scene-control layer.
-
-A ``ShotPlan`` is the 3D-side twin of a ``MotionPlan``: per shot it fixes the camera path, the
-characters and props with their poses and placements, the environment, the lighting and which
-control passes to render. The Blender skill (``skills/video/blender_scene``) consumes one
-``ShotSpec`` and the control plane wraps its output as a ``ControlBundle`` — the same contract the
-2D ``MotionPlan`` compiler produces, so downstream stages see one shape whichever compiler ran.
-
-Coordinates are metres, Blender Z-up, right-handed. Image coordinates are normalised with y down.
-"""
+"""Shot plans and control bundles for the Blender scene-control layer."""
 
 from __future__ import annotations
 
@@ -109,19 +100,7 @@ class ClipPose(SchemaModel):
 
 
 class SegmentClipPose(SchemaModel):
-    """A ``cf.clip.v2`` motion clip: captured world segment directions, aimed onto whatever rig is
-    loaded at render time.
-
-    ``ClipPose`` stores a quaternion per bone, which makes a clip specific to the body it was
-    solved on: MPFB fits its rig to each character mesh, so the same quaternions land up to 22.6
-    degrees wrong on a different character (measured across the four built assets). Directions are
-    a property of the motion, so one clip is exact on every body.
-
-    ``actor`` selects which performer of a multi-person clip this character plays. A two-person
-    capture is one clip with both actors on one timeline, so two ``CharacterSpec`` entries pointing
-    at the same clip with different actors reproduce the captured contact instead of staging two
-    solo clips near each other.
-    """
+    """A ``cf.clip.v2`` motion clip: captured world segment directions."""
 
     kind: Literal["segments"] = "segments"
     name: SlugId
@@ -386,8 +365,7 @@ class ControlEncoding(StrEnum):
 
 
 class CameraFrame(SchemaModel):
-    """Camera state for one frame. Rotation is a Blender camera quaternion (looks down local -Z,
-    +Y up); ``intrinsics`` is (fx, fy, cx, cy) in pixels; ``world_to_camera`` is row-major 4x4."""
+    """Camera state for one frame."""
 
     frame_index: int = Field(ge=0)
     position: Vec3
@@ -426,8 +404,7 @@ class SubjectTrack(SchemaModel):
 
 
 class ControlBundle(VersionedModel):
-    """Everything compiled for one shot (or one MotionPlan sequence): per-kind frame tracks,
-    per-subject layout/pose tracks and, for 3D compilers, the camera per frame."""
+    """Everything compiled for one shot (or one MotionPlan sequence): per-kind frame tracks."""
 
     bundle_id: OpaqueId
     shot_id: OpaqueId
@@ -494,8 +471,7 @@ class BeatRoute(SchemaModel):
 
 
 class ShotRouting(VersionedModel):
-    """Owned by the shot router; consumed by ``compile_controls`` (renders only generate-routed
-    shots) and ``compose_video`` (interleaves Remotion segments and generated clips)."""
+    """Owned by the shot router; consumed by ``compile_controls``."""
 
     routing_id: OpaqueId
     deliverable_id: OpaqueId

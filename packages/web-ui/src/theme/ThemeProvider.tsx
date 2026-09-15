@@ -5,13 +5,7 @@ import { coerceThemeState, isThemeState, MAX_CUSTOM_THEMES, parseThemeImport, SC
 import { initialThemeState, saveThemeState } from "./storage";
 import type { BaseTokens, ColorTokenKey, Scheme } from "./tokens";
 
-/**
- * Remote persistence. Failures are swallowed and surfaced as `syncError` only.
- *
- * `load` returns whatever the store holds, unvalidated: the provider is the single place that
- * decides whether it is a usable state, so a row written by an older build is repaired here rather
- * than reaching `state` and crashing whatever reads a field it is missing.
- */
+/** Remote persistence. */
 export interface ThemeSyncAdapter {
   load(): Promise<unknown>;
   save(state: ThemeState): Promise<void>;

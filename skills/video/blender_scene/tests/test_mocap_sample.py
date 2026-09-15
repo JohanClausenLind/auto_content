@@ -1,9 +1,4 @@
-"""Sampling cf.clip.v2 at a render frame.
-
-The properties that matter: an interpolated direction is still a unit vector (otherwise a limb
-changes length mid-clip), yaw takes the short way round, the ground offset is applied once, and
-two actors sampled at the same render frame keep the contact the capture had.
-"""
+"""Sampling cf.clip.v2 at a render frame."""
 
 from __future__ import annotations
 
@@ -178,8 +173,7 @@ def test_both_actors_share_one_ground_plane() -> None:
 
 @clips
 def test_the_offset_form_preserves_the_distance_between_actors() -> None:
-    """Both actors subtract the same origin, so their separation is untouched. If the origin were
-    per-actor, a two-person clip would silently change how far apart the pair stands."""
+    """Both actors subtract the same origin, so their separation is untouched."""
     clip = json.loads((CLIPS / "cmu_22_23_08.json").read_text())
     worst = 0.0
     for frame in range(clip["frame_count"]):

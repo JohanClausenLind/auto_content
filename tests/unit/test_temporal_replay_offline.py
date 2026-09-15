@@ -1,5 +1,4 @@
-"""Offline replay: the recorded history must replay against the current workflow code with no
-non-determinism errors. Runs in core CI without a Temporal server."""
+"""Offline replay: the recorded history must replay against the current workflow code with no."""
 
 from __future__ import annotations
 

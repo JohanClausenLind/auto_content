@@ -1,10 +1,4 @@
-"""DistributionBackend protocol (22) and typed publish machinery.
-
-Publishing is a side effect, never a cacheable result: every attempt runs through a PublishIntent
-whose key derives from campaign/deliverable/package/backend/account/destination revisions. Before
-any retry the service checks the local intent, then reconciles against the provider by content,
-and creates a new post only when absence is proven. Ambiguity is a blocking reconciliation state,
-never a blind retry."""
+"""DistributionBackend protocol (22) and typed publish machinery."""
 
 from __future__ import annotations
 

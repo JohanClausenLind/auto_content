@@ -1,26 +1,4 @@
-"""Shot text to model prompts: deterministic clause tables, one compiler, one version.
-
-Two separate defects live here, both measured on rendered films (STATUS 1627, 1704).
-
-The first is that the planner used to copy a beat's ``display_text`` into ``motion_prompt``, and
-``_anchor_prompt`` then put that narration in front of the image model. A sentence written to be
-*spoken over* a picture is not a description of a picture: "the wind kept blowing after the
-subsidies stopped" asks a model to illustrate an argument, and what came back was typography,
-collage and invented interfaces.
-
-The second is that the same string was used for both the still and the clip. A still needs one
-instant — framing, lighting, environment, materials, nothing moving. A clip needs a progression —
-what changes, and how the camera changes with it. Asking for a progression while generating a
-still is how a static frame acquires motion blur and duplicated limbs.
-
-So there are two builders here and they never share a sentence. :func:`state_sentence` writes the
-one-instant ``description`` the anchor prompt uses; :func:`progression_sentence` writes the
-``motion_prompt``; :func:`compile_video_prompt` expands a whole ``ShotSpec`` into the
-seven-component paragraph ``style.editorial.video_prompt`` enforces. Every clause comes from a
-table keyed on the ``CameraPreset``, the ``LightingSpec`` preset or the ``EnvironmentSpec``, so the
-same shot compiles to the same bytes on every machine and on every run — which is what lets the
-compiled prompt sit inside a clip's ``input_hash``.
-"""
+"""Shot text to model prompts: deterministic clause tables, one compiler, one version."""
 
 from __future__ import annotations
 
@@ -97,11 +75,7 @@ def _clean(text: str) -> str:
 
 
 def subject_clause(characters: tuple[CharacterSpec, ...]) -> str:
-    """The figures in frame, and how they look when the plan says.
-
-    The mesh carries a body and nothing else, so an appearance the operator wrote is the only
-    thing keeping the model from re-dressing the same character every frame.
-    """
+    """The figures in frame, and how they look when the plan says."""
     if not characters:
         return "no figures"
     described = [_clean(c.appearance) for c in characters if c.appearance]
@@ -113,21 +87,7 @@ def subject_clause(characters: tuple[CharacterSpec, ...]) -> str:
 
 
 def environment_clause(environment: EnvironmentSpec, *, has_figures: bool = True) -> str:
-    """Where the shot is, from the staged geometry rather than from a guess.
-
-    ``has_figures`` exists because "standing on open level ground" is a sentence about a body.
-    Applied to an object it is both wrong and load-bearing: measured on `audio-picture-story`
-    2026-09-10, "one open pine cone on a plain grey slate" plus this clause plus the preamble's
-    "shallow depth of field" produced six frames of a cone on **wet outdoor gravel**, the stated
-    slate gone, the background thrown into bokeh and the whole picture covered in specular glints
-    that I first mistook for sensor noise. The subject line had named its own ground and this
-    overrode it.
-
-    So a shot that stages nobody says nothing about the environment and lets the subject line
-    carry it — the same reasoning the caller already applies to ``"of no figures"``, one clause
-    along. A staged room is still worth naming, because a room is a place rather than a surface
-    the subject might have brought with it.
-    """
+    """Where the shot is, from the staged geometry rather than from a guess."""
     if environment.walls is not None:
         return "inside a bare room with plain walls"
     if not has_figures:
@@ -145,15 +105,8 @@ def state_sentence(
     characters: tuple[CharacterSpec, ...] = (),
     visual_subject: str | None = None,
 ) -> str:
-    """One instant: what the anchor frame looks like, standing still.
-
-    No verbs of motion, no beat number and no narration. The beat number mattered: it used to be
-    written in here, so inserting a beat mid-story renumbered every later beat, changed every later
-    anchor prompt, and re-generated a whole film's worth of anchors that had not changed.
-    """
-    # "of no figures" is a sentence about an absence, and an image model draws what a prompt
-    # names. A shot that stages nobody says nothing about figures at all and lets the framing run
-    # straight into the subject.
+    """One instant: what the anchor frame looks like, standing still."""
+    # "of no figures" is a sentence about an absence, and an image model draws what a prompt names.
     parts = [
         FRAMING_CLAUSE[preset],
         f"of {subject_clause(characters)}" if characters else "",
@@ -175,13 +128,7 @@ def progression_sentence(
 
 
 def compile_video_prompt(shot: ShotSpec, story: StoryPlan | None = None) -> str:
-    """The seven-component cinematography paragraph for one shot.
-
-    Pure: ``(shot, story.visual_subject)`` in, one paragraph out, so the digest of this string is
-    a fair thing to put in a clip's ``input_hash``. Everything the video model is told comes from
-    the ``ShotSpec`` and the clause tables above — never from ``VisualBeat.display_text``, which is
-    narration and describes the argument rather than the picture.
-    """
+    """The seven-component cinematography paragraph for one shot."""
     preset = shot.camera.preset
     props = (
         "nothing else in the frame moves"

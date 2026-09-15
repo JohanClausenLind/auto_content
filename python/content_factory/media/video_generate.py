@@ -1,10 +1,4 @@
-"""`video.generate` media skill: image-to-video with interchangeable backends.
-
-The same typed invocation runs a local ComfyUI workflow package (LTX-2.5 i2v on this hardware) or
-a deterministic mock unchanged — mirroring `media/generate.py` for images. Generated clips are
-editorial assets, never evidence; every result carries full provenance, and the container is
-verified with ffprobe before anything downstream may consume it.
-"""
+"""`video.generate` media skill: image-to-video with interchangeable backends."""
 
 from __future__ import annotations
 
@@ -31,8 +25,7 @@ from content_factory.schemas.comfyui import ComfyWorkflowPackage
 
 
 class GuideFrame(SchemaModel):
-    """A keyframe the clip must pass through: an anchor image pinned at ``frame_index``
-    (LTXVAddGuide). The bytes travel separately; the digest ties them to the request."""
+    """A keyframe the clip must pass through; the bytes travel separately."""
 
     frame_index: int = Field(ge=0)
     png_sha256: Sha256Hex
@@ -90,21 +83,12 @@ class VideoBackend(ABC):
     ) -> VideoOutput: ...
 
     def graph_fingerprint(self, guides: int = 0) -> dict[str, str]:
-        """What this backend would run, apart from the parameters. Part of a clip's cache key.
-
-        The key used to carry the backend *name* and a settings string, so editing a node in
-        `ltx_packages.py` — a sampler, a step count, a node the graph wires differently — produced
-        the identical key and the old clip was reused. That is the one cache mistake nobody
-        notices, because the file is a plausible clip of the right length. The digest is over the
-        **un-parameterised** graph, so changing a prompt or a seed is still handled by the rest of
-        the key rather than by invalidating every clip in the film.
-        """
+        """What this backend would run, apart from the parameters."""
         return {"backend": self.name}
 
 
 def probe(mp4: Path) -> dict[str, Any]:
-    """qc.media.ffprobe is the one ffprobe call site; this wraps its failure into the
-    skill's typed error so generation and QC can never disagree on how a container is read."""
+    """Wrap the one ffprobe call site (qc.media) so generation and QC read containers alike."""
     from content_factory.qc.media import ffprobe
 
     try:
@@ -122,9 +106,7 @@ def run_video_skill(
     guide_pngs: Mapping[int, bytes] | None = None,
     extra_files: Mapping[str, Path] | None = None,
 ) -> VideoOutput:
-    """The single invocation path: verify the guide bytes → execute → verify the container →
-    verify provenance. ``extra_files`` are package parameters bound to uploaded files (e.g. the
-    Wan pose video)."""
+    """The single invocation path: verify guides, execute, verify the container and provenance."""
     guide_pngs = dict(guide_pngs or {})
     for guide in request.guides:
         png = guide_pngs.get(guide.frame_index)
@@ -167,9 +149,7 @@ def run_video_skill(
 
 
 class ComfyUIVideoBackend(VideoBackend):
-    """Image-to-video through allowlisted workflow packages on the local ComfyUI. ``package`` is
-    the plain i2v graph; ``guided_packages[n]`` is the variant with ``n`` LTXVAddGuide keyframes,
-    picked by the number of guides on the request."""
+    """Image-to-video through allowlisted workflow packages on the local ComfyUI."""
 
     name = "comfyui"
 
@@ -277,9 +257,8 @@ class ComfyUIVideoBackend(VideoBackend):
                     output_dir=workdir / "comfy",
                     collect=self.collect,
                     timeout_s=self.timeout_s,
-                    # A generation is forty seconds of exclusive GPU on the LTX GGUF stack, so a
-                    # process that died after submitting must not queue a second one. The journal
-                    # sits beside the clip and is what a rerun reconciles against.
+                    # A generation is ~40 s of exclusive GPU, so a process that died after
+                    # submitting must not queue a second one; a rerun reconciles against this.
                     journal=workdir / "submitted.json",
                 )
             finally:
@@ -315,8 +294,7 @@ class ComfyUIVideoBackend(VideoBackend):
 
 
 class MockVideoBackend(VideoBackend):
-    """Deterministic offline stand-in: a seed-coloured clip (with a quiet tone when audio is
-    requested) synthesised by ffmpeg. Same shape, same verification path, zero models."""
+    """Deterministic offline stand-in: an ffmpeg-synthesised seed-coloured clip, zero models."""
 
     name = "mock"
 

@@ -1,5 +1,4 @@
-"""Pull inbound messages through a read adapter, classify, and store idempotently (24.1).
-Safety-relevant and harassment messages open an ActionItem — they are never auto-handled."""
+"""Pull inbound messages through a read adapter, classify, and store idempotently (24.1)."""
 
 from __future__ import annotations
 

@@ -1,14 +1,4 @@
-"""``content-factory datasets …``: what downloaded data is on this host, and what reads it.
-
-Named ``datasets`` at the command line because that is what an operator calls them, and
-:mod:`content_factory.libraries` in code because ``content_factory.datasets`` already means
-something else here (an uploaded CSV compiled into a typed table).
-
-Three questions, three commands. ``list`` says what is declared and whether it is present; ``link``
-builds the ``datasets/<category>/<Name>`` tree that makes it discoverable from the repo; ``check``
-is the one that earns the module — it says which libraries nothing reads, which is the fact that
-took grepping 236 runs to establish the first time.
-"""
+"""``content-factory datasets …``: what downloaded data is on this host, and what reads it."""
 
 from __future__ import annotations
 
@@ -69,11 +59,7 @@ def link_libraries(
 
 @app.command("check")
 def check_libraries(as_json: bool = typer.Option(False, "--json")) -> None:
-    """Report what is absent and what nothing reads.
-
-    Exit code is 0 in both cases on purpose. A machine without the 19 GB reference library runs
-    every lane, and a library nobody reads is a fact to act on rather than a broken build.
-    """
+    """Report what is absent and what nothing reads."""
     from content_factory.libraries import LIBRARIES, unreached
 
     absent = [lib for lib in LIBRARIES if not lib.present()]

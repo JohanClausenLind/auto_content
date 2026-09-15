@@ -1,7 +1,4 @@
-"""Stage executors for the production workflow (phase 6). Every stage is deterministic given its
-inputs, writes atomically into the project directory, and is safe to run twice. The workflow
-caches by input hash (campaign + stage + dependency outputs + edit overlays), so a change to one
-card invalidates exactly that card's render and nothing else."""
+"""Stage executors for the production workflow (phase 6)."""
 
 from __future__ import annotations
 
@@ -107,8 +104,7 @@ class StageContext:
     quality: str
     dep_outputs: dict[str, str]  # dependency node_id -> outputs hash
     # Widget values frozen onto this DAG node by the workspace-graph compiler. A stage reads the
-    # keys it knows through :meth:`param`; anything else stays inert. They are part of the node's
-    # input hash, so turning a knob in the canvas re-runs exactly the stages it affects.
+    # keys it knows through :meth:`param`; anything else stays inert.
     params: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -160,12 +156,7 @@ def _param_bool(ctx: StageContext, key: str, default: bool) -> bool:
 
 
 def _param_list(ctx: StageContext, key: str, default: Sequence[str]) -> tuple[str, ...]:
-    """A list widget: a JSON array or a comma/space separated list; the setting when unset.
-
-    The canvas has no list control, so a list arrives as text and the two spellings an operator
-    would actually type both work. An empty widget means "the configured list", never "no items" —
-    a blank text box is what a widget looks like before anyone touches it.
-    """
+    """A list widget: a JSON array or a comma/space separated list; the setting when unset."""
     raw = _param(ctx, key).strip()
     if not raw:
         return tuple(default)
@@ -177,8 +168,7 @@ def _param_list(ctx: StageContext, key: str, default: Sequence[str]) -> tuple[st
         if isinstance(parsed, list):
             return tuple(str(x).strip() for x in parsed if str(x).strip())
         # A bracketed list that is not valid JSON — `[image]`, `[title, quote]`, which is what a
-        # person types and what YAML hands through as a plain string. Strip the brackets and treat
-        # it as the separated list it plainly is, rather than reading "[image]" as one scene kind.
+        # person types and what YAML hands through as a plain string.
         raw = raw[1:-1] if raw.endswith("]") else raw[1:]
     return tuple(
         part.strip().strip("\"'") for part in raw.replace(",", " ").split() if part.strip("\"' ")
@@ -228,31 +218,14 @@ become a film without going through a web form first."""
 
 
 def _claim_digest(claims: Sequence) -> str:
-    """A claim set's identity, with the check DATE left out of it.
-
-    ``checked_at`` is when the verification ran, not what it concluded. Folding it into the hash
-    made every stage downstream of research re-run at midnight — a cache key that changes with the
-    clock is not a cache key. What identifies a claim set is the statements, their verdicts, and
-    the evidence and datasets they resolve to.
-    """
+    """A claim set's identity, with the check DATE left out of it."""
     return _hash_obj(
         [{k: v for k, v in c.model_dump(mode="json").items() if k != "checked_at"} for c in claims]
     )
 
 
 def stage_ingest(ctx: StageContext) -> StageOutput:
-    """Every file in ``<project>/uploads`` into the artifact store as a typed source.
-
-    The library this calls has existed and been tested since phase 4 (``ingest.uploads``: size
-    caps, magic-number sniffing, an allowlist that never accepts SVG); what was missing was
-    anything that called it, so ``data-story-video`` was the one lane the catalogue marks
-    unfinished and every other lane's ``sources`` came from a committed fixture.
-
-    Uploads are hostile input, so nothing here trusts a filename: the MIME is sniffed from the
-    bytes, a declared extension from the dangerous set is refused whatever the sniff says, and a
-    rejected file fails the stage by name rather than being skipped — a film built from three of
-    an operator's four files, silently, is worse than one that stopped.
-    """
+    """Every file in ``<project>/uploads`` into the artifact store as a typed source."""
     import tempfile
 
     from content_factory.datasets import is_transform_sidecar
@@ -265,9 +238,7 @@ def stage_ingest(ctx: StageContext) -> StageOutput:
     from content_factory.schemas.research import SourceClass, SourceRecord
 
     uploads = ctx.project_dir / UPLOADS_DIRNAME
-    # A `<file>.transforms.json` sidecar declares how to shape the upload it sits beside. It is
-    # metadata about an upload, not an upload: ingesting it would make it a source of its own and
-    # compile it as a second dataset, which is exactly what happened the first time this ran.
+    # A `<file>.transforms.json` sidecar declares how to shape the upload it sits beside.
     files = (
         sorted(p for p in uploads.glob("**/*") if p.is_file() and not is_transform_sidecar(p))
         if uploads.is_dir()
@@ -299,9 +270,7 @@ def stage_ingest(ctx: StageContext) -> StageOutput:
     sources: list[SourceRecord] = []
     rejected: list[str] = []
     # Conversions land here and are thrown away with it: the operator's own file in uploads/ is
-    # never modified, and what goes into the artifact store is the converted copy the stages can
-    # actually open. A file dropped through the browser was already converted at upload time;
-    # this is the same step for one copied in by hand.
+    # never modified.
     with tempfile.TemporaryDirectory(prefix="cf-convert-") as convert_dir:
         for path in files:
             rel = path.relative_to(uploads).as_posix()
@@ -401,13 +370,7 @@ def _today() -> str:
 
 
 def stage_research(ctx: StageContext) -> StageOutput:
-    """Sources, evidence and claims for the run.
-
-    The real search/fetch/extract pipeline is opt-in (``execution.live_research``): it reaches the
-    network, and the core suite must not. Without it this is the committed fixture — the same
-    material every lane has used — plus whatever ``ingest`` put in the project, so an operator's
-    own uploads are sources even on the offline path.
-    """
+    """Sources, evidence and claims for the run."""
     sources, evidence, claims = demo_fixtures.fixture_research(ctx.workspace_id)
     if get_settings().execution.live_research:
         from content_factory.research.pipeline import research_topic
@@ -441,15 +404,7 @@ def stage_research(ctx: StageContext) -> StageOutput:
 
 
 def stage_verify_claims(ctx: StageContext) -> StageOutput:
-    """Re-verify every claim against the evidence and datasets on disk, then gate the script.
-
-    Two things were wrong here. It re-derived the *fixture* claims instead of reading what
-    ``research`` wrote, so an operator's own sources could never reach it; and it gated
-    ``sample_story_plan()`` rather than the plan this run is making, so the check passed on a film
-    nobody was rendering. It also ran before ``plan_story``, which is the right place for the
-    per-claim verification and the wrong place for the script gate — the script does not exist yet.
-    So the verification stays here and the gate moved to ``lock_script``, where there is a script.
-    """
+    """Re-verify every claim against the evidence and datasets on disk, then gate the script."""
     from content_factory.research.claims import build_claim
     from content_factory.schemas.research import ClaimRecord, EvidenceRecord, SourceRecord
 
@@ -496,9 +451,8 @@ def stage_verify_claims(ctx: StageContext) -> StageOutput:
     from content_factory.qc.media import Severity
     from content_factory.research.claims import independence_findings
 
-    # The requirement compiler has set requires_independent_sources=2 on high-stakes claims since
-    # it was written and nothing ever read it, so two outlets reprinting one press release counted
-    # twice. This is where that number finally means something.
+    # The requirement compiler has set requires_independent_sources=2 on high-stakes claims since it
+    # was written and nothing ever read it.
     independence = independence_findings(
         verified,
         evidence,
@@ -521,13 +475,7 @@ def stage_verify_claims(ctx: StageContext) -> StageOutput:
 
 
 def stage_compile_datasets(ctx: StageContext) -> StageOutput:
-    """Uploaded CSV/JSON into typed ``DatasetTable``s through declared transforms.
-
-    Returned ``sample_dataset()`` — the committed wind-power fixture — so a data-led film could
-    only ever be about Swedish wind power whatever the operator uploaded. The transforms come from
-    a ``<file>.transforms.json`` sidecar beside the upload, so the derivation lives with the data
-    rather than inside a widget, and it is recorded next to the compiled table.
-    """
+    """Uploaded CSV/JSON into typed ``DatasetTable``s through declared transforms."""
     from content_factory.datasets import (
         DatasetError,
         compile_dataset,
@@ -584,10 +532,7 @@ def stage_compile_datasets(ctx: StageContext) -> StageOutput:
 
 
 def _import_story_sidecars(ctx: StageContext, fixture: Path, hashes: list[str]) -> dict:
-    """A hand-authored story may bring its own evidence: ``<story>.datasets.json`` (a list of
-    DatasetTable) and ``<story>.sources.json`` (a list of SourceCard) next to the fixture. They
-    land where compile_timeline looks (``data/<id>.json``, ``research/source_cards.json``), so the
-    charts and source cards of that story render its numbers, not the demo's."""
+    """A hand-authored story may bring its own evidence: ``<story>.datasets.json``."""
     from content_factory.schemas.render import DatasetTable, SourceCard
 
     facts: dict = {}
@@ -612,8 +557,7 @@ def _import_story_sidecars(ctx: StageContext, fixture: Path, hashes: list[str]) 
         hashes.append(_hash_obj([c.model_dump(mode="json") for c in cards]))
         facts["sources"] = len(cards)
     # `story_lexicon` reads `<project>/story/lexicon.json` and nothing ever put one there for a
-    # hand-authored film: every respelling the contracts can express was unreachable unless the
-    # operator wrote the file into the run directory by hand.
+    # hand-authored film: every respelling the contracts can express was unreachable.
     lexicon_path = stem.with_suffix(".lexicon.json")
     if lexicon_path.exists():
         entries = [
@@ -637,8 +581,7 @@ def _import_story_sidecars(ctx: StageContext, fixture: Path, hashes: list[str]) 
 
 
 def _project_brand(ctx: StageContext):
-    """Brand token overrides the story brought (``story/brand.json``): approved tokens only —
-    paper, ink, accent — so a dark short is a three-line sidecar, not a theme fork."""
+    """Brand token overrides the story brought (``story/brand.json``): approved tokens only."""
     from content_factory.schemas.render import BrandTokens
 
     path = ctx.project_dir / "story" / "brand.json"
@@ -672,14 +615,7 @@ def _project_sources(ctx: StageContext) -> dict:
 
 
 def _project_assets(ctx: StageContext) -> dict[str, str]:
-    """Files ``ingest`` put in the project, in the shape ``RenderBundle.assets`` takes.
-
-    This is the plumbing that was missing, and it is why `image`, `screenshot`, `map` and
-    `manim_asset` were unreachable from every lane: the scenes resolve `bundle.assets[asset_id]`,
-    `ingest` wrote the mapping into ``research/uploads.json``, and nothing carried it across. A
-    scene naming an asset that is not here still renders — as a card saying which id is missing —
-    so a half-ingested project produces a film with a labelled hole rather than a crash.
-    """
+    """Files ``ingest`` put in the project, in the shape ``RenderBundle.assets`` takes."""
     path = ctx.project_dir / "research" / "uploads.json"
     if not path.exists():
         return {}
@@ -702,10 +638,7 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
     else:
         plan = sample_story_plan()
         # The demo plan's last beat is "Sources: Energimyndigheten, Svenska kraftnät." — two words
-        # no English text-to-speech says and no English aligner spells. Without a respelling the
-        # model produced "enner's aminahin sventzka craftnet" and the script gate refused the beat
-        # at 0.22, so the lane that ships with this repo could not narrate its own demo film. The
-        # plan is a code fixture, so its lexicon is one too.
+        # no English text-to-speech says and no English aligner spells.
         _write(
             ctx.project_dir / "story" / LEXICON_FILENAME,
             json.dumps(
@@ -715,20 +648,12 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
             ),
         )
     # ``--subject`` is one sentence naming the film's world, which is exactly StoryPlan's
-    # ``visual_subject``. Putting it on the plan is what carries it to both models: the shot
-    # planner's state sentence and the video prompt compiler both read it from here, so the
-    # operator says it once instead of once per stage. It wins over a fixture's own value: it is
-    # the more specific instruction, given for this run.
+    # ``visual_subject``.
     subject = _param(ctx, "subject").strip()
     if subject:
         plan = plan.model_copy(update={"visual_subject": subject[:400]})
-    # ``beats`` is the lane's shape, and it was read in transcript mode only — so every other
-    # lane's widget was decoration. `single-image` says `beats: 1` ("one beat is one image. More
-    # beats would plan frames nothing draws") and planned the demo fixture's four;
-    # `single-clip-post`
-    # says 3 and planned four. It is a cap, not a demand: a five-beat script asked for seven beats
-    # is a shorter film, not a failure, so the shortfall is recorded in the facts rather than
-    # raised — but a plan longer than the lane can use is trimmed here instead of downstream.
+    # ``beats`` is the lane's shape, and it was read in transcript mode only — so every other lane's
+    # widget was decoration. `single-image` says `beats: 1`.
     want = _param_int(ctx, "beats", 0)
     trimmed = 0
     if want > 0 and want < len(plan.beats):
@@ -752,8 +677,7 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
         facts.update(_import_story_sidecars(ctx, REPO_ROOT / fixture, hashes))
 
     # Documentary-shaped campaigns (a long_video, optionally with excerpt_of shorts) also get an
-    # editorial-arc outline and per-short vertical plans. Shorts are re-edited excerpts, never
-    # crops: each derived plan re-runs narration/alignment/captions through its own branch.
+    # editorial-arc outline and per-short vertical plans.
     doc = find_documentary(ctx.campaign)
     if doc is not None:
         long_spec, short_specs = doc
@@ -797,13 +721,7 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
 
 
 def _transcript_path(ctx: StageContext) -> Path | None:
-    """The transcript ``transcribe_audio`` wrote for this deliverable, when there is one.
-
-    ``plan_story`` is a *shared* stage: the campaign compiler runs one of it for the whole run, so
-    it can arrive with no deliverable at all — and a transcript belongs to a deliverable's audio
-    folder. No deliverable therefore means no transcript rather than an assertion, which is what
-    the documentary tests found the moment this branch existed.
-    """
+    """The transcript ``transcribe_audio`` wrote for this deliverable, when there is one."""
     if ctx.deliverable_id is None:
         return None
     path = ctx.ddir() / "audio" / "transcript.json"
@@ -811,17 +729,7 @@ def _transcript_path(ctx: StageContext) -> Path | None:
 
 
 def _story_plan_from_recording(ctx: StageContext, path: Path) -> tuple[StoryPlan, dict]:
-    """The plan a recording dictates: beats are spans of what was actually said.
-
-    Precedence matters here and is deliberate. A named ``story`` fixture still wins, because an
-    operator who names a plan means it; failing that, a transcript on disk beats both the script
-    writer and the demo fixture, because a lane that transcribed a recording and then planned a
-    film about Swedish wind power would be the single most confusing thing this pipeline could do.
-
-    ``beats`` is the number of drawings. It is the one knob here that changes the film: each beat
-    becomes one shot, one drawing and one held span of the recording, so asking for four beats out
-    of a three-minute interview is asking for four pictures that hold for forty seconds each.
-    """
+    """The plan a recording dictates: beats are spans of what was actually said."""
     from content_factory.audio.transcribe import TRANSCRIBE_VERSION, story_plan_from_transcript
     from content_factory.schemas.audio import SpeechTranscript
 
@@ -832,11 +740,7 @@ def _story_plan_from_recording(ctx: StageContext, path: Path) -> tuple[StoryPlan
     fps = int(getattr(spec, "fps", 24) or 24)
     subject = _param(ctx, "subject").strip()
     # A plan made from a recording has no world of its own, and `visual_subject` is the only thing
-    # that tells the image model what the film is *of*. Left empty, `plan_shots`' presets were the
-    # only content in the prompt, so a recording explaining why the sky is blue came back as six
-    # drawings of an unnamed man standing on open ground. The recording's opening line is a poor
-    # substitute for an operator's sentence and a far better one than nothing: it is at least about
-    # the thing that was said. `--subject` still wins, and the facts say which was used.
+    # that tells the image model what the film is *of*.
     opening = " ".join(transcript.text.split())[:200].strip()
     from_transcript = not subject and bool(opening)
     subject_source = "--subject" if subject else ("transcript" if from_transcript else "none")
@@ -860,11 +764,7 @@ def _story_plan_from_recording(ctx: StageContext, path: Path) -> tuple[StoryPlan
 
 
 def _draft_story_plan(ctx: StageContext) -> tuple[StoryPlan, dict]:
-    """The local writer's plan, or a named failure. Never a silent fallback to the fixture.
-
-    Falling back would be the worst of both: an operator who turned the writer on and got the demo
-    film would have no way to tell, and the run would look like it worked.
-    """
+    """The local writer's plan, or a named failure."""
     from content_factory.models.scriptwriter import draft_story_plan
     from content_factory.schemas.research import ClaimRecord
 
@@ -1000,9 +900,7 @@ def stage_write_copy(ctx: StageContext) -> StageOutput:
         "units": len(payload.get("cards", [1])),
         "tone": tone if use_model else f"{tone} (ignored: execution.local_copywriter is off)",
     }
-    # What the model call cost. The gateway has always returned tokens, wall clock and dollars and
-    # every caller kept only the alias, so a run said which model wrote the copy and never what it
-    # cost — the numbers that matter with a local 8B model sharing the card.
+    # What the model call cost.
     if isinstance(payload.get("model"), dict):
         facts.update({f"model_{k}": v for k, v in payload["model"].items()})
     return StageOutput(_hash_obj(payload), facts)
@@ -1044,14 +942,7 @@ def stage_render_static(ctx: StageContext) -> StageOutput:
 
 
 def stage_compile_cards(ctx: StageContext) -> StageOutput:
-    """One artboard per card. A carousel's cards are its copy; a film's cards are its beats.
-
-    ``write_copy`` writes a ``cards`` list only when the deliverable is a **carousel** — for
-    anything else it writes a caption and an alt text. This stage read ``copy["cards"]``
-    unconditionally, so `data-story-video`, whose deliverable is a video, died on a bare
-    ``KeyError: 'cards'`` at stage 13 of 22, every run. The beats are the right source there:
-    they are what `card_stills` renders and what the timeline cuts.
-    """
+    """One artboard per card."""
     copy_path = ctx.ddir() / "copy.json"
     copy = json.loads(copy_path.read_text()) if copy_path.is_file() else {}
     source = "copy"
@@ -1153,22 +1044,7 @@ def stage_render_cards(ctx: StageContext) -> StageOutput:
 
 # --- 3D scene-control layer (shots -> control passes) -----------------------------------------
 def _story_plan_path(ctx: StageContext) -> Path | None:
-    """Which story plan this deliverable's stages read, or None when nothing has been planned.
-
-    A documentary campaign is one long video plus N shorts, and ``plan_story`` already writes a
-    derived vertical plan per short to ``story/shorts/<deliverable_id>.plan.json``: a re-edit, never
-    a crop, with the measured timings reset so narration, alignment and captions regenerate for
-    that short and with a rewritten hook. Nothing consumed them. Every per-deliverable stage
-    resolved ``story/plan.json``, so all N shorts narrated the LONG plan and came out as N copies
-    of the same film at a different aspect ratio — the limitation recorded at STATUS 528 as "the
-    lane's next smallest task".
-
-    Preferring the short's own plan here is the whole fix: ``lock_script``,
-    ``synthesize_narration``, ``align_words``, ``compile_captions``, ``compile_timeline``,
-    ``plan_shots`` and ``find_reference`` all read the plan through this one function, so the
-    playbook's episode-to-shorts recipe becomes ``make`` on a documentary campaign with no new lane
-    and no new contract.
-    """
+    """Which story plan this deliverable's stages read, or None when nothing has been planned."""
     if ctx.deliverable_id:
         short = ctx.project_dir / "story" / "shorts" / f"{ctx.deliverable_id}.plan.json"
         if short.exists():
@@ -1189,14 +1065,7 @@ def _reviews_dir(ctx: StageContext) -> Path:
 
 
 def stage_review_assets(ctx: StageContext) -> StageOutput:
-    """Gate every character asset a shot uses on a reviewed, approved sculpture.
-
-    Deterministic checks run over the turnaround the build already produced, and a contact sheet
-    is written for a person to look at. The stage **blocks** while any asset is unapproved: an
-    approval binds to the built mesh's digest, so rebuilding an asset withdraws it. Passing
-    measurements is necessary and never sufficient — "this is a plausible human" is not something
-    the checks decide.
-    """
+    """Gate every character asset a shot uses on a reviewed, approved sculpture."""
     from content_factory.controls.asset_review import review_asset
     from content_factory.schemas.assets import CharacterAssetReview
 
@@ -1213,9 +1082,7 @@ def stage_review_assets(ctx: StageContext) -> StageOutput:
     reviews_dir = _reviews_dir(ctx) / "assets"
     # Approvals are not run artifacts: see ControlsSettings.asset_approvals_dir.
     approvals = Path(get_settings().controls.asset_approvals_dir)
-    # Whether this film sends an identity reference at all. If it does, a character with no styled
-    # sheet for the film's style has nothing to fill that slot with — and the count of slots is
-    # what selects the editing recipe upstream, so a silently empty one changes the whole run.
+    # Whether this film sends an identity reference at all.
     references = _param_list(ctx, "references", get_settings().image_sequences.anchor_references)
     from content_factory.controls.identity_sheets import style_slug
 
@@ -1304,21 +1171,16 @@ FPS_MASTER_HINT = (
 
 
 def stage_plan_shots(ctx: StageContext) -> StageOutput:
-    """One ShotSpec per story beat (camera preset by scene kind), or a hand-authored fixture plan.
-    Deterministic: the plan hash is the stage output, so downstream re-runs only on shot changes."""
+    """One ShotSpec per story beat (camera preset by scene kind)."""
     cfg = get_settings().shots
     planner = _param(ctx, "planner", cfg.planner)
-    # The story's rate is the master rate. The setting is only the fallback for a lane that plans
-    # shots without a story; taking it as the default meant a 30 fps story silently produced 24 fps
-    # shots, because ShotSettings.fps is 24 and nothing compared the two.
+    # The story's rate is the master rate.
     story = _story_plan_or_none(ctx)
     default_fps = story.fps if story is not None else cfg.fps
     if planner == "fixture":
         plan = load_fixture_plan(REPO_ROOT / _param(ctx, "fixture_path", cfg.fixture_path))
     elif planner == "reference":
-        # Stage the beats from whatever find_reference chose. With no selection on disk this falls
-        # through to the preset planner rather than failing: a lane must still run on a machine
-        # with no reference library.
+        # Stage the beats from whatever find_reference chose.
         from content_factory.shots.planner import plan_shots_from_reference
 
         selection_path = ctx.ddir() / "reference" / "selection.json"
@@ -1344,13 +1206,10 @@ def stage_plan_shots(ctx: StageContext) -> StageOutput:
             with_character=_param(ctx, "characters", "one").strip().lower() != "none",
             lighting_preset=_param(ctx, "lighting", "studio"),  # type: ignore[arg-type]
         )
-    # Which styled identity sheet each character's anchor will be conditioned on. Named on the
-    # PLAN, by digest, rather than looked up at anchor time by style: a sheet rebuilt in the same
-    # style is a different picture, and a plan has to say which one it was made against.
+    # Which styled identity sheet each character's anchor will be conditioned on.
     plan = _attach_identity_sheets(ctx, plan)
     # Every shot in a plan shares one rate (ShotPlan enforces it), so one comparison covers the
-    # film. Refused here rather than reported, because there is no honest way to run it: the
-    # conform is lossy and invisible in the facts.
+    # film.
     if story is not None and plan.shots[0].fps != story.fps:
         msg = (
             f"the story is {story.fps} fps and this shot plan is {plan.shots[0].fps} fps."
@@ -1359,9 +1218,7 @@ def stage_plan_shots(ctx: StageContext) -> StageOutput:
         raise RuntimeError(msg)
     _write(ctx.ddir() / "shots" / "plan.json", plan.model_dump_json(indent=1))
     # Measured off the finished plan, not predicted, and reported rather than fixed: a shot under
-    # the cliff renders its control passes and then has them ignored by the image model. The cause
-    # is a frame too narrow to hold the cast at a legible size, so the answer is a wider frame or a
-    # closer-standing clip. Neither is the planner's call to make silently.
+    # the cliff renders its control passes and then has them ignored by the image model.
     from content_factory.shots.planner import underframed_shots
 
     under = underframed_shots(plan)
@@ -1394,19 +1251,13 @@ def stage_plan_shots(ctx: StageContext) -> StageOutput:
 
 
 def _anchor_style(ctx: StageContext) -> str:
-    """The film's style prompt, resolved. One string for the whole film: the anchors and the
-    identity sheets have to be in the same style or the reference fights the prompt."""
+    """The film's style prompt, resolved."""
     cfg = get_settings().image_sequences
     return resolve_style(_param(ctx, "style", cfg.anchor_style_prompt))
 
 
 def _attach_identity_sheets(ctx: StageContext, plan: ShotPlan) -> ShotPlan:
-    """Put each character's styled sheet digest on its ``CharacterSpec``, when one is built.
-
-    Absent sheets are not an error here. Whether a film *needs* them is
-    ``anchor_references``' business, and ``review_assets`` is the gate that refuses to run a lane
-    asking for an identity slot that nothing can fill — a plan is not the place to decide it.
-    """
+    """Put each character's styled sheet digest on its ``CharacterSpec``, when one is built."""
     from content_factory.controls.identity_sheets import sheet_sha_for_style
 
     root = Path(get_settings().controls.assets_root)
@@ -1446,10 +1297,7 @@ def _load_routing(ctx: StageContext) -> ShotRouting | None:
 
 
 def stage_route_shots(ctx: StageContext) -> StageOutput:
-    """Hybrid workflow: decide per story beat whether Remotion renders it (D3 / Vega-Lite /
-    MapLibre / Manim scenes) or the generative chain produces it (Blender controls -> HiDream ->
-    LTX-2.5). A scene-kind table plus per-beat overrides from ``routing`` settings; the routing hash
-    is the stage output, so downstream re-runs only when a decision changes."""
+    """Hybrid workflow: decide per story beat whether Remotion renders it."""
     plan_path = ctx.ddir() / "shots" / "plan.json"
     if not plan_path.exists():
         msg = "route_shots needs shots/plan.json: run plan_shots first"
@@ -1482,11 +1330,7 @@ def stage_route_shots(ctx: StageContext) -> StageOutput:
 
 
 def _first_stageable(matches) -> str | None:
-    """The first match that is a retargeted mocap clip on disk, or None.
-
-    The one predicate that decides whether retrieval changes a film or only describes one. It lives
-    here and in ``shots.planner.plan_shots_from_reference``; they must agree, and a test says so.
-    """
+    """The first match that is a retargeted mocap clip on disk, or None."""
     from content_factory.shots.planner import CLIPS_DIR
 
     for match in matches:
@@ -1497,18 +1341,7 @@ def _first_stageable(matches) -> str | None:
 
 
 def stage_find_reference(ctx: StageContext) -> StageOutput:
-    """Ask the reference library, in the story's own words, for the real interaction to stage from.
-
-    Writes ``reference/selection.json``: one ``ReferenceMatchSet`` per story beat, carrying the
-    ranked clips, the terms the query was understood to mean, and the terms that are understood and
-    known to be missing from every source on disk. ``plan_shots`` reads it to name a mocap clip on a
-    character, and ``generate_anchor`` can read it for a reference frame.
-
-    An absent library selects nothing rather than failing. The library is host-specific and 19 GB,
-    so a machine without it must still be able to run every lane: the honest outcome is a selection
-    file that says the library was not found, not a broken run. This mirrors ``select_music``, which
-    behaves the same way when no music library is present.
-    """
+    """Ask the reference library, in the story's own words."""
     cfg = get_settings().reference
     index_path = Path(cfg.index_path)
     story = _load_story_plan(ctx)
@@ -1563,8 +1396,7 @@ def stage_find_reference(ctx: StageContext) -> StageOutput:
                 "order": beat.order,
                 "match_set": json.loads(result.model_dump_json()),
                 # Decided here rather than left for plan_shots to discover, so the selection file
-                # answers "will this stage?" on its own. Same predicate plan_shots_from_reference
-                # applies, and a test pins that they agree.
+                # answers "will this stage?" on its own.
                 "stageable": _first_stageable(result.matches) is not None,
                 "stageable_clip": _first_stageable(result.matches),
             }
@@ -1574,14 +1406,6 @@ def stage_find_reference(ctx: StageContext) -> StageOutput:
     selection["absent_terms"] = sorted(absent_terms)
     # How many beats found a clip that can actually drive a rig, which is a different number from
     # `selected` and the one that decides whether `plan_shots` stages anything.
-    #
-    # The distinction was invisible and it cost days. Three runs on this host recorded
-    # `selected: 0` and nothing else, and that one number covers three unrelated situations: the
-    # library is not installed; the library is fine but the story has no people in it (all three
-    # of those runs were a Rayleigh-scattering explainer — "Sunlight is white. It carries every
-    # colour at once."); or the search matched well and every match was an SBU sequence, which is
-    # a skeleton to look at and not something a character can be posed from. Only 58 of the 15789
-    # indexed clips are retargeted, so the third case is common and reads exactly like the first.
     stageable = sum(1 for b in beats if b.get("stageable"))
     selection["stageable_beats"] = stageable
     selection["reason"] = _selection_reason(len(beats), selected, stageable)
@@ -1622,8 +1446,7 @@ def _selection_reason(beats: int, selected: int, stageable: int) -> str:
 
 
 def stage_compile_controls(ctx: StageContext) -> StageOutput:
-    """Per-frame control passes as ControlBundles. ``controls.compiler`` selects the builtin 2D
-    MotionPlan renderer or the Blender scene controller; both write the same bundle layout."""
+    """Per-frame control passes as ControlBundles."""
     compiler = _param(ctx, "compiler", get_settings().controls.compiler)
     controls_dir = ctx.ddir() / "controls"
     if compiler == "motion_plan":
@@ -1631,8 +1454,7 @@ def stage_compile_controls(ctx: StageContext) -> StageOutput:
         shot_plan_path = ctx.ddir() / "shots" / "plan.json"
         if shot_plan_path.exists():
             # Shots planned (hybrid / blender workflows on mock backends): one bundle per routed
-            # shot, keyed by the shot id, so anchors, clips and the compose step line up exactly as
-            # they do with the Blender compiler. Anchor at frame 0 only: the 2D plan is a stand-in.
+            # shot, keyed by the shot id.
             shot_plan = ShotPlan.model_validate_json(shot_plan_path.read_text())
             routing = _load_routing(ctx)
             wanted = [
@@ -1673,8 +1495,7 @@ def stage_compile_controls(ctx: StageContext) -> StageOutput:
 _CONTROL_PASS_WIDGETS: tuple[tuple[str, bool, tuple[ControlKind, ...]], ...] = (
     ("rough_rgb", True, (ControlKind.rough_rgb,)),
     # One toggle, two passes: the 8-bit PNG a model can be shown and the EXR the depth range is
-    # measured from. Splitting them into two widgets would let a lane ask for a depth reference
-    # whose range nothing had measured.
+    # measured from.
     ("depth", True, (ControlKind.depth, ControlKind.depth_exr)),
     ("normals", True, (ControlKind.normals,)),
     ("segmentation", True, (ControlKind.segmentation,)),
@@ -1699,18 +1520,7 @@ def _control_passes(ctx: StageContext) -> tuple[ControlKind, ...]:
 
 
 def _refuse_unclothed_staging(plan: ShotPlan) -> None:
-    """Refuse a Blender plan whose figures nobody has described.
-
-    The mesh carries a body and nothing else, and the depth and normals passes are renders of
-    that bare body — so the image model, which draws what it is shown, draws a bare body. Measured
-    on `picture-story` (2026-09-10): ten anchors of a **grey untextured mannequin in a T-pose**
-    standing in a desert, 22 minutes of GPU, every frame unusable. It is the same failure ADR-0004
-    records for identity references, arriving through the control passes instead.
-
-    `CharacterSpec.appearance` is the field that fixes it and it is optional, so the refusal is
-    here rather than in the contract: a shot plan with no figures at all is fine (that is most
-    lanes), and one with figures nobody described cannot produce a picture worth the wait.
-    """
+    """Refuse a Blender plan whose figures nobody has described."""
     staged = [c for sh in plan.shots for c in sh.characters]
     if not staged or any(c.appearance for c in staged):
         return
@@ -1726,9 +1536,7 @@ def _refuse_unclothed_staging(plan: ShotPlan) -> None:
 
 
 def _compile_controls_blender(ctx: StageContext) -> list[ControlBundle]:
-    """One Blender skill run per shot, cached by shot hash + compiler settings. The skill writes
-    its passes straight into ``controls/<shot_id>/``; the bundle builder verifies every digest and
-    renders the pose/layout PNG tracks content-factory owns."""
+    """One Blender skill run per shot, cached by shot hash + compiler settings."""
     from content_factory.controls.blender import BUNDLE_BUILDER_VERSION, run_blender_scene
     from content_factory.controls.bundle import build_control_bundle
 
@@ -1748,10 +1556,7 @@ def _compile_controls_blender(ctx: StageContext) -> list[ControlBundle]:
     passes = _control_passes(ctx)
     bundles: list[ControlBundle] = []
     for shot in shots_to_compile:
-        # The node's toggles decide which passes Blender renders. Sending a pass costs real time
-        # per frame and, further down, real prompt influence — the image model draws what it is
-        # shown — so a lane that wants skeleton and depth only should render skeleton and depth
-        # only. The ShotSpec's own passes are the default when no toggle was set.
+        # The node's toggles decide which passes Blender renders.
         shot = shot.model_copy(update={"render": shot.render.model_copy(update={"passes": passes})})
 
         shot_dir = ctx.ddir() / "controls" / shot.shot_id
@@ -1804,8 +1609,7 @@ def _compile_controls_blender(ctx: StageContext) -> list[ControlBundle]:
 
 # --- anchors, lock, keyframes (image-sequence branch executors) --------------------------------
 def _same_endpoint(a: str, b: str) -> bool:
-    """Whether two service URLs name the same server, ignoring trailing slashes and the
-    scheme's default port."""
+    """Whether two service URLs name the same server, ignoring trailing slashes."""
     from urllib.parse import urlparse
 
     def parts(url: str) -> tuple[str, str, int]:
@@ -1820,19 +1624,7 @@ def _same_endpoint(a: str, b: str) -> bool:
 
 
 def _service_for_backend(backend: object) -> str | None:
-    """The local GPU tenant a backend talks to (None for mocks, and None for another machine's).
-
-    Started lazily — only when a stage is about to generate something that is not cached — so a
-    fully cached rerun never evicts whatever the other tenant is doing on the card.
-
-    The endpoint check is not a detail. ``hidream_endpoints`` is a pool, and a pool entry pointing
-    at the second box is not this machine's to start: matching on type alone meant every run
-    dispatched to the remote host *also* booted the local server and left 17-19 GB resident on a
-    card the run never touched. Measured 2026-09-10: a `single-image` run whose pool was
-    `["http://100.82.150.94:8801"]` recorded `vram_before_mib=18994` locally, and the
-    `silent-video` running beside it died at `sound_design` because MMAudio met 15.5 GiB of
-    somebody else's weights. Only the endpoint `services.local` manages is ours to bring up.
-    """
+    """The local GPU tenant a backend talks to (None for mocks, and None for another machine's)."""
     from content_factory.media.video_generate import ComfyUIVideoBackend
     from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
@@ -1849,12 +1641,8 @@ def _ensure_backend_ready(backend: object, warmed: set[str]) -> None:
     tenant = _service_for_backend(backend)
     if tenant is None or tenant in warmed:
         return
-    # The one moment this run is about to put weights on the local card, and therefore the one
-    # place worth asking whether the card is still there. A GPU that has fallen off the bus is
-    # not a retryable condition — the driver's own recovery action is a reboot — and without
-    # this the failure arrives later wearing someone else's clothes: ComfyUI answering
-    # "All connection attempts failed", or SeedVR2 placing its VAE on the CPU and dying on
-    # "device cpu:0 is invalid". A queue would spend every remaining job finding that out.
+    # The one moment this run is about to put weights on the local card, and therefore the one place
+    # worth asking whether the card is still there.
     gone = gpu_is_gone()
     if gone:
         from content_factory.workflows.blocked import BlockedError
@@ -1888,6 +1676,16 @@ ANCHOR_MODELS_WITHOUT_BACKEND: dict[str, str] = {
         " this stage. Use hidream-o1 (one world across a film) or flux2-dev (several references"
         " composed at once)."
     ),
+    "ideogram-4": (
+        "Ideogram 4 has no image path into its conditioning, so it cannot take the references or"
+        " control passes this stage exists to apply. It draws text-to-image only. For a region of"
+        " an existing frame use scripts/ideogram_inpaint.py (Differential Diffusion); for an"
+        " anchor a later frame must match, use hidream-o1 or flux2-dev."
+    ),
+    "ideogram-4-sdnq": (
+        "the SDNQ repack of the same model, and it has the same limit: no image conditioning, so"
+        " no reference edit. It adds inpainting, which scripts/ideogram_inpaint.py drives."
+    ),
     "comfy-fixture": (
         "the fixture ComfyUI package renders an empty image and takes no references; it exists to"
         " prove the ComfyUI submit/collect path, not to draw anchors. Use mock for an offline run."
@@ -1899,22 +1697,7 @@ film of grey rectangles."""
 
 
 def _anchor_backend_name(ctx: StageContext | None) -> str:
-    """Which reference-edit backend draws the anchors.
-
-    Three sources reach here and the order between them is the whole design:
-
-    1. the node's ``backend`` key, which the local runner and the offline tests inject for one run;
-    2. ``image_sequences.backend`` **when it was explicitly configured** — a machine that has said
-       "no GPU here, use the mock" has to be obeyed, or that setting is unenforceable on any lane
-       that pins a model;
-    3. the ``model`` widget, which is what a lane definition freezes ("this lane is a HiDream
-       lane"). It was inert before: three lanes declare ``model: hidream-o1`` and every one of them
-       drew mock rectangles unless the operator also knew to set the setting;
-    4. the setting's own default.
-
-    ``model_fields_set`` is what separates 2 from 4, and it is the only honest way to: a configured
-    ``mock`` and a defaulted ``mock`` are the same string and mean different things.
-    """
+    """Which reference-edit backend draws the anchors."""
     cfg = get_settings().image_sequences
     if ctx is None:
         return cfg.backend
@@ -1937,12 +1720,7 @@ def _anchor_backend_name(ctx: StageContext | None) -> str:
 
 
 def _megapixel_size(width: int, height: int, megapixels: float) -> tuple[int, int]:
-    """``width`` x ``height`` scaled to a pixel budget, aspect held, both sides a multiple of 32.
-
-    Zero or less means "leave it alone", which is the default: with a shot plan the size is the
-    ShotSpec's and nothing here should overrule it. HiDream-O1 snaps to its own ~4 MP buckets by
-    aspect ratio whatever it is asked for, so this only bites on the backends that honour a size.
-    """
+    """``width`` x ``height`` scaled to a pixel budget, aspect held, both sides a multiple of 32."""
     if megapixels <= 0:
         return width, height
     scale = (megapixels * 1_000_000 / (width * height)) ** 0.5
@@ -1959,11 +1737,7 @@ def _reference_backend(ctx: StageContext | None = None) -> ReferenceEditBackend:
     if backend == "hidream":
         from content_factory.sequences.hidream_backend import HiDreamReferenceEditBackend
 
-        # The pool's first host, not the singular endpoint. They are the same value whenever no
-        # pool is configured (`hidream_pool()` falls back to it), so a single-machine run is
-        # unchanged — but a pool that deliberately names only *other* machines, because this card
-        # is doing something else, used to have its anchor drawn here anyway, starting a local
-        # server the operator had just configured out of the run.
+        # The pool's first host, not the singular endpoint.
         return HiDreamReferenceEditBackend(
             endpoint=cfg.hidream_pool()[0],
             send_control_as_reference=cfg.control_as_reference,
@@ -1985,12 +1759,7 @@ def _reference_backend(ctx: StageContext | None = None) -> ReferenceEditBackend:
 
 
 def _reference_backends(ctx: StageContext | None = None) -> list[ReferenceEditBackend]:
-    """One backend per configured GPU host, for spreading a sequence's frames across machines.
-
-    A pool of one is the default everywhere and makes ``build_sequence`` take its serial path, so
-    a single-machine run is unchanged. The anchor is still made by ``_reference_backend``: it is
-    one picture, every frame depends on it, and there is nothing to spread.
-    """
+    """One backend per configured GPU host, for spreading a sequence's frames across machines."""
     cfg = get_settings().image_sequences
     backend = _anchor_backend_name(ctx)
     if backend == "hidream":
@@ -2007,9 +1776,7 @@ def _reference_backends(ctx: StageContext | None = None) -> list[ReferenceEditBa
 
         endpoints = cfg.flux2_pool()
         base = (ctx.ddir() / "flux2") if ctx is not None else Path("output/flux2")
-        # Each host gets its own scratch dir. The reference files are content-addressed, so two
-        # hosts would write identical bytes to one path -- identical, but not atomically, and a
-        # half-written reference is a corrupt frame rather than a slow one.
+        # Each host gets its own scratch dir.
         return [
             Flux2ReferenceBackend(
                 workdir=base if len(endpoints) == 1 else base / f"host{i}",
@@ -2034,9 +1801,8 @@ def _anchor_lock(
         cfg.anchor_style_prompt if ctx is None else _param(ctx, "style", cfg.anchor_style_prompt)
     )
     seed = cfg.anchor_seed if ctx is None else _param_int(ctx, "seed", cfg.anchor_seed)
-    # The lock names what actually made the picture, because it is what a rerun is checked
-    # against: a frame generated by one model must not be served from a cache entry another model
-    # wrote, and the steps and guidance below mean different things per recipe.
+    # The lock names what actually made the picture, because it is what a rerun is checked against:
+    # a frame generated by one model must not be served from a cache entry another model wrote.
     package_ids = {
         "hidream-o1": ("hidream-o1-image", cfg.anchor_model_revision),
         "flux2-dev": ("flux2-dev.reference", "FLUX.2-dev-Q4_K_M"),
@@ -2061,42 +1827,14 @@ def _anchor_lock(
 
 
 def _anchor_prompt(ctx: StageContext, shot: ShotSpec | None, lock: GenerationLock) -> str:
-    """The style leads, then the subject, then the shot's one-instant state.
-
-    Order is not cosmetic here. With the style clause last — behind the subject and two sentences
-    of staging — the image model ignored it: asking for a flat, gradient-free ukiyo-e woodblock
-    returned the same heavy-outline photoreal idiom as every other style. The identical words moved
-    to the front produced an actual woodblock. Same prompt, same reference, same seed; only the
-    position changed. Anything appended after the style dilutes it, so keep the style first.
-
-    ``motion_prompt`` is deliberately absent. An anchor is one still frame, and the progression
-    ("the camera pushes slowly in") is an instruction the still cannot carry out: asking for it
-    while generating a frame is how a static image acquires motion blur and a second pair of arms.
-    The progression belongs to the clip, where ``shots.prompt_compile`` compiles it.
-
-    The **world** is the StoryPlan's ``visual_subject`` — "one sentence naming the film's world,
-    for the image and video models only", by the field's own definition. It reached the shot
-    planner and the video prompt compiler and never this stage, while the node's ``prompt`` widget
-    on these lanes is a *framing* instruction: "the subject alone, centred, plain background, the
-    reference view of the set". Framing with no subject in it is a prompt that asks the model to
-    invent one, and it does — an `image-set` run of a deep-sea documentary came back as a
-    character line-up of three strangers in coats, because the style clause said "consistent
-    character design" and nothing said what the picture was of. The two clauses are complementary,
-    so both go in: what it is, then how it is framed. ``--subject`` writes to both places, so an
-    exact repeat is emitted once.
-    """
+    """The style leads, then the subject, then the shot's one-instant state."""
     framing = _param(ctx, "prompt").strip()
     world = ""
     story_path = _story_plan_path(ctx)
     if story_path is not None:
         world = (StoryPlan.model_validate_json(story_path.read_text()).visual_subject or "").strip()
     # The shot's state sentence is built by `shots.prompt_compile.state_sentence`, which already
-    # embeds the story's `visual_subject` — so appending the world clause as well said the whole
-    # thing twice. Measured on `audio-picture-story` (2026-09-10): 258 of a 480-character prompt
-    # were one 129-character world sentence, printed twice, and the six drawings that came back
-    # were six near-copies of the same vista — the camera clause is four words against two copies
-    # of a long one and lost. The dedup below could not see it, because it compares whole clauses
-    # and the repeat is a substring of a longer one.
+    # embeds the story's `visual_subject`.
     staging = shot.description.strip() if shot is not None and shot.description else ""
     said = [lock.style_prompt.rstrip("."), staging.rstrip(".")]
     parts = [lock.style_prompt]
@@ -2113,16 +1851,7 @@ def _anchor_prompt(ctx: StageContext, shot: ShotSpec | None, lock: GenerationLoc
 
 
 def _identity_reference(shot: ShotSpec | None, character_id: str) -> tuple[bytes, str] | None:
-    """The character's styled identity sheet, addressed by the digest the plan named.
-
-    Never the turnaround. HiDream-O1's IP pipeline treats every reference as subject material, so
-    the clay render makes it draw clay people and the untextured MPFB turnaround makes it draw a
-    nude mannequin — both measured (STATUS 1339, 1379-1381). This used to send exactly that clay
-    front view, which is why ``anchor_references`` could not include ``identity`` at all.
-
-    Addressed by ``CharacterSpec.reference_image_sha256`` rather than by style, so a sheet rebuilt
-    in the same style is a different picture and is not served for a plan made from the old one.
-    """
+    """The character's styled identity sheet, addressed by the digest the plan named."""
     from content_factory.controls.identity_sheets import load_sheet_by_sha
 
     if shot is None:
@@ -2155,19 +1884,7 @@ def _conditioning_for_frame(
     shot: ShotSpec | None,
     wanted: Sequence[str] = ("pose_skeleton",),
 ) -> tuple[ControlConditioning, list[dict]]:
-    """The references for one frame, in the order upstream's IP pipeline expects: identity
-    references (each with its layout box) first, then structural passes.
-
-    ``wanted`` names the passes; ``identity`` opts the character sheets in. Sending a pass costs
-    more than nothing — the model draws what it is shown — so the default is the OpenPose skeleton
-    plus depth. See ``ImageSequenceSettings.anchor_references``.
-
-    The second return value is what each slot actually carried: ``{slot, role, subject_id, sha256,
-    box}``, in order. It is written into the anchor's marker because the reference *count* alone
-    could not answer the question that mattered — upstream branches on ``len(ref_images) == 1``, so
-    the number of slots selects the whole editing recipe, and a run whose identity sheet was
-    missing silently became a one-reference run on a different scheduler.
-    """
+    """The references for one frame, in the order upstream's IP pipeline expects."""
     refs: list[bytes] = []
     boxes: list = []
     slots: list[dict] = []
@@ -2189,29 +1906,7 @@ def _conditioning_for_frame(
                     }
                 )
     available = {t.kind.value for t in bundle.tracks}
-    # A skeleton of nobody is not conditioning, it is a scheduler switch. The docstring above
-    # names the trap and this is the other way into it: a shot that stages no figures still gets a
-    # `pose_skeleton` track compiled, and sending it made the anchor a **one-reference** request,
-    #
-    # The condition is the *shot's* character list, not the bundle's subject list, and getting
-    # that wrong first is instructive. `ps1-pinecone`'s bundle does carry a subject — labelled
-    # "one open pine cone on a plain grey slate" and carrying `subject_id: subj_hands0001` with
-    # joints for two wrists and two index fingers. That is the motion_plan compiler's **builtin
-    # hand-gesture fixture**, the one `image-set`'s own caveat warns about ("its per-image layout
-    # is that plan's hand-gesture fixture, not the views the brief asks for"). So every object
-    # subject gets a skeleton of two hands drawn over it and then sent as the anchor's reference.
-    # `shot.characters` is empty for these lanes and is the honest signal.
-    # which is exactly `is_editing` upstream. That routes the dev recipe onto `flow_match`, and
-    # `skills/image/hidream/server.py` has the measurement for what that costs: speckle at 0.175
-    # of pixels above a luma gradient of 60, against 0.0004 on `flash`.
-    #
-    # Measured on `audio-picture-story` 2026-09-10: "one open pine cone on a plain grey slate"
-    # came back six times covered in white speckle, `references: 1`, the single slot a pose
-    # skeleton of no one. The same prompt with no references at all renders clean on the same
-    # server, at either aspect — which is what finally isolated it after three wrong diagnoses of
-    # my own (paper texture from the style, the environment clause, the machine). The skeleton
-    # carried no information about a pine cone and its only effect was to pick the noisier
-    # scheduler.
+    # A skeleton of nobody is not conditioning, it is a scheduler switch.
     staged_figures = bool(shot.characters) if shot is not None else bool(bundle.subjects)
     if not staged_figures:
         wanted = tuple(k for k in wanted if k != "pose_skeleton")
@@ -2243,17 +1938,7 @@ def _shots_by_id(ctx: StageContext) -> dict[str, ShotSpec]:
 
 
 def _free_the_gpu(ctx: StageContext, reason: str) -> dict:
-    """Evict the managed GPU tenants (and the Ollama models) before a skill loads its own weights.
-
-    ``_ensure_backend_ready`` covers the two stages that talk to a *managed* server. It does not
-    cover the ones that load a model inside their own uv environment through a subprocess — the
-    post chain (Cutie, ProPainter, SeedVR2, RIFE), ``sound_design`` (MMAudio, Stable Audio) and
-    ``restore_speech`` (Resemble Enhance, ClearerVoice). Those went straight to torch, so nothing
-    had stopped HiDream or ComfyUI and the second load met a card with 19 GB already resident.
-
-    Only ever called on the uncached path, and only once per stage: a fully cached rerun must not
-    evict a tenant somebody else is using to produce nothing.
-    """
+    """Evict the managed GPU tenants (and the Ollama models) before a skill loads its own."""
     from content_factory.services.local import free_the_gpu
 
     freed = free_the_gpu()
@@ -2281,13 +1966,7 @@ put its VAE on the CPU — and a queue would have spent every remaining job find
 
 
 def gpu_is_gone() -> str:
-    """`""` when the GPU is there (or there never was one), else what nvidia-smi said.
-
-    Deliberately not "is there a GPU": a machine with no NVIDIA driver at all is a normal offline
-    machine and every mock backend works on it. This is the narrower question of whether the
-    driver is present and has *lost* the device, which is not a condition any amount of retrying
-    fixes — the driver's own recovery action for it is a reboot.
-    """
+    """`""` when the GPU is there (or there never was one), else what nvidia-smi said."""
     import subprocess
 
     try:
@@ -2308,13 +1987,7 @@ def gpu_is_gone() -> str:
 
 
 def gpu_memory_used_mib() -> int | None:
-    """What is on the card right now, in MiB, or None where there is no nvidia-smi.
-
-    One number, taken before and after each uncached generation. It is the measurement that was
-    missing every time this repo hit an out-of-memory failure: the record said which stage died
-    and never what was resident when it started, so "Ollama was still holding the text model" was
-    a hypothesis for weeks (STATUS 1213, 1361, 1380, 1657) rather than a number in a marker.
-    """
+    """What is on the card right now, in MiB, or None where there is no nvidia-smi."""
     import subprocess
 
     try:
@@ -2336,13 +2009,7 @@ def gpu_memory_used_mib() -> int | None:
 def _generation_telemetry(
     *, before: int | None, seconds: float, backend: object, extra: dict | None = None
 ) -> dict:
-    """What one uncached generation cost, in the marker's own words.
-
-    ``vram_before_mib``/``vram_after_mib`` are the card, ``seconds`` is the stage's wall clock, and
-    ``server_elapsed_s`` is what the model server itself reported. Keeping both timings is the
-    point: they disagreed by a factor of three on the thirty-anchor run and the gap was recorded as
-    "unexplained" because nothing held the two numbers side by side.
-    """
+    """What one uncached generation cost, in the marker's own words."""
     facts: dict[str, object] = {
         "seconds": round(seconds, 2),
         "vram_before_mib": before,
@@ -2379,12 +2046,7 @@ def _expects_photographic(style_prompt: str) -> bool:
 
 
 def _blocker_findings(png: bytes, *, expect_monochrome: bool):
-    """The deterministic frame checks, reduced to the ones that mean "do not ship this".
-
-    Only blockers. The advisory findings (tonal collapse, black clipping, edge intrusion,
-    background churn) are for a person reading the contact sheet: they mean "look at this", and
-    regenerating on them would spend GPU hours chasing a threshold that was deliberately set loose.
-    """
+    """The deterministic frame checks, reduced to the ones that mean "do not ship this"."""
     from content_factory.qc.frame_review import colour_findings, edge_findings, tonal_findings
 
     found = [
@@ -2407,43 +2069,14 @@ def _generate_checked(
     warmed: set[str],
     seed_offset: int = 0,
 ) -> tuple[bytes, int, int, dict]:
-    """Generate an anchor until the blocker checks pass.
-
-    Returns ``(png, attempts, seed, telemetry)``.
-
-    Before this, ``generate_anchor`` wrote whatever came back and the deterministic checks ran only
-    later, inside ``review_frames``, where a person was already looking. So a thirty-anchor run
-    spent three GPU hours and then showed a reviewer thirty frames, four of which had a style
-    instruction half-applied — findings the code could have seen the moment each frame arrived.
-
-    Regeneration follows the pattern ``sequences.engine.build_sequence`` already uses for
-    keyframes: a new seed per attempt, derived rather than random, so the second attempt is the
-    same second attempt on every machine and on every rerun. ``lock.seed`` is attempt 1, which
-    keeps a frame that passes first time byte-identical to what it was before.
-
-    ``seed_offset`` moves that whole ladder, and is how a frame a *person* rejected comes back
-    different rather than identical — :func:`_anchor_rejection_offsets` sets it from how many times
-    the frame has been turned down. It is 0 for a frame nobody has rejected, so the ordinary path
-    is unchanged byte for byte.
-
-    When the attempts run out this raises :class:`BlockedError` rather than writing the last one:
-    a fourth attempt is more GPU time for the same answer, and the answer is that a person has to
-    look. Every rejected candidate is kept on disk for them to look AT.
-    """
+    """Generate an anchor until the blocker checks pass."""
     import time
 
     cfg = get_settings().image_sequences
     expect_monochrome = any(w in (lock.style_prompt or "").lower() for w in MONOCHROME_WORDS)
     candidates: list[dict] = []
 
-    # Every host that can draw this, the given one first. A frame already falls back to another
-    # card when one goes away (`WorkerPool`), and the anchor did not: measured on this host, the
-    # local HiDream was killed by another tenant asking Ollama for a model and `silent-video`
-    # failed at stage 4 of 12 with "server unreachable", with a healthy second host in the pool.
-    # The anchor is one picture and every frame depends on it, so losing it loses the run.
-    # Deduplicated by endpoint, not by identity: `_reference_backend` and `_reference_backends`
-    # build separate client objects for the same URL, so an identity check left the first host in
-    # the list twice and every anchor paid two connection failures to a dead server instead of one.
+    # Every host that can draw this, the given one first.
     def _where(host: object) -> str:
         return str(getattr(host, "endpoint", getattr(host, "name", host)))
 
@@ -2505,15 +2138,7 @@ def _generate_checked(
 
 
 def _anchor_from_upload(ctx: StageContext) -> StageOutput:
-    """The operator's own still as the anchor, drawn by nobody.
-
-    ``image-to-video``'s caveat used to read "no node type ingests a supplied still, so starting
-    from an image you already have is not expressible in the graph today". This is that node
-    behaviour: with ``source: upload`` the stage adopts the picture in the run's uploads folder
-    instead of generating one, writes it as ``anchors/anchor.png`` and records the same manifest a
-    generated anchor writes — so ``generate_video`` moves the operator's photograph with no
-    knowledge that it was not drawn here, and no prompt, seed or model is consulted at all.
-    """
+    """The operator's own still as the anchor, drawn by nobody."""
     uploads = ctx.project_dir / UPLOADS_DIRNAME
     stills = (
         sorted(
@@ -2599,13 +2224,7 @@ def _anchor_from_upload(ctx: StageContext) -> StageOutput:
 
 
 def _anchor_frame_paths(anchors_dir: Path, frame_id: str) -> tuple[Path, Path, str] | None:
-    """``frame_id`` -> (png, marker, a filename-safe key), or None if it is not an anchor's.
-
-    ``review_frames`` builds anchor ids as ``<shot_id>:<frame index>`` from the manifest, and the
-    single-anchor branch records ``shot_id: None`` — so that lane's frames really are called
-    ``None:0000`` on disk today. Both spellings are accepted here rather than only the tidy one,
-    because a verdict already written against the old id has to keep working.
-    """
+    """``frame_id`` -> (png, marker, a filename-safe key), or None if it is not an anchor's."""
     shot, _, tail = frame_id.rpartition(":")
     if not tail.isdigit():
         return None
@@ -2617,26 +2236,10 @@ def _anchor_frame_paths(anchors_dir: Path, frame_id: str) -> tuple[Path, Path, s
 
 
 def _clear_rejected_anchors(ctx: StageContext) -> list[str]:
-    """Drop the cache markers of anchors a person rejected, so the next run redraws them.
-
-    The keyframe lanes have had this since 2026-09-10 (:func:`_clear_rejected_frames`). The anchor
-    lanes did not, and the consequence was the same one, measured on `amber-refix` 2026-09-12:
-    three of six frames rejected with reasons, the resume reported ``cache_hits: 6`` on
-    generate_anchor, and the gate blocked again on the identical pictures. An operator who rejected
-    a frame was stuck for ever unless the prompt changed and moved the input hash — which means the
-    honest verdict the gate exists to collect was the one thing it could not act on.
-
-    Only the marker is removed. The picture moves to ``anchors/rejected/``, so what was turned down
-    can still be looked at, and the frame is named in the stage's facts, because a redraw nobody
-    can see in the record is a redraw nobody can audit.
-    """
+    """Drop the cache markers of anchors a person rejected, so the next run redraws them."""
     from content_factory.services.frame_reviews import current_batch
 
-    # The MERGED state, not `batch.json` alone. `batch.json` is what the gate wrote when it last
-    # ran; `verdict.json` beside it is what the operator answered afterwards, and the answer is the
-    # whole point. Reading only the first works the first time and then silently stops: measured
-    # here 2026-09-12, a second rejection reported `cache_hits: 6` because at the moment this runs
-    # the gate's file still described the *previous* round, in which those frames were unreviewed.
+    # The MERGED state, not `batch.json` alone.
     batch = current_batch(ctx.ddir())
     if batch is None:
         return []
@@ -2665,20 +2268,7 @@ def _clear_rejected_anchors(ctx: StageContext) -> list[str]:
 
 
 def _anchor_redirects(ctx: StageContext) -> dict[str, str]:
-    """``frame_id -> what the reviewer said it should show instead``, for frames they rejected.
-
-    This is the half a seed offset cannot do. Moving the seed makes a redraw *different*; it does
-    not make it different in the direction that was asked for, and measured on `amber-refix`
-    2026-09-12 that is exactly what happened — of three frames rejected for having an open rim,
-    two came back solid and the third came back a corked bottle, which is further from amber than
-    what it replaced.
-
-    The reviewer's ``reason`` is a complaint and cannot be sent to an image model as one: these
-    weights run at guidance 0, where `sequences.styles` has already measured that a negation is a
-    hint the model may or may not take. So the contract carries a separate ``redirect``, stated
-    positively, and that is what goes into the prompt. A rejection with no redirect still redraws —
-    it just redraws on a new seed alone, which is the behaviour this replaces.
-    """
+    """``frame_id -> what the reviewer said it should show instead``, for frames they rejected."""
     from content_factory.services.frame_reviews import current_batch
 
     batch = current_batch(ctx.ddir())
@@ -2692,14 +2282,7 @@ def _anchor_redirects(ctx: StageContext) -> dict[str, str]:
 
 
 def _with_redirects(prompt: str, redirects: Sequence[str]) -> str:
-    """``prompt`` with the reviewer's corrections appended, as descriptions of the picture.
-
-    Appended, not prepended: `_anchor_prompt` documents that the style leads and that anything
-    after it is weaker, and a correction is about the subject rather than the medium. Each one is
-    already phrased positively — that is what the contract asks the reviewer for — so they join the
-    sentence list as they are rather than being wrapped in "avoid" or "not", which at guidance 0
-    is a hint rather than an instruction.
-    """
+    """``prompt`` with the reviewer's corrections appended, as descriptions of the picture."""
     extra = [r.strip().rstrip(".") for r in redirects if r.strip()]
     if not extra:
         return prompt
@@ -2707,12 +2290,7 @@ def _with_redirects(prompt: str, redirects: Sequence[str]) -> str:
 
 
 def _applied_redirects(anchors_dir: Path, key: str, marker: Path, pending: str) -> tuple[str, ...]:
-    """The corrections this draw is made with.
-
-    A frame whose marker survived was not rejected, so it keeps exactly the set it was drawn with
-    and its input hash is unchanged — otherwise every untouched frame would regenerate the moment
-    any frame in the set was corrected.
-    """
+    """The corrections this draw is made with."""
     if marker.exists():
         try:
             return tuple(json.loads(marker.read_text()).get("redirects", ()))
@@ -2722,19 +2300,7 @@ def _applied_redirects(anchors_dir: Path, key: str, marker: Path, pending: str) 
 
 
 def _redirects_for_frame(anchors_dir: Path, key: str, pending: str) -> tuple[str, ...]:
-    """Every redirect that applies to the next draw of one frame, oldest first.
-
-    Sticky, and derived from files rather than recomputed from the verdict each time — which is
-    what keeps the prompt stable across a resume. A redirect read straight from the verdict would
-    vanish the moment the frame was redrawn (the new digest makes it `unreviewed` again), the
-    prompt would revert, the input hash would revert with it, and the frame would regenerate
-    *without* the correction it had just been given. Same failure shape as reading `batch.json`
-    instead of the merged state, one layer down.
-
-    So each draw records the set it was made with, that marker moves aside when the frame is
-    rejected, and the next draw reads the most recent one and appends whatever is newly pending.
-    Corrections accumulate: "a solid lump with no opening" and then "deeper orange" both hold.
-    """
+    """Every redirect that applies to the next draw of one frame, oldest first."""
     applied: tuple[str, ...] = ()
     reject_dir = anchors_dir / "rejected"
     if reject_dir.is_dir():
@@ -2754,17 +2320,7 @@ def _redirects_for_frame(anchors_dir: Path, key: str, pending: str) -> tuple[str
 
 
 def _anchor_rejection_offsets(anchors_dir: Path) -> dict[str, int]:
-    """How far to move each anchor's seed, from how many times it has been turned down.
-
-    Same arithmetic as :func:`_rejection_seed_offsets`, and for the same measured reason: a redraw
-    has to come back *different*, and the backend derives its seed from the attempt number
-    (``lock.seed + attempt - 1``), so redrawing without moving the base reproduces the picture that
-    was just rejected. The multiplier is 8 because the three blocker retries inside one run already
-    walk the seed by 0, 1, 2 — an offset of one would land the redraw on the second attempt of the
-    run that was rejected.
-
-    Counted off the files in ``anchors/rejected/``, so it survives a crash and needs no extra state.
-    """
+    """How far to move each anchor's seed, from how many times it has been turned down."""
     reject_dir = anchors_dir / "rejected"
     if not reject_dir.is_dir():
         return {}
@@ -2776,16 +2332,12 @@ def _anchor_rejection_offsets(anchors_dir: Path) -> dict[str, int]:
 
 
 def stage_generate_anchor(ctx: StageContext) -> StageOutput:
-    """Anchor images. With control bundles present: one anchor per shot per ``anchor_frames``
-    index, conditioned on the Blender passes (identity refs + layout boxes + rough RGB + skeleton).
-    Without controls: a single anchor from the brief. Each anchor is cached by its input hash."""
+    """Anchor images."""
     if _param(ctx, "source", "generate") == "upload":
         return _anchor_from_upload(ctx)
     backend = _reference_backend(ctx)
     warmed: set[str] = set()
-    # A verdict is only worth collecting if the run can act on it. Clearing first means a rejected
-    # anchor misses its cache below; the offsets then make sure what comes back is a different
-    # picture rather than the one that was turned down.
+    # A verdict is only worth collecting if the run can act on it.
     redrawing = _clear_rejected_anchors(ctx)
     seed_offsets = _anchor_rejection_offsets(ctx.ddir() / "anchors")
     # Read before the loop, because clearing above is what makes these frames eligible to redraw
@@ -2862,13 +2414,10 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                         "attempts": attempts,
                         "seed": used_seed,
                         "telemetry": telemetry,
-                        # The exact words the model was given. It is already inside input_hash, so
-                        # this adds nothing to caching — it is here so a frame can be read back
-                        # against what was asked for without re-deriving the compiler's tables.
+                        # The exact words the model was given.
                         "prompt": frame_prompt,
                         # The reviewer corrections folded into that prompt, in the order they were
-                        # given. Recorded rather than recomputed so the next draw can carry them:
-                        # see `_redirects_for_frame`.
+                        # given.
                         "redirects": list(redirects),
                         "png_sha256": sha256_hex(png),
                         "backend": backend.name,
@@ -2878,10 +2427,7 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                         # upstream, so "which slots were filled" is not a detail.
                         "reference_slots": slots,
                         "layout_boxes": len(cond.layout_boxes),
-                        # What the model actually returned. HiDream-O1 snaps to its own ~4 MP
-                        # resolution buckets by aspect ratio, so the lock's width/height is a
-                        # request, not a promise — record the delivered size rather than implying
-                        # the requested one came back.
+                        # What the model actually returned.
                         **_png_size(png),
                         "cache_hit": False,
                     }
@@ -2905,11 +2451,7 @@ def stage_generate_anchor(ctx: StageContext) -> StageOutput:
                 }
             )
     else:
-        # The story's frame, not the settings' default. A plan carries width and height because
-        # the film has a shape, and this branch read `default_working_resolution` (16:9) whatever
-        # it said — so a 1080x1920 story got a landscape picture. HiDream snaps to its own ~4 MP
-        # bucket by *aspect*, so what is passed here decides portrait or landscape and nothing
-        # else. Without a plan on disk the setting still decides, which is the brief-only path.
+        # The story's frame, not the settings' default.
         width, height = get_settings().image_sequences.default_working_resolution
         story_path = _story_plan_path(ctx)
         if story_path is not None:
@@ -3006,12 +2548,7 @@ def _first_anchor(ctx: StageContext) -> tuple[str, int, int]:
 
 
 def _anchor_recorded_style(ctx: StageContext) -> str:
-    """The style clause the first anchor was actually drawn with, from its own marker.
-
-    `generate_anchor` records the exact prompt it sent, and that prompt begins with the style. The
-    style is everything up to the first sentence break, because `_anchor_prompt` joins its clauses
-    with ". " and puts the style first — deliberately, and measured (see its docstring).
-    """
+    """The style clause the first anchor was actually drawn with, from its own marker."""
     for marker in (
         ctx.ddir() / "anchors" / "anchor.done.json",
         *sorted((ctx.ddir() / "anchors").glob("*/0000.done.json")),
@@ -3023,9 +2560,8 @@ def _anchor_recorded_style(ctx: StageContext) -> str:
 
 
 ANCHOR_BACKEND_MODELS: dict[str, str] = {
-    # A backend's `.name`, which is what `generate_anchor` writes into its marker, back to the
-    # `model` widget's spelling. Two of the three are already the widget's word; the mock's is
-    # not, and reading its marker has to give "mock" rather than nothing.
+    # A backend's `.name` (what `generate_anchor` writes into its marker) back to the `model`
+    # widget's spelling; the mock's marker has to read "mock" rather than nothing.
     "hidream-o1": "hidream-o1",
     "flux2-dev": "flux2-dev",
     "mock-reference-edit": "mock",
@@ -3034,15 +2570,7 @@ ANCHOR_BACKEND_MODELS: dict[str, str] = {
 
 
 def _anchor_recorded_backend(ctx: StageContext) -> str:
-    """Which backend actually drew the first anchor, from its own marker — or `""`.
-
-    The same argument as :func:`_anchor_recorded_style`, for the other half of the lock. This
-    stage re-derived the backend from *its* node's `model` widget, and `lock_generation` has no
-    such widget, so it fell through to the settings default: a run whose anchors were drawn by
-    HiDream wrote a lock that said `mock-reference-edit` (measured on `image-set`, 2026-09-10).
-    The lock's model rides in every spoke's `input_hash`, so the wrong name is not only a wrong
-    record — it keys the whole frame set on a model that never touched it.
-    """
+    """Which backend actually drew the first anchor, from its own marker — or `""`."""
     for marker in (
         ctx.ddir() / "anchors" / "anchor.done.json",
         *sorted((ctx.ddir() / "anchors").glob("*/0000.done.json")),
@@ -3053,15 +2581,7 @@ def _anchor_recorded_backend(ctx: StageContext) -> str:
 
 
 def stage_lock_generation(ctx: StageContext) -> StageOutput:
-    """Freeze the generation lock around the first anchor: same model, seed, sampler and prompts
-    for every frame that follows.
-
-    The style comes from **the anchor's own node**, not from this one. `_anchor_lock` resolves the
-    style from `ctx.params`, and a `--style` or a canvas widget sets it on `generate_anchor` — so
-    this stage re-derived it from the settings default and wrote a lock whose art direction was
-    not the art direction the anchor was drawn in. Every spoke was then edited under a style the
-    hub had never seen, which is the one thing a lock exists to prevent.
-    """
+    """Freeze the generation lock around the first anchor, in the style the anchor was drawn in."""
     sha, width, height = _first_anchor(ctx)
     anchor_style = _anchor_recorded_style(ctx)
     params = dict(ctx.params)
@@ -3080,11 +2600,7 @@ def stage_lock_generation(ctx: StageContext) -> StageOutput:
 
 
 def _sequence_style_name(ctx: StageContext) -> str:
-    """The style preset the sequence was locked to, or `""` when there is no lock on disk.
-
-    Read rather than required: `generate_video` runs in lanes that never build an image sequence,
-    and a missing lock means "no per-style override", not an error.
-    """
+    """The style preset the sequence was locked to, or `""` when there is no lock on disk."""
     path = ctx.ddir() / "sequence" / "lock.json"
     if not path.exists():
         return ""
@@ -3103,24 +2619,7 @@ def _controls_compiler(ctx: StageContext) -> str | None:
 
 
 def _sequence_motion_plan(ctx: StageContext) -> tuple[MotionPlan, dict[int, str]]:
-    """The frame plan a keyframe lane draws, and what each frame is a picture *of*.
-
-    ``sample_motion_plan()`` is a fixture: eight frames of two hands sliding together on a
-    1024x576 canvas, every frame instructed "Move hands to the plotted position for frame N". It
-    was what `image-set` and `photo-sequence-video` drew whatever story they were given — so the
-    story widget those definitions describe as "the list of views, as beats" reached the anchor's
-    prompt and nothing else, and a deep-sea documentary and a children's book came back as the
-    same eight pictures of the fixture's subject moving its hands.
-
-    With a story on disk the plan is derived from it: one frame per beat, on the story's canvas,
-    and each frame's edit instruction is that beat's scene ``alt_text`` — the field whose whole
-    job is to say what the picture shows. The layout box is held still across the set, because
-    these lanes are views of one subject rather than a subject in motion, and the box is exactly
-    what drift masking treats as allowed to change.
-
-    Without a story on disk the fixture comes back unchanged, which is what the brief-only path
-    and every existing test get.
-    """
+    """The frame plan a keyframe lane draws, and what each frame is a picture *of*."""
     path = _story_plan_path(ctx)
     if path is None:
         return sample_motion_plan(), {}
@@ -3128,16 +2627,11 @@ def _sequence_motion_plan(ctx: StageContext) -> tuple[MotionPlan, dict[int, str]
     if not story.beats:
         return sample_motion_plan(), {}
     frames = len(story.beats)
-    # The fixture's subject and its trajectory are kept exactly as they are and only re-timed:
-    # what the story knows is how many pictures there are, how big they are and what each one
-    # shows, and it says nothing about where a subject sits in the frame. Re-deriving the layout
-    # here would change what drift masking treats as allowed to move, which is a separate decision
-    # from "draw the views the story lists".
+    # The fixture's subject and trajectory are kept and only re-timed: the story says nothing about
+    # where a subject sits, and re-deriving the layout would change what drift masking lets move.
     base = sample_motion_plan()
-    # The label reaches the model: `compile_edit_instruction` writes "(subject: <label>)" into
-    # every frame's edit instruction. Left at the fixture's, an owl sequence asked HiDream for
-    # "The same tawny owl on the same mossy branch ... (subject: hands)", which is a contradiction
-    # in the one sentence that is supposed to say what to change.
+    # The label reaches the model via "(subject: <label>)" in every edit instruction; left at the
+    # fixture's, an owl sequence asked HiDream for "the same tawny owl ... (subject: hands)".
     label = (story.visual_subject or "").split(",")[0].strip()[:80] or base.subjects[0].label
     subjects = tuple(
         subject.model_copy(
@@ -3174,25 +2668,11 @@ def _sequence_motion_plan(ctx: StageContext) -> tuple[MotionPlan, dict[int, str]
 
 
 def _clear_rejected_frames(ctx: StageContext, workdir: Path) -> list[int]:
-    """Drop the cache markers of frames a person rejected, so the next run redraws them.
-
-    `image-set`'s own note promises that "rejecting one drawing costs one drawing, not the film",
-    and nothing implemented it: `review_frames` recorded the verdict and `generate_keyframes`
-    never read it, so a rejected frame was a cache hit for ever and the gate blocked on the same
-    picture on every rerun. Measured 2026-09-10 on a malachite set — six consistent views of the
-    wrong object, rejected, and the resume printed the identical rejection.
-
-    Only the marker is removed. The picture itself moves to `sequence/rejected/`, beside the ones
-    the drift check refuses, so what was turned down can still be looked at; and the frame is
-    listed in the stage's facts, because a redraw nobody can see in the record is a redraw nobody
-    can audit.
-    """
+    """Drop the cache markers of frames a person rejected, so the next run redraws them."""
     from content_factory.services.frame_reviews import current_batch
 
     # Merged, for the reason `_clear_rejected_anchors` records: `batch.json` is the gate's last
-    # word and `verdict.json` is the operator's, and only the second one carries a rejection made
-    # since the gate last ran. This path had the same latent flaw and had never been exercised
-    # twice in a row.
+    # word and `verdict.json` the operator's, and only the second carries a rejection since then.
     batch = current_batch(ctx.ddir())
     if batch is None:
         return []
@@ -3224,15 +2704,7 @@ def _clear_rejected_frames(ctx: StageContext, workdir: Path) -> list[int]:
 
 
 def _rejection_seed_offsets(workdir: Path) -> dict[int, int]:
-    """How far to move each frame's seed, from how many times it has been turned down.
-
-    A redraw has to come back *different*. Redrawing with the same instruction and the same first
-    attempt reproduces the picture exactly — measured 2026-09-10, when a rejected kilim frame was
-    redrawn and came back as the drawing that had just been rejected. The backend derives its
-    seed from the attempt number (`lock.seed + attempt - 1`), so one offset per rejection walks
-    it somewhere new and keeps doing so if the next one is rejected too. Counted off the files
-    in `sequence/rejected/`, which means it survives a crash and needs no extra state.
-    """
+    """How far to move each frame's seed, from how many times it has been turned down."""
     reject_dir = workdir / "rejected"
     if not reject_dir.is_dir():
         return {}
@@ -3241,15 +2713,13 @@ def _rejection_seed_offsets(workdir: Path) -> dict[int, int]:
         head = png.name.split(".", 1)[0]
         if head.isdigit():
             offsets[int(head)] = offsets.get(int(head), 0) + 1
-    # One rejection is worth more than one attempt: within a run the three drift retries already
-    # walk the seed by 0, 1, 2, so a redraw that only moved by one would land on the second
-    # attempt of the run that was rejected.
+    # One rejection is worth more than one attempt: the three drift retries already walk the seed
+    # by 0, 1, 2, so a redraw moved by one would land on the rejected run's second attempt.
     return {idx: n * 8 for idx, n in offsets.items()}
 
 
 def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
-    """Hub-and-spoke keyframes from the MotionPlan (builtin controls). Blender-compiled shots are
-    keyframed by their anchors instead and go straight to generate_video."""
+    """Hub-and-spoke keyframes from the MotionPlan (builtin controls)."""
     if _controls_compiler(ctx) == "blender":
         return StageOutput(
             _hash_obj({"skipped": "blender"}),
@@ -3265,26 +2735,17 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
         (workdir / "anchor.png").write_bytes(anchor.read_bytes())
     cfg = get_settings().image_sequences
     # Per style, not one pair for twelve art directions: a watercolour wash legitimately varies
-    # more between frames than a photograph does. The lock freezes the prompt, so the preset name
-    # is recovered from it; a hand-written prompt has no name and takes the defaults.
+    # more between frames than a photograph. The preset name is recovered from the locked prompt.
     from content_factory.sequences.drift import UNCALIBRATED
     from content_factory.sequences.styles import style_name_for
 
     locked_min, delta_max = cfg.drift_thresholds.resolve(style=style_name_for(lock.style_prompt))
-    # The configured default (0.92 / 0.15) is a *mock* number: the stand-in backend repaints only
-    # inside the motion box, so everything outside it is byte-identical and 0.92 is met by
-    # construction. A diffusion model re-renders every pixel of a 4 MP frame, and measured here no
-    # real frame came near it -- six drawings, eighteen attempts, nothing written. `drift.py`
-    # already names the profile for that case and nothing selected it, so the node does:
-    # `--set spokes.drift_profile=uncalibrated` observes rather than gates, which is what the run
-    # that produces the numbers a real threshold is set from needs. `locked_min` and
-    # `style_delta_max` set a measured pair directly.
+    # The configured default (0.92 / 0.15) is a *mock* number, met by construction; no real frame
+    # came near it (six drawings, eighteen attempts, nothing written), so `uncalibrated` observes.
     if _param(ctx, "drift_profile", "configured").strip().lower() == "uncalibrated":
         locked_min, delta_max = UNCALIBRATED
-    # 0 is "leave the profile's own value alone", not "a floor of zero". The real thresholds are
-    # per-style and per-camera and resolved above; a widget that had to carry a number would be a
-    # third calibration to keep in step with the other two, and its default would silently
-    # override them on every node that never touched it.
+    # 0 is "leave the profile's own value alone", not "a floor of zero": the real thresholds are
+    # per-style and per-camera, and a widget default would silently override them everywhere.
     locked_min = _param_float(ctx, "locked_min", 0.0) or locked_min
     delta_max = _param_float(ctx, "style_delta_max", 0.0) or delta_max
     pool = _reference_backends(ctx)
@@ -3301,15 +2762,8 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
         style_delta_max=delta_max,
     )
     if result.failed:
-        # Same distinction as the anchors: the engine already regenerated each of these with a
-        # fresh seed up to max_regen_attempts_per_frame and they still drifted. Another attempt is
-        # more GPU time for the same answer, so this blocks for a person rather than failing.
-        #
-        # The candidates name `sequence/rejected/`, which is where the drawing that did not pass
-        # actually is, with the measurement beside it. They used to name `sequence/frames/`, where
-        # nothing was ever written for a failed frame, and to carry the *name* of the check with
-        # no number in it -- so the block asked a person to look at a missing file and told them
-        # neither what it scored nor what it needed.
+        # Already retried max_regen_attempts_per_frame times and still drifting: block for a person.
+        # Candidates name `sequence/rejected/`, where the drawing and its measurement actually are.
         rejects = workdir / "rejected"
         measured = {}
         for idx in result.failed:
@@ -3358,18 +2812,7 @@ def stage_generate_keyframes(ctx: StageContext) -> StageOutput:
 
 
 def stage_review_frames(ctx: StageContext) -> StageOutput:
-    """Gate the generated frames on someone having looked at them.
-
-    Writes a contact sheet of every drawing in order, with deterministic findings beside each —
-    tonal collapse, a half-applied monochrome instruction, subject matter jammed into the frame
-    edge, and how far each frame drifts from the one before it. Then it **blocks**: a verdict binds
-    to the digests of the exact images reviewed, so a regenerated frame is unreviewed again.
-
-    The measurements exist because those specific faults were invisible to the code and obvious in
-    the pictures. What they cannot judge — whether these are the same two people as the last frame,
-    whether a pose is bodily possible, whether two figures appear where two were staged — is why
-    the sheet and the verdict exist at all.
-    """
+    """Gate the generated frames on someone having looked at them."""
     import datetime as dt
 
     from content_factory.qc.frame_review import (
@@ -3381,12 +2824,8 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
     from content_factory.qc.verdict import merge_verdict
     from content_factory.schemas.review import FrameRecord, FrameReviewBatch
 
-    # Review what this lane's graph actually put in front of the reviewer. The keyframe lanes
-    # (photo-sequence-video, picture-story) wire `drift_qc -> review_frames`, so the drawings
-    # under `sequence/frames` are the ones a verdict is being asked about and the ones
-    # compose_video cuts. The Blender/scene lanes generate no keyframes and their per-shot
-    # anchors *are* the frames. Reading the anchor manifest unconditionally gated a single
-    # picture on a lane whose wire said eight.
+    # Review what this lane's graph put in front of the reviewer: `sequence/frames` on the keyframe
+    # lanes; on the Blender/scene lanes, which generate no keyframes, the anchors *are* the frames.
     frames_dir = ctx.ddir() / "sequence" / "frames"
     sequence_pngs = sorted(frames_dir.glob("[0-9]*.png"))
     pngs: list[tuple[str, bytes]] = []
@@ -3405,11 +2844,8 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
         entries = json.loads(manifest_path.read_text())["shots"]
         for entry in entries:
             for frame in entry["frames"]:
-                # `or`, not a dict default: the single-anchor branch writes `shot_id: None`
-                # rather than omitting the key, so `.get(..., "anchor")` returned None and that
-                # lane's frames were called "None:0000" in every review request and verdict.
-                # `_anchor_frame_paths` still accepts the old spelling, so a verdict already on
-                # disk keeps working.
+                # `or`, not a dict default: the single-anchor branch writes `shot_id: None`, so
+                # `.get(..., "anchor")` returned None and frames were called "None:0000".
                 shot_id = entry.get("shot_id") or "anchor"
                 frame_id = f"{shot_id}:{frame['frame_index']:04d}"
                 pngs.append((frame_id, (ctx.ddir() / frame["path"]).read_bytes()))
@@ -3418,9 +2854,8 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
         raise RuntimeError(msg)
 
     raw_style = _param(ctx, "style", get_settings().image_sequences.anchor_style_prompt)
-    # Resolved once: a preset name has to become its prompt before either predicate can read it,
-    # and `resolve_style` refuses a short unknown token rather than sending it to a model, so the
-    # empty case is guarded rather than passed through.
+    # Resolved once: a preset name has to become its prompt before either predicate reads it, and
+    # `resolve_style` refuses a short unknown token, so the empty case is guarded.
     style = resolve_style(raw_style) if raw_style.strip() else ""
     monochrome = any(word in style.lower() for word in ("monochrome", "no colour", "no color"))
     findings = review_findings(
@@ -3430,9 +2865,8 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
     )
     sheet_rel = Path("reviews") / "frames" / "contact-sheet.png"
     sheet_png = contact_sheet(pngs, ctx.ddir() / sheet_rel, findings=findings)
-    # Every frame against every other, not just its neighbour: a set can drift a little at each
-    # step and end somewhere else entirely with every consecutive pair looking fine. Written out
-    # whole so a reviewer can cite the number rather than the impression.
+    # Every frame against every other, not just its neighbour: a set can drift a little each step
+    # and end somewhere else with every consecutive pair looking fine.
     matrix = consistency_matrix(pngs)
     _write(ctx.ddir() / "reviews" / "frames" / "consistency.json", json.dumps(matrix, indent=1))
 
@@ -3452,9 +2886,7 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
         created_at=dt.datetime.now(dt.UTC),
     )
     # A verdict recorded earlier applies only if it reviewed these same images. The overlay is
-    # `qc.verdict.merge_verdict`, shared with the review panel in the app: the panel has to show
-    # exactly what this gate will decide on, and two copies of a digest comparison is how it would
-    # come to show something else.
+    # `qc.verdict.merge_verdict`, shared with the app's review panel so both decide the same way.
     verdict_path = ctx.ddir() / "reviews" / "frames" / "verdict.json"
     if verdict_path.exists():
         prior = FrameReviewBatch.model_validate_json(verdict_path.read_text())
@@ -3462,9 +2894,8 @@ def stage_review_frames(ctx: StageContext) -> StageOutput:
     _write(ctx.ddir() / "reviews" / "frames" / "batch.json", batch.model_dump_json(indent=1))
 
     flagged = sum(1 for r in batch.frames for f in r.findings if not f.passed)
-    # Who is being asked. A run started from a Claude Code session has an agent present, and 27
-    # runs on this machine were parked here with their drawings finished and nobody coming.
-    # Empty means "not set on the node", which is what lets the environment decide.
+    # Who is being asked: a run started from a Claude Code session has an agent present, and 27
+    # runs were parked here with nobody coming. Empty means "not set", so the environment decides.
     wants = intended_reviewer(_param(ctx, "reviewer") or None)
     request_rel = Path("reviews") / "frames" / "request.md"
     if wants == "agent" and not batch.passed:
@@ -3579,23 +3010,7 @@ def _blank_pictured(paths: Sequence[Path]) -> dict[Path, str]:
 
 
 def _source_recording(ctx: StageContext) -> tuple[Path, str]:
-    """The one recording this run is about and why it counted, or a failure saying where to put one.
-
-    Three places, in the order an operator would expect them to win:
-
-    1. the node's ``source`` widget — a path, absolute or relative to the project directory;
-    2. ``<project>/uploads/`` — where ``make --audio`` copies a file and where the canvas's
-       Audio File node stages what was dropped on it;
-    3. ``<deliverable>/audio/source.wav`` — the normalised copy a previous run of this stage
-       wrote, so a resumed run needs neither the original nor the flag again.
-
-    More than one candidate in uploads is an error rather than a coin flip: "which of these two
-    interviews is the film" is not a question a stage may answer by sort order.
-
-    The second element is empty for a file anyone would call a recording, and carries the
-    measurement when the recording arrived in a video container — the one case where the stage
-    read a file its own suffix list says is not audio, and therefore has to say so.
-    """
+    """The one recording this run is about, or a failure saying where to put one."""
     named = _param(ctx, "source").strip()
     if named:
         path = Path(named).expanduser()
@@ -3641,22 +3056,7 @@ def _source_recording(ctx: StageContext) -> tuple[Path, str]:
 
 
 def stage_transcribe_audio(ctx: StageContext) -> StageOutput:
-    """Read the words off a recording, with timings, and keep the normalised audio beside them.
-
-    This is the only stage in the factory whose input is speech and whose output is text, and it
-    exists so a film can be made out of what somebody said rather than out of something somebody
-    wrote. It writes three things into ``<deliverable>/audio``:
-
-    * ``source.wav`` — the recording as mono PCM at the transcription rate. Every later stage
-      measures, cuts and mixes PCM, so an m4a off a phone is normalised once, here.
-    * ``transcript.json`` — the :class:`SpeechTranscript` contract: text, per-word timings, what
-      read it, and whether those timings were measured or estimated.
-    * ``transcript.txt`` — the same words as plain text, because an operator reading back what
-      their interview said should not have to open a JSON file to do it.
-
-    Cached by the recording's bytes and the transcriber's identity: re-running never re-transcribes
-    the same file, which matters at a minute of CPU per few minutes of audio.
-    """
+    """Read the words off a recording, with timings, and keep the normalised audio beside them."""
     from content_factory.audio.takes import TakeError
     from content_factory.audio.transcribe import (
         TRANSCRIBE_VERSION,
@@ -3736,11 +3136,7 @@ def stage_transcribe_audio(ctx: StageContext) -> StageOutput:
 
 
 def _transcript_fixture(ctx: StageContext) -> str:
-    """The operator's own transcript, for the ``fixture`` engine: the widget, or a file it names.
-
-    A widget holding a whole interview is unusable, and a path is unusable when the transcript is
-    one sentence, so both spellings work and the file wins when it resolves.
-    """
+    """The operator's own transcript, for the ``fixture`` engine: the widget, or a file it names."""
     raw = _param(ctx, "transcript").strip()
     if not raw:
         return ""
@@ -3752,30 +3148,22 @@ def _transcript_fixture(ctx: StageContext) -> str:
 
 
 def stage_lock_script(ctx: StageContext) -> StageOutput:
-    """The sentences this deliverable speaks, frozen.
-
-    A short reads its own derived plan (see :func:`_story_plan_path`), so the locked script is the
-    short's re-edited beats rather than the whole episode's.
-    """
+    """The sentences this deliverable speaks, frozen."""
     plan = _load_story_plan(ctx)
     # The read's locale, so a lexicon entry for another language is not applied to this script.
     lexicon = story_lexicon(ctx, get_settings().narration.locale)
     locked = {
         "deliverable_id": ctx.deliverable_id,
         "sentences": [b.display_text for b in plan.beats],
-        # What is SAID, which is not always what is shown: a beat displayed as "21%" may be spoken
-        # as "twenty-one per cent". The alignment and the caption timings are measured against
-        # these, so locking only the display text locked the wrong string.
+        # What is SAID, not always what is shown ("21%" vs "twenty-one per cent"): alignment and
+        # caption timings are measured against these, so locking only the display text was wrong.
         "spoken": [spoken_line(b, lexicon) for b in plan.beats],
         "plan_hash": plan.content_hash(),
     }
     _write(ctx.ddir() / "script" / "locked.json", json.dumps(locked, indent=1))
     path = _story_plan_path(ctx)
-    # The claim gate, here rather than in verify_claims, because THIS is where a script exists.
-    # verify_claims runs before plan_story: it gated `sample_story_plan()` — a film nobody was
-    # rendering — and passed. Locking the script is the last moment before words are spoken and
-    # pictures are drawn from them, so it is the right place to refuse a statement whose claim is
-    # unsupported.
+    # The claim gate is here, not in verify_claims, because THIS is where a script exists:
+    # locking it is the last moment before words are spoken and pictures drawn from them.
     gate = _script_claim_gate(ctx, plan)
     _write(
         ctx.ddir() / "script" / "claim-gate.json",
@@ -3800,12 +3188,7 @@ def stage_lock_script(ctx: StageContext) -> StageOutput:
 
 
 def _script_claim_gate(ctx: StageContext, plan: StoryPlan) -> dict:
-    """The script's own claim gate, against the claims this run verified.
-
-    Silent when there are no claims on disk: a hand-written StoryPlan fixture with no claim links
-    is a legitimate film (every picture-story lane is one), and inventing a gate failure for it
-    would block the lanes that never had claims to check.
-    """
+    """The script's own claim gate, against the claims this run verified."""
     from content_factory.schemas.research import ClaimRecord
 
     claims_path = ctx.project_dir / "research" / "claims.json"
@@ -3834,18 +3217,7 @@ LEXICON_FILENAME = "lexicon.json"
 
 
 def story_lexicon(ctx: StageContext, locale: str = "") -> tuple[PronunciationEntry, ...]:
-    """The film's own pronunciation list, from ``<project>/story/lexicon.json``.
-
-    `NarrationRequest.lexicon` and `normalize_for_speech`'s `lexicon` argument have both existed
-    since phase 15 and **nothing ever passed one**, so every respelling this repo's contracts can
-    express was dead weight: a documentary about Energimyndigheten got whatever the TTS guessed at,
-    once per beat, and the operator's only recourse was to rewrite the display text.
-
-    A file, per story, because a pronunciation is a fact about *this* film's subject matter — a
-    place name, an agency, a person, a unit — and a repo-wide default list would be a guess about
-    films nobody has made yet. Entries whose locale does not match the read are skipped: a Swedish
-    respelling of a Swedish name is wrong guidance for an English narrator.
-    """
+    """The film's own pronunciation list, from ``<project>/story/lexicon.json``."""
     path = ctx.project_dir / "story" / LEXICON_FILENAME
     if not path.exists():
         return ()
@@ -3858,26 +3230,22 @@ def story_lexicon(ctx: StageContext, locale: str = "") -> tuple[PronunciationEnt
 
 
 def spoken_line(beat, lexicon: tuple[PronunciationEntry, ...] = ()) -> str:
-    """What is actually said for one beat.
-
-    ``VisualBeat.spoken_text`` has existed since the scene grammar was written and every caller
-    normalised ``display_text`` instead, so a plan that carefully spelled "twenty-one per cent" for
-    a line displayed as "21%" was thrown away and the TTS was handed "21%" to guess at. When a beat
-    says how it should be read, that is what is read; the normaliser still runs over it, because a
-    hand-written spoken line can still contain a numeral the model would mispronounce — and the
-    story's own lexicon is applied there, which is the only place a respelling can take effect.
-    """
+    """What is actually said for one beat."""
     written = (getattr(beat, "spoken_text", None) or "").strip()
     return normalize_for_speech(written or beat.display_text, lexicon)
 
 
-def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceIdentity]:
-    """``narration.tts`` selects the voice: the deterministic mock, Qwen3-TTS, or Kokoro.
+def _qwen_revision(cloning: bool, designing: bool) -> str:
+    """Which Qwen3-TTS weights a mode uses; only CustomVoice has built-in timbres."""
+    if cloning:
+        return "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+    if designing:
+        return "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    return "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 
-    A canvas node overrides the configured voice, timbre, delivery note and aligner through
-    ``ctx.params``; without a context the settings alone decide, which is what the tests and any
-    non-graph caller want.
-    """
+
+def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceIdentity]:
+    """``narration.tts`` selects the voice: the deterministic mock, Qwen3-TTS, or Kokoro."""
     cfg = get_settings().narration
 
     def param(key: str, default: str) -> str:
@@ -3887,9 +3255,8 @@ def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceId
     # The canvas labels Kokoro by its model name; the setting spells it by skill.
     if backend == "kokoro-82m":
         backend = "kokoro"
-    # Before any weights load, and before the GPU is claimed: a locale the chosen voice cannot
-    # speak is a refusal by name. Kokoro used to map every non-English locale to *British English*
-    # and narrate the whole film in the wrong language without failing anywhere.
+    # Before any weights load or the GPU is claimed: a locale the voice cannot speak is a refusal
+    # by name. Kokoro used to map every non-English locale to British English without failing.
     language = check_narration_language(
         backend, cfg.locale, language=param("language", cfg.qwen_language)
     )
@@ -3907,15 +3274,22 @@ def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceId
                     "narration.qwen_ref_audio needs narration.qwen_ref_text: the Base weights"
                     " clone a voice from a clip AND its transcript"
                 )
+        describe = param("describe", cfg.qwen_describe)
+        if describe and ref_audio:
+            raise RuntimeError(
+                "narration: qwen_describe designs a voice and qwen_ref_audio clones one;"
+                " they are different weights, so set one or the other"
+            )
         voice = VoiceIdentity(
             provider="qwen3tts",
             # A cloned voice is identified by the clip it was cloned from, not by a timbre name.
-            voice_id=(ref_audio.name[:80] if ref_audio else param("speaker", cfg.qwen_speaker)),
-            model_revision=(
-                "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+            # A designed voice has no timbre name, so the id records that it was described.
+            voice_id=(
+                ref_audio.name[:80]
                 if ref_audio
-                else "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+                else ("designed" if describe else param("speaker", cfg.qwen_speaker))
             ),
+            model_revision=_qwen_revision(bool(ref_audio), bool(describe)),
             speed=float(param("speed", str(cfg.speed))),
             locale=cfg.locale,
         )
@@ -3926,12 +3300,12 @@ def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceId
             # so the model is never left to guess at what the run already declared.
             language=language.qwen_language,
             instruct=param("instruct", cfg.qwen_instruct),
+            describe=describe,
             ref_audio=ref_audio,
             ref_text=cfg.qwen_ref_text,
             aligner=param("aligner", cfg.aligner),
             # The aligner checkpoint for *this* language: `base.en` cannot transcribe German and
-            # does not say so, and a word-perfect take then fails the script gate. Configured
-            # values are obeyed; see `audio.languages.aligner_model_for`.
+            # does not say so; see `audio.languages.aligner_model_for`.
             faster_whisper_model=aligner_model_for(
                 cfg.locale,
                 cfg.faster_whisper_model,
@@ -3967,9 +3341,112 @@ def _tts_executor(ctx: StageContext | None = None) -> tuple[TTSExecutor, VoiceId
     return MockTTS(), demo_fixtures.MOCK_VOICE.model_copy(update={"speed": speed})
 
 
+def _narrate_continuously(
+    ctx: StageContext,
+    tts,
+    voice,
+    lexicon,
+    requests: list[NarrationRequest],
+    audio_dir: Path,
+    group_hash: str,
+    *,
+    freed: bool,
+) -> StageOutput:
+    """Speak every beat as one take, then write the per-beat wavs and segments out of it."""
+    from content_factory.audio.continuity import ContinuityError, cut_take, joined_text, segment_for
+
+    marker = audio_dir / "narration.take.json"
+    cached = json.loads(marker.read_text()) if marker.exists() else {}
+    have_all = cached.get("input_hash") == group_hash and all(
+        (audio_dir / f"{r.beat_id}.wav").exists()
+        and (audio_dir / f"{r.beat_id}.segment.json").exists()
+        for r in requests
+    )
+    if have_all:
+        from content_factory.schemas.audio import NarrationSegment
+
+        sources = {
+            NarrationSegment.model_validate_json(
+                (audio_dir / f"{r.beat_id}.segment.json").read_text()
+            ).timing_source.value
+            for r in requests
+        }
+        return StageOutput(
+            _hash_obj(cached["audio_sha256s"]),
+            {
+                "segments": len(requests),
+                "provider": tts.provider,
+                "spoken": 0,
+                "locale": voice.locale,
+                "lexicon_terms": len(lexicon),
+                "take": "cached",
+                "timing_source": sorted(sources),
+            },
+        )
+    if not freed and tts.provider != "mock":
+        _free_the_gpu(ctx, "synthesize_narration")
+    paragraph = joined_text(requests)
+    take_request = NarrationRequest(
+        beat_id=requests[0].beat_id,
+        display_text=paragraph,
+        spoken_text=paragraph,
+        voice=voice,
+        lexicon=lexicon,
+    )
+    result = tts.synthesize(take_request)
+    try:
+        cuts = cut_take(
+            requests,
+            result.audio,
+            list(result.segment.words),
+            result.segment.duration_ms,
+            match=get_settings().narration.match_beat_levels,
+        )
+    except ContinuityError as exc:
+        # Not a fallback to beat-at-a-time: that is the behaviour this stage exists to avoid, and
+        # silently taking it would hide a script/transcript mismatch the operator needs to see.
+        msg = f"synthesize_narration: {exc}"
+        raise RuntimeError(msg) from exc
+    hashes: list[str] = []
+    for request, cut in zip(requests, cuts, strict=True):
+        segment = segment_for(cut, request, result.segment)
+        (audio_dir / f"{request.beat_id}.wav").write_bytes(cut.audio)
+        _write(audio_dir / f"{request.beat_id}.segment.json", segment.model_dump_json(indent=1))
+        hashes.append(segment.audio_sha256)
+    (audio_dir / "narration.take.wav").write_bytes(result.audio)
+    _write(
+        marker,
+        json.dumps(
+            {
+                "input_hash": group_hash,
+                "audio_sha256s": hashes,
+                "take_duration_ms": result.segment.duration_ms,
+                "beats": [r.beat_id for r in requests],
+                "spans_ms": [list(c.take_span_ms) for c in cuts],
+            },
+            indent=1,
+            sort_keys=True,
+        ),
+    )
+    check = getattr(tts, "last_script_check", "")
+    return StageOutput(
+        _hash_obj(hashes),
+        {
+            "segments": len(hashes),
+            "provider": tts.provider,
+            "spoken": len(hashes),
+            "locale": voice.locale,
+            "lexicon_terms": len(lexicon),
+            "take": "continuous",
+            "take_duration_ms": result.segment.duration_ms,
+            "script_checks": [f"take: {check}"] if check else [],
+            "timing_source": [result.segment.timing_source.value],
+        },
+    )
+
+
 def stage_synthesize_narration(ctx: StageContext) -> StageOutput:
-    """One wav + NarrationSegment per beat. Cached per beat by (voice, spoken text): a real TTS
-    is slow and a rerun with the same script must not re-speak (or re-time) anything."""
+    """One wav + NarrationSegment per beat, spoken as ONE take and cut at the pauses."""
     plan = _load_story_plan(ctx)
     tts, voice = _tts_executor(ctx)
     lexicon = story_lexicon(ctx, voice.locale)
@@ -3979,15 +3456,11 @@ def stage_synthesize_narration(ctx: StageContext) -> StageOutput:
     timing_sources: set[str] = set()
     script_checks: list[str] = []
     spoken = 0
-    # The same eviction `restore_speech` and `sound_design` already do, and this stage was left out
-    # of it. Qwen3-TTS loads its weights in its own uv environment through a subprocess, so nothing
-    # stops the managed servers first: measured on `hybrid-video`, it met a card with HiDream's
-    # 18.57 GB already resident and died on a 20 MiB allocation. Only on the uncached path — a
-    # rerun that speaks nothing must not evict a tenant somebody else is using — and only for a
-    # provider that actually loads a model on this card.
+    # Qwen3-TTS loads in its own uv environment, so the managed servers are evicted first (it met
+    # HiDream's 18.57 GB resident and died on 20 MiB). Only uncached, and only for a real provider.
     freed = tts.provider == "mock"
-    for b in plan.beats:
-        request = NarrationRequest(
+    requests = [
+        NarrationRequest(
             beat_id=b.beat_id,
             display_text=b.display_text,
             spoken_text=spoken_line(b, lexicon),
@@ -3996,6 +3469,24 @@ def stage_synthesize_narration(ctx: StageContext) -> StageOutput:
             # in the cache key below: adding a respelling has to re-speak the beats it changes.
             lexicon=lexicon,
         )
+        for b in plan.beats
+    ]
+    continuous = _param_bool(ctx, "continuous_take", get_settings().narration.continuous_take)
+    # One hash over the WHOLE script when the beats share a take: a cut depends on its neighbours'
+    # word times, so a per-beat key would serve a stale slice of a take that no longer exists.
+    group_hash = _hash_obj(
+        {
+            "provider": tts.provider,
+            "requests": [r.model_dump(mode="json") for r in requests],
+            "executor": tts.fingerprint(),
+            "continuous": continuous,
+        }
+    )
+    if continuous and len(requests) > 1:
+        return _narrate_continuously(
+            ctx, tts, voice, lexicon, requests, audio_dir, group_hash, freed=freed
+        )
+    for b, request in zip(plan.beats, requests, strict=True):
         input_hash = _hash_obj(
             {
                 "provider": tts.provider,
@@ -4080,17 +3571,7 @@ def _restoration_spec(ctx: StageContext) -> SpeechRestorationSpec:
 
 
 def stage_restore_speech(ctx: StageContext) -> StageOutput:
-    """The voice chain, per beat: detection, optional cleanup and band extension, restoration,
-    then de-esser, EQ and light compression into the delivery sample rate.
-
-    Word timings are not touched and cannot be: the chain returns each beat at exactly the length
-    it received, ``restore_beat`` refuses to write anything else, and this stage re-checks. What
-    the segment record *does* gain is the new audio hash and sample rate, so the contract keeps
-    describing the bytes that actually exist.
-
-    Cached per beat by (take bytes, spec): a rerun with the same script and the same chain never
-    re-restores anything, which matters because Resemble Enhance is ~19x realtime on CPU.
-    """
+    """The voice chain per beat; each beat comes back at exactly the length it went in."""
     from content_factory.audio.restore import (
         CHAIN_VERSION,
         RestorationError,
@@ -4121,9 +3602,8 @@ def stage_restore_speech(ctx: StageContext) -> StageOutput:
     )
     reports: list[SpeechRestorationReport] = []
     restored_count = 0
-    # Resemble Enhance and ClearerVoice load their own weights inside their own uv environments,
-    # so nothing here goes through _ensure_backend_ready and nothing had stopped the image or
-    # video tenant. Freed once, lazily, on the first beat that actually has to be restored.
+    # Resemble Enhance and ClearerVoice load inside their own uv environments, so nothing here goes
+    # through _ensure_backend_ready; the GPU is freed once, lazily, on the first beat restored.
     freed = False
     for beat in plan.beats:
         raw = audio_dir / f"{beat.beat_id}.wav"
@@ -4225,14 +3705,7 @@ def _takes_dir(ctx: StageContext) -> Path:
 
 
 def stage_voice_over(ctx: StageContext) -> StageOutput:
-    """Human takes instead of a synthesized voice: the same NarrationSegment per beat, so the
-    captions, timeline, mix and mux downstream cannot tell the difference.
-
-    Recordings are found by beat id under ``takes_dir``, normalised to mono PCM, checked against
-    the locked script and force-aligned. Nothing here generates speech — a beat without a take
-    fails the stage and names the beat, which is what an operator waiting on a co-star needs to
-    hear. Cached per beat by (take bytes, script, aligner): re-running never re-aligns a take
-    that has not changed."""
+    """Human takes instead of a synthesized voice, as the same NarrationSegment per beat."""
     from content_factory.audio.takes import (
         TakeError,
         discover_takes,
@@ -4261,9 +3734,8 @@ def stage_voice_over(ctx: StageContext) -> StageOutput:
     verdicts: list[str] = []
     aligned = 0
     speakers: set[str] = set()
-    # The same lexicon the script was locked with: the aligner compares the take's transcript
-    # against this string, so a respelling applied on one side and not the other reads as a
-    # performer who said the wrong words.
+    # The same lexicon the script was locked with: a respelling applied on one side and not the
+    # other reads as a performer who said the wrong words.
     lexicon = story_lexicon(ctx, get_settings().narration.locale)
     for beat in plan.beats:
         take = takes[beat.beat_id]
@@ -4339,20 +3811,7 @@ def stage_voice_over(ctx: StageContext) -> StageOutput:
 
 
 def _voice_over_from_recording(ctx: StageContext, plan: StoryPlan) -> StageOutput:
-    """One continuous recording as the narration, cut into the plan's beats.
-
-    The other mode asks an operator to record their material beat by beat, which is the right
-    shape for a film written before it was performed and the wrong one for material that already
-    exists: nobody re-records an interview into six numbered files. So the beats are cut out of
-    the recording instead, at the word boundaries the transcript measured, and what lands on disk
-    is byte-for-byte the same per-beat layout the take path writes — ``<beat_id>.wav``, its
-    ``<beat_id>.segment.json`` and a marker — so ``restore_speech``, ``align_words``,
-    ``compile_captions``, the timeline compiler and the mix cannot tell the two apart.
-
-    No aligner runs. The recording was measured once, whole, by ``transcribe_audio``, and a beat
-    is a window on that measurement; re-transcribing each beat would cost minutes to rediscover
-    timings already on disk, and would let two passes disagree about what was said.
-    """
+    """One continuous recording as the narration, cut into the plan's beats."""
     from content_factory.audio.takes import TakeError
     from content_factory.audio.transcribe import beat_spans, cut_beat, segment_from_transcript
     from content_factory.schemas.audio import SpeechTranscript
@@ -4435,9 +3894,8 @@ def _voice_over_from_recording(ctx: StageContext, plan: StoryPlan) -> StageOutpu
                 sum(end - start for start, end in spans.values()) / 1000,
                 1,
             ),
-            # How much of the recording no beat owns: the pauses between beats, plus anything the
-            # story dropped. A large number here is the operator's signal that the beat count is
-            # wrong or that the plan is not this recording's.
+            # How much of the recording no beat owns: pauses plus anything the story dropped. A big
+            # number says the beat count is wrong or the plan is not this recording's.
             "unused_seconds": round(
                 max(0, transcript.duration_ms - sum(e - s for s, e in spans.values())) / 1000, 1
             ),
@@ -4451,13 +3909,7 @@ preview, stage_interpolate's ``sequence`` case and _silent_picture all have to a
 
 
 def _final_audio(ctx: StageContext) -> tuple[Path | None, str]:
-    """The audio track for the finished cut, and what it is: speech, a bed, or nothing.
-
-    ``audio/narration-mastered.wav`` is what ``mix_audio`` writes, whatever went into it — a
-    narration stem, a music bed, effects, or a combination — so it is the first choice. Failing
-    that, an unmastered music or effects file written by ``select_music``/``sound_design`` without a
-    mix is still better than silence, and genuine silence is a real answer rather than a failure.
-    """
+    """The audio track for the finished cut, and what it is: speech, a bed, or nothing."""
     audio_dir = ctx.ddir() / "audio"
     mastered = audio_dir / "narration-mastered.wav"
     if mastered.exists():
@@ -4478,23 +3930,14 @@ def _final_audio(ctx: StageContext) -> tuple[Path | None, str]:
 
 
 def _speech_end_ms(ctx: StageContext) -> int:
-    """Where the last word ends in the laid-out narration: the length a film has to reach.
-
-    One definition for both compose paths, and for the mux itself. It is the *laid-out* position,
-    not the sum of the segments: the mix puts ``lead_in_ms`` before the first beat and a pause
-    between beats, so the last word is later than the audio alone would suggest.
-    """
+    """Where the last word ends in the laid-out narration: the length a film has to reach."""
     _plan, segs, _files = _load_segments(ctx)
     laid = lay_out(segs, AudioMixSpec(deliverable_id=ctx.deliverable_id))  # type: ignore[arg-type]
     return max((w.end_ms for b in laid for w in b.words), default=0)
 
 
 def _planned_beat_seconds(ctx: StageContext, count: int) -> list[float]:
-    """How long each of ``count`` pictures is on screen, from the story's beats. Empty if unknown.
-
-    A beat carries ``planned_duration_ms`` for exactly this: a silent lane has no narration to
-    measure, so the plan is the only thing that knows the pace.
-    """
+    """How long each of ``count`` pictures is on screen, from the story's beats."""
     path = _story_plan_path(ctx)
     if path is None:
         return []
@@ -4505,11 +3948,7 @@ def _planned_beat_seconds(ctx: StageContext, count: int) -> list[float]:
 
 
 def _hold_frames(pngs: list[Path], target: Path, seconds: list[float], fps: int = 30) -> None:
-    """Cut stills together, each held for its own length, with no blending across the joins.
-
-    The same ffmpeg concat-demuxer shape `_hold_stills` uses for the shot-based lanes; this one
-    takes a flat list of frames because a sequence lane has no ShotSpecs to read lengths from.
-    """
+    """Cut stills together, each held for its own length, with no blending across the joins."""
     from content_factory.audio.mix import ffmpeg
 
     lines = [f"file '{p.resolve()}'\nduration {s}\n" for p, s in zip(pngs, seconds, strict=True)]
@@ -4560,12 +3999,7 @@ name is a delivery candidate in its own right.
 
 
 def _silent_picture(ctx: StageContext) -> Path:
-    """The silent cut: whatever the video branch has produced, most-finished first.
-
-    Both the sound designer and the final mux need this, and which file it is depends on the lane
-    — a Remotion render bundle, the post chain's ``final.mp4``, or the concatenated generated
-    clips. Naming them here keeps one answer for both.
-    """
+    """The silent cut: whatever the video branch has produced, most-finished first."""
     exports = ctx.ddir() / "exports"
     for name in ("picture.mp4", POST_CHAIN_EXPORT, "generated.mp4"):
         candidate = exports / name
@@ -4574,21 +4008,15 @@ def _silent_picture(ctx: StageContext) -> Path:
     renders = sorted(exports.glob("bnd_*.mp4"))
     if renders:
         return renders[-1]
-    # An image-sequence lane (photo-sequence-video, image-set) has approved PNG frames and no
-    # video at all: there is no generate_video in it and no interpolate either, on purpose —
-    # inventing frames between two drawings is what a lane of held pictures does not want. So the
-    # frames ARE the picture, and cutting them is this function's job rather than a new node's.
-    # Before this, compose_video reached here and raised, which is why that lane had no picture.
+    # An image-sequence lane has approved PNG frames and no video: no generate_video and no
+    # interpolate, on purpose. So the frames ARE the picture, and cutting them is done here.
     frames = ctx.ddir() / "sequence" / "frames"
     pngs = sorted(frames.glob("[0-9]*.png"))
     if pngs:
         target = exports / "generated.mp4"
         target.parent.mkdir(parents=True, exist_ok=True)
-        # Held for the beats' own lengths when the story says how long they are. Cut at the
-        # flipbook rate instead — which is what this did unconditionally — a five-beat story
-        # planned at eighteen seconds came out as a **0.6-second** film, because eight frames per
-        # second is a preview of a frame set and not a cut of it. The lane's own description says
-        # the pictures carry the story and the cut carries the pace; the pace is in the plan.
+        # Held for the beats' own lengths when the story gives them; cut at the flipbook rate, a
+        # five-beat story planned at eighteen seconds came out as a 0.6-second film.
         held = _planned_beat_seconds(ctx, len(pngs))
         if held:
             _hold_frames(pngs, target, held)
@@ -4604,10 +4032,7 @@ def _silent_picture(ctx: StageContext) -> Path:
 
 
 def stage_sound_design(ctx: StageContext) -> StageOutput:
-    """Video-synced SFX for the silent cut, written as a bed the mix folds under the narration.
-
-    The backend watches the picture, so the sound lands on the frame: this is the stage that makes
-    a generated walk sound like footsteps. Cached by (picture bytes, prompt, seed, steps)."""
+    """Video-synced SFX for the silent cut, written as a bed the mix folds under the narration."""
     from content_factory.audio.sfx import SfxError, SfxRequest, backend_for
     from content_factory.qc.media import ffprobe
 
@@ -4653,10 +4078,8 @@ def stage_sound_design(ctx: StageContext) -> StageOutput:
     # The generator's own output is kept and never overwritten, same discipline as restore_speech:
     # a rerun always starts from what the model actually produced.
     raw_wav = ctx.ddir() / "audio" / "sfx.raw.wav" if cfg.condition else out_wav
-    # MMAudio and Stable Audio load their weights in their own skill environment, so the image and
-    # video tenants have to come off the card first. Past the cache check, so a rerun that changes
-    # nothing does not evict anything — and never for the deterministic stand-in, which loads no
-    # model at all and must not reach into another tenant to produce a tone.
+    # MMAudio and Stable Audio load in their own skill environment, so the image and video tenants
+    # come off the card first — past the cache check, and never for the mock, which loads no model.
     if backend.name != "mock":
         _free_the_gpu(ctx, "sound_design")
     import time as _time
@@ -4726,9 +4149,8 @@ def _load_segments(ctx: StageContext):
                 (ctx.ddir() / "audio" / f"{b.beat_id}.segment.json").read_text()
             )
         )
-        # The restore_speech stage writes its result alongside the take and never over it, so a
-        # rerun can always start from the untouched synthesis output. Everything downstream reads
-        # the restored file when it is there.
+        # Beside the take, never over it: a rerun starts from the raw synthesis, and everything
+        # downstream reads the restored file when it is there.
         restored = ctx.ddir() / "audio" / f"{b.beat_id}.restored.wav"
         raw = ctx.ddir() / "audio" / f"{b.beat_id}.wav"
         files[b.beat_id] = restored if restored.exists() else raw
@@ -4746,27 +4168,7 @@ def stage_align_words(ctx: StageContext) -> StageOutput:
 
 
 def _shown_words(measured: list, display_text: str) -> list:
-    """The words a caption shows, carrying the timings of the words that were said.
-
-    They are usually the same string. They are not when the beat carries a pronunciation
-    respelling: `spoken_line` substitutes it so the model says the name correctly, the aligner
-    measures what it heard, and the captions are built from those measured words — so a film about
-    the Swedish energy agency burned **"en-er-yee-MIN-dih-het-en"** across the bottom of the frame.
-    `display_text` is the contract's answer to exactly this ("Display text; if it carries a factual
-    statement it must link to claims") and it was not being used.
-
-    Substituted only when the two tokenise to the same count, which a respelling does by
-    construction — one token in, one token out. Anything else and the measured words stand, because
-    a guess at which measured word belongs to which displayed one would put the caption out of sync
-    with the voice, which is worse than showing the respelling.
-
-    The written form is preferred **with its punctuation**: the measured words come from an aligner
-    that emits bare tokens, so every caption in this repo read "Euclid asked whether they eventually
-    stop Suppose they did" — two sentences run together with nothing between them. Splitting the
-    display text on whitespace keeps the commas and full stops exactly where the author put them,
-    and falls back to the aligner's tokenisation, and then to the measured words, when the counts
-    do not line up.
-    """
+    """The words a caption shows, carrying the timings of the words that were said."""
     from content_factory.audio.normalize import tokenize_words
 
     for shown in (display_text.split(), tokenize_words(display_text)):
@@ -4784,17 +4186,7 @@ sentence. They do not have to be: two headlines at once is the defect."""
 
 
 def _hook_overlay(plan: StoryPlan) -> str | None:
-    """The headline burned over the opening seconds, unless the opening card is already one.
-
-    The hook exists for "the words a muted viewer reads in the first 1-3 s", which is a real job
-    when the film opens on a picture. It has nothing to do when the film opens on typography.
-
-    Two tests, and the kind is the stronger one. A film that opens on a title card carrying the
-    same line — the natural thing for an author to write — showed it twice, in two type sizes, at
-    once; and a film whose title card *paraphrased* the hook showed two different headlines
-    stacked, which reads worse than either. So: no hook over a headline card, and no hook that
-    repeats the opening scene's words whatever kind of card carries them.
-    """
+    """The headline burned over the opening seconds, unless the opening card is already one."""
     if not plan.hook_text:
         return None
     opening = next((sc for sc in plan.scenes if sc.beat_id == plan.beats[0].beat_id), None)
@@ -4815,9 +4207,7 @@ def _same_words(left: str, right: str) -> bool:
 
 
 def stage_compile_captions(ctx: StageContext) -> StageOutput:
-    """Cues never straddle a beat: each beat's words are compiled on their own and the cues are
-    concatenated, so a caption always belongs to the scene on screen (the compiler alone breaks
-    on pauses, and a short beat gap can be under its 700 ms threshold)."""
+    """Cues never straddle a beat: each beat compiles alone, so a caption belongs to its scene."""
     from content_factory.audio.captions import (
         balanced_groups,
         cues_from_groups,
@@ -4892,17 +4282,14 @@ def stage_compile_captions(ctx: StageContext) -> StageOutput:
 def stage_compile_timeline(ctx: StageContext) -> StageOutput:
     plan, segs, _files = _load_segments(ctx)
     laid = lay_out(segs, AudioMixSpec(deliverable_id=ctx.deliverable_id))  # type: ignore[arg-type]
-    # The delivery rate. The timeline compiler reads it off the plan, so changing it means changing
-    # the plan and recompiling, not post-processing the result: every scene boundary is an integer
-    # frame index at this rate, and the narration boundaries are placed at absolute frames.
+    # The delivery rate. Changing it means changing the plan and recompiling, not post-processing:
+    # every scene boundary is an integer frame index at this rate.
     fps = _param_int(ctx, "fps", plan.fps)
     if fps not in (24, 25, 30, 60):
         msg = f"compile_timeline fps must be 24, 25, 30 or 60, got {fps}"
         raise RuntimeError(msg)
-    # The other half of the master-rate check. plan_shots refuses a plan that disagrees with the
-    # story; this refuses a timeline that disagrees with the shots, which is the direction the wind
-    # shorts actually failed in — the lane pinned `fps: 24` on this node to match the shot
-    # planner's default while the script was 30, and compose_video conformed every generated clip.
+    # The other half of the master-rate check: plan_shots refuses a plan that disagrees with the
+    # story; this refuses a timeline that disagrees with the shots (how the wind shorts failed).
     shots = _shots_by_id(ctx)
     shot_fps = {sh.fps for sh in shots.values()}
     if shot_fps and fps not in shot_fps:
@@ -4947,8 +4334,7 @@ def _music_library_dir() -> Path:
 
 
 def stage_select_music(ctx: StageContext) -> StageOutput:
-    """Deterministic pick from the local music library; an empty library selects nothing (music
-    is optional) rather than failing the run."""
+    """Deterministic pick from the local music library; an empty library selects nothing."""
     library = _music_library_dir()
     manifest = library / "tracks.json"
     mood = _param(ctx, "mood").strip().lower()
@@ -4956,10 +4342,8 @@ def stage_select_music(ctx: StageContext) -> StageOutput:
     selection: dict = {"track_id": None, "reason": "music library has no manifest"}
     if manifest.exists():
         tracks = [MusicTrack.model_validate(t) for t in json.loads(manifest.read_text())]
-        # The mood narrows the pool before the deterministic pick, so it decides which track is
-        # chosen rather than only labelling the one that would have been. An unset mood takes the
-        # whole library; a mood no track carries selects nothing and says which mood, because
-        # bedding an energetic cue under a memorial piece is worse than no music.
+        # The mood narrows the pool before the deterministic pick. An unset mood takes the whole
+        # library; a mood no track carries selects nothing: a mismatched bed is worse than no music.
         if mood:
             tracks = [t for t in tracks if mood in {m.lower() for m in t.moods}]
             if not tracks:
@@ -4975,9 +4359,8 @@ def stage_select_music(ctx: StageContext) -> StageOutput:
                 )
             if file_sha256(file) != track.sha256:
                 raise RuntimeError(f"music track {track.track_id} does not match its manifest hash")
-            # The library-relative filename, never an absolute path: this dict is folded into
-            # the stage's outputs_hash, and an absolute path would make the hash (and every
-            # cached downstream stage) depend on where the repo happens to live.
+            # The library-relative filename, never an absolute path: this dict is folded into the
+            # outputs_hash, and an absolute path would make it depend on where the repo lives.
             selection = {
                 "track_id": track.track_id,
                 "filename": track.filename,
@@ -4996,11 +4379,7 @@ def stage_select_music(ctx: StageContext) -> StageOutput:
 
 
 def _picture_ms(ctx: StageContext) -> int:
-    """How long the finished picture is, in milliseconds.
-
-    A narrated mix takes its length from the measured speech. A silent lane has no speech, so the
-    bed has to be as long as the film, and the film is the only thing that knows.
-    """
+    """How long the finished picture is, in milliseconds."""
     from content_factory.qc.media import ffprobe
 
     picture = _silent_picture(ctx)
@@ -5025,24 +4404,7 @@ def _place_library_cues(
     narration: Path,
     beats: list[tuple[str, int, int]],
 ) -> dict:
-    """Cut a cue sheet from the film's scene spans and fold the rendered track into the mix.
-
-    Rules over the spans, so no model and no GPU: the same film always gets the same sounds in the
-    same places. The sheet is written to ``audio/cue-sheet.json`` whether or not it is mixed,
-    because it is the part of the mix a person reads rather than hears — every cue carries the
-    reason it exists.
-
-    ``beats`` are the measured narration boundaries this stage just laid out, which is the whole
-    reason the cutter takes spans rather than a `CompiledTimeline`: **mix_audio runs before
-    compile_timeline** in every lane that has both — it has to, because the timeline's scene
-    durations are compiled from this stage's measurements — so a cutter that wanted a compiled
-    timeline would have found none and placed nothing on every run. A silent lane has no beats,
-    and falls back to the compiled timeline from a previous pass if one is on disk.
-
-    The cue track ducks against the **narration stem**, not against `pre_master`: by the time it
-    is added, `pre_master` may already carry a music bed and a generated effects bed, and "duck
-    under speech" has to mean under speech.
-    """
+    """Cut a cue sheet from the film's scene spans and fold the rendered track into the mix."""
     cfg = get_settings().sound_design
     if not cfg.library_cues or total_ms <= 0:
         return {"mixed": False, "reason": "disabled" if not cfg.library_cues else "no length"}
@@ -5103,13 +4465,7 @@ def _place_library_cues(
 
 
 def _loop_to_length(source: Path, out_wav: Path, *, duration_ms: int, spec: AudioMixSpec) -> None:
-    """One bed, looped to ``duration_ms``, faded out over the last second, at its own level.
-
-    The counterpart of ``add_music_bed`` for a film with no voice in it: there is nothing to duck
-    under and nothing to mix against, so the sidechain and the amix would both be no-ops on one
-    input. The gain is left alone here on purpose — the master sets the delivery level, and
-    attenuating a bed that is the whole soundtrack only makes the master pull it back up.
-    """
+    """One bed, looped to ``duration_ms``, faded out over the last second, at its own level."""
     out_wav.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg(
         [
@@ -5138,17 +4494,9 @@ def _loop_to_length(source: Path, out_wav: Path, *, duration_ms: int, spec: Audi
 
 
 def stage_mix_audio(ctx: StageContext) -> StageOutput:
-    """Narration stem, then the music bed, then the effects bed, then the master.
-
-    The narration is optional. silent-video is a lane with no voice stage in it at all — its
-    caveat used to say so — and this stage read per-beat narration segments unconditionally, so
-    that lane died here on a missing file with the music already selected and the foley already
-    generated. With no speech the first bed becomes the base and the master runs on that, which is
-    exactly what a music-only or effects-only cut needs.
-    """
-    # The delivery loudness. -14 LUFS is the streaming default and the right answer for most
-    # platforms; a lane delivering to a broadcast spec needs its own number, and `master` refuses
-    # the mix rather than shipping one that missed the target it was given.
+    """Narration stem, then the music bed, then the effects bed, then the master."""
+    # The delivery loudness: -14 LUFS is the streaming default; a broadcast lane needs its own
+    # number, and `master` refuses a mix that missed the target it was given.
     spec = AudioMixSpec(
         deliverable_id=ctx.deliverable_id,  # type: ignore[arg-type]
         target_lufs=_param_float(ctx, "target_lufs", -14.0),
@@ -5172,9 +4520,8 @@ def stage_mix_audio(ctx: StageContext) -> StageOutput:
             bedded = ctx.ddir() / "audio" / "narration-with-music.wav"
             track = _music_library_dir() / selection["filename"]
             if pre_master is None:
-                # No speech to duck under: the bed IS the mix, so it is taken at its own level and
-                # only the length has to be decided. Silent lanes have no measured speech to take
-                # it from, so it comes from the picture.
+                # No speech to duck under: the bed IS the mix, taken at its own level; only the
+                # length has to be decided, and with no measured speech it comes from the picture.
                 total_ms = _picture_ms(ctx)
                 _loop_to_length(track, bedded, duration_ms=total_ms, spec=spec)
             else:
@@ -5190,10 +4537,8 @@ def stage_mix_audio(ctx: StageContext) -> StageOutput:
     sfx_wav = ctx.ddir() / "audio" / "sfx.wav"
     sfx_marker = ctx.ddir() / "audio" / "sfx.json"
     if sfx_wav.exists() and sfx_marker.exists():
-        # Same bed mixer as music: looped to length, ducked under speech, faded at the tail. The
-        # sidechain key is the narration stem and not `pre_master`, which by now contains the
-        # music bed: keying off that made the effects duck under the *music*, and a -18 dB bed is
-        # loud enough to hold them ducked for the whole film.
+        # Same bed mixer as music, keyed off the narration stem and not `pre_master`: keying off
+        # the music bed made the effects duck under the *music* for the whole film.
         with_sfx = ctx.ddir() / "audio" / "narration-with-sfx.wav"
         if pre_master is None:
             total_ms = _picture_ms(ctx)
@@ -5276,9 +4621,7 @@ def _rewrap_srt(srt_text: str, max_chars: int) -> str:
 
 
 def _burn_captions(video: Path, srt: Path, out: Path, *, width: int, height: int) -> None:
-    """Render the .srt onto the picture with libass: white bold text in a translucent box, sized
-    and placed by frame height so the same settings work for 9:16 and 16:9. libass scales SRT
-    styles from a 384x288 script, so frame fractions are converted to that space."""
+    """Burn the .srt with libass, sized by frame height; libass scales SRT styles from 384x288."""
     cfg = get_settings().compose
     wrapped = out.with_suffix(".burn.srt")
     wrapped.write_text(_rewrap_srt(srt.read_text(), cfg.caption_max_chars_per_line))
@@ -5342,8 +4685,7 @@ def _fonts_dir_arg() -> str:
 
 
 def _burn_ass(video: Path, ass: Path, out: Path) -> None:
-    """Render a styled ASS track (word highlight + hook headline) with libass; styles live in the
-    file, so no force_style — only the pinned fonts directory."""
+    """Burn a styled ASS track with libass; styles live in the file, so no force_style."""
     ass_arg = str(ass).replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
     ffmpeg(
         [
@@ -5373,8 +4715,7 @@ def _burn_ass(video: Path, ass: Path, out: Path) -> None:
 def _captioned(
     ctx: StageContext, silent: Path, *, width: int, height: int
 ) -> tuple[Path, Path | None]:
-    """The silent picture with captions burned in when the captions stage ran and burning is on;
-    otherwise the picture unchanged. Returns (video, srt used or None)."""
+    """The silent picture with captions burned in when available and enabled, else unchanged."""
     cfg = get_settings().compose
     srt = ctx.ddir() / "captions" / "captions.srt"
     ass = ctx.ddir() / "captions" / "captions.ass"
@@ -5391,12 +4732,7 @@ def _captioned(
 
 
 def _source_fps(path: Path) -> float | None:
-    """The video stream's frame rate, or None when it cannot be read.
-
-    Used to decide whether a segment needs an ``fps=`` conform at all. Unreadable means "conform
-    anyway", which is the safe direction: an unconformed segment at the wrong rate desynchronises
-    everything after it in the concatenation.
-    """
+    """The video stream's frame rate, or None when it cannot be read."""
     from content_factory.qc.media import ffprobe
 
     try:
@@ -5417,17 +4753,7 @@ def _source_fps(path: Path) -> float | None:
 
 
 def _segment_filter(route: str, tl, scene, source_fps: float | None = None) -> str:
-    """ffmpeg -vf for one beat segment at the timeline's size and fps, exactly duration_frames long.
-    Remotion segments are cut from the full render by frame index; generated clips are fitted
-    (letterboxed, never cropped), retimed, and held on their last frame if the shot is shorter.
-
-    The ``fps=`` conform is emitted only when the source is not already at the timeline's rate.
-    ffmpeg's ``fps`` filter reaches a higher target by DUPLICATING frames, which is what every wind
-    short v1-v5 shipped: 24 fps footage stepped up to a 30 fps timeline, one frame in five shown
-    twice. It is still emitted when it is needed — dropping it would desynchronise the
-    concatenation — but it now shows up in ``compose.json`` as ``retimed_from_fps`` instead of
-    being invisible.
-    """
+    """ffmpeg -vf for one beat segment at the timeline's size and fps, duration_frames long."""
     conform = f"fps={tl.fps}," if source_fps is None or abs(source_fps - tl.fps) > 0.01 else ""
     if route == "generate":
         hold_s = scene.duration_frames / tl.fps + 1.0
@@ -5442,9 +4768,7 @@ def _segment_filter(route: str, tl, scene, source_fps: float | None = None) -> s
 
 
 def _pacing(scene_frames: list[int], fps: int) -> dict:
-    """Editing rhythm facts: short-form retention holds when something on screen changes every
-    3-5 s, so scenes longer than that are listed for the editor (not a blocker: a chart that
-    animates for 6 s is fine, a static card is not)."""
+    """Editing rhythm facts: scenes longer than 6 s are listed for the editor, not blocked."""
     secs = [round(f / fps, 2) for f in scene_frames]
     over = [round(x, 2) for x in secs if x > 6.0]
     return {
@@ -5457,10 +4781,7 @@ def _pacing(scene_frames: list[int], fps: int) -> dict:
 
 
 def _compose_mixed(ctx: StageContext, routing: ShotRouting) -> StageOutput:
-    """Hybrid workflow: one segment per compiled scene, in beat order, each either cut from the
-    Remotion render or conformed from the shot's generated clip; segments are encoded identically
-    (cached by source digest + filter), concatenated losslessly, then narration is muxed on when
-    the audio branch ran. ``exports/compose.json`` records what went where."""
+    """Hybrid workflow: one segment per scene (Remotion cut or conformed clip), concatenated."""
     from content_factory.qc.media import check_video
     from content_factory.schemas.scenes import CompiledTimeline
 
@@ -5572,9 +4893,8 @@ def _compose_mixed(ctx: StageContext, routing: ShotRouting) -> StageOutput:
     facts: dict = {}
     if narration.exists():
         speech_ms = _speech_end_ms(ctx)
-        # No min_video_ms here: this path's picture IS the compiled timeline, frame for frame —
-        # check_video asserts exactly that a few lines above — so holding its last frame would
-        # break the one guarantee a timeline film makes about its own length.
+        # No min_video_ms here: this path's picture IS the compiled timeline, frame for frame, so
+        # holding its last frame would break the one length guarantee a timeline film makes.
         mux(picture, narration, final)
         aqc = check_audio_in_video(final, expected_speech_ms=speech_ms)
         if not aqc.passed:
@@ -5627,15 +4947,12 @@ def _compose_mixed(ctx: StageContext, routing: ShotRouting) -> StageOutput:
 
 
 def stage_compose_video(ctx: StageContext) -> StageOutput:
-    """Final assembly. Plain path: mux narration onto the Remotion render. Hybrid path (a shot
-    routing with generate-routed beats): interleave Remotion segments and generated clips in beat
-    order, then mux narration when present."""
+    """Final assembly."""
     routing = _load_routing(ctx)
     if routing is not None and routing.generated_shot_ids():
         return _compose_mixed(ctx, routing)
     # Whatever produced the picture: the Remotion bundle for a deterministic film, the post-chain
-    # or the generative concatenation for one that was drawn. Before this, a narrated generative
-    # film failed here looking for a Remotion render it never had.
+    # or the generative concatenation for one that was drawn.
     exports = ctx.ddir() / "exports"
     final = exports / "final.mp4"
     manifest_path = exports / "compose.json"
@@ -5652,23 +4969,15 @@ def stage_compose_video(ctx: StageContext) -> StageOutput:
             silent = silent.rename(final.with_name("picture.mp4"))
     story = _load_story_plan(ctx)
     picture, srt = _captioned(ctx, silent, width=story.width, height=story.height)
-    # Narration is optional on this path, the same way it already was on the mixed one. Two lanes
-    # exist for films with no voice in them — silent-video (music and effects) and
-    # photo-sequence-video (nothing at all) — and both failed here: the stage muxed
-    # audio/narration-mastered.wav unconditionally and then read per-beat narration segments to
-    # size the speech QC, so a lane with no voice stage died on a missing file.
+    # Narration is optional on this path too: silent-video and photo-sequence-video have no voice
+    # stage, and muxing narration-mastered.wav unconditionally died on the missing file.
     audio, source = _final_audio(ctx)
     facts: dict = {"narrated": audio is not None and source == "narration"}
-    # How long the film has to last to carry everything that is said, measured before the mux
-    # rather than after it: a picture shorter than that loses words, and the mux holds its last
-    # frame to the number instead. The same number is what the QC below checks the result against.
+    # How long the film must last to carry everything said, measured before the mux: the mux holds
+    # its last frame to this number, and the QC below checks the result against the same one.
     speech_ms = _speech_end_ms(ctx) if facts["narrated"] else None
-    # ...but only a picture whose length is its OWN is held. A Remotion bundle render is the
-    # compiled timeline frame for frame, and that count is a promise three tests and the delivery
-    # QC rely on; the timeline is itself compiled from the measured narration, so what -shortest
-    # takes off it is the stem's trailing silence. A drawn or post-processed picture has no such
-    # promise — its length is the spans of speech it illustrates — and that is the one that loses
-    # sentences.
+    # ...but only a picture whose length is its OWN is held. A Remotion render is the compiled
+    # timeline frame for frame (a promise tests and delivery QC rely on); a drawn picture is not.
     timeline_render = silent.name.startswith("bnd_")
     hold_to = None if timeline_render else speech_ms
     if audio is None:
@@ -5692,9 +5001,8 @@ def stage_compose_video(ctx: StageContext) -> StageOutput:
         ),
     )
     if facts["narrated"] and speech_ms is not None:
-        # Only speech gets the speech check: it asserts the mux carries at least 90 % of the
-        # measured words, which is meaningless for a music bed and needs per-beat segment files
-        # that only voice_over or synthesize_narration write.
+        # Only speech gets the speech check: it asserts 90 % of the measured words survived the
+        # mux, which is meaningless for a music bed and needs per-beat segment files.
         qc = check_audio_in_video(final, expected_speech_ms=speech_ms)
         if not qc.passed:
             raise RuntimeError(f"final video failed audio QC: {qc.findings}")
@@ -5714,19 +5022,7 @@ is the third option and is absent here because it selects no package at all."""
 
 
 def _video_model(ctx: StageContext | None) -> tuple[str, str]:
-    """Which generator animates, and with which package — the same precedence as the anchor's.
-
-    1. ``video.backend`` **when it was explicitly configured**, because a machine that has said
-       "no ComfyUI here" has to be obeyed on every lane;
-    2. the node's ``model`` widget, which is what a lane definition freezes;
-    3. the setting's default, which is ``mock``.
-
-    It was 1 and 3 only, and the widget did not exist. So a lane could name its LTX weight files —
-    this node has three widgets for exactly that — and still run the deterministic ffmpeg
-    stand-in, with nothing in the run saying the model had not been asked. Measured 2026-09-10:
-    ``image-to-video``, ``silent-video``, ``scene-controlled-video``, ``hybrid-video`` and
-    ``single-clip-post`` had every one of their generated clips recorded as ``"backend": "mock"``.
-    """
+    """Which generator animates, and with which package — the same precedence as the anchor's."""
     cfg = get_settings().video
     if "backend" in cfg.model_fields_set or ctx is None:
         return cfg.backend, cfg.package
@@ -5741,13 +5037,7 @@ def _video_model(ctx: StageContext | None) -> tuple[str, str]:
 
 
 def _video_backend(ctx: StageContext | None = None):
-    """The video executor, with the LTX weight file names the node asks for.
-
-    The three ``*_name`` widgets exist because a machine may hold a different quantisation of the
-    same weights; naming one should not mean editing ``ltx_packages``. They were inert, so a lane
-    that named a file got whichever pin the module happened to carry, and the mismatch showed up as
-    a ComfyUI node error minutes into a render.
-    """
+    """The video executor, with the LTX weight file names the node asks for."""
     from content_factory.media.video_generate import ComfyUIVideoBackend, MockVideoBackend
 
     cfg = get_settings().video
@@ -5791,12 +5081,7 @@ def _video_backend(ctx: StageContext | None = None):
 
 
 def _write_atomic(path: Path, data: bytes) -> str:
-    """Write bytes through a temp file in the same directory, then rename. Returns the sha256.
-
-    A 40-second generation written straight to its final name leaves a **truncated but present**
-    file if the process dies mid-write, and the next run's `clip.exists()` treats it as a cache
-    hit. `os.replace` within one directory is atomic, so the file either is not there or is whole.
-    """
+    """Write bytes through a temp file in the same directory, then rename."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     tmp.write_bytes(data)
@@ -5805,13 +5090,7 @@ def _write_atomic(path: Path, data: bytes) -> str:
 
 
 def _cached_output(marker: Path, artifact: Path, input_hash: str, sha_key: str) -> dict | None:
-    """A cache hit only if the marker matches AND the file on disk is still the recorded bytes.
-
-    Reusing a file because a marker says so is a guess about the filesystem. A clip truncated by a
-    full disk, half-copied by a rerun, or edited by hand all satisfy "the marker matches and the
-    file exists", and the failure surfaces four stages later as a QC finding about a container.
-    Hashing it costs milliseconds against the forty seconds not regenerating it saves.
-    """
+    """A cache hit only if the marker matches AND the file on disk is still the recorded bytes."""
     if not marker.is_file() or not artifact.is_file():
         return None
     try:
@@ -5827,12 +5106,7 @@ def _cached_output(marker: Path, artifact: Path, input_hash: str, sha_key: str) 
 
 
 def _extract_frames(clip: Path, indices: list[int]) -> dict[int, bytes]:
-    r"""The clip's frames at the given indices, as PNG bytes. One ffmpeg call per frame.
-
-    ``select=eq(n\,N)`` with ``-vsync 0``, so N is the decoded frame index and not a timestamp
-    rounded to the nearest frame — a guide is pinned to an index, and comparing the wrong frame
-    would measure the model's motion rather than its adherence.
-    """
+    """The clip's frames at the given indices, as PNG bytes."""
     from content_factory.audio.mix import AudioError, ffmpeg
 
     out: dict[int, bytes] = {}
@@ -5854,9 +5128,8 @@ def _extract_frames(clip: Path, indices: list[int]) -> dict[int, bytes]:
                 timeout=120,
             )
         except AudioError:
-            # ffmpeg refusing a frame index past the end of the clip is a *finding* — the guide was
-            # pinned somewhere the clip does not reach — and `guide_adherence` reports it by name
-            # from the absence. Logging it here would report the same thing twice, in worse words.
+            # A frame index past the end of the clip is a finding `guide_adherence` reports by
+            # name from the absence; logging it here would say the same thing twice.
             continue
         if png.exists():
             out[index] = png.read_bytes()
@@ -5866,17 +5139,7 @@ def _extract_frames(clip: Path, indices: list[int]) -> dict[int, bytes]:
 def _guide_adherence(
     clip: Path, guide_pngs: dict[int, bytes], *, style: str = "", camera: str = ""
 ) -> dict[str, object]:
-    """Did the clip actually pass through the guides it was given?
-
-    The measurement the guided package never had: `LTXVAddGuide` pins an anchor at a frame index,
-    and nothing afterwards checked that the clip went anywhere near it. A guide whose strength was
-    too low, or whose index the 8k+1 length rule snapped past the end of the clip, produced exactly
-    the same "ok" as one the model honoured.
-
-    Reported, not gating. The bar it starts from has not been calibrated against a live run yet
-    (`sequences.drift.GUIDE_SIMILARITY_MIN` says so), and a threshold nobody has measured must not
-    fail a film — but it can and does put the number in the run record.
-    """
+    """Did the clip actually pass through the guides it was given?"""
     if not guide_pngs:
         return {"guides": 0, "passed": True, "similarity": [], "worst": 1.0, "reasons": []}
     from content_factory.sequences.drift import guide_adherence
@@ -5901,21 +5164,14 @@ def _concat_clips(clips: list[Path], target: Path) -> None:
 
 
 def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) -> StageOutput:
-    """Cut the drawings together, each held for its shot's length. No model, no interpolation.
-
-    ffmpeg's concat demuxer with an explicit duration per image gives exactly this and nothing
-    else: no blending across the joins, no invented in-between frames, every frame on screen one of
-    the drawings that was approved. The jump between them is the look.
-    """
+    """Cut the drawings together, each held for its shot's length."""
     from content_factory.audio.mix import ffmpeg
 
     exports = ctx.ddir() / "exports"
     exports.mkdir(parents=True, exist_ok=True)
     entries = manifest["shots"]
-    # Whatever the finishing chain last produced for these drawings, if it produced all of them:
-    # a lane that runs upscale_video before the hold gets the restored pictures on screen rather
-    # than an orphaned frames directory. One picture per shot, in shot order, which is exactly the
-    # order they were gathered in.
+    # Whatever the finishing chain last produced for these drawings, if all of them: a lane that
+    # upscales before the hold gets the restored pictures on screen. One per shot, in shot order.
     finished = _finished_anchor_frames(ctx, sum(len(e["frames"]) for e in entries))
     used: list[Path] = []
     listing_lines: list[str] = []
@@ -5937,11 +5193,8 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
     target = exports / "generated.mp4"
     listing = exports / "held.concat.txt"
     listing.write_text("".join(listing_lines))
-    # Cut at the drawings' own resolution, not the ShotSpec's. The ShotSpec size is what LTX
-    # generates at; a held cut has no such constraint, and HiDream returns ~4 MP whatever was
-    # asked for. Downscaling 2560x1440 ink hatching to 1024x576 throws away 84 % of the pixels
-    # and *raises* measured edge energy by 54 % — fine line work aliasing into crunch rather than
-    # resolving. A ``size`` parameter still forces a smaller cut for a quick preview.
+    # Cut at the drawings' own resolution, not the ShotSpec's: downscaling 2560x1440 hatching to
+    # 1024x576 *raised* edge energy 54 % (aliasing); ``size`` still forces a smaller preview cut.
     native = _png_size(used[0].read_bytes())
     default_size = (
         int(native.get("png_width") or entries[0]["width"]),
@@ -5953,9 +5206,8 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
         {
             "held": held,
             "anchors": [e["frames"][0]["sha256"] for e in entries],
-            # The finishing chain's output is not in the anchor digests, so without this a cut
-            # made from raw drawings would be reused after an upscale and the enlargement would
-            # never reach the screen.
+            # Not in the anchor digests: without this a raw cut is reused after an upscale and
+            # the enlargement never reaches the screen.
             "used": [file_sha256(p) for p in used],
             "size": [width, height],
             "fps": fps,
@@ -5982,10 +5234,8 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
             # into a smooth stream.
             "-vsync",
             "vfr",
-            # Colour has to be *declared*, not merely converted. Written untagged the file says
-            # nothing about range or matrix, so every player guesses — and one that assumes
-            # limited range on full-range data crushes the blacks and shifts the whole palette.
-            # Convert to limited-range BT.709 and tag it, which is what h264 players expect.
+            # Colour has to be *declared*: untagged, every player guesses, and one that assumes
+            # limited range on full-range data crushes the blacks. So convert to tv BT.709 and tag.
             "-vf",
             f"scale={width}:{height}:flags=lanczos"
             f":in_range=pc:out_range=tv:out_color_matrix=bt709,fps={fps}",
@@ -6030,27 +5280,13 @@ def _hold_stills(ctx: StageContext, manifest: dict, shots: dict[str, ShotSpec]) 
 
 
 def _story_plan_or_none(ctx: StageContext) -> StoryPlan | None:
-    """The deliverable's story plan when plan_story has run for it, else None.
-
-    ``generate_video`` needs only one field of it (``visual_subject``), and the single-clip path
-    runs in lanes that never plan a story at all, so an absent plan is not an error here.
-    """
+    """The deliverable's story plan when plan_story has run for it, else None."""
     path = _story_plan_path(ctx)
     return StoryPlan.model_validate_json(path.read_text()) if path is not None else None
 
 
 def _codec_size(width: int, height: int) -> tuple[int, int]:
-    """The nearest frame size at or above ``width x height`` that a video codec will take.
-
-    `VideoGenerationRequest` requires a multiple of 16 on both axes, because that is what h264
-    macroblocks and every diffusion video model's latent grid are built on. **1080 is not one** —
-    1080 / 16 is 67.5 — so every 1080x1920 story, which is the vertical format, failed the contract
-    at `generate_video` with "Input should be a multiple of 16". (It is the same arithmetic that
-    makes 1080p video encode as 1088 lines and crop.)
-
-    Rounded up rather than down: the clip is composited into the timeline's frame afterwards, and
-    scaling a slightly larger picture down keeps detail that scaling a smaller one up invents.
-    """
+    """The nearest frame size at or above ``width x height`` that a video codec will take."""
     grid = 16
 
     def snap(value: int, limit: int) -> int:
@@ -6060,11 +5296,7 @@ def _codec_size(width: int, height: int) -> tuple[int, int]:
 
 
 def _backend_size_cap(backend: object) -> tuple[int, int] | None:
-    """The largest frame the backend's workflow package will accept, or None if it says.
-
-    Read off the package's own parameter bindings rather than configured anywhere: the graph is
-    what has the limit, and the LTX-2.5 package declares 1344 on both axes.
-    """
+    """The largest frame the backend's workflow package will accept, or None if it says."""
     params = getattr(getattr(backend, "package", None), "parameters", None)
     if not params:
         return None
@@ -6077,18 +5309,7 @@ def _backend_size_cap(backend: object) -> tuple[int, int] | None:
 def _clip_size(
     backend: object, width: int, height: int, *, fit: bool, what: str
 ) -> tuple[int, int]:
-    """``_codec_size``, but inside what the video model can actually generate.
-
-    Measured 2026-09-10: `image-to-video` on a 2560x1440 photograph, and `silent-video` on a
-    1920x1080 story, both died at `generate_video` with "parameter 'width' above maximum 1344.0"
-    — raised by the ComfyUI package validator, after the anchors had already been generated. The
-    limit belongs to the graph and nothing upstream had asked it.
-
-    The two paths want different answers and that is deliberate. A *supplied still* has an
-    incidental size — a phone took it — so the clip is fitted into the cap with its aspect kept
-    (``fit=True``). A *shot plan* has a deliberate one, chosen with the deliverable, so silently
-    shrinking a whole film is the wrong repair: it is refused, early, naming the cap and the knob.
-    """
+    """``_codec_size``, but inside what the video model can actually generate."""
     cap = _backend_size_cap(backend)
     if cap is None or (width <= cap[0] and height <= cap[1]):
         return _codec_size(width, height)
@@ -6105,22 +5326,7 @@ def _clip_size(
 
 
 def _video_prompt_for(ctx: StageContext, shot: ShotSpec | None, story: StoryPlan | None) -> str:
-    """The compiled cinematography paragraph for one shot, under the lane's own preamble.
-
-    The ``prompt`` widget is the lane's standing instruction to the video model — "hand-drawn
-    animation on paper, two frames per second" — and it leads, for the same measured reason the
-    style leads an anchor prompt. The compiled shot text follows it, and the shot's own words never
-    come from a story beat.
-
-    ``ctx.campaign.brief.topic`` is deliberately not consulted. A brief topic is a research
-    question ("How much of Sweden's electricity came from wind in 2025?"), and it was reaching the
-    LTX request two ways: as the whole prompt on the single-clip path, and as the substitute
-    whenever a shot happened to carry no motion text. Both produced a clip prompted with a question
-    about something that was not in the picture (STATUS 1370, 1678). The single-clip path has no
-    ShotSpec to compile from, so it needs a subject stated for it: ``--subject``, or the story's
-    ``visual_subject`` when a story was planned. With neither, this raises — before any GPU tenant
-    is started, because nothing here touches a backend.
-    """
+    """The compiled cinematography paragraph for one shot, under the lane's own preamble."""
     lane = _param(ctx, "prompt").strip()
     if shot is not None:
         joined = ". ".join(p.rstrip(".") for p in (lane, compile_video_prompt(shot, story)) if p)
@@ -6139,13 +5345,7 @@ def _video_prompt_for(ctx: StageContext, shot: ShotSpec | None, story: StoryPlan
 
 
 def stage_generate_video(ctx: StageContext) -> StageOutput:
-    """Image-to-video through the video.generate skill.
-
-    With anchors per shot (the scene-control layer): one clip per shot, first frame = the shot's
-    anchor at frame 0, the remaining anchors pinned as LTXVAddGuide keyframes at their Blender frame
-    indices, size/fps/length from the ShotSpec; clips are cached per shot and concatenated into
-    ``exports/generated.mp4``. Without shots: one clip from the brief (single anchor as first frame
-    when present). ``video.backend`` selects the mock or the LTX-2.5 ComfyUI backend."""
+    """Image-to-video through the video.generate skill."""
     from content_factory.media.video_generate import (
         GuideFrame,
         VideoGenerationRequest,
@@ -6172,11 +5372,8 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
 
     if manifest is not None and per_shot:
         if not manifest["shots"]:
-            # The routing sent every beat to the renderer, so there is nothing generative to do.
-            # A no-op, not a failure: `compose_video` takes its plain path when the routing has no
-            # generated shots, and the film is the Remotion render. Before this, the empty clip
-            # list reached ffmpeg's concat demuxer and the lane died on "No files to concat" —
-            # nine words that name neither the stage's problem nor the routing that caused it.
+            # The routing sent every beat to the renderer: a no-op, not a failure. `compose_video`
+            # takes its plain path, and an empty list would only die in ffmpeg's concat demuxer.
             return StageOutput(
                 _hash_obj({"shots": []}),
                 {
@@ -6229,8 +5426,7 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
                 duration_s=max(1.0, round(frame_count / fps, 3)),
                 fps=fps,
                 # The node's seed wins over the shot's, so an operator can re-roll a whole film's
-                # motion without editing the plan. Zero means "the shot decides", which is what a
-                # seed widget at its default has to mean.
+                # motion without editing the plan. Zero means "the shot decides".
                 seed=noise_seed or (shot.seed if shot else 0),
                 with_audio=False,
                 guides=guides,
@@ -6242,11 +5438,8 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
                 {
                     "request": request.model_dump(mode="json"),
                     "first_frame": frames[0]["sha256"],
-                    # The package id, its version and a digest of the un-parameterised graph, not
-                    # just the backend's name: editing a node in ltx_packages.py used to produce
-                    # the identical key, so the old clip was reused with the new graph. That is the
-                    # one cache mistake nobody notices, because the file is a plausible clip of
-                    # the right length.
+                    # The package id, version and un-parameterised graph digest, not just the
+                    # backend's name: editing a node in ltx_packages.py used to reuse the old clip.
                     "graph": backend.graph_fingerprint(len(guides)),
                     "package": cfg.package,
                     # Reworded clause tables change the prompt without changing the ShotSpec, so
@@ -6281,9 +5474,8 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
                 }
                 _write(marker, json.dumps(record, indent=1, sort_keys=True))
                 _log_execution(ctx, f"generate_video:{entry['shot_id']}")
-            # Measured on the produced clip, cached or not, and written beside it: the number is
-            # about this clip and this guide set, so a cache hit has the same answer as the run
-            # that made it and re-reading it costs one ffmpeg call per guide.
+            # Measured on the produced clip, cached or not, and written beside it: a cache hit has
+            # the same answer as the run that made it, at one ffmpeg call per guide.
             adherence = _guide_adherence(
                 clip,
                 guide_pngs,
@@ -6327,9 +5519,8 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
         first_png = (ctx.ddir() / first["frames"][0]["path"]).read_bytes()
         width, height = first["width"], first["height"]
     prompt = _video_prompt_for(ctx, None, story)
-    # With no ShotSpec the clip's length is this node's to choose. With one it is not: the shot's
-    # frame count is what the anchor guide indices were placed against, so the widget stays out of
-    # the per-shot path above rather than silently truncating a shot's guides.
+    # With no ShotSpec the clip's length is this node's to choose; with one the shot's frame count
+    # is what the guide indices were placed against, so the widget stays out of the per-shot path.
     duration_s = _param_float(
         ctx, "duration", cfg.default_duration_s if backend.name != "mock" else 4.0
     )
@@ -6350,9 +5541,8 @@ def stage_generate_video(ctx: StageContext) -> StageOutput:
         seed=noise_seed or int(sha256_hex(prompt.encode())[:8], 16),
         with_audio=backend.name == "mock",
     )
-    # The same `.done.json` discipline the per-shot path has had. Without it this branch
-    # regenerated its clip on every rerun of the lane — forty seconds of GPU to produce a file
-    # already on disk — because the only thing that decided was whether the stage ran.
+    # The same `.done.json` discipline the per-shot path has: without it this branch regenerated
+    # its clip on every rerun of the lane — forty seconds of GPU for a file already on disk.
     gen_dir = ctx.ddir() / "generated"
     target = ctx.ddir() / "exports" / "generated.mp4"
     marker = gen_dir / ".done.json"
@@ -6415,15 +5605,7 @@ container the converter would refuse."""
 
 
 def _chain_inputs(ctx: StageContext) -> list[tuple[str, Path]]:
-    """(name, working dir) per clip to post-process: the per-shot clips of the scene-control path,
-    else the single generated clip, else the MotionPlan keyframes, else what the operator supplied.
-
-    The last case is what makes ``video-finish`` and ``image-upscale`` real lanes rather than
-    lanes that describe themselves. Both exist to work on footage this repo did not generate, and
-    before this the material had to be copied by hand into a deliverable directory whose name
-    contains a generated id — so the documented way to run them was to run something else first.
-    Now the entry point is the same one every lane uses: the run's uploads folder.
-    """
+    """(name, working dir) per clip to post-process, falling back to the run's uploads folder."""
     video_dir = ctx.ddir() / "video"
     shots = sorted(p.parent for p in video_dir.glob("*/clip.mp4")) if video_dir.exists() else []
     if shots:
@@ -6432,10 +5614,8 @@ def _chain_inputs(ctx: StageContext) -> list[tuple[str, Path]]:
         return [("main", video_dir / "main")]
     if (ctx.ddir() / "sequence" / "frames").exists():
         return [("sequence", ctx.ddir() / "sequence")]
-    # The drawings, before anything has been held or animated. This is the entry the held-cut
-    # lanes need: a film of N drawings held for their own spans has N pictures worth finishing
-    # and thousands of identical frames, so the finishing chain has to run on the drawings and
-    # not on the cut. Ordered after the clip cases so a lane that animates first is unaffected.
+    # The drawings, before anything is held or animated: a held cut has N pictures worth finishing
+    # and thousands of identical frames. After the clip cases so a lane that animates is unaffected.
     if _anchor_sequence_dir(ctx) is not None:
         return [("anchors", ctx.ddir() / "anchors")]
     supplied = _adopt_uploaded_picture(ctx)
@@ -6451,16 +5631,7 @@ def _chain_inputs(ctx: StageContext) -> list[tuple[str, Path]]:
 
 
 def _adopt_uploaded_picture(ctx: StageContext) -> tuple[str, Path] | None:
-    """The operator's clip or stills, staged where the post chain reads them. Idempotent.
-
-    A clip becomes ``video/upload/clip.mp4``, which ``_latest_frames`` explodes on demand; a
-    folder of stills becomes ``sequence/frames/%04d.png``, the layout every frame tool in the post
-    chain already speaks. Conversion is FFmpeg's job and happens once: a JPEG folder is rewritten
-    to PNG because ProPainter, SeedVR2 and the interpolators all read PNG only.
-
-    Two clips is a refusal, not a choice by sort order — "which of these is the film" is the
-    operator's question. Stills and a clip together is the same refusal for the same reason.
-    """
+    """The operator's clip or stills, staged where the post chain reads them."""
     uploads = ctx.project_dir / UPLOADS_DIRNAME
     if not uploads.is_dir():
         return None
@@ -6515,14 +5686,7 @@ def _adopt_uploaded_picture(ctx: StageContext) -> tuple[str, Path] | None:
 
 
 def _anchor_sequence_dir(ctx: StageContext) -> Path | None:
-    """The anchor drawings gathered into ``anchors/frames/%04d.png``, in shot order.
-
-    The post chain speaks one language — a directory of numbered PNGs — and the anchors are
-    written per shot under their own shot ids. Gathering them is a copy of N pictures and is
-    idempotent, so the chain can restore and enlarge the *drawings* of a held film. Without this
-    the only thing an upscaler could see was the cut, which for held drawings is the same few
-    pictures repeated a few thousand times: hours of GPU to enlarge six images.
-    """
+    """The anchor drawings gathered into ``anchors/frames/%04d.png``, in shot order."""
     manifest_path = ctx.ddir() / "anchors" / "manifest.json"
     if not manifest_path.exists():
         return None
@@ -6543,12 +5707,7 @@ def _anchor_sequence_dir(ctx: StageContext) -> Path | None:
 
 
 def _finished_anchor_frames(ctx: StageContext, expected: int) -> list[Path]:
-    """The post chain's finished drawings, when it has finished exactly ``expected`` of them.
-
-    A partial set is not usable: holding four restored drawings and two raw ones would put a
-    visible change of texture in the middle of a film, so the count has to match or the raw
-    drawings are used. The chain records where its latest output is; nothing here re-derives it.
-    """
+    """The post chain's finished drawings, when it has finished exactly ``expected`` of them."""
     state = _chain_state(ctx.ddir() / "anchors")
     latest = state.get("latest")
     if not latest or not state.get("steps"):
@@ -6589,9 +5748,7 @@ def _chain_step(
     source: Path | None = None,
     advance: bool = True,
 ) -> dict:
-    """Run one tool as a cached chain step. The step's input is pinned in ``chain.json`` the first
-    time it runs, so a rerun never reads its own output; ``advance=False`` marks a side output
-    (masks) that does not move the chain forward."""
+    """Run one tool as a cached chain step."""
     from content_factory.postchain import POSTCHAIN_VERSION, frames_digest, run_tool
 
     cfg = get_settings().postchain
@@ -6649,8 +5806,7 @@ def _chain_step(
 
 
 def stage_fix_video(ctx: StageContext) -> StageOutput:
-    """Remove the configured segmentation ids: Cutie tracks them from the Blender seed mask,
-    ProPainter inpaints them. Without ids (or without a seed mask) the frames pass through."""
+    """Cutie + ProPainter remove the configured segmentation ids; with none, frames pass through."""
     cfg = get_settings().postchain
     remove_ids = _param_int_list(ctx, "remove_ids", cfg.remove_seg_ids)
     dilation = _param_int(ctx, "mask_dilation", cfg.mask_dilation)
@@ -6696,11 +5852,8 @@ def stage_fix_video(ctx: StageContext) -> StageOutput:
 
 def stage_upscale_video(ctx: StageContext) -> StageOutput:
     cfg = get_settings().postchain
-    # The node's own widget wins over the setting, the way stage_interpolate already worked. It
-    # did not here, so a workflow that asked for 2160 quietly got whatever the host was configured
-    # for - a widget that looks bound and is not is worse than no widget.
-    # _param speaks strings, the setting and the tool speak numbers, so the coercion is explicit
-    # here rather than leaking a string into the facts and the tool arguments.
+    # The node's widget wins over the setting, as in stage_interpolate. _param speaks strings and
+    # the setting and tool speak numbers, so the coercion is explicit here.
     resolution = int(_param(ctx, "resolution", str(cfg.upscale_resolution)))
     results = [
         {
@@ -6727,12 +5880,8 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
     engine = _param(ctx, "engine", cfg.interpolator)
     raw_factor = _param(ctx, "factor", str(cfg.interpolate_factor)).strip().rstrip("xX")
     factor = int(raw_factor) if raw_factor.isdigit() else cfg.interpolate_factor
-    # A held cut is the answer, not an intermediate. generate_video's ``motion: hold`` exists to
-    # guarantee that every frame on screen is a drawing a person approved, and the jump between
-    # drawings is the look (limited animation, stop motion). Interpolating it invents frames that
-    # were never drawn and were never reviewed, which destroys exactly the property the mode was
-    # chosen for — and it does it silently, because rife runs happily on a concat of stills.
-    # So the marker wins over the engine widget: a lane can set both and still get its held cut.
+    # A held cut is the answer, not an intermediate: interpolating it invents frames nobody drew or
+    # reviewed, and rife runs happily on a concat of stills. So the marker beats the engine widget.
     held = (ctx.ddir() / "exports" / "held.done.json").exists()
     if engine == "none" or held:
         return _mux_without_interpolation(
@@ -6745,11 +5894,8 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
         try:
             record = _chain_step(ctx, name, workdir, "interpolated", engine, {"factor": factor})
         except PostChainError as exc:
-            # An optical-flow interpolator's memory is quadratic in the frame area: GIMM-VFI's
-            # RAFT correlation asked for **12.36 GiB** on a single 1088x1920 pair and died on a
-            # 24 GB card. That is a size limit, not a broken install, and the answer is the film
-            # without the invented frames rather than no film — recorded, because a lane that
-            # quietly stopped interpolating would look like one that never tried.
+            # Optical-flow memory is quadratic in frame area: GIMM-VFI asked for 12.36 GiB on one
+            # 1088x1920 pair (24 GB card). A size limit, not a broken install: ship uninterpolated.
             if "OutOfMemoryError" not in str(exc):
                 raise
             return _mux_without_interpolation(
@@ -6783,27 +5929,11 @@ def stage_interpolate(ctx: StageContext) -> StageOutput:
 
 
 def _mux_without_interpolation(ctx: StageContext, *, skipped: str, requested: str) -> StageOutput:
-    """Interpolation declined, and the picture still assembled from whatever the chain finished.
-
-    This stage is the post chain's last step and therefore its muxer, so declining to interpolate
-    must not mean declining to deliver. Before this it returned the most-finished *existing* video
-    and nothing else, which silently threw away every earlier step: a lane that removed an object
-    and upscaled and then held its drawings wrote its finished frames to disk and shipped the
-    unfinished cut — the frames were on disk, nothing had muxed them, and the run said ok.
-
-    A held cut re-muxes nothing: ``generate_video``'s hold already assembled it from the finished
-    drawings, each on screen for its own span, and re-muxing exploded frames at a constant rate
-    would throw that structure away. So the held case is the one that legitimately reports the
-    existing picture.
-    """
+    """Interpolation declined, and the picture still assembled from whatever the chain finished."""
     from content_factory.postchain import mux_frames
 
-    # Resolved where it is used, not up front. This function *produces* the picture on a lane that
-    # has none yet — `video-finish` and `image-upscale` end at the post chain — so asking for one
-    # first turned the out-of-memory fallback into a second failure: GIMM-VFI OOMed on a 1088x1920
-    # pair (1.99 GiB), the fallback ran, and the run died on "no picture yet" instead of
-    # delivering the film without the invented frames (measured 2026-09-10, the first run to get
-    # past the CuPy break and reach this path at all).
+    # Resolved where it is used: this function *produces* the picture on a lane that has none yet,
+    # so asking up front turned the OOM fallback into a second failure (journal 2026-09-10).
     if skipped == "held cut":
         picture = _silent_picture(ctx)
         return StageOutput(
@@ -6871,9 +6001,7 @@ def _mux_without_interpolation(ctx: StageContext, *, skipped: str, requested: st
 
 
 def stage_render_animation(ctx: StageContext) -> StageOutput:
-    """Deterministic explainer animation (builtin Pillow renderer by default; the Manim skill
-    renders the same spec when configured). Frames land like an image sequence; a preview mp4 is
-    packaged alongside for review."""
+    """Deterministic explainer animation: frames land like an image sequence plus a preview mp4."""
     from content_factory.animation import render_animation_frames
     from content_factory.schemas.animation import AnimationSpec
 
@@ -6887,9 +6015,8 @@ def stage_render_animation(ctx: StageContext) -> StageOutput:
         msg = f"render_animation fps must be 24 or 30, got {fps}"
         raise RuntimeError(msg)
     duration_ms = max(500, min(60_000, round(_param_float(ctx, "duration_s", 2.0) * 1000)))
-    # equation and diagram_build reveal one line or one labelled box per step, and AnimationSpec
-    # refuses either with no steps. The story's beats ARE the film's steps, so a planned story
-    # supplies them; without one the stage says what is missing instead of inventing content.
+    # equation and diagram_build reveal one step at a time, and AnimationSpec refuses no steps. The
+    # story's beats ARE the steps; without a story the stage says what is missing.
     steps: tuple[str, ...] = ()
     if kind != "count_up":
         story = _story_plan_or_none(ctx)
@@ -6968,8 +6095,7 @@ def stage_render_animation(ctx: StageContext) -> StageOutput:
 
 
 def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
-    """Real per-deliverable QC (17): accessibility on artboards, flashing + delivery checks on
-    video, claim gate already ran as a shared stage. A failing layer fails the stage honestly."""
+    """Per-deliverable QC (17); every check is recorded and a failing layer fails the stage."""
     from dataclasses import asdict
 
     from content_factory.qc.accessibility import (
@@ -6983,15 +6109,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
     spec = _spec(ctx)
     checks: dict[str, object] = {}
     a11y_results = {}
-    # The only QC line here whose failure cannot be undone. A caption or an on-screen line
-    # carrying an API key is published the moment the file leaves the machine, and rotating the
-    # key afterwards is damage control rather than a fix. Text only — it says so in its facts.
-    # A scene kind with no renderer draws a labelled grey card, and a grey card passed every check
-    # here — so a plan naming `ranking` shipped a placeholder where a chart was meant to be, and
-    # nothing said so. scenes/kinds.py is the list both languages check.
-    # A plan that will not parse is a finding of its own, not an exception: QC's job is to report
-    # everything it found, and letting one unreadable input abort the stage would suppress the
-    # credentials scan below — the one line here whose failure cannot be undone.
+    # An unreadable plan is a finding, not an exception: aborting here would skip the credentials
+    # scan below, the one QC line whose failure cannot be undone once the file leaves the machine.
     try:
         story = _story_plan_or_none(ctx)
     except ValidationError as exc:
@@ -7001,10 +6120,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
             "facts": {"story_plan": "unreadable", "errors": len(exc.errors())},
         }
     if story is not None:
-        # Do the figures on screen come out of the datasets the plan cites? The renderer is total
-        # by design — a missing column becomes zero and a missing row an em dash — so a chart whose
-        # `y` column is misspelled draws a flat line along zero and passed every check there was.
-        # A plausible chart of nothing, with a real dataset's name under it.
+        # The renderer is total (missing column: zero, missing row: em dash), so a misspelled `y`
+        # column draws a plausible flat chart of nothing. Check the figures against the datasets.
         from content_factory.qc.datarefs import plan_problems
 
         ref_problems = plan_problems(story, _project_datasets(ctx))
@@ -7029,15 +6146,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
                 "beats": [s.beat_id for s in story.scenes if s.kind not in IMPLEMENTED_KINDS],
             },
         }
-        # The same fault one step along. A scene whose asset is not in the bundle draws the same
-        # labelled grey card an unimplemented kind does, and it passed everything here too: a
-        # thirty-second film in which every single scene read "missing asset · ast_sky02000" came
-        # back QC-passed and packaged. Only asked of a lane that renders a bundle — a generative
-        # lane cuts its own frames and has no assets dict to check against.
-        # ...but only on a lane that has no pictures of its own. A generative lane names assets in
-        # its plan that the *shots* fill — hybrid-video routes some beats to a generated clip and
-        # renders the rest as cards — so an empty bundle assets dict there means "the picture came
-        # from somewhere else", not "the picture is missing".
+        # A scene whose asset is missing from the bundle draws the same grey card. Only asked of a
+        # lane that renders a bundle: a generative lane's shots supply pictures the bundle lacks.
         draws_its_own = (ctx.ddir() / "anchors" / "manifest.json").is_file() or (
             ctx.ddir() / "shots" / "plan.json"
         ).is_file()
@@ -7059,17 +6169,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
                     "missing": missing[:12],
                 },
             }
-        # The same fault a third time, on the other kind of reference a scene can dangle. A
-        # scene names a source as `source_id` (quote, screenshot) or `source_ids` (source card,
-        # chart), and when the bundle has no such source the renderer prints **the raw id** where
-        # the citation goes. Measured on `f02-penny` (2026-09-10): a quote card shipped reading
-        # "Source: src_authored000001", and all seven checks here passed. `scenes/kinds.py`
-        # already says why it matters — "a quote attributed to a source that does not exist is a
-        # fabricated citation" — and the script writer is held to it, so this only bites a story
-        # that went round the writer. That is exactly how the placeholder films got out too.
-        #
-        # Not gated on `draws_its_own`, unlike the assets check above: a shot can supply a
-        # picture the bundle does not carry, but nothing downstream ever invents a source.
+        # A dangling `source_id`/`source_ids` prints the raw id as the citation, i.e. a fabricated
+        # one (journal 2026-09-10). Unlike the assets check, no shot can ever supply a source.
         if bundle is not None:
             known = set(bundle.get("sources") or {})
             named: list[tuple[str, str]] = []
@@ -7136,21 +6237,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
         if spec.type in {"long_video", "short_video"}:
             from content_factory.qc.delivery import promised_delivery
 
-            # The **pristine** picture, and the manifest that says how it was made. Three defects
-            # in one line, all now fixed:
-            #
-            #  * it measured `exports/bnd_run000000001.mp4` — the Remotion bundle. On the hybrid
-            #    path that is only the typeset half; the picture that ships is `composed.mp4`,
-            #    which interleaves the generated clips. So the check was reading a file that had
-            #    none of the generated motion in it and then reporting on the motion.
-            #  * the promise came from `spec.intent.startswith("animated")` over a 1000-character
-            #    free-text field. False for every real brief, so the promise was always
-            #    `chart_led` — the one value that makes the check unable to fail.
-            #  * and it had no route counts, so it could not tell a card that does not move (fine)
-            #    from a generated clip that does not move (a wasted generation).
-            #
-            # `final.mp4` is deliberately NOT the file: it carries burned-in captions, and caption
-            # animation would register as scene animation in exactly the scenes that have none.
+            # Measure `composed.mp4` (the Remotion bundle lacks the generated motion), never
+            # `final.mp4`: its burned-in captions would register as scene animation.
             composed = ctx.ddir() / "exports" / "composed.mp4"
             measured = composed if composed.exists() else video_path
             compose_manifest = ctx.ddir() / "exports" / "compose.json"
@@ -7162,9 +6250,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
                     routes_by_scene[segment["scene_id"]] = segment["route"]
                     route_counts[segment["route"]] = route_counts.get(segment["route"], 0) + 1
             promise = promised_delivery(getattr(spec, "intent", ""), route_counts)
-            # Whether the clips came from a real generator. On the mock a generated clip is a
-            # static test pattern, so the "generated segments do not move" finding would fail
-            # every offline run of the hybrid lane — measuring the backend, not the film.
+            # On the mock a generated clip is a static test pattern, so "generated segments do not
+            # move" would fail every offline hybrid run — measuring the backend, not the film.
             backends = {
                 json.loads(marker.read_text()).get("backend")
                 for marker in (ctx.ddir() / "video").glob("*/.done.json")
@@ -7187,13 +6274,8 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
             }
             if not delivery.passed:
                 a11y_results["delivery"] = delivery
-    # An audio master is a deliverable too, and this stage used to have nothing to say about one.
-    # The two audio lanes (audio-restore, voice-over-track) deliver a WAV and nothing else; their
-    # QC node sat with an unwired input because the slot did not accept AUDIO, and the caveat in
-    # each definition admitted the stage "says nothing about loudness or clipping here". It can:
-    # the delivered file is on disk and ffmpeg measures integrated loudness, true peak and dead
-    # air. Severity does the rest — a missing audio stream or a truncated master is a failure, a
-    # 2.5 s pause in a recording of somebody talking is a fact worth recording and nothing more.
+    # An audio master is a deliverable too: ffmpeg measures loudness, true peak and dead air on it.
+    # Severity decides — a missing stream or truncated master fails, a 2.5 s pause is only a fact.
     master_path = ctx.ddir() / "audio" / "narration-mastered.wav"
     if master_path.is_file() and master_path.stat().st_size > 0 and not video_path.exists():
         from content_factory.qc.audio import check_audio_in_video
@@ -7230,8 +6312,7 @@ def stage_qc_deliverable(ctx: StageContext) -> StageOutput:
 
 
 def stage_originality_gate(ctx: StageContext) -> StageOutput:
-    """The real originality gate (2.10): the new piece's fingerprint against the workspace's
-    content memory. Blocking verdicts fail the stage; a model cannot override them."""
+    """Originality gate (2.10): a blocking verdict against content memory fails the stage."""
     from content_factory.imports.history import ContentMemoryStore
     from content_factory.originality.fingerprint import compare, decide, fingerprint_script
 
@@ -7295,29 +6376,23 @@ def stage_originality_gate(ctx: StageContext) -> StageOutput:
 # in this order so the manifest reads the way a person would list it: the film first.
 DELIVERY_CANDIDATES: tuple[tuple[str, str], ...] = (
     ("video", "exports/final.mp4"),
-    # The post chain's own output. It is the deliverable on a lane that ends there — `image-upscale`
-    # and `video-finish` have no cut to make — and an intermediate on a lane that goes on to
-    # compose, where `final.mp4` above wins because it is listed first.
+    # The post chain's own output: the deliverable on a lane that ends there (`image-upscale`,
+    # `video-finish`), an intermediate where the lane composes and `final.mp4` above wins.
     ("video", f"exports/{POST_CHAIN_EXPORT}"),
     ("video", "exports/generated.mp4"),
     ("image", "exports/artboard.png"),
-    # A still lane's deliverable is the anchor itself. `single-image` draws one picture and stops,
-    # so there is no export, no cards and no audio to scan — and without this line the scan found
-    # only `qc/report.json`, so `DeliveryPackage` refused a package carrying only metadata and the
-    # four-stage lane failed on its last stage having already drawn the picture it was asked for.
+    # A still lane's deliverable is the anchor itself: `single-image` draws a picture and stops;
+    # without it the scan found only `qc/report.json` and `DeliveryPackage` rightly refused that.
     ("image", "anchors/anchor.png"),
-    # `package_sequence` writes these three beside `sequence/frames/`, and for a set-of-stills lane
-    # they *are* the deliverable, which is what the `sequence` role means: the frame set is the
-    # thing being published, not a description of it. A lane that also cuts a film ships that film
-    # as the video and these alongside it — see the guard in `_delivery_files`.
+    # `package_sequence` writes these beside `sequence/frames/`; on a set-of-stills lane they *are*
+    # the deliverable (the `sequence` role). A lane that also cuts a film: see `_delivery_files`.
     ("sequence", "sequence/preview.mp4"),
     ("sequence", "sequence/contact-sheet.png"),
     ("audio", "audio/narration-mastered.wav"),
     ("caption", "captions/captions.srt"),
     ("caption", "captions/captions.vtt"),
-    # What a transcribed recording said, in plain text. A deliverable in its own right for the
-    # lanes that start from sound — the most useful by-product a lecture recording has — and
-    # `text`, not `metadata`, because it is content rather than a description of content.
+    # What a transcribed recording said, in plain text: `text`, not `metadata`, because it is
+    # content rather than a description of content.
     ("text", "audio/transcript.txt"),
     ("metadata", "audio/transcript.json"),
     ("metadata", "qc/report.json"),
@@ -7342,24 +6417,15 @@ _DELIVERY_ROLE_ORDER: tuple[str, ...] = (
 
 
 def _delivery_files(ctx: StageContext) -> list:
-    """Every shippable file this deliverable actually produced, with a digest for each.
-
-    Scanned rather than declared: what a lane produces depends on the lane, and a hand-written
-    list of expected outputs per deliverable type would go stale the first time a lane changed.
-    What is not negotiable is that a file in the manifest exists and its digest is of the bytes
-    on disk right now — a manifest is a claim about bytes, and an unverified claim about bytes is
-    the thing this stage used to make (`"status": "packaged"`).
-    """
+    """Every shippable file this deliverable actually produced, with a digest for each."""
     import mimetypes
 
     from content_factory.schemas.delivery import DeliveryFile
 
     files = []
     seen: set[str] = set()
-    # A lane that cut a film already ships that film. `sequence/preview.mp4` is an 8 fps proof
-    # reel of the same frames, so on those lanes it is the same footage a second time; on a
-    # set-of-stills lane, which cuts nothing, it is the deliverable. Decided here rather than in
-    # the table because it depends on what else the run produced.
+    # `sequence/preview.mp4` is an 8 fps proof reel of the same frames a cut film already carries,
+    # so it ships only on a set-of-stills lane. Decided here because it depends on what else ran.
     cut_a_film = any(
         (ctx.ddir() / rel).is_file() for rel in ("exports/final.mp4", "exports/generated.mp4")
     )
@@ -7385,16 +6451,8 @@ def _delivery_files(ctx: StageContext) -> list:
                 content_type=guessed or "application/octet-stream",
             )
         )
-    # Carousels and image sets export one file per card, so they are collected by glob rather
-    # than named: the count is a property of the copy, not of the lane.
-    #
-    # Two naming schemes reach this stage and both have to be scanned. A lane run through the
-    # local runner writes the fixed names above plus `exports/card_*.png`. A campaign run through
-    # ProductionWorkflow writes one file per *render bundle* instead — `bnd_card000000001.png`,
-    # `bnd_art000000001.png`, `bnd_tl0000000001.narrated.mp4` — because `render_artboard` names
-    # its output after the bundle it rendered. Scanning only the lane names found nothing but
-    # `qc/report.json` for a three-card carousel, so the package carried only metadata and
-    # `DeliveryPackage` refused it. It was right to: the defect was here, not in the contract.
+    # Per-card exports are collected by glob: the local runner writes `card_*.png`, and a campaign
+    # run writes one file per render bundle (`bnd_*`). Scanning only the lane names found nothing.
     exports = ctx.ddir() / "exports"
     for path in sorted(exports.glob("card_*.png")) + sorted(exports.glob("bnd_*")):
         role = _BUNDLE_EXPORT_ROLES.get(path.suffix)
@@ -7421,11 +6479,8 @@ def _delivery_files(ctx: StageContext) -> list:
                 content_type=guessed or "application/octet-stream",
             )
         )
-    # The post chain's own output. `image-upscale` and `video-finish` end in a chain step, not in
-    # an export: SeedVR2 enlarged a still from 2560x1440 to 3840x2160, wrote it under
-    # `sequence/upscaled/frames/`, and the package came back carrying `qc/report.json` and nothing
-    # else — a finishing lane failing on its last stage having already done the work. `chain.json`
-    # names the final directory in `latest`, which is the one thing that knows which step was last.
+    # `image-upscale` and `video-finish` end in a chain step, not an export. `chain.json` names the
+    # final directory in `latest`, the one thing that knows which step was last.
     chain = ctx.ddir() / "sequence" / "chain.json"
     if chain.is_file():
         latest = Path(json.loads(chain.read_text()).get("latest", ""))
@@ -7457,12 +6512,7 @@ def _delivery_files(ctx: StageContext) -> list:
 
 
 def stage_compile_destination_packages(ctx: StageContext) -> StageOutput:
-    """One typed `DeliveryPackage` per destination, with a digest per file.
-
-    This stage used to write `{"status": "packaged"}` and not one word about *what* was packaged,
-    so the last step before a destination recorded neither the files nor their bytes — and a
-    package for a film that had failed to render looked exactly like one for a film that had not.
-    """
+    """One typed `DeliveryPackage` per destination, with a digest per file."""
     import datetime as dt
 
     from content_factory.schemas.delivery import DeliveryPackage
@@ -7513,24 +6563,7 @@ def stage_compile_destination_packages(ctx: StageContext) -> StageOutput:
 
 
 def _publish_to_gallery(ctx: StageContext, files: Sequence) -> str | None:
-    """Hard-link the run's film into one flat directory a person can browse.
-
-    A deliverable lives at ``deliverables/<id>/exports/final.mp4``, which is correct and unusable:
-    213 run directories held 34 films between them and finding one meant knowing the path. The
-    last stage of a run now also puts the film in ``<gallery>/<run>.mp4`` — one directory, named
-    by the run, so "where are the videos" has an answer that does not involve a glob.
-
-    A hard link rather than a copy: the bytes exist once, the gallery costs nothing, and deleting
-    it cannot lose a deliverable. Falls back to a copy across filesystems.
-
-    Only for a run whose project directory is inside the repo. A test with a `tmp_path` project
-    would otherwise litter the checkout with one file per test that happens to package something,
-    and the gallery is for the operator's own runs.
-
-    The primary video only, and only the first: `DELIVERY_CANDIDATES` is ordered, so `final.mp4`
-    wins over the post chain's own export on a lane that has both, which is the same precedence
-    the packages use.
-    """
+    """Hard-link the run's film into one flat directory a person can browse."""
     from content_factory.deliverables.gallery import publish_film
 
     film = primary_film(files)
@@ -7549,13 +6582,7 @@ def _publish_to_gallery(ctx: StageContext, files: Sequence) -> str | None:
 
 
 def primary_film(files: Sequence) -> DeliveryFile | None:
-    """The one file that is the film, or None for a lane that cut none.
-
-    ``DELIVERY_CANDIDATES`` is ordered and `_delivery_files` preserves that order, so the first
-    ``video`` is ``exports/final.mp4`` on a lane that has both it and the post chain's own export.
-    Shared with the harvest, which has to pick the same file out of the same manifest read on
-    another machine — two implementations of "which one is the film" would eventually disagree.
-    """
+    """The one file that is the film, or None for a lane that cut none."""
     return next((f for f in files if getattr(f, "role", "") == "video"), None)
 
 
@@ -7566,13 +6593,7 @@ def stage_package_qc(ctx: StageContext) -> StageOutput:
 
 
 def _log_execution(ctx: StageContext, unit: str, telemetry: dict | None = None) -> None:
-    """One line per unit of real work. ``telemetry`` appends what it cost, tab-separated.
-
-    The log stays greppable — the unit name is still the whole first field, and every existing
-    reader counts lines by prefix — but a line for an uncached generation now carries the wall
-    clock, the card before and after, and the server's own timing. That is the record that was
-    missing every time a run OOMed or a stage took three times what the server reported.
-    """
+    """One line per unit of real work."""
     log = ctx.project_dir / ".stages" / "executions.log"
     log.parent.mkdir(parents=True, exist_ok=True)
     line = unit
