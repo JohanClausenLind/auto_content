@@ -92,7 +92,7 @@ def regions_for(scene: Scene) -> tuple[NamedRegion, ...]:
     elif isinstance(template, DiagramTemplate):
         regions.append(NamedRegion(name="plot", box=area))
     elif isinstance(template, SourceDocumentTemplate):
-        regions.append(NamedRegion(name="page", box=area))
+        regions.append(NamedRegion(name="page", box=_page_region(area)))
     return tuple(regions)
 
 
@@ -413,6 +413,12 @@ class _Placer:
             f"give entity {entity_id} a short_label of at most {chars} characters, or split "
             f"scene {self.scene.scene_id} after beat {beat_id}, or use layout 'split'"
         )
+
+
+def _page_region(area: PixelBox) -> PixelBox:
+    """The area minus a label-high attribution bar below it, so the source stays named on screen."""
+    bar = _grid_up(line_px("label")) + UNIT
+    return PixelBox(x=area.x, y=area.y, width=area.width, height=area.height - bar)
 
 
 def _split(box: PixelBox) -> tuple[PixelBox, PixelBox]:

@@ -1,5 +1,5 @@
 // What every template reads from the bundle once, indexed by id, plus the canvas scale.
-import type { AssetRef, DiagramLayout, Entity, EvidenceDataset, ExplainerRenderBundle, Scene } from "@content-factory/content-schema-ts";
+import type { AssetRef, CaptureAsset, DiagramLayout, Entity, EvidenceDataset, ExplainerRenderBundle, Scene } from "@content-factory/content-schema-ts";
 import { createContext, useContext } from "react";
 
 import { scaleFor } from "./geometry";
@@ -13,6 +13,7 @@ export interface SceneEnv {
   layouts: ReadonlyMap<string, DiagramLayout>;
   entities: ReadonlyMap<string, Entity>;
   assets: ReadonlyMap<string, AssetRef>;
+  captures: ReadonlyMap<string, CaptureAsset>;
 }
 
 export const SceneEnvContext = createContext<SceneEnv | null>(null);
@@ -32,5 +33,6 @@ export function buildSceneEnv(bundle: ExplainerRenderBundle): SceneEnv {
     layouts: new Map(bundle.layouts.map((l) => [l.scene_id, l] as const)),
     entities: new Map(bundle.spec.entities.map((e) => [e.entity_id, e] as const)),
     assets: new Map(bundle.spec.assets.map((a) => [a.asset_id, a] as const)),
+    captures: new Map(bundle.captures.map((c) => [c.capture_id, c] as const)),
   };
 }

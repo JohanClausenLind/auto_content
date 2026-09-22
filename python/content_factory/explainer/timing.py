@@ -20,6 +20,7 @@ from content_factory.schemas.explainer import (
 )
 
 TimingSource = Literal["estimated", "aligned"]
+Durations = Mapping[tuple[str, int], int]
 DURATION_MS: dict[str, int] = {"beat": 300, "short": 600, "medium": 1200, "long": 2400}
 ESTIMATED_TOKEN_MS = 385
 BEFORE_MS = 300
@@ -135,7 +136,10 @@ class _Shown:
 
 
 def resolve_timing(
-    spec: VisualSpec, clock: TokenClock, texts: Mapping[str, Mapping[str, str]]
+    spec: VisualSpec,
+    clock: TokenClock,
+    texts: Mapping[str, Mapping[str, str]],
+    durations: Mapping[str, Durations] | None = None,
 ) -> tuple[TimedScene, ...]:
     """Absolute ms spans for every action and scene, or timing issues for texts cut short."""
     scenes: list[TimedScene] = []
@@ -149,7 +153,11 @@ def resolve_timing(
                 scenes[-1].scene_id, scenes[-1].start_ms, start, scenes[-1].actions
             )
         actions, shown[scene.scene_id] = _scene_actions(
-            scene, clock, start, texts.get(scene.scene_id, {})
+            scene,
+            clock,
+            start,
+            texts.get(scene.scene_id, {}),
+            (durations or {}).get(scene.scene_id),
         )
         last_end = max((a.end_ms for a in actions), default=start)
         scenes.append(TimedScene(scene.scene_id, start, last_end, actions))
@@ -163,9 +171,15 @@ def resolve_timing(
 
 
 def _scene_actions(
-    scene: Scene, clock: TokenClock, scene_start: int, texts: Mapping[str, str]
+    scene: Scene,
+    clock: TokenClock,
+    scene_start: int,
+    texts: Mapping[str, str],
+    overrides: Durations | None = None,
 ) -> tuple[tuple[TimedAction, ...], list[_Shown]]:
+    """Spans per action; with overrides (a source scene) actions run one after another."""
     actions: list[TimedAction] = []
+    cursor = scene_start
     shown: list[_Shown] = [
         _Shown(eid, texts[eid], scene_start, None, None)
         for eid in scene.initial_visible
@@ -176,6 +190,9 @@ def _scene_actions(
         anchor = max(clock.anchor_ms(beat.cue), scene_start)
         for k, action in enumerate(beat.actions):
             duration = DURATION_MS[beat.cue.duration_class]
+            if overrides is not None:
+                anchor = max(anchor, cursor)
+                duration = overrides.get((beat.beat_id, k), duration)
             targets: tuple[str, ...] = tuple(getattr(action, "targets", ()))
             if action.action == "hold":
                 # A hold reads what appeared since the last hold as one passage, then pauses.
@@ -201,6 +218,7 @@ def _scene_actions(
             actions.append(
                 TimedAction(beat.beat_id, k, action.action, anchor, anchor + duration, targets)
             )
+            cursor = anchor + duration
     return tuple(actions), shown
 
 

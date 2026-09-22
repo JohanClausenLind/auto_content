@@ -40,14 +40,14 @@ runtime (`docs/CHANNEL_PROFILE.md`, `EDITORIAL.md`, `DESIGN_SYSTEM.md`, `PLANNER
 - [x] 0 audit — GREEN (2026-09-15): table exists, every "works" row has its command, nothing deleted
 - [x] 1 contracts and evidence — GREEN (2026-09-22): B1 arithmetic, B2 invalidation, B3 actionable errors
 - [x] 2 compiler and render core — GREEN (2026-09-22): C1 seek determinism, C2 label bounds, C3 post-encode APCA and edge contrast, C4 60 s compile
-- [ ] 3 real source documents — gates D1–D4 (Scoop capture, pywb replay, OCR check)
+- [x] 3 real source documents — GREEN (2026-09-22): D1 highlight tracking, D2 passage cases, D3 OCR rejection, D4 replay after change
 - [ ] 4 narration and alignment — gates E1, E2 (Qwen3-TTS measured, CTC/MFA aligner, licence gate)
 - [ ] 5 QC, reviewer, repair, delivery — gates F1–F6 (Qwen3.8-27B W4A16 reviewer, advisory first)
 - [ ] 6 editorial workflow and demonstration episodes
 
 ## Next smallest task
 
-Explainer Phase 3 (source documents, gate D1 left) and Phase 4 (TTS benchmark left); then Phase 5.
+Explainer Phase 4 (TTS benchmark running) and Phase 5 (deterministic QC, reviewer, repair, delivery).
 Before that, the three operator gates below stand as they were:
 
 1. **Live Bluesky gate.** Put a designated TEST account's `BLUESKY_HANDLE` /

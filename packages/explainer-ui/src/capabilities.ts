@@ -6,9 +6,12 @@ export interface ExplainerCompositionProps extends Record<string, unknown> {
   bundle: ExplainerRenderBundle;
 }
 
-export const SUPPORTED_TEMPLATES: ReadonlySet<string> = new Set(["chart", "diagram", "text"]);
-const SOURCE_DOCUMENT_ACTIONS: ReadonlySet<string> = new Set(["show_source", "scroll_to", "focus_passage", "highlight_quote"]);
-const LATER = "the source_document renderer arrives in Phase 3";
+export const SUPPORTED_TEMPLATES: ReadonlySet<string> = new Set(["chart", "diagram", "text", "source_document"]);
+
+/** An absolute local path the browser cannot reach; the bundle needs staging first (render.stage_captures). */
+export function isLocalPath(path: string): boolean {
+  return /^(\/|[A-Za-z]:[\\/])/.test(path);
+}
 
 /** One line per scene this renderer cannot draw yet, or whose bundle data it cannot find. */
 export function bundleCapabilityErrors(bundle: ExplainerRenderBundle): string[] {
@@ -17,18 +20,18 @@ export function bundleCapabilityErrors(bundle: ExplainerRenderBundle): string[] 
   const layouts = new Set(bundle.layouts.map((l) => l.scene_id));
   const datasets = new Set(bundle.datasets.map((d) => d.dataset_id));
   const assets = new Map(bundle.spec.assets.map((a) => [a.asset_id, a] as const));
+  const captures = new Map(bundle.captures.map((c) => [c.capture_id, c] as const));
   const specScenes = new Set<string>();
   for (const scene of bundle.spec.scenes) {
     specScenes.add(scene.scene_id);
     const template = scene.template;
-    if (!SUPPORTED_TEMPLATES.has(template.template)) {
-      errors.push(`scene ${scene.scene_id} uses ${template.template}; ${LATER}`);
-    } else {
-      for (const beat of scene.beats) {
-        for (const action of beat.actions) {
-          if (SOURCE_DOCUMENT_ACTIONS.has(action.action)) errors.push(`scene ${scene.scene_id} beat ${beat.beat_id} uses ${action.action}; ${LATER}`);
-        }
-      }
+    if (!SUPPORTED_TEMPLATES.has(template.template)) errors.push(`scene ${scene.scene_id} uses ${template.template}, which this renderer cannot draw`);
+    if (template.template === "source_document") {
+      const asset = assets.get(template.capture_asset_id);
+      const capture = asset?.capture_id == null ? undefined : captures.get(asset.capture_id);
+      if (!capture) errors.push(`scene ${scene.scene_id} shows capture ${asset?.capture_id ?? template.capture_asset_id}, which is not in bundle.captures`);
+      const local = capture?.tiles.find((t) => isLocalPath(t.path));
+      if (local) errors.push(`capture ${capture?.capture_id} tile ${local.path} is a local path; stage the bundle first (content_factory.explainer.render.stage_captures)`);
     }
     if (template.template === "diagram" && !layouts.has(scene.scene_id)) errors.push(`scene ${scene.scene_id} is a diagram without a DiagramLayout in bundle.layouts`);
     if (template.template === "chart") {

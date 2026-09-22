@@ -6,7 +6,7 @@ import hashlib
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
-from content_factory.explainer import render
+from content_factory.explainer import render, source_scene
 from content_factory.explainer.colors import allocate_colors
 from content_factory.explainer.errors import ContractIssue, EpisodeInvalidError
 from content_factory.explainer.fonts import FONTS_VERSION
@@ -29,6 +29,7 @@ from content_factory.explainer.timing import (
 from content_factory.explainer.tokens_gen import DESIGN_SYSTEM_VERSION
 from content_factory.explainer.validate import validate_episode
 from content_factory.schemas.explainer import (
+    CaptureAsset,
     CompiledExplainerScene,
     DiagramLayout,
     DiagramTemplate,
@@ -41,6 +42,7 @@ from content_factory.schemas.explainer import (
     ResolvedAction,
     ScriptPlan,
     SourceCaptureManifest,
+    SourceDocumentTemplate,
     VisualSpec,
 )
 
@@ -55,10 +57,14 @@ def compile_episode(
     *,
     narration: NarrationManifest | None = None,
     manifests: Iterable[SourceCaptureManifest] = (),
+    captures: Iterable[CaptureAsset] = (),
     layout_diagrams: LayoutDiagrams | None = None,
     fps: int = 30,
 ) -> ExplainerRenderBundle:
-    validate_episode(pack, script, spec, manifests, narration)
+    captures = tuple(captures)
+    known = {m.capture_id: m for m in manifests}
+    known.update({c.capture_id: c.manifest for c in captures})
+    validate_episode(pack, script, spec, known.values(), narration)
     issues: list[ContractIssue] = []
     colors = _collect(lambda: allocate_colors(spec), issues) or {}
     boxes: dict[str, SceneBoxes] = {}
@@ -66,33 +72,40 @@ def compile_episode(
         placed = _collect(lambda s=scene: boxes_for(s, spec), issues)
         if placed is not None:
             boxes[scene.scene_id] = placed
+    plans = _collect(lambda: source_scene.plan_source_scenes(spec, captures), issues) or {}
     if issues:
         raise EpisodeInvalidError(issues)
     clock = TokenClock(script, narration)
-    timed = resolve_timing(spec, clock, {sid: b.texts for sid, b in boxes.items()})
+    durations = {sid: plan.durations_ms() for sid, plan in plans.items()}
+    timed = resolve_timing(spec, clock, {sid: b.texts for sid, b in boxes.items()}, durations)
     frames = scene_frames(timed, fps)
-    scenes = tuple(
-        CompiledExplainerScene(
-            scene_id=scene.scene_id,
-            start_frame=start,
-            duration_frames=duration,
-            regions=regions_for(scene),
-            colors=colors[scene.scene_id],
-            boxes=boxes[scene.scene_id].boxes,
-            actions=tuple(
-                ResolvedAction(
-                    beat_id=a.beat_id,
-                    index=a.index,
-                    action=a.action,
-                    start_frame=to_frames(a.start_ms, fps),
-                    end_frame=to_frames(a.end_ms, fps),
-                    targets=a.targets,
-                )
-                for a in t.actions
-            ),
+    scenes: list[CompiledExplainerScene] = []
+    for scene, t, (start, duration) in zip(spec.scenes, timed, frames, strict=True):
+        plan = plans.get(scene.scene_id)
+        camera, highlights = plan.tracks(t.actions, fps, start) if plan else ((), ())
+        scenes.append(
+            CompiledExplainerScene(
+                scene_id=scene.scene_id,
+                start_frame=start,
+                duration_frames=duration,
+                regions=regions_for(scene),
+                colors=colors[scene.scene_id],
+                boxes=boxes[scene.scene_id].boxes,
+                actions=tuple(
+                    ResolvedAction(
+                        beat_id=a.beat_id,
+                        index=a.index,
+                        action=a.action,
+                        start_frame=to_frames(a.start_ms, fps),
+                        end_frame=to_frames(a.end_ms, fps),
+                        targets=a.targets,
+                    )
+                    for a in t.actions
+                ),
+                camera=camera,
+                highlights=highlights,
+            )
         )
-        for scene, t, (start, duration) in zip(spec.scenes, timed, frames, strict=True)
-    )
     spec_hash = spec.spec_hash()
     timeline = ExplainerTimeline(
         timeline_id=f"tl_{spec_hash[:12]}",
@@ -105,7 +118,7 @@ def compile_episode(
         width=CANVAS_WIDTH,
         height=CANVAS_HEIGHT,
         total_frames=sum(d for _, d in frames),
-        scenes=scenes,
+        scenes=tuple(scenes),
         inputs=(
             InputHash(name="pack", sha256=pack.pack_hash()),
             InputHash(name="script", sha256=script.script_hash()),
@@ -124,12 +137,19 @@ def compile_episode(
     }
     layouts = (layout_diagrams or render.layout_diagrams)(spec, plots) if plots else ()
     referenced = {a.dataset_id for a in spec.assets if a.dataset_id is not None}
+    assets = {a.asset_id: a for a in spec.assets}
+    shown = {
+        assets[s.template.capture_asset_id].capture_id
+        for s in spec.scenes
+        if isinstance(s.template, SourceDocumentTemplate)
+    }
     return ExplainerRenderBundle(
         bundle_id=f"bndl_{timeline.content_hash()[:16]}",
         spec=spec,
         timeline=timeline,
         datasets=tuple(d for d in pack.datasets if d.dataset_id in referenced),
         layouts=tuple(layouts),
+        captures=tuple(c for c in captures if c.capture_id in shown),
         design_system_version=DESIGN_SYSTEM_VERSION,
         fonts_version=FONTS_VERSION,
     )

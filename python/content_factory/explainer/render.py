@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -11,11 +12,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from content_factory.schemas.base import canonical_dumps
-from content_factory.schemas.explainer import DiagramLayout, PixelBox, VisualSpec
+from content_factory.schemas.base import canonical_dumps, file_sha256
+from content_factory.schemas.explainer import (
+    CaptureTile,
+    DiagramLayout,
+    ExplainerRenderBundle,
+    PixelBox,
+    VisualSpec,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS_DIR = REPO_ROOT / "apps" / "renderer" / "scripts"
+# The timeline renderer's staging directory (video/render.py): what staticFile() can reach.
+PUBLIC_ASSETS = REPO_ROOT / "apps" / "renderer" / "public" / "assets"
+URL_PREFIXES = ("http:", "https:", "data:", "blob:", "file:", "assets/")
 FrameMode = Literal["sequential", "stills"]
 
 
@@ -87,6 +97,40 @@ def render_frames(
         msg = f"{script.name} wrote no {', '.join(missing)} in {out_dir}"
         raise RuntimeError(msg)
     return paths
+
+
+def stage_captures(bundle: ExplainerRenderBundle) -> ExplainerRenderBundle:
+    """Copy every tile into public/assets by content hash, as the timeline stages its images."""
+    if not bundle.captures:
+        return bundle
+    captures = tuple(
+        c.model_copy(update={"tiles": tuple(_stage_tile(t) for t in c.tiles)})
+        for c in bundle.captures
+    )
+    return bundle.model_copy(update={"captures": captures})
+
+
+def _stage_tile(tile: CaptureTile) -> CaptureTile:
+    if tile.path.startswith(URL_PREFIXES):
+        return tile
+    src = Path(tile.path)
+    if not src.is_file():
+        msg = f"capture tile {tile.path} is missing"
+        raise FileNotFoundError(msg)
+    digest = file_sha256(src)
+    if digest != tile.sha256:
+        msg = (
+            f"capture tile {tile.path} hashes to {digest[:12]}, the bundle says {tile.sha256[:12]}"
+        )
+        raise ValueError(msg)
+    name = f"{digest}{src.suffix.lower()}"
+    dst = PUBLIC_ASSETS / name
+    if not dst.exists():
+        PUBLIC_ASSETS.mkdir(parents=True, exist_ok=True)
+        tmp = dst.with_name(f".{name}.{os.getpid()}.tmp")
+        shutil.copyfile(src, tmp)
+        tmp.replace(dst)
+    return tile.model_copy(update={"path": f"assets/{name}"})
 
 
 def script_path(name: str) -> Path:

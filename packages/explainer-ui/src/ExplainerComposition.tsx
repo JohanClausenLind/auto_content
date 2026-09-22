@@ -9,6 +9,7 @@ import { tokenHex } from "./palette";
 import { resolveSceneState } from "./state";
 import { ChartTemplate } from "./templates/ChartTemplate";
 import { DiagramTemplate } from "./templates/DiagramTemplate";
+import { SourceDocumentTemplate } from "./templates/SourceDocumentTemplate";
 import { TextTemplate } from "./templates/TextTemplate";
 import { TEXT_STACK } from "./text";
 
@@ -31,8 +32,10 @@ function CompiledSceneView({ compiled }: { compiled: CompiledExplainerScene }): 
       return <DiagramTemplate compiled={compiled} scene={scene} template={template} state={state} layout={layout} />;
     case "text":
       return <TextTemplate compiled={compiled} scene={scene} template={template} state={state} />;
+    case "source_document":
+      return <SourceDocumentTemplate compiled={compiled} scene={scene} template={template} state={state} />;
     default:
-      throw new Error(`scene ${compiled.scene_id} uses ${template.template}; the source_document renderer arrives in Phase 3`);
+      throw new Error(`scene ${compiled.scene_id} uses an unknown template`);
   }
 }
 

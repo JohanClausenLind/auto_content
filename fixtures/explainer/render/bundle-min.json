@@ -90,7 +90,7 @@
         "template": {
           "template": "chart",
           "chart_kind": "stacked_bar",
-          "title": "Installed wind and solar capacity",
+          "title": "",
           "dataset_asset_id": "ast_dsenergy01",
           "x": {
             "field": "year",
@@ -423,7 +423,7 @@
     "schema_version": 1,
     "timeline_id": "tl_min0000001",
     "spec_id": "spec_min00001",
-    "spec_hash": "045470c66c7626797636586b7de578318d3a2ad169316f1e9df13a5d85b46a66",
+    "spec_hash": "26a47c523351342cbf698a4c0e45b85d81855f2c8f998d5d04ce76cad67aa649",
     "script_hash": "e0ff4a6c219773b6aa45bd786bf1266597f535730f5407fd94a0e4c3c7a08be9",
     "pack_hash": "cebca6248a603570e1c49e92b395f4ebad75e346669349e4ca2a8e5295d5ca4e",
     "narration_manifest_id": null,
@@ -527,7 +527,9 @@
             "end_frame": 84,
             "targets": []
           }
-        ]
+        ],
+        "camera": [],
+        "highlights": []
       },
       {
         "scene_id": "scn_num00001",
@@ -556,7 +558,7 @@
             },
             "font_px": 72,
             "lines": 1,
-            "text": "124 GW"
+            "text": null
           },
           {
             "entity_id": "ent_numlbl01",
@@ -568,7 +570,7 @@
             },
             "font_px": 34,
             "lines": 1,
-            "text": "installed solar capacity, 2024"
+            "text": null
           }
         ],
         "actions": [
@@ -592,7 +594,9 @@
               "ent_numlbl01"
             ]
           }
-        ]
+        ],
+        "camera": [],
+        "highlights": []
       },
       {
         "scene_id": "scn_flow0001",
@@ -637,7 +641,7 @@
             },
             "font_px": 28,
             "lines": 1,
-            "text": "Sunlight"
+            "text": null
           },
           {
             "entity_id": "ent_npanel01",
@@ -649,7 +653,7 @@
             },
             "font_px": 28,
             "lines": 1,
-            "text": "Solar panel"
+            "text": null
           },
           {
             "entity_id": "ent_ngrid001",
@@ -661,7 +665,7 @@
             },
             "font_px": 28,
             "lines": 1,
-            "text": "Grid"
+            "text": null
           }
         ],
         "actions": [
@@ -718,7 +722,9 @@
               "ent_npanel01"
             ]
           }
-        ]
+        ],
+        "camera": [],
+        "highlights": []
       }
     ],
     "inputs": [],
@@ -857,6 +863,7 @@
       ]
     }
   ],
+  "captures": [],
   "design_system_version": 1,
   "fonts_version": "fontsource-5.3.0"
 }

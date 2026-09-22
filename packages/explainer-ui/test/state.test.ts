@@ -25,6 +25,8 @@ function fixture(actions: ResolvedAction[], initial: string[] = [A, B], beatActi
     colors: [],
     boxes: [{ entity_id: A, box: { x: 900, y: 500, width: 120, height: 80 }, font_px: null, lines: 1, text: null }],
     actions,
+    camera: [],
+    highlights: [],
   };
   const scene: Scene = {
     scene_id: "scn_state0001",

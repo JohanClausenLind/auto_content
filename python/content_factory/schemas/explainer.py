@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from itertools import pairwise
 from typing import Annotated, Any, Literal
 
 from pydantic import Field, model_validator
@@ -1059,6 +1060,49 @@ class ResolvedAction(SchemaModel):
         return self
 
 
+CameraEasing = Literal["move", "standard", "hold"]
+MAX_ZOOM = 2.5
+
+
+class CameraKey(SchemaModel):
+    """Page viewport at a timeline frame: scroll in page px, zoom 1 = page width fits the region."""
+
+    frame: int = Field(ge=0)
+    scroll_x: float = Field(default=0.0, ge=0, allow_inf_nan=False)
+    scroll_y: float = Field(ge=0, allow_inf_nan=False)
+    zoom: float = Field(ge=1, le=MAX_ZOOM, allow_inf_nan=False)
+    easing: CameraEasing = "hold"
+
+
+class HighlightKey(SchemaModel):
+    """A quote's overlay: lines sweep in over start..end, then stay until the clear fade, if any."""
+
+    quote_id: OpaqueId
+    start_frame: int = Field(ge=0)
+    end_frame: int = Field(ge=0)
+    rects: tuple[PageRect, ...] = Field(min_length=1)
+    rgba: str = Field(pattern=r"^rgba\(\d{1,3}, \d{1,3}, \d{1,3}, (0|0?\.\d{1,3}|1)\)$")
+    clear_start_frame: int | None = Field(default=None, ge=0)
+    clear_end_frame: int | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> HighlightKey:
+        if self.end_frame < self.start_frame:
+            msg = f"highlight {self.quote_id} ends before it starts"
+            raise ValueError(msg)
+        if (self.clear_start_frame is None) != (self.clear_end_frame is None):
+            msg = f"highlight {self.quote_id} needs both clear frames or neither"
+            raise ValueError(msg)
+        if self.clear_start_frame is not None and self.clear_end_frame is not None:
+            if (
+                self.clear_start_frame < self.end_frame
+                or self.clear_end_frame < self.clear_start_frame
+            ):
+                msg = f"highlight {self.quote_id} clears before its sweep ends"
+                raise ValueError(msg)
+        return self
+
+
 class CompiledExplainerScene(SchemaModel):
     scene_id: OpaqueId
     start_frame: int = Field(ge=0)
@@ -1067,6 +1111,16 @@ class CompiledExplainerScene(SchemaModel):
     colors: tuple[EntityColor, ...] = ()
     boxes: tuple[EntityBox, ...] = ()
     actions: tuple[ResolvedAction, ...] = ()
+    camera: tuple[CameraKey, ...] = ()
+    highlights: tuple[HighlightKey, ...] = ()
+
+    @model_validator(mode="after")
+    def _camera_monotonic(self) -> CompiledExplainerScene:
+        frames = [k.frame for k in self.camera]
+        if any(b <= a for a, b in pairwise(frames)):
+            msg = f"scene {self.scene_id}: camera keys must be strictly increasing in frame"
+            raise ValueError(msg)
+        return self
 
 
 class InputHash(SchemaModel):
@@ -1134,14 +1188,40 @@ class DiagramLayout(SchemaModel):
     edges: tuple[LayoutEdge, ...] = ()
 
 
+class CaptureTile(SchemaModel):
+    """One viewport-high PNG of the page at y_px; path is local until the renderer stages it."""
+
+    path: str = Field(min_length=1, max_length=2000)
+    y_px: float = Field(ge=0, allow_inf_nan=False)
+    width: int = Field(ge=1)
+    height: int = Field(ge=1)
+    sha256: Sha256Hex
+
+
+class CaptureAsset(SchemaModel):
+    """A capture the bundle carries: its manifest plus the page tiles the renderer draws."""
+
+    capture_id: OpaqueId
+    manifest: SourceCaptureManifest
+    tiles: tuple[CaptureTile, ...] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _manifest_matches(self) -> CaptureAsset:
+        if self.manifest.capture_id != self.capture_id:
+            msg = f"capture {self.capture_id} carries manifest {self.manifest.capture_id}"
+            raise ValueError(msg)
+        return self
+
+
 class ExplainerRenderBundle(VersionedModel):
-    """Everything the renderer reads: spec, compiled timeline, data and precomputed layouts."""
+    """Everything the renderer reads: spec, compiled timeline, data, layouts and captures."""
 
     bundle_id: OpaqueId
     spec: VisualSpec
     timeline: ExplainerTimeline
     datasets: tuple[EvidenceDataset, ...] = ()
     layouts: tuple[DiagramLayout, ...] = ()
+    captures: tuple[CaptureAsset, ...] = ()
     design_system_version: int = Field(ge=1)
     fonts_version: str = Field(min_length=1, max_length=40)
 
@@ -1160,6 +1240,7 @@ class ExplainerRenderBundle(VersionedModel):
             _must_exist(scene.scene_id, compiled, "bundle", "compiled scene")
         datasets = {d.dataset_id for d in self.datasets}
         layouts = {layout.scene_id for layout in self.layouts}
+        captures = _unique_ids("capture", [c.capture_id for c in self.captures])
         assets = {a.asset_id: a for a in self.spec.assets}
         for scene in self.spec.scenes:
             template = scene.template
@@ -1171,6 +1252,11 @@ class ExplainerRenderBundle(VersionedModel):
             if isinstance(template, DiagramTemplate) and scene.scene_id not in layouts:
                 msg = f"diagram scene {scene.scene_id} has no precomputed layout"
                 raise ValueError(msg)
+            if isinstance(template, SourceDocumentTemplate):
+                capture_id = assets[template.capture_asset_id].capture_id
+                if capture_id not in captures:
+                    msg = f"scene {scene.scene_id} shows capture {capture_id}: not in bundle"
+                    raise ValueError(msg)
         return self
 
 

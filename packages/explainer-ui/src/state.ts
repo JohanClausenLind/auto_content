@@ -41,7 +41,7 @@ export interface FilterState {
   progress: number;
 }
 
-/** Computed in Phase 2, rendered in Phase 3; scrollY needs the capture manifest and stays null. */
+/** Action progress only; the camera itself is CompiledExplainerScene.camera, read by source.ts. */
 export interface SourceDocumentState {
   shown: number;
   sectionId: string | null;
