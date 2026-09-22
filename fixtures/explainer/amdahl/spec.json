@@ -1,0 +1,369 @@
+{
+  "assets": [
+    {
+      "asset_id": "ast_latency_split",
+      "capture_id": null,
+      "dataset_id": "ds_latency_split",
+      "kind": "dataset",
+      "sha256": "a54d91052aae1c843b9983b51a679aad0b17431c82e62b68f028a8a95aa03af5"
+    }
+  ],
+  "capability_requests": [],
+  "design_system_version": 1,
+  "entities": [
+    {
+      "claim_ids": [
+        "clm_compute_80ms",
+        "clm_compute_40ms"
+      ],
+      "entity_id": "ent_series_compute",
+      "kind": "series",
+      "label": "Computation",
+      "short_label": "Computation"
+    },
+    {
+      "claim_ids": [
+        "clm_other_20ms"
+      ],
+      "entity_id": "ent_series_other",
+      "kind": "series",
+      "label": "Other work",
+      "short_label": "Other"
+    },
+    {
+      "claim_ids": [
+        "clm_total_100ms"
+      ],
+      "entity_id": "ent_total_base",
+      "kind": "value",
+      "label": "Total before",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_total_60ms"
+      ],
+      "entity_id": "ent_total_fast",
+      "kind": "value",
+      "label": "Total after",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_total_60ms"
+      ],
+      "entity_id": "ent_big_sixty",
+      "kind": "text",
+      "label": "60 ms",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_amdahl_1967"
+      ],
+      "entity_id": "ent_amdahl_quote",
+      "kind": "quote",
+      "label": "Amdahl 1967",
+      "short_label": ""
+    }
+  ],
+  "pack_hash": "5d1b6dfd2aa5b011f6300ad8884d6ce513ea920034b05e3d742bc212176ec42f",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_series_compute",
+                "ent_series_other"
+              ]
+            }
+          ],
+          "beat_id": "bt_reveal_series",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_build_model",
+            "token_end": 1,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_series_compute"
+              ]
+            }
+          ],
+          "beat_id": "bt_highlight_compute",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_build_model",
+            "token_end": 3,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_total_base"
+              ]
+            }
+          ],
+          "beat_id": "bt_reveal_base",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_build_model",
+            "token_end": 12,
+            "token_start": 11
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "annotate",
+              "claim_id": "clm_total_100ms",
+              "targets": [
+                "ent_total_base"
+              ],
+              "text": "100 ms"
+            }
+          ],
+          "beat_id": "bt_annotate_base",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_build_model",
+            "token_end": 12,
+            "token_start": 11
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_total_fast"
+              ]
+            }
+          ],
+          "beat_id": "bt_reveal_fast",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_change_variable",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "compare",
+              "targets": [
+                "ent_total_base",
+                "ent_total_fast"
+              ]
+            }
+          ],
+          "beat_id": "bt_compare_totals",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "on",
+            "segment_id": "seg_change_variable",
+            "token_end": 11,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_hold_bars",
+          "cue": {
+            "duration_class": "long",
+            "relation": "after",
+            "segment_id": "seg_change_variable",
+            "token_end": 11,
+            "token_start": 11
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_compute_80ms",
+        "clm_other_20ms",
+        "clm_total_100ms",
+        "clm_compute_40ms",
+        "clm_total_60ms"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the wait as two stacked parts so the untouched part is visible early.",
+      "scene_id": "scn_latency_bars",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "stacked_bar",
+        "dataset_asset_id": "ast_latency_split",
+        "series": [
+          {
+            "entity_id": "ent_series_compute",
+            "value": "computation"
+          },
+          {
+            "entity_id": "ent_series_other",
+            "value": "other"
+          }
+        ],
+        "series_field": "part",
+        "template": "chart",
+        "x": {
+          "field": "scenario",
+          "kind": "nominal",
+          "title": "Scenario",
+          "unit": ""
+        },
+        "y": {
+          "field": "ms",
+          "kind": "quantitative",
+          "title": "ms",
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_big_sixty"
+              ]
+            }
+          ],
+          "beat_id": "bt_reveal_sixty",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_change_variable",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_hold_sixty",
+          "cue": {
+            "duration_class": "long",
+            "relation": "after",
+            "segment_id": "seg_change_variable",
+            "token_end": 11,
+            "token_start": 11
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_total_60ms"
+      ],
+      "initial_visible": [],
+      "layout": "overlay",
+      "purpose": "Land the answer as one number the viewer cannot miss.",
+      "scene_id": "scn_big_sixty",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_total_60ms",
+            "entity_id": "ent_big_sixty",
+            "text": "60 ms"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_quote"
+              ]
+            }
+          ],
+          "beat_id": "bt_reveal_card",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_show_limits",
+            "token_end": 3,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_hold_card",
+          "cue": {
+            "duration_class": "long",
+            "relation": "after",
+            "segment_id": "seg_show_limits",
+            "token_end": 17,
+            "token_start": 17
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_amdahl_1967"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Name the general result and its author; the illustration is not the proof.",
+      "scene_id": "scn_amdahl_card",
+      "section": "show_limits",
+      "source_ids": [
+        "src_amdahl_1967"
+      ],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_amdahl_1967",
+            "entity_id": "ent_amdahl_quote",
+            "text": "Amdahl (1967) argued that the serial fraction of a program bounds the speed-up from parallel hardware."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "script_hash": "b9cd2a01188856efe1682348c5dd45c4c6832d29fc9fa3ee48f542702e8ff7dd",
+  "script_id": "scr_amdahl_demo",
+  "spec_id": "vs_amdahl_demo"
+}

@@ -965,6 +965,82 @@ WEIGHT_PACKAGES: tuple[WeightPackage, ...] = (
         index_name="Blender-Assets",
         caveat="built locally rather than downloaded; needs Blender on PATH",
     ),
+    WeightPackage(
+        key="qwen3.8-27b-int4",
+        name="RedHatAI/Qwen3.8-27B-INT4",
+        purpose="Explainer visual reviewer: Qwen3.8-27B at W4A16 for vLLM on Ampere",
+        store_dir="qwen3.8-27b-int4",
+        license="apache-2.0",
+        approx_bytes=19_472_989_747,
+        provides=(
+            ProvidedFile(store_rel="model.safetensors", min_bytes=18231319902),
+            ProvidedFile(store_rel="tokenizer.json", min_bytes=19589538),
+            ProvidedFile(store_rel="model.safetensors.index.json", min_bytes=167336),
+            ProvidedFile(store_rel="config.json", min_bytes=1000),
+        ),
+        hf=(
+            HuggingFaceSource(
+                repo_id="RedHatAI/Qwen3.8-27B-INT4",
+                revision="7fb3aaca2d21c0db4716572945208db40cef9966",
+            ),
+        ),
+        index_category="vision_review",
+        index_name="Qwen3.8-27B-INT4",
+    ),
+    WeightPackage(
+        key="wav2vec2-base-960h",
+        name="facebook/wav2vec2-base-960h",
+        purpose="Explainer forced alignment: CTC emissions for torchaudio forced_align (Apache-2.0)",
+        store_dir="wav2vec2-base-960h",
+        license="apache-2.0",
+        approx_bytes=371_000_000,
+        provides=(
+            ProvidedFile(store_rel="model.safetensors", min_bytes=370055742),
+            ProvidedFile(store_rel="config.json", min_bytes=1000),
+            ProvidedFile(store_rel="vocab.json", min_bytes=200),
+            ProvidedFile(store_rel="preprocessor_config.json", min_bytes=100),
+            ProvidedFile(store_rel="tokenizer_config.json", min_bytes=50),
+            ProvidedFile(store_rel="special_tokens_map.json", min_bytes=50),
+        ),
+        hf=(
+            HuggingFaceSource(
+                repo_id="facebook/wav2vec2-base-960h",
+                revision="22aad52d435eb6dbaf354bdad9b0da84ce7d6156",
+                files=(
+                    "model.safetensors",
+                    "config.json",
+                    "vocab.json",
+                    "preprocessor_config.json",
+                    "tokenizer_config.json",
+                    "special_tokens_map.json",
+                ),
+            ),
+        ),
+        index_category="speech",
+        index_name="wav2vec2-base-960h",
+    ),
+    WeightPackage(
+        key="chatterbox-turbo",
+        name="ResembleAI/chatterbox-turbo",
+        purpose="Explainer TTS benchmark alternate to Qwen3-TTS (MIT weights, watermarked output)",
+        store_dir="chatterbox-turbo",
+        license="mit",
+        approx_bytes=4_044_184_736,
+        provides=(
+            ProvidedFile(store_rel="t3_turbo_v1.safetensors", min_bytes=1877170450),
+            ProvidedFile(store_rel="s3gen_meanflow.safetensors", min_bytes=1043577535),
+            ProvidedFile(store_rel="s3gen.safetensors", min_bytes=1035354927),
+            ProvidedFile(store_rel="ve.safetensors", min_bytes=5581868),
+        ),
+        hf=(
+            HuggingFaceSource(
+                repo_id="ResembleAI/chatterbox-turbo",
+                revision="749d1c1a46eb10492095d68fbcf55691ccf137cd",
+            ),
+        ),
+        index_category="speech",
+        index_name="Chatterbox-Turbo",
+    ),
 )
 
 

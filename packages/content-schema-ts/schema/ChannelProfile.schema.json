@@ -1,0 +1,159 @@
+{
+  "$defs": {
+    "ChannelEpisodeFormat": {
+      "additionalProperties": false,
+      "properties": {
+        "fps": {
+          "maximum": 60,
+          "minimum": 24,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "height": {
+          "minimum": 180,
+          "title": "Height",
+          "type": "integer"
+        },
+        "language": {
+          "default": "en",
+          "maxLength": 8,
+          "minLength": 2,
+          "title": "Language",
+          "type": "string"
+        },
+        "max_length_s": {
+          "minimum": 30,
+          "title": "Max Length S",
+          "type": "integer"
+        },
+        "min_length_s": {
+          "minimum": 30,
+          "title": "Min Length S",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 320,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fps",
+        "height",
+        "language",
+        "max_length_s",
+        "min_length_s",
+        "width"
+      ],
+      "title": "ChannelEpisodeFormat",
+      "type": "object"
+    },
+    "ChannelNarrationPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "recorded_seconds_max": {
+          "minimum": 0,
+          "title": "Recorded Seconds Max",
+          "type": "integer"
+        },
+        "recorded_seconds_min": {
+          "minimum": 0,
+          "title": "Recorded Seconds Min",
+          "type": "integer"
+        },
+        "voice_kind": {
+          "enum": [
+            "creator_recorded_plus_clone",
+            "creator_recorded",
+            "clone_only"
+          ],
+          "title": "Voice Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recorded_seconds_max",
+        "recorded_seconds_min",
+        "voice_kind"
+      ],
+      "title": "ChannelNarrationPolicy",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ChannelProfile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Who the channel is for and what an episode is; the planner and compiler read it.",
+  "properties": {
+    "audience": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Audience",
+      "type": "string"
+    },
+    "channel_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Channel Id",
+      "type": "string"
+    },
+    "commercial_stance": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Commercial Stance",
+      "type": "string"
+    },
+    "episode_format": {
+      "$ref": "#/$defs/ChannelEpisodeFormat"
+    },
+    "excluded_topics": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Excluded Topics",
+      "type": "array"
+    },
+    "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "narration": {
+      "$ref": "#/$defs/ChannelNarrationPolicy"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "sponsors_allowed": {
+      "default": false,
+      "title": "Sponsors Allowed",
+      "type": "boolean"
+    },
+    "topic_domain": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Topic Domain",
+      "type": "array"
+    }
+  },
+  "required": [
+    "audience",
+    "channel_id",
+    "commercial_stance",
+    "episode_format",
+    "excluded_topics",
+    "name",
+    "narration",
+    "schema_version",
+    "sponsors_allowed",
+    "topic_domain"
+  ],
+  "title": "ChannelProfile",
+  "type": "object"
+}

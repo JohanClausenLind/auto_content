@@ -1,0 +1,310 @@
+{
+  "$defs": {
+    "AlignedWord": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "end_ms": {
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "start_ms": {
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
+        "token_index": {
+          "minimum": 0,
+          "title": "Token Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "confidence",
+        "end_ms",
+        "segment_id",
+        "start_ms",
+        "token_index"
+      ],
+      "title": "AlignedWord",
+      "type": "object"
+    },
+    "Alignment": {
+      "additionalProperties": false,
+      "description": "Forced alignment over verified text; unmatched and low-confidence spans stay explicit.",
+      "properties": {
+        "aligner": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Aligner",
+          "type": "string"
+        },
+        "aligner_version": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Aligner Version",
+          "type": "string"
+        },
+        "low_confidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TokenRef"
+          },
+          "title": "Low Confidence",
+          "type": "array"
+        },
+        "model_id": {
+          "default": "",
+          "maxLength": 120,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "unmatched": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TokenRef"
+          },
+          "title": "Unmatched",
+          "type": "array"
+        },
+        "words": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AlignedWord"
+          },
+          "title": "Words",
+          "type": "array"
+        }
+      },
+      "required": [
+        "aligner",
+        "aligner_version",
+        "low_confidence",
+        "model_id",
+        "unmatched",
+        "words"
+      ],
+      "title": "Alignment",
+      "type": "object"
+    },
+    "NarrationTake": {
+      "additionalProperties": false,
+      "description": "Accepted audio for one or more whole segments; the hash is the audio, not the text.",
+      "properties": {
+        "alignment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Alignment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "audio_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Audio Sha256",
+          "type": "string"
+        },
+        "duration_ms": {
+          "minimum": 1,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "recorded",
+            "synthesized"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sample_rate_hz": {
+          "minimum": 8000,
+          "title": "Sample Rate Hz",
+          "type": "integer"
+        },
+        "segment_ids": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Segment Ids",
+          "type": "array"
+        },
+        "take_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Take Id",
+          "type": "string"
+        },
+        "transcript_similarity": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Transcript Similarity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "alignment",
+        "audio_sha256",
+        "duration_ms",
+        "kind",
+        "sample_rate_hz",
+        "segment_ids",
+        "take_id",
+        "transcript_similarity"
+      ],
+      "title": "NarrationTake",
+      "type": "object"
+    },
+    "TokenRef": {
+      "additionalProperties": false,
+      "properties": {
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "token_index": {
+          "minimum": 0,
+          "title": "Token Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "segment_id",
+        "token_index"
+      ],
+      "title": "TokenRef",
+      "type": "object"
+    },
+    "VoiceSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "creator_recorded",
+            "creator_clone",
+            "designed",
+            "preset"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "model_id": {
+          "default": "",
+          "maxLength": 120,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "model_revision": {
+          "default": "",
+          "maxLength": 80,
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "voice_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Voice Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "model_id",
+        "model_revision",
+        "voice_id"
+      ],
+      "title": "VoiceSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/NarrationManifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Which take speaks which segments, with alignment, for one locked script.",
+  "properties": {
+    "created_at": {
+      "minLength": 4,
+      "title": "Created At",
+      "type": "string"
+    },
+    "manifest_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Manifest Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "script_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Script Hash",
+      "type": "string"
+    },
+    "script_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Script Id",
+      "type": "string"
+    },
+    "stem_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Stem Sha256"
+    },
+    "takes": {
+      "items": {
+        "$ref": "#/$defs/NarrationTake"
+      },
+      "minItems": 1,
+      "title": "Takes",
+      "type": "array"
+    },
+    "total_duration_ms": {
+      "minimum": 1,
+      "title": "Total Duration Ms",
+      "type": "integer"
+    },
+    "voice": {
+      "$ref": "#/$defs/VoiceSpec"
+    }
+  },
+  "required": [
+    "created_at",
+    "manifest_id",
+    "schema_version",
+    "script_hash",
+    "script_id",
+    "stem_sha256",
+    "takes",
+    "total_duration_ms",
+    "voice"
+  ],
+  "title": "NarrationManifest",
+  "type": "object"
+}

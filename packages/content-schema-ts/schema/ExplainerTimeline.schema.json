@@ -1,0 +1,380 @@
+{
+  "$defs": {
+    "CompiledExplainerScene": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ResolvedAction"
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "boxes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityBox"
+          },
+          "title": "Boxes",
+          "type": "array"
+        },
+        "colors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityColor"
+          },
+          "title": "Colors",
+          "type": "array"
+        },
+        "duration_frames": {
+          "minimum": 1,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/NamedRegion"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "actions",
+        "boxes",
+        "colors",
+        "duration_frames",
+        "regions",
+        "scene_id",
+        "start_frame"
+      ],
+      "title": "CompiledExplainerScene",
+      "type": "object"
+    },
+    "EntityBox": {
+      "additionalProperties": false,
+      "description": "Where an entity sits; font_px is the role size the compiler verified, not a shrink.",
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/PixelBox"
+        },
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "font_px": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Px"
+        },
+        "lines": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Lines",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "box",
+        "entity_id",
+        "font_px",
+        "lines"
+      ],
+      "title": "EntityBox",
+      "type": "object"
+    },
+    "EntityColor": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "srgb_hex": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Srgb Hex",
+          "type": "string"
+        },
+        "token_id": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Token Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "srgb_hex",
+        "token_id"
+      ],
+      "title": "EntityColor",
+      "type": "object"
+    },
+    "InputHash": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256"
+      ],
+      "title": "InputHash",
+      "type": "object"
+    },
+    "NamedRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/PixelBox"
+        },
+        "name": {
+          "enum": [
+            "content",
+            "plot",
+            "title",
+            "legend",
+            "axis_x",
+            "axis_y",
+            "caption",
+            "page"
+          ],
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "box",
+        "name"
+      ],
+      "title": "NamedRegion",
+      "type": "object"
+    },
+    "PixelBox": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "height",
+        "width",
+        "x",
+        "y"
+      ],
+      "title": "PixelBox",
+      "type": "object"
+    },
+    "ResolvedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "end_frame": {
+          "minimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "index": {
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "targets": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "beat_id",
+        "end_frame",
+        "index",
+        "start_frame",
+        "targets"
+      ],
+      "title": "ResolvedAction",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ExplainerTimeline.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The explainer's compiled timeline: frames, geometry and colours resolved from the spec.",
+  "properties": {
+    "compiler_version": {
+      "maxLength": 20,
+      "minLength": 1,
+      "title": "Compiler Version",
+      "type": "string"
+    },
+    "fps": {
+      "maximum": 60,
+      "minimum": 24,
+      "title": "Fps",
+      "type": "integer"
+    },
+    "height": {
+      "minimum": 180,
+      "title": "Height",
+      "type": "integer"
+    },
+    "inputs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/InputHash"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "narration_manifest_id": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Narration Manifest Id"
+    },
+    "pack_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Pack Hash",
+      "type": "string"
+    },
+    "scenes": {
+      "items": {
+        "$ref": "#/$defs/CompiledExplainerScene"
+      },
+      "minItems": 1,
+      "title": "Scenes",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "script_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Script Hash",
+      "type": "string"
+    },
+    "spec_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Spec Hash",
+      "type": "string"
+    },
+    "spec_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Spec Id",
+      "type": "string"
+    },
+    "timeline_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Timeline Id",
+      "type": "string"
+    },
+    "total_frames": {
+      "minimum": 1,
+      "title": "Total Frames",
+      "type": "integer"
+    },
+    "width": {
+      "minimum": 320,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "compiler_version",
+    "fps",
+    "height",
+    "inputs",
+    "narration_manifest_id",
+    "pack_hash",
+    "scenes",
+    "schema_version",
+    "script_hash",
+    "spec_hash",
+    "spec_id",
+    "timeline_id",
+    "total_frames",
+    "width"
+  ],
+  "title": "ExplainerTimeline",
+  "type": "object"
+}

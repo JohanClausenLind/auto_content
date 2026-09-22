@@ -1,0 +1,434 @@
+{
+  "$defs": {
+    "CaptureQuote": {
+      "additionalProperties": false,
+      "description": "A passage located in the capture; line_rects are page pixels, occurrence picks a repeat.",
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "context_after": {
+          "default": "",
+          "maxLength": 400,
+          "title": "Context After",
+          "type": "string"
+        },
+        "context_before": {
+          "default": "",
+          "maxLength": 400,
+          "title": "Context Before",
+          "type": "string"
+        },
+        "line_rects": {
+          "items": {
+            "$ref": "#/$defs/PageRect"
+          },
+          "minItems": 1,
+          "title": "Line Rects",
+          "type": "array"
+        },
+        "locator": {
+          "discriminator": {
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/DomRangeLocator"
+            },
+            {
+              "$ref": "#/$defs/PdfLocator"
+            }
+          ],
+          "title": "Locator",
+          "type": "object"
+        },
+        "occurrence_index": {
+          "minimum": 0,
+          "title": "Occurrence Index",
+          "type": "integer"
+        },
+        "ocr_similarity": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ocr Similarity"
+        },
+        "ocr_verified": {
+          "default": false,
+          "title": "Ocr Verified",
+          "type": "boolean"
+        },
+        "quote_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Quote Id",
+          "type": "string"
+        },
+        "section_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Section Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "context_after",
+        "context_before",
+        "line_rects",
+        "locator",
+        "occurrence_index",
+        "ocr_similarity",
+        "ocr_verified",
+        "quote_id",
+        "section_id",
+        "text"
+      ],
+      "title": "CaptureQuote",
+      "type": "object"
+    },
+    "CaptureSection": {
+      "additionalProperties": false,
+      "properties": {
+        "heading": {
+          "default": "",
+          "maxLength": 300,
+          "title": "Heading",
+          "type": "string"
+        },
+        "order": {
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "scroll_y_px": {
+          "minimum": 0,
+          "title": "Scroll Y Px",
+          "type": "number"
+        },
+        "section_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Section Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "heading",
+        "order",
+        "scroll_y_px",
+        "section_id"
+      ],
+      "title": "CaptureSection",
+      "type": "object"
+    },
+    "DomRangeLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "end_offset": {
+          "minimum": 0,
+          "title": "End Offset",
+          "type": "integer"
+        },
+        "end_path": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "End Path",
+          "type": "string"
+        },
+        "kind": {
+          "const": "dom_range",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start_offset": {
+          "minimum": 0,
+          "title": "Start Offset",
+          "type": "integer"
+        },
+        "start_path": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Start Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "end_offset",
+        "end_path",
+        "kind",
+        "start_offset",
+        "start_path"
+      ],
+      "title": "DomRangeLocator",
+      "type": "object"
+    },
+    "PageRect": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "height",
+        "width",
+        "x",
+        "y"
+      ],
+      "title": "PageRect",
+      "type": "object"
+    },
+    "PdfLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "pdf",
+          "title": "Kind",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "page"
+      ],
+      "title": "PdfLocator",
+      "type": "object"
+    },
+    "Viewport": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "minimum": 240,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 320,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "height",
+        "width"
+      ],
+      "title": "Viewport",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/SourceCaptureManifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A signed capture of one source with its sections and located quotes; rendering reads this.",
+  "properties": {
+    "artifact_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Artifact Sha256",
+      "type": "string"
+    },
+    "author": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Author",
+      "type": "string"
+    },
+    "capture_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Capture Id",
+      "type": "string"
+    },
+    "capture_kind": {
+      "enum": [
+        "wacz",
+        "pdf"
+      ],
+      "title": "Capture Kind",
+      "type": "string"
+    },
+    "captured_at": {
+      "minLength": 4,
+      "title": "Captured At",
+      "type": "string"
+    },
+    "claim_ids": {
+      "default": [],
+      "items": {
+        "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+        "type": "string"
+      },
+      "title": "Claim Ids",
+      "type": "array"
+    },
+    "extractor": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Extractor",
+      "type": "string"
+    },
+    "extractor_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Extractor Version",
+      "type": "string"
+    },
+    "page_height_px": {
+      "exclusiveMinimum": 0,
+      "title": "Page Height Px",
+      "type": "number"
+    },
+    "published_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Published At"
+    },
+    "publisher": {
+      "default": "",
+      "maxLength": 200,
+      "title": "Publisher",
+      "type": "string"
+    },
+    "quotes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CaptureQuote"
+      },
+      "title": "Quotes",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/CaptureSection"
+      },
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    },
+    "signature_domain": {
+      "default": "",
+      "maxLength": 253,
+      "title": "Signature Domain",
+      "type": "string"
+    },
+    "signed": {
+      "default": false,
+      "title": "Signed",
+      "type": "boolean"
+    },
+    "source_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "text_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Text Sha256",
+      "type": "string"
+    },
+    "title": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Title",
+      "type": "string"
+    },
+    "tls_certificate_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tls Certificate Sha256"
+    },
+    "url": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    },
+    "viewport": {
+      "$ref": "#/$defs/Viewport"
+    }
+  },
+  "required": [
+    "artifact_sha256",
+    "author",
+    "capture_id",
+    "capture_kind",
+    "captured_at",
+    "claim_ids",
+    "extractor",
+    "extractor_version",
+    "page_height_px",
+    "published_at",
+    "publisher",
+    "quotes",
+    "schema_version",
+    "sections",
+    "signature_domain",
+    "signed",
+    "source_id",
+    "text_sha256",
+    "title",
+    "tls_certificate_sha256",
+    "url",
+    "viewport"
+  ],
+  "title": "SourceCaptureManifest",
+  "type": "object"
+}

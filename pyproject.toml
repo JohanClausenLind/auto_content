@@ -94,7 +94,7 @@ extraPaths = ["scripts"]
 testpaths = ["tests", "python"]
 pythonpath = ["."]
 # The core suite, defined once; an explicit -m on the command line overrides it.
-addopts = '-m "not integration and not gpu and not live and not blender"'
+addopts = '-m "not integration and not gpu and not live and not blender and not render"'
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
@@ -102,6 +102,7 @@ markers = [
   "gpu: needs a local GPU",
   "live: needs live provider credentials (never in core CI)",
   "blender: needs the system Blender (skills/video/blender_scene integration)",
+  "render: drives Remotion through Node and Chrome (minutes per test; `uv run pytest -m render`)",
 ]
 filterwarnings = ["error::DeprecationWarning:content_factory.*"]
 

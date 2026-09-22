@@ -1,0 +1,344 @@
+{
+  "calculations": [
+    {
+      "calc_id": "calc_total_base",
+      "op": "add",
+      "operands": [
+        {
+          "claim_id": "clm_compute_80ms",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_other_20ms",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_total_100ms"
+    },
+    {
+      "calc_id": "calc_compute_fast",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_compute_80ms",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_speedup_2x",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_compute_40ms"
+    },
+    {
+      "calc_id": "calc_total_fast",
+      "op": "add",
+      "operands": [
+        {
+          "claim_id": "clm_compute_40ms",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_other_20ms",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_total_60ms"
+    }
+  ],
+  "claims": [
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_amdahl_1967",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "evi_amdahl_title"
+      ],
+      "geography": "",
+      "rationale": "The paper's thesis, as its title states it; quoted rather than valued.",
+      "short_label": "Amdahl's 1967 bound",
+      "stable": true,
+      "statement": "Amdahl (1967) argued that the serial fraction of a program bounds the speed-up from parallel hardware.",
+      "time_basis": "1967",
+      "value": null
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_compute_80ms",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "A round split chosen for the illustration; any large share makes the same point.",
+      "short_label": "Computation: 80 ms",
+      "stable": false,
+      "statement": "In the illustration, computation takes 80 ms of the wait.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 80.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_other_20ms",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "The part the faster processor does not touch; chosen round for the illustration.",
+      "short_label": "Other work: 20 ms",
+      "stable": false,
+      "statement": "In the illustration, other work takes 20 ms of the wait.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 20.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_speedup_2x",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "Doubling is the cleanest case of the argument.",
+      "short_label": "Processor 2x faster",
+      "stable": false,
+      "statement": "The faster processor halves computation time.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 2.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": "calc_total_base",
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_total_100ms",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "Recomputed from the illustrative inputs by the named calculation.",
+      "short_label": "Total before: 100 ms",
+      "stable": false,
+      "statement": "The program takes 100 ms before the upgrade.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 100.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_compute_fast",
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_compute_40ms",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "Recomputed from the illustrative inputs by the named calculation.",
+      "short_label": "Computation after: 40 ms",
+      "stable": false,
+      "statement": "Computation takes 40 ms on the faster processor.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 40.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_total_fast",
+      "checked_at": "2026-09-16T00:00:00Z",
+      "claim_id": "clm_total_60ms",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "Recomputed from the illustrative inputs by the named calculation.",
+      "short_label": "Total after: 60 ms",
+      "stable": false,
+      "statement": "The program takes 60 ms after the upgrade.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 60.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "scenario",
+          "unit": ""
+        },
+        {
+          "kind": "nominal",
+          "name": "part",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "ms",
+          "unit": "ms"
+        }
+      ],
+      "dataset_id": "ds_latency_split",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_compute_80ms"
+          ],
+          "key": "baseline-computation",
+          "values": [
+            "baseline",
+            "computation",
+            80.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_other_20ms"
+          ],
+          "key": "baseline-other",
+          "values": [
+            "baseline",
+            "other",
+            20.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_compute_40ms"
+          ],
+          "key": "faster-computation",
+          "values": [
+            "faster",
+            "computation",
+            40.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_other_20ms"
+          ],
+          "key": "faster-other",
+          "values": [
+            "faster",
+            "other",
+            20.0
+          ]
+        }
+      ],
+      "title": "Where the wait goes"
+    }
+  ],
+  "frozen_at": "2026-09-16T00:00:00Z",
+  "items": [
+    {
+      "context_after": "",
+      "context_before": "",
+      "geography": "",
+      "item_id": "evi_amdahl_title",
+      "locator": {
+        "end": 89,
+        "kind": "char_range",
+        "start": 0
+      },
+      "passage": "Validity of the single processor approach to achieving large scale computing capabilities",
+      "quoted_at": "2026-09-16T00:00:00Z",
+      "source_id": "src_amdahl_1967",
+      "time_basis": "1967",
+      "unit": ""
+    }
+  ],
+  "language": "en",
+  "pack_id": "pack_amdahl_demo",
+  "schema_version": 1,
+  "sources": [
+    {
+      "accessed_at": "2026-09-16T00:00:00Z",
+      "author": "Amdahl, G. M.",
+      "canonical_url": "https://doi.org/10.1145/1465482.1465560",
+      "capture_id": null,
+      "content_sha256": "3ecf55f3b810430eb17afdd3a80ecbb7679f5e4d3a785e458404e7bfa91cf2ce",
+      "published_at": "1967-04-18",
+      "publisher": "ACM",
+      "rights_status": "quotable_excerpt",
+      "source_class": "analysis",
+      "source_id": "src_amdahl_1967",
+      "title": "Validity of the single processor approach to achieving large scale computing capabilities",
+      "url": "https://doi.org/10.1145/1465482.1465560"
+    }
+  ],
+  "topic": "Why doubling the processor does not halve the wait"
+}

@@ -21,9 +21,9 @@ color:
     - { id: ui.surface.0, oklch: [0.18, 0.010, 260], role: canvas }
     - { id: ui.surface.1, oklch: [0.22, 0.012, 260], role: panel }
     - { id: ui.surface.2, oklch: [0.26, 0.014, 260], role: raised }
-    - { id: ui.ink.primary, oklch: [0.96, 0.010, 80], role: read text }
+    - { id: ui.ink.primary, oklch: [0.96, 0.010, 80], role: "read text" }
     - { id: ui.ink.secondary, oklch: [0.82, 0.012, 80], role: labels }
-    - { id: ui.ink.muted, oklch: [0.64, 0.012, 80], role: axes, captions }
+    - { id: ui.ink.muted, oklch: [0.64, 0.012, 80], role: "axes, captions" }
     - { id: ui.stroke.soft, oklch: [0.34, 0.012, 260] }
     - { id: ui.stroke.strong, oklch: [0.48, 0.012, 260] }
   data:
@@ -49,11 +49,11 @@ color:
       - { t: 0.5, oklch: [0.72, 0.005, 260] }
       - { t: 1.0, oklch: [0.75, 0.15, 77] }
   state:
-    - { id: state.emphasis, oklch: [0.84, 0.150, 78], role: the one thing being talked about }
-    - { id: state.deemphasis, alpha: 0.35, role: everything else while emphasis is active }
-    - { id: state.uncertain, oklch: [0.72, 0.050, 80], pattern: hatch, role: estimated or forecast values }
-    - { id: state.quote_highlight, rule: contrast, role: source-quote overlay, see below }
-    - { id: state.error, oklch: [0.65, 0.180, 25], role: failure states only }
+    - { id: state.emphasis, oklch: [0.84, 0.150, 78], role: "the one thing being talked about" }
+    - { id: state.deemphasis, alpha: 0.35, role: "everything else while emphasis is active" }
+    - { id: state.uncertain, oklch: [0.72, 0.050, 80], pattern: hatch, role: "estimated or forecast values" }
+    - { id: state.quote_highlight, rule: contrast, role: "source-quote overlay, see Quote highlight" }
+    - { id: state.error, oklch: [0.65, 0.180, 25], role: "failure states only" }
 typography:
   faces: { display: Sora, text: Inter }     # bundled, pinned via @fontsource 5.3.0; no host fonts
   scale_px_at_1080:

@@ -1,0 +1,179 @@
+{
+  "channel_id": "ch_explainer_demo",
+  "contribution": "One wait split into two parts shows the part you did not speed up setting the ceiling, then names the paper that proved it in general.",
+  "locked_at": "2026-09-16T00:00:00Z",
+  "pack_hash": "5d1b6dfd2aa5b011f6300ad8884d6ce513ea920034b05e3d742bc212176ec42f",
+  "pack_id": "pack_amdahl_demo",
+  "promises": [
+    {
+      "claim_ids": [
+        "clm_total_100ms",
+        "clm_total_60ms"
+      ],
+      "thumbnail_promise": "100 ms becomes 60 ms, not 50",
+      "title": "Why doubling the processor does not halve the wait"
+    },
+    {
+      "claim_ids": [
+        "clm_amdahl_1967"
+      ],
+      "thumbnail_promise": "Two bars, one untouched part, one ceiling",
+      "title": "Amdahl's law in one bar chart"
+    },
+    {
+      "claim_ids": [
+        "clm_other_20ms"
+      ],
+      "thumbnail_promise": "Faster hardware leaves the other work alone",
+      "title": "The 20 milliseconds you cannot buy your way out of"
+    }
+  ],
+  "question": "Why does a processor twice as fast not make the program twice as fast?",
+  "schema_version": 1,
+  "script_id": "scr_amdahl_demo",
+  "segments": [
+    {
+      "claim_ids": [
+        "clm_total_100ms",
+        "clm_speedup_2x",
+        "clm_total_60ms"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "cold_open",
+      "segment_id": "seg_cold_open",
+      "spoken_text": "Your program takes 100 milliseconds. You buy a processor twice as fast. It still takes 60.",
+      "tokens": [
+        "Your",
+        "program",
+        "takes",
+        "100",
+        "milliseconds.",
+        "You",
+        "buy",
+        "a",
+        "processor",
+        "twice",
+        "as",
+        "fast.",
+        "It",
+        "still",
+        "takes",
+        "60."
+      ]
+    },
+    {
+      "claim_ids": [
+        "clm_compute_80ms",
+        "clm_other_20ms",
+        "clm_total_100ms"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "build_model",
+      "segment_id": "seg_build_model",
+      "spoken_text": "80 milliseconds of computation plus 20 milliseconds of other work is 100 milliseconds.",
+      "tokens": [
+        "80",
+        "milliseconds",
+        "of",
+        "computation",
+        "plus",
+        "20",
+        "milliseconds",
+        "of",
+        "other",
+        "work",
+        "is",
+        "100",
+        "milliseconds."
+      ]
+    },
+    {
+      "claim_ids": [
+        "clm_speedup_2x",
+        "clm_compute_40ms",
+        "clm_other_20ms",
+        "clm_total_60ms"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "change_variable",
+      "segment_id": "seg_change_variable",
+      "spoken_text": "Double the computation speed and you get 40 plus 20: 60 milliseconds.",
+      "tokens": [
+        "Double",
+        "the",
+        "computation",
+        "speed",
+        "and",
+        "you",
+        "get",
+        "40",
+        "plus",
+        "20:",
+        "60",
+        "milliseconds."
+      ]
+    },
+    {
+      "claim_ids": [
+        "clm_amdahl_1967"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "show_limits",
+      "segment_id": "seg_show_limits",
+      "spoken_text": "In 1967, Gene Amdahl argued that the serial part of a program bounds the speed-up from faster hardware.",
+      "tokens": [
+        "In",
+        "1967,",
+        "Gene",
+        "Amdahl",
+        "argued",
+        "that",
+        "the",
+        "serial",
+        "part",
+        "of",
+        "a",
+        "program",
+        "bounds",
+        "the",
+        "speed-up",
+        "from",
+        "faster",
+        "hardware."
+      ]
+    },
+    {
+      "claim_ids": [],
+      "delivery": "either",
+      "display_text": null,
+      "section": "synthesis",
+      "segment_id": "seg_synthesis",
+      "spoken_text": "Speed up only the part you measured, and the rest of the wait stays exactly where it was.",
+      "tokens": [
+        "Speed",
+        "up",
+        "only",
+        "the",
+        "part",
+        "you",
+        "measured,",
+        "and",
+        "the",
+        "rest",
+        "of",
+        "the",
+        "wait",
+        "stays",
+        "exactly",
+        "where",
+        "it",
+        "was."
+      ]
+    }
+  ],
+  "sponsor": null
+}

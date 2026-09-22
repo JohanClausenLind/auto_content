@@ -1,0 +1,254 @@
+{
+  "$defs": {
+    "ScriptSegment": {
+      "additionalProperties": false,
+      "description": "One spoken unit; tokens are the stable cue coordinates, derived by ``tokenize``.",
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "delivery": {
+          "default": "either",
+          "enum": [
+            "recorded",
+            "synthesized",
+            "either"
+          ],
+          "title": "Delivery",
+          "type": "string"
+        },
+        "display_text": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Display Text"
+        },
+        "section": {
+          "enum": [
+            "cold_open",
+            "question_stakes",
+            "build_model",
+            "run_system",
+            "change_variable",
+            "show_limits",
+            "synthesis",
+            "sponsor"
+          ],
+          "title": "Section",
+          "type": "string"
+        },
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "spoken_text": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Spoken Text",
+          "type": "string"
+        },
+        "tokens": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Tokens",
+          "type": "array"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "delivery",
+        "display_text",
+        "section",
+        "segment_id",
+        "spoken_text",
+        "tokens"
+      ],
+      "title": "ScriptSegment",
+      "type": "object"
+    },
+    "SponsorSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "disclosure_text": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Disclosure Text",
+          "type": "string"
+        },
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "spoken_text": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Spoken Text",
+          "type": "string"
+        },
+        "sponsor_name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Sponsor Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "disclosure_text",
+        "segment_id",
+        "spoken_text",
+        "sponsor_name"
+      ],
+      "title": "SponsorSegment",
+      "type": "object"
+    },
+    "TitlePromise": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_ids": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "thumbnail_promise": {
+          "maxLength": 140,
+          "minLength": 1,
+          "title": "Thumbnail Promise",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "thumbnail_promise",
+        "title"
+      ],
+      "title": "TitlePromise",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ScriptPlan.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The locked script: segments in arc order, bound to one frozen evidence pack.",
+  "properties": {
+    "channel_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Channel Id",
+      "type": "string"
+    },
+    "contribution": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Contribution",
+      "type": "string"
+    },
+    "locked_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Locked At"
+    },
+    "pack_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Pack Hash",
+      "type": "string"
+    },
+    "pack_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Pack Id",
+      "type": "string"
+    },
+    "promises": {
+      "items": {
+        "$ref": "#/$defs/TitlePromise"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Promises",
+      "type": "array"
+    },
+    "question": {
+      "maxLength": 300,
+      "minLength": 1,
+      "title": "Question",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "script_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Script Id",
+      "type": "string"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/ScriptSegment"
+      },
+      "minItems": 1,
+      "title": "Segments",
+      "type": "array"
+    },
+    "sponsor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SponsorSegment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "channel_id",
+    "contribution",
+    "locked_at",
+    "pack_hash",
+    "pack_id",
+    "promises",
+    "question",
+    "schema_version",
+    "script_id",
+    "segments",
+    "sponsor"
+  ],
+  "title": "ScriptPlan",
+  "type": "object"
+}

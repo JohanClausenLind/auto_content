@@ -1,0 +1,1741 @@
+{
+  "$defs": {
+    "AnnotateAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "annotate",
+          "title": "Action",
+          "type": "string"
+        },
+        "claim_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "targets": {
+          "maxItems": 1,
+          "minItems": 1,
+          "prefixItems": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            }
+          ],
+          "title": "Targets",
+          "type": "array"
+        },
+        "text": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "claim_id",
+        "targets",
+        "text"
+      ],
+      "title": "AnnotateAction",
+      "type": "object"
+    },
+    "AssetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "capture_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capture Id"
+        },
+        "dataset_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Id"
+        },
+        "kind": {
+          "enum": [
+            "dataset",
+            "capture",
+            "image",
+            "formula"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "asset_id",
+        "capture_id",
+        "dataset_id",
+        "kind",
+        "sha256"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "Beat": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "discriminator": {
+              "propertyName": "action"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TargetAction"
+              },
+              {
+                "$ref": "#/$defs/CompareAction"
+              },
+              {
+                "$ref": "#/$defs/AnnotateAction"
+              },
+              {
+                "$ref": "#/$defs/SortAction"
+              },
+              {
+                "$ref": "#/$defs/FilterAction"
+              },
+              {
+                "$ref": "#/$defs/HoldAction"
+              },
+              {
+                "$ref": "#/$defs/ShowSourceAction"
+              },
+              {
+                "$ref": "#/$defs/ScrollToAction"
+              },
+              {
+                "$ref": "#/$defs/QuoteAction"
+              }
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "Actions",
+          "type": "array"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "cue": {
+          "$ref": "#/$defs/Cue"
+        }
+      },
+      "required": [
+        "actions",
+        "beat_id",
+        "cue"
+      ],
+      "title": "Beat",
+      "type": "object"
+    },
+    "CapabilityRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "fallback": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Fallback",
+          "type": "string"
+        },
+        "intent": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Intent",
+          "type": "string"
+        },
+        "scene_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Id"
+        }
+      },
+      "required": [
+        "fallback",
+        "intent",
+        "scene_id"
+      ],
+      "title": "CapabilityRequest",
+      "type": "object"
+    },
+    "ChartTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_zero": {
+          "default": true,
+          "title": "Baseline Zero",
+          "type": "boolean"
+        },
+        "chart_kind": {
+          "enum": [
+            "bar",
+            "line",
+            "area",
+            "stacked_bar",
+            "scatter",
+            "slope"
+          ],
+          "title": "Chart Kind",
+          "type": "string"
+        },
+        "dataset_asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Dataset Asset Id",
+          "type": "string"
+        },
+        "series": {
+          "items": {
+            "$ref": "#/$defs/SeriesBinding"
+          },
+          "minItems": 1,
+          "title": "Series",
+          "type": "array"
+        },
+        "series_field": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series Field"
+        },
+        "template": {
+          "const": "chart",
+          "title": "Template",
+          "type": "string"
+        },
+        "x": {
+          "$ref": "#/$defs/FieldEncoding"
+        },
+        "y": {
+          "$ref": "#/$defs/FieldEncoding"
+        }
+      },
+      "required": [
+        "baseline_zero",
+        "chart_kind",
+        "dataset_asset_id",
+        "series",
+        "series_field",
+        "template",
+        "x",
+        "y"
+      ],
+      "title": "ChartTemplate",
+      "type": "object"
+    },
+    "CompareAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "compare",
+          "title": "Action",
+          "type": "string"
+        },
+        "targets": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            }
+          ],
+          "title": "Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "targets"
+      ],
+      "title": "CompareAction",
+      "type": "object"
+    },
+    "CompiledExplainerScene": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ResolvedAction"
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "boxes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityBox"
+          },
+          "title": "Boxes",
+          "type": "array"
+        },
+        "colors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityColor"
+          },
+          "title": "Colors",
+          "type": "array"
+        },
+        "duration_frames": {
+          "minimum": 1,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/NamedRegion"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "actions",
+        "boxes",
+        "colors",
+        "duration_frames",
+        "regions",
+        "scene_id",
+        "start_frame"
+      ],
+      "title": "CompiledExplainerScene",
+      "type": "object"
+    },
+    "Cue": {
+      "additionalProperties": false,
+      "description": "A narration anchor: a token span of one segment, never a quoted phrase.",
+      "properties": {
+        "duration_class": {
+          "default": "short",
+          "enum": [
+            "beat",
+            "short",
+            "medium",
+            "long"
+          ],
+          "title": "Duration Class",
+          "type": "string"
+        },
+        "relation": {
+          "default": "on",
+          "enum": [
+            "before",
+            "on",
+            "after"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "token_end": {
+          "minimum": 0,
+          "title": "Token End",
+          "type": "integer"
+        },
+        "token_start": {
+          "minimum": 0,
+          "title": "Token Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "duration_class",
+        "relation",
+        "segment_id",
+        "token_end",
+        "token_start"
+      ],
+      "title": "Cue",
+      "type": "object"
+    },
+    "DatasetColumn": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "quantitative",
+            "temporal",
+            "ordinal",
+            "nominal"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "unit": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "unit"
+      ],
+      "title": "DatasetColumn",
+      "type": "object"
+    },
+    "DatasetRow": {
+      "additionalProperties": false,
+      "description": "One row; every quantitative cell must equal a claim value listed in claim_ids.",
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "key": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "key",
+        "values"
+      ],
+      "title": "DatasetRow",
+      "type": "object"
+    },
+    "DiagramEdgeSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Label",
+          "type": "string"
+        },
+        "source_entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Source Entity Id",
+          "type": "string"
+        },
+        "target_entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Target Entity Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "label",
+        "source_entity_id",
+        "target_entity_id"
+      ],
+      "title": "DiagramEdgeSpec",
+      "type": "object"
+    },
+    "DiagramLayout": {
+      "additionalProperties": false,
+      "description": "ELK output for one diagram scene, computed before rendering so every frame is pure.",
+      "properties": {
+        "edges": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/LayoutEdge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/LayoutNode"
+          },
+          "minItems": 1,
+          "title": "Nodes",
+          "type": "array"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "edges",
+        "height",
+        "nodes",
+        "scene_id",
+        "width"
+      ],
+      "title": "DiagramLayout",
+      "type": "object"
+    },
+    "DiagramNodeSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "label"
+      ],
+      "title": "DiagramNodeSpec",
+      "type": "object"
+    },
+    "DiagramTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "default": "LR",
+          "enum": [
+            "LR",
+            "TB"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "edges": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DiagramEdgeSpec"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/DiagramNodeSpec"
+          },
+          "minItems": 1,
+          "title": "Nodes",
+          "type": "array"
+        },
+        "template": {
+          "const": "diagram",
+          "title": "Template",
+          "type": "string"
+        }
+      },
+      "required": [
+        "direction",
+        "edges",
+        "nodes",
+        "template"
+      ],
+      "title": "DiagramTemplate",
+      "type": "object"
+    },
+    "Entity": {
+      "additionalProperties": false,
+      "description": "A thing with persistent identity across scenes: same colour, label and place everywhere.",
+      "properties": {
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "series",
+            "node",
+            "edge",
+            "value",
+            "text",
+            "quote",
+            "region",
+            "annotation"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "short_label": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Short Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_ids",
+        "entity_id",
+        "kind",
+        "label",
+        "short_label"
+      ],
+      "title": "Entity",
+      "type": "object"
+    },
+    "EntityBox": {
+      "additionalProperties": false,
+      "description": "Where an entity sits; font_px is the role size the compiler verified, not a shrink.",
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/PixelBox"
+        },
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "font_px": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Font Px"
+        },
+        "lines": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Lines",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "box",
+        "entity_id",
+        "font_px",
+        "lines"
+      ],
+      "title": "EntityBox",
+      "type": "object"
+    },
+    "EntityColor": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "srgb_hex": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Srgb Hex",
+          "type": "string"
+        },
+        "token_id": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Token Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "srgb_hex",
+        "token_id"
+      ],
+      "title": "EntityColor",
+      "type": "object"
+    },
+    "EvidenceDataset": {
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/DatasetColumn"
+          },
+          "minItems": 1,
+          "title": "Columns",
+          "type": "array"
+        },
+        "dataset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/DatasetRow"
+          },
+          "minItems": 1,
+          "title": "Rows",
+          "type": "array"
+        },
+        "title": {
+          "default": "",
+          "maxLength": 120,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "columns",
+        "dataset_id",
+        "rows",
+        "title"
+      ],
+      "title": "EvidenceDataset",
+      "type": "object"
+    },
+    "ExplainerTimeline": {
+      "additionalProperties": false,
+      "description": "The explainer's compiled timeline: frames, geometry and colours resolved from the spec.",
+      "properties": {
+        "compiler_version": {
+          "maxLength": 20,
+          "minLength": 1,
+          "title": "Compiler Version",
+          "type": "string"
+        },
+        "fps": {
+          "maximum": 60,
+          "minimum": 24,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "height": {
+          "minimum": 180,
+          "title": "Height",
+          "type": "integer"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/InputHash"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "narration_manifest_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Narration Manifest Id"
+        },
+        "pack_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Pack Hash",
+          "type": "string"
+        },
+        "scenes": {
+          "items": {
+            "$ref": "#/$defs/CompiledExplainerScene"
+          },
+          "minItems": 1,
+          "title": "Scenes",
+          "type": "array"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "script_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Script Hash",
+          "type": "string"
+        },
+        "spec_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Spec Hash",
+          "type": "string"
+        },
+        "spec_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Spec Id",
+          "type": "string"
+        },
+        "timeline_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Timeline Id",
+          "type": "string"
+        },
+        "total_frames": {
+          "minimum": 1,
+          "title": "Total Frames",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 320,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "compiler_version",
+        "fps",
+        "height",
+        "inputs",
+        "narration_manifest_id",
+        "pack_hash",
+        "scenes",
+        "schema_version",
+        "script_hash",
+        "spec_hash",
+        "spec_id",
+        "timeline_id",
+        "total_frames",
+        "width"
+      ],
+      "title": "ExplainerTimeline",
+      "type": "object"
+    },
+    "FieldEncoding": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "quantitative",
+            "temporal",
+            "ordinal",
+            "nominal"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "title": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Title",
+          "type": "string"
+        },
+        "unit": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "kind",
+        "title",
+        "unit"
+      ],
+      "title": "FieldEncoding",
+      "type": "object"
+    },
+    "FilterAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "filter",
+          "title": "Action",
+          "type": "string"
+        },
+        "field": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "op": {
+          "enum": [
+            "eq",
+            "neq",
+            "gt",
+            "lt",
+            "gte",
+            "lte"
+          ],
+          "title": "Op",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "action",
+        "field",
+        "op",
+        "value"
+      ],
+      "title": "FilterAction",
+      "type": "object"
+    },
+    "HoldAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "hold",
+          "title": "Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "title": "HoldAction",
+      "type": "object"
+    },
+    "InputHash": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256"
+      ],
+      "title": "InputHash",
+      "type": "object"
+    },
+    "LayoutEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "label_anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LayoutPoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "points": {
+          "items": {
+            "$ref": "#/$defs/LayoutPoint"
+          },
+          "minItems": 2,
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entity_id",
+        "label_anchor",
+        "points"
+      ],
+      "title": "LayoutEdge",
+      "type": "object"
+    },
+    "LayoutNode": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/PixelBox"
+        },
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "box",
+        "entity_id"
+      ],
+      "title": "LayoutNode",
+      "type": "object"
+    },
+    "LayoutPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "LayoutPoint",
+      "type": "object"
+    },
+    "NamedRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/PixelBox"
+        },
+        "name": {
+          "enum": [
+            "content",
+            "plot",
+            "title",
+            "legend",
+            "axis_x",
+            "axis_y",
+            "caption",
+            "page"
+          ],
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "box",
+        "name"
+      ],
+      "title": "NamedRegion",
+      "type": "object"
+    },
+    "PixelBox": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "height",
+        "width",
+        "x",
+        "y"
+      ],
+      "title": "PixelBox",
+      "type": "object"
+    },
+    "QuoteAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "focus_passage",
+            "highlight_quote"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "quote_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Quote Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "quote_id"
+      ],
+      "title": "QuoteAction",
+      "type": "object"
+    },
+    "ResolvedAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "end_frame": {
+          "minimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "index": {
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "targets": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "beat_id",
+        "end_frame",
+        "index",
+        "start_frame",
+        "targets"
+      ],
+      "title": "ResolvedAction",
+      "type": "object"
+    },
+    "Scene": {
+      "additionalProperties": false,
+      "description": "One composition with one template, mutated by beats; a new question gets a new scene.",
+      "properties": {
+        "beats": {
+          "items": {
+            "$ref": "#/$defs/Beat"
+          },
+          "minItems": 1,
+          "title": "Beats",
+          "type": "array"
+        },
+        "claim_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Claim Ids",
+          "type": "array"
+        },
+        "initial_visible": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Initial Visible",
+          "type": "array"
+        },
+        "layout": {
+          "default": "primary",
+          "enum": [
+            "primary",
+            "split",
+            "overlay"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "purpose": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "section": {
+          "enum": [
+            "cold_open",
+            "question_stakes",
+            "build_model",
+            "run_system",
+            "change_variable",
+            "show_limits",
+            "synthesis",
+            "sponsor"
+          ],
+          "title": "Section",
+          "type": "string"
+        },
+        "source_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "sponsored": {
+          "default": false,
+          "title": "Sponsored",
+          "type": "boolean"
+        },
+        "template": {
+          "discriminator": {
+            "propertyName": "template"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ChartTemplate"
+            },
+            {
+              "$ref": "#/$defs/DiagramTemplate"
+            },
+            {
+              "$ref": "#/$defs/TextTemplate"
+            },
+            {
+              "$ref": "#/$defs/SourceDocumentTemplate"
+            }
+          ],
+          "title": "Template",
+          "type": "object"
+        }
+      },
+      "required": [
+        "beats",
+        "claim_ids",
+        "initial_visible",
+        "layout",
+        "purpose",
+        "scene_id",
+        "section",
+        "source_ids",
+        "sponsored",
+        "template"
+      ],
+      "title": "Scene",
+      "type": "object"
+    },
+    "ScrollToAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "scroll_to",
+          "title": "Action",
+          "type": "string"
+        },
+        "section_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Section Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "section_id"
+      ],
+      "title": "ScrollToAction",
+      "type": "object"
+    },
+    "SeriesBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "value"
+      ],
+      "title": "SeriesBinding",
+      "type": "object"
+    },
+    "ShowSourceAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "show_source",
+          "title": "Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "title": "ShowSourceAction",
+      "type": "object"
+    },
+    "SortAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "sort",
+          "title": "Action",
+          "type": "string"
+        },
+        "by": {
+          "enum": [
+            "value_desc",
+            "value_asc",
+            "label"
+          ],
+          "title": "By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "by"
+      ],
+      "title": "SortAction",
+      "type": "object"
+    },
+    "SourceDocumentTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "capture_asset_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Capture Asset Id",
+          "type": "string"
+        },
+        "initial_section_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Initial Section Id",
+          "type": "string"
+        },
+        "template": {
+          "const": "source_document",
+          "title": "Template",
+          "type": "string"
+        }
+      },
+      "required": [
+        "capture_asset_id",
+        "initial_section_id",
+        "template"
+      ],
+      "title": "SourceDocumentTemplate",
+      "type": "object"
+    },
+    "TargetAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "reveal",
+            "hide",
+            "highlight",
+            "clear_highlight",
+            "focus",
+            "trace",
+            "draw",
+            "flow",
+            "isolate",
+            "zoom_to",
+            "pan_to"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "targets": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "action",
+        "targets"
+      ],
+      "title": "TargetAction",
+      "type": "object"
+    },
+    "TextItem": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "entity_id",
+        "text"
+      ],
+      "title": "TextItem",
+      "type": "object"
+    },
+    "TextTemplate": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/$defs/TextItem"
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "title": "Items",
+          "type": "array"
+        },
+        "template": {
+          "const": "text",
+          "title": "Template",
+          "type": "string"
+        },
+        "variant": {
+          "enum": [
+            "statement",
+            "big_number",
+            "list",
+            "quotation_card",
+            "formula"
+          ],
+          "title": "Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "items",
+        "template",
+        "variant"
+      ],
+      "title": "TextTemplate",
+      "type": "object"
+    },
+    "VisualSpec": {
+      "additionalProperties": false,
+      "description": "Typed semantic intent for every scene of one episode; nothing in it is renderer code.",
+      "properties": {
+        "assets": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AssetRef"
+          },
+          "title": "Assets",
+          "type": "array"
+        },
+        "capability_requests": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CapabilityRequest"
+          },
+          "title": "Capability Requests",
+          "type": "array"
+        },
+        "design_system_version": {
+          "minimum": 1,
+          "title": "Design System Version",
+          "type": "integer"
+        },
+        "entities": {
+          "items": {
+            "$ref": "#/$defs/Entity"
+          },
+          "minItems": 1,
+          "title": "Entities",
+          "type": "array"
+        },
+        "pack_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Pack Hash",
+          "type": "string"
+        },
+        "scenes": {
+          "items": {
+            "$ref": "#/$defs/Scene"
+          },
+          "minItems": 1,
+          "title": "Scenes",
+          "type": "array"
+        },
+        "schema_version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "script_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Script Hash",
+          "type": "string"
+        },
+        "script_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Script Id",
+          "type": "string"
+        },
+        "spec_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Spec Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assets",
+        "capability_requests",
+        "design_system_version",
+        "entities",
+        "pack_hash",
+        "scenes",
+        "schema_version",
+        "script_hash",
+        "script_id",
+        "spec_id"
+      ],
+      "title": "VisualSpec",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ExplainerRenderBundle.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Everything the renderer reads: spec, compiled timeline, data and precomputed layouts.",
+  "properties": {
+    "bundle_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "datasets": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EvidenceDataset"
+      },
+      "title": "Datasets",
+      "type": "array"
+    },
+    "design_system_version": {
+      "minimum": 1,
+      "title": "Design System Version",
+      "type": "integer"
+    },
+    "fonts_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Fonts Version",
+      "type": "string"
+    },
+    "layouts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DiagramLayout"
+      },
+      "title": "Layouts",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "spec": {
+      "$ref": "#/$defs/VisualSpec"
+    },
+    "timeline": {
+      "$ref": "#/$defs/ExplainerTimeline"
+    }
+  },
+  "required": [
+    "bundle_id",
+    "datasets",
+    "design_system_version",
+    "fonts_version",
+    "layouts",
+    "schema_version",
+    "spec",
+    "timeline"
+  ],
+  "title": "ExplainerRenderBundle",
+  "type": "object"
+}

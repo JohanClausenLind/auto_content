@@ -38,7 +38,7 @@ runtime (`docs/CHANNEL_PROFILE.md`, `EDITORIAL.md`, `DESIGN_SYSTEM.md`, `PLANNER
 `EVIDENCE_POLICY.md`, `SPONSORS.md`) are drafts derived from the repo and need the creator's review.
 
 - [x] 0 audit — GREEN (2026-09-15): table exists, every "works" row has its command, nothing deleted
-- [ ] 1 contracts and evidence — gates B1 arithmetic, B2 invalidation, B3 actionable errors
+- [x] 1 contracts and evidence — GREEN (2026-09-22): B1 arithmetic, B2 invalidation, B3 actionable errors
 - [ ] 2 compiler and render core — gates C1 seek determinism, C2 label bounds, C3 post-encode APCA, C4 60 s compile
 - [ ] 3 real source documents — gates D1–D4 (Scoop capture, pywb replay, OCR check)
 - [ ] 4 narration and alignment — gates E1, E2 (Qwen3-TTS measured, CTC/MFA aligner, licence gate)
@@ -47,7 +47,7 @@ runtime (`docs/CHANNEL_PROFILE.md`, `EDITORIAL.md`, `DESIGN_SYSTEM.md`, `PLANNER
 
 ## Next smallest task
 
-Explainer Phase 1: the contracts in `schemas/explainer.py`, the dependency graph, and gates B1–B3.
+Explainer Phase 2: the compiler and render core, gates C1–C4 (`docs/explainer-audit.md`).
 Before that, the three operator gates below stand as they were:
 
 1. **Live Bluesky gate.** Put a designated TEST account's `BLUESKY_HANDLE` /

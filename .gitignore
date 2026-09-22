@@ -81,3 +81,7 @@ apps/renderer/public/assets/
 # Per-user Claude Code settings. `.claude/settings.json` (shared) and `.mcp.json` stay tracked:
 # neither holds a secret — the MCP entry sources ./.env for its token at launch.
 .claude/settings.local.json
+
+# Remotion agent skills are installed, not vendored: `npx skills add remotion-dev/skills` (skills-lock.json pins them)
+.agents/
+.claude/skills/remotion-*

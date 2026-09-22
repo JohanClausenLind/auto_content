@@ -1,0 +1,10 @@
+{
+  "name": "@content-factory/scoop-capture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pinned Scoop (Harvard LIL) for signed WACZ captures; a separate process, never linked into the renderer",
+  "dependencies": {
+    "@harvard-lil/scoop": "0.7.0"
+  }
+}

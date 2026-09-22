@@ -45,6 +45,13 @@ Not installed automatically (multi-gigabyte). Either point `comfyui.workspace` a
 comfy-cli workspace (this machine: `~/git/ComfyUI`) or run
 `comfy --workspace=./.comfy install --nvidia` then `comfy launch --background`.
 
+## Renderer agent skills
+
+The official Remotion skills the renderer code is written against are installed, not vendored:
+`npx skills add remotion-dev/skills` puts them in `.agents/skills/` (symlinked into
+`.claude/skills/`), pinned by `skills-lock.json`. They ship without a LICENSE file, which is why
+they stay out of git.
+
 ## Local AI stack (optional, GPU)
 Everything the video/audio skills depend on lives inside this repository, laid out ComfyUI-style
 in flat, purpose-named directories. All of them are git-ignored:

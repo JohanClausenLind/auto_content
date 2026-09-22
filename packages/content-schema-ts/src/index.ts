@@ -4,6 +4,15 @@ import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020.
 import addFormats from "ajv-formats";
 
 import { SCHEMA_NAMES, type SchemaName } from "../generated/index.js";
+import ChannelProfile from "../schema/ChannelProfile.schema.json";
+import EvidencePack from "../schema/EvidencePack.schema.json";
+import SourceCaptureManifest from "../schema/SourceCaptureManifest.schema.json";
+import ScriptPlan from "../schema/ScriptPlan.schema.json";
+import NarrationManifest from "../schema/NarrationManifest.schema.json";
+import VisualSpec from "../schema/VisualSpec.schema.json";
+import ExplainerTimeline from "../schema/ExplainerTimeline.schema.json";
+import ReviewReport from "../schema/ReviewReport.schema.json";
+import ExplainerRenderBundle from "../schema/ExplainerRenderBundle.schema.json";
 import AlignmentReport from "../schema/AlignmentReport.schema.json";
 import AnimationSpec from "../schema/AnimationSpec.schema.json";
 import ArtboardSpec from "../schema/ArtboardSpec.schema.json";
@@ -79,6 +88,15 @@ export type * from "../generated/index.js";
 export { SCHEMA_NAMES };
 
 const SCHEMAS: Record<SchemaName, object> = {
+  ChannelProfile,
+  EvidencePack,
+  SourceCaptureManifest,
+  ScriptPlan,
+  NarrationManifest,
+  VisualSpec,
+  ExplainerTimeline,
+  ReviewReport,
+  ExplainerRenderBundle,
   AlignmentReport,
   AnimationSpec,
   ArtboardSpec,

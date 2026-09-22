@@ -1,0 +1,636 @@
+{
+  "$defs": {
+    "CategoryCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "readability",
+            "composition",
+            "continuity",
+            "animation_completion",
+            "narration_alignment",
+            "misleading_comparison",
+            "source_correctness",
+            "highlight_correctness",
+            "communication",
+            "technical",
+            "audio"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "covered_by": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Covered By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "covered_by"
+      ],
+      "title": "CategoryCoverage",
+      "type": "object"
+    },
+    "CoverageSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+            "type": "string"
+          },
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "frame_sha256s": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "title": "Frame Sha256S",
+          "type": "array"
+        },
+        "interval": {
+          "$ref": "#/$defs/TimeInterval"
+        },
+        "sampled_ms": {
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Sampled Ms",
+          "type": "array"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_ids",
+        "frame_sha256s",
+        "interval",
+        "sampled_ms",
+        "scene_id"
+      ],
+      "title": "CoverageSpan",
+      "type": "object"
+    },
+    "CueOffsetRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "offset_ms": {
+          "title": "Offset Ms",
+          "type": "integer"
+        },
+        "repair": {
+          "const": "cue_offset",
+          "title": "Repair",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "offset_ms",
+        "repair"
+      ],
+      "title": "CueOffsetRepair",
+      "type": "object"
+    },
+    "HoldRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "duration_class": {
+          "enum": [
+            "beat",
+            "short",
+            "medium",
+            "long"
+          ],
+          "title": "Duration Class",
+          "type": "string"
+        },
+        "repair": {
+          "const": "hold",
+          "title": "Repair",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "duration_class",
+        "repair"
+      ],
+      "title": "HoldRepair",
+      "type": "object"
+    },
+    "LabelWordingRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "repair": {
+          "const": "label_wording",
+          "title": "Repair",
+          "type": "string"
+        },
+        "short_label": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Short Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "repair",
+        "short_label"
+      ],
+      "title": "LabelWordingRepair",
+      "type": "object"
+    },
+    "LayoutChoiceRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "layout": {
+          "enum": [
+            "primary",
+            "split",
+            "overlay"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "repair": {
+          "const": "layout_choice",
+          "title": "Repair",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "layout",
+        "repair",
+        "scene_id"
+      ],
+      "title": "LayoutChoiceRepair",
+      "type": "object"
+    },
+    "ReviewFinding": {
+      "additionalProperties": false,
+      "description": "One observed problem, where and when, with evidence and a typed repair if one is known.",
+      "properties": {
+        "beat_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Beat Id"
+        },
+        "category": {
+          "enum": [
+            "readability",
+            "composition",
+            "continuity",
+            "animation_completion",
+            "narration_alignment",
+            "misleading_comparison",
+            "source_correctness",
+            "highlight_correctness",
+            "communication",
+            "technical",
+            "audio"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "disposition": {
+          "enum": [
+            "pass",
+            "fail",
+            "uncertain"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "evidence": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "finding_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "frame_sha256s": {
+          "default": [],
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "title": "Frame Sha256S",
+          "type": "array"
+        },
+        "interval": {
+          "$ref": "#/$defs/TimeInterval"
+        },
+        "observed": {
+          "maxLength": 600,
+          "minLength": 1,
+          "title": "Observed",
+          "type": "string"
+        },
+        "proposed_repair": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "propertyName": "repair"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/CueOffsetRepair"
+                },
+                {
+                  "$ref": "#/$defs/LabelWordingRepair"
+                },
+                {
+                  "$ref": "#/$defs/LayoutChoiceRepair"
+                },
+                {
+                  "$ref": "#/$defs/HoldRepair"
+                },
+                {
+                  "$ref": "#/$defs/TakeSelectionRepair"
+                },
+                {
+                  "$ref": "#/$defs/SourcePassageRepair"
+                },
+                {
+                  "$ref": "#/$defs/SplitSceneRepair"
+                }
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proposed Repair"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "blocker",
+            "major",
+            "minor",
+            "note"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beat_id",
+        "category",
+        "confidence",
+        "disposition",
+        "evidence",
+        "finding_id",
+        "frame_sha256s",
+        "interval",
+        "observed",
+        "proposed_repair",
+        "scene_id",
+        "severity"
+      ],
+      "title": "ReviewFinding",
+      "type": "object"
+    },
+    "ReviewedArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "mp4",
+            "frame_set",
+            "animatic",
+            "audio"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "sha256"
+      ],
+      "title": "ReviewedArtifact",
+      "type": "object"
+    },
+    "ReviewerIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "modalities": {
+          "items": {
+            "enum": [
+              "image",
+              "video",
+              "audio",
+              "text"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Modalities",
+          "type": "array"
+        },
+        "model_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Model Id",
+          "type": "string"
+        },
+        "model_revision": {
+          "default": "",
+          "maxLength": 80,
+          "title": "Model Revision",
+          "type": "string"
+        },
+        "prompt_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "quantization": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Quantization",
+          "type": "string"
+        },
+        "rubric_version": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Rubric Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "modalities",
+        "model_id",
+        "model_revision",
+        "prompt_sha256",
+        "quantization",
+        "rubric_version"
+      ],
+      "title": "ReviewerIdentity",
+      "type": "object"
+    },
+    "SourcePassageRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "quote_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Quote Id",
+          "type": "string"
+        },
+        "repair": {
+          "const": "source_passage",
+          "title": "Repair",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "quote_id",
+        "repair",
+        "scene_id"
+      ],
+      "title": "SourcePassageRepair",
+      "type": "object"
+    },
+    "SplitSceneRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "after_beat_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "After Beat Id",
+          "type": "string"
+        },
+        "repair": {
+          "const": "split_scene",
+          "title": "Repair",
+          "type": "string"
+        },
+        "scene_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Scene Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "after_beat_id",
+        "repair",
+        "scene_id"
+      ],
+      "title": "SplitSceneRepair",
+      "type": "object"
+    },
+    "TakeSelectionRepair": {
+      "additionalProperties": false,
+      "properties": {
+        "repair": {
+          "const": "take_selection",
+          "title": "Repair",
+          "type": "string"
+        },
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "take_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Take Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repair",
+        "segment_id",
+        "take_id"
+      ],
+      "title": "TakeSelectionRepair",
+      "type": "object"
+    },
+    "TimeInterval": {
+      "additionalProperties": false,
+      "properties": {
+        "end_ms": {
+          "minimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "start_ms": {
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "end_ms",
+        "start_ms"
+      ],
+      "title": "TimeInterval",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ReviewReport.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A reviewer's verdict on one artifact: who looked, at what, where, and what they found.",
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/ReviewedArtifact"
+    },
+    "authority": {
+      "default": "advisory",
+      "enum": [
+        "advisory",
+        "blocking"
+      ],
+      "title": "Authority",
+      "type": "string"
+    },
+    "categories": {
+      "items": {
+        "$ref": "#/$defs/CategoryCoverage"
+      },
+      "minItems": 1,
+      "title": "Categories",
+      "type": "array"
+    },
+    "coverage": {
+      "items": {
+        "$ref": "#/$defs/CoverageSpan"
+      },
+      "minItems": 1,
+      "title": "Coverage",
+      "type": "array"
+    },
+    "created_at": {
+      "minLength": 4,
+      "title": "Created At",
+      "type": "string"
+    },
+    "disposition": {
+      "enum": [
+        "pass",
+        "fail",
+        "uncertain"
+      ],
+      "title": "Disposition",
+      "type": "string"
+    },
+    "findings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReviewFinding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "report_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "reviewer": {
+      "$ref": "#/$defs/ReviewerIdentity"
+    },
+    "schema_version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "timeline_id": {
+      "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+      "title": "Timeline Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact",
+    "authority",
+    "categories",
+    "coverage",
+    "created_at",
+    "disposition",
+    "findings",
+    "report_id",
+    "reviewer",
+    "schema_version",
+    "timeline_id"
+  ],
+  "title": "ReviewReport",
+  "type": "object"
+}

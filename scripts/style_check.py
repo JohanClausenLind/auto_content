@@ -12,7 +12,8 @@ COMMENT_BLOCK_MAX = 2
 MD_LIMITS = {"STATUS.md": 200, "CLAUDE.md": 80}
 JOURNAL_SECTION_MAX = 60
 EXCLUDE = re.compile(
-    r"^(alembic/|.*/generated/|packages/content-schema-ts/schema/|.*node_modules/|.*/dist/|.*/out/)"
+    r"^(alembic/|\.agents/|\.claude/skills/remotion-|.*/generated/|packages/content-schema-ts/schema/"
+    r"|.*node_modules/|.*/dist/|.*/out/)"
 )
 PY_PRAGMA = re.compile(r"^#!|^# (ruff|pyright|type|noqa|fmt|isort):")
 TS_PRAGMA = re.compile(r"^// ?(eslint|oxlint|@ts-|biome|prettier|c8|v8|istanbul|vitest)")
