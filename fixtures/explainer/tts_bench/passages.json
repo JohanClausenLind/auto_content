@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "asr": "faster-whisper base.en, CPU int8; numbers, case and punctuation normalised on both sides",
+  "passages": [
+    {
+      "id": "amdahl",
+      "kind": "script",
+      "text": "Your program takes 100 milliseconds. You buy a processor twice as fast. It still takes 60. 80 milliseconds of computation plus 20 milliseconds of other work is 100 milliseconds. Double the computation speed and you get 40 plus 20: 60 milliseconds. In 1967, Gene Amdahl argued that the serial part of a program bounds the speed-up from faster hardware. Speed up only the part you measured, and the rest of the wait stays exactly where it was.",
+      "acronyms": [],
+      "long_form": false
+    },
+    {
+      "id": "numbers",
+      "kind": "numbers",
+      "text": "In 2024, 46.3 percent of 1,250 samples exceeded 0.5 milliseconds; by Q3 2025 that fell to 12 percent.",
+      "acronyms": [],
+      "long_form": false
+    },
+    {
+      "id": "acronyms",
+      "kind": "acronyms",
+      "text": "The GPU, CPU and NVMe SSD share PCIe 4.0 lanes; the API returns JSON over HTTPS.",
+      "acronyms": [
+        "GPU",
+        "CPU",
+        "NVMe",
+        "SSD",
+        "PCIe",
+        "API",
+        "JSON",
+        "HTTPS"
+      ],
+      "long_form": false
+    },
+    {
+      "id": "emphasis",
+      "kind": "emphasis",
+      "text": "The program is not slow because the code is bad; it is slow because part of it is SERIAL. You did not buy a faster program, you bought a faster PROCESSOR.",
+      "acronyms": [],
+      "long_form": false
+    },
+    {
+      "id": "long_form",
+      "kind": "long_form",
+      "text": "A bicycle gear is a trade. Every turn of the pedals is one unit of effort, and the gear decides how far that effort carries the bicycle along the road. A low gear turns each pedal stroke into a short distance with little force needed. A high gear turns the same stroke into a long distance, but the rider has to push harder to make it happen. Nothing is gained for free. The work done over a climb is the same whichever gear is chosen; what changes is how that work is spread across the strokes.\n\nThe mechanism is simple to picture. The pedals turn a front chainring, and a chain carries that motion back to a smaller cog on the rear wheel. If the front ring has forty teeth and the rear cog has twenty, one turn of the pedals pulls forty links of chain, and the rear cog, needing only twenty links for one revolution, turns twice. The wheel turns twice for every turn of the legs. Swap the rear cog for one with forty teeth and the wheel turns once per pedal stroke instead. The bicycle covers half the distance per stroke, and the rider feels the pedals become lighter by about the same factor.\n\nRiders talk about this in terms of ratio. The ratio is the number of teeth on the front ring divided by the number on the rear cog. A ratio of two means two wheel turns per pedal turn. A ratio of one means one turn each. Larger ratios suit flat roads and tailwinds, where speed matters and the resistance is low. Smaller ratios suit hills, headwinds and heavy loads, where the rider wants to keep the legs turning at a comfortable rate without stalling.\n\nThat comfortable rate has a name: cadence. Most riders settle into a cadence somewhere between seventy and ninety pedal turns a minute. Muscles work well in that band and tire quickly outside it. The purpose of a gear range is to keep the legs inside that band while the road changes underneath them. On the flat, a high gear lets a moderate cadence produce a good speed. On a climb, a low gear lets the same cadence continue while the bicycle slows, because each stroke now moves it a shorter distance.\n\nThere is an easy way to feel the trade without a hill. Ride along a flat road in a high gear and count strokes for a hundred metres. Then shift to a low gear and count again over the same stretch. The second count is higher, and each stroke was easier. Multiply the number of strokes by the effort per stroke and the two products come out close to the same. Friction and air resistance take a little more from the slower ride, but the shape of the result is what matters: force and distance are being exchanged, not created.\n\nThis is why a bicycle cannot climb a steep hill in a high gear no matter how strong the rider is. The force needed per stroke rises with the ratio, and past some point the legs cannot supply it. Shifting down does not make the hill shorter. It divides the same climb into more strokes, each one small enough to complete. The total effort stays where it was; only the size of each piece changes.\n\nThe same principle appears in a lever, a pulley and a car's gearbox. A long lever moves a heavy load a short way in exchange for a long, light push on the far end. A gearbox lets a small engine start a heavy car by trading speed for turning force in the low gears. The bicycle is simply the version where the rider can feel the trade directly, stroke by stroke, and choose it on the move.",
+      "acronyms": [],
+      "long_form": true
+    }
+  ]
+}

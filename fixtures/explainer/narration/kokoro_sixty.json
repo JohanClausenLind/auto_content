@@ -1,0 +1,40 @@
+{
+ "text": "It still takes sixty.",
+ "words": [
+  "It",
+  "still",
+  "takes",
+  "sixty"
+ ],
+ "synthesizer": "skills/audio/kokoro/run.py --device cpu (hexgrad/Kokoro-82M, af_heart)",
+ "created_at": "2026-09-22",
+ "sample_rate_hz": 16000,
+ "duration_ms": 1900,
+ "kokoro_tokens_ms": [
+  {
+   "text": "It",
+   "start_ms": 250,
+   "end_ms": 375
+  },
+  {
+   "text": "still",
+   "start_ms": 375,
+   "end_ms": 625
+  },
+  {
+   "text": "takes",
+   "start_ms": 625,
+   "end_ms": 900
+  },
+  {
+   "text": "sixty",
+   "start_ms": 900,
+   "end_ms": 1625
+  },
+  {
+   "text": ".",
+   "start_ms": 1625,
+   "end_ms": 1800
+  }
+ ]
+}

@@ -1,0 +1,41 @@
+[project]
+name = "cf-skill-chatterbox"
+version = "0.1.0"
+description = "Isolated environment for Chatterbox Turbo 350M (MIT code and weights, Perth-watermarked output): the explainer TTS benchmark alternate to Qwen3-TTS. Never imported by the control plane."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # chatterbox-tts 0.1.7 itself pins torch==2.6.0 and torchaudio==2.6.0 (PyPI metadata, read
+    # 2026-09-22); the cu126 index supplies the CUDA build of exactly those versions.
+    "chatterbox-tts==0.1.7",
+    "torch==2.6.0+cu126",
+    "torchaudio==2.6.0+cu126",
+    "soundfile==0.14.0",
+    # The x86_64 cu126 wheel's own Requires-Dist, which uv's lock dropped (it read another
+    # platform's metadata); without these torch cannot find libcudart at import.
+    "nvidia-cuda-nvrtc-cu12==12.6.77",
+    "nvidia-cuda-runtime-cu12==12.6.77",
+    "nvidia-cuda-cupti-cu12==12.6.80",
+    "nvidia-cudnn-cu12==9.5.1.17",
+    "nvidia-cublas-cu12==12.6.4.1",
+    "nvidia-cufft-cu12==11.3.0.4",
+    "nvidia-curand-cu12==10.3.7.77",
+    "nvidia-cusolver-cu12==11.7.1.2",
+    "nvidia-cusparse-cu12==12.5.4.2",
+    "nvidia-cusparselt-cu12==0.6.3",
+    "nvidia-nccl-cu12==2.21.5",
+    "nvidia-nvtx-cu12==12.6.77",
+    "nvidia-nvjitlink-cu12==12.6.85",
+    "triton==3.2.0",
+    # resemble-perth imports pkg_resources, gone from setuptools >= 81; without it the watermarker
+    # silently resolves to None and every synthesis fails.
+    "setuptools==80.9.0",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu126" }]
+torchaudio = [{ index = "pytorch-cu126" }]

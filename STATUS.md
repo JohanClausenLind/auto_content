@@ -41,13 +41,13 @@ runtime (`docs/CHANNEL_PROFILE.md`, `EDITORIAL.md`, `DESIGN_SYSTEM.md`, `PLANNER
 - [x] 1 contracts and evidence — GREEN (2026-09-22): B1 arithmetic, B2 invalidation, B3 actionable errors
 - [x] 2 compiler and render core — GREEN (2026-09-22): C1 seek determinism, C2 label bounds, C3 post-encode APCA and edge contrast, C4 60 s compile
 - [x] 3 real source documents — GREEN (2026-09-22): D1 highlight tracking, D2 passage cases, D3 OCR rejection, D4 replay after change
-- [ ] 4 narration and alignment — gates E1, E2 (Qwen3-TTS measured, CTC/MFA aligner, licence gate)
+- [x] 4 narration and alignment — GREEN (2026-09-23): E1, E2; VoiceDesign measured best; creator reference recording still missing
 - [ ] 5 QC, reviewer, repair, delivery — gates F1–F6 (Qwen3.8-27B W4A16 reviewer, advisory first)
 - [ ] 6 editorial workflow and demonstration episodes
 
 ## Next smallest task
 
-Explainer Phase 4 (TTS benchmark running) and Phase 5 (deterministic QC, reviewer, repair, delivery).
+Explainer Phase 5: deterministic QC, the Qwen3.8-27B reviewer on vLLM, repair loop, delivery.
 Before that, the three operator gates below stand as they were:
 
 1. **Live Bluesky gate.** Put a designated TEST account's `BLUESKY_HANDLE` /

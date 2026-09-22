@@ -1057,6 +1057,12 @@ SKILL_ENVS: tuple[SkillEnv, ...] = (
         purpose="Synthesizes narration with word timings",
     ),
     SkillEnv(
+        skill="skills/audio/chatterbox",
+        name="Chatterbox Turbo voice",
+        purpose="The explainer TTS benchmark's MIT alternate; every output is Perth-watermarked",
+        caveat="torch 2.6 cu126, its nvidia-* runtime and setuptools 80.9 pinned; Python 3.12",
+    ),
+    SkillEnv(
         skill="skills/audio/kokoro",
         name="Kokoro voice",
         purpose="The lighter alternative narration voice",

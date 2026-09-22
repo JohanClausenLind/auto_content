@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -62,9 +63,11 @@ def main() -> int:
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(args.seed)
 
+    t0 = time.perf_counter()
     model = Qwen3TTSModel.from_pretrained(
         model_path, device_map=args.device, dtype=torch.bfloat16, attn_implementation=args.attn
     )
+    t_loaded = time.perf_counter()
 
     if args.list:
         print(
@@ -112,6 +115,7 @@ def main() -> int:
             instruct=args.instruct or None,
         )
 
+    t_done = time.perf_counter()
     import soundfile as sf
 
     out = args.out or tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
@@ -128,6 +132,8 @@ def main() -> int:
                 "describe": args.describe or None,
                 "model_revision": Path(model_path).name,
                 "seed": args.seed,
+                "load_s": round(t_loaded - t0, 2),
+                "generate_s": round(t_done - t_loaded, 2),
             },
             ensure_ascii=False,
         )

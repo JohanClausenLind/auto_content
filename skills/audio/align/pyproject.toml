@@ -1,0 +1,23 @@
+[project]
+name = "cf-skill-align"
+version = "0.1.0"
+description = "Isolated environment for the explainer forced aligner: facebook/wav2vec2-base-960h (Apache-2.0) CTC emissions through torchaudio.functional.forced_align (BSD-2-Clause), CPU only. Never imported by the control plane."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # torch and torchaudio pair by release (both 2026-03-23); the CPU index keeps CUDA off this box.
+    "torch==2.11.0+cpu",
+    "torchaudio==2.11.0+cpu",
+    "transformers==5.17.0",
+    "safetensors==0.8.0",
+    "soundfile==0.14.0",
+    "numpy==2.5.3",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+torchaudio = [{ index = "pytorch-cpu" }]
