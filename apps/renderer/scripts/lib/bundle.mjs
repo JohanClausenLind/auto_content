@@ -1,5 +1,5 @@
-// Webpack bundle cache: one bundle per hash of (renderer src, content-ui src, video-ui src,
-// fixtures imported as default props, fonts, lockfile). Reused across script invocations.
+// Webpack bundle cache: one bundle per hash of (renderer src, content-ui, video-ui and explainer-ui
+// src, fixtures imported as default props, fonts, lockfile). Reused across script invocations.
 import { bundle } from "@remotion/bundler";
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from "node:fs";
@@ -47,7 +47,9 @@ export function bundleHash() {
     path.join(rendererRoot, "public"),
     path.join(repoRoot, "packages", "content-ui", "src"),
     path.join(repoRoot, "packages", "video-ui", "src"),
+    path.join(repoRoot, "packages", "explainer-ui", "src"),
     path.join(repoRoot, "fixtures", "demo"),
+    path.join(repoRoot, "fixtures", "explainer", "render"),
   ])
     walk(dir, inputs);
   inputs.push(path.join(repoRoot, "pnpm-lock.yaml"));

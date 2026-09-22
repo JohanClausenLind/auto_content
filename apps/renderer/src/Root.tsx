@@ -1,9 +1,11 @@
-import type { RenderBundle } from "@content-factory/content-schema-ts";
+import type { ExplainerRenderBundle, RenderBundle } from "@content-factory/content-schema-ts";
 import { Composition, Still } from "remotion";
 
 import artboardFixture from "../../../fixtures/demo/artboard-bundle.json";
 import timelineFixture from "../../../fixtures/demo/timeline-bundle.json";
+import explainerFixture from "../../../fixtures/explainer/render/bundle-min.json";
 import { ArtboardComposition, calculateArtboardMetadata } from "./compositions/ArtboardComposition";
+import { ExplainerComposition, calculateExplainerMetadata } from "./compositions/ExplainerComposition";
 import { SmokeTitle, smokeTitleSchema } from "./compositions/SmokeTitle";
 import { TimelineComposition, calculateTimelineMetadata } from "./compositions/TimelineComposition";
 
@@ -11,6 +13,7 @@ import { TimelineComposition, calculateTimelineMetadata } from "./compositions/T
 // always pass a validated bundle as inputProps.
 const defaultArtboard = artboardFixture as unknown as RenderBundle;
 const defaultTimeline = timelineFixture as unknown as RenderBundle;
+const defaultExplainer = explainerFixture as unknown as ExplainerRenderBundle;
 
 // Every composition is deterministic: no Math.random, no CSS transitions, no network fetches.
 export const RemotionRoot: React.FC = () => {
@@ -32,6 +35,12 @@ export const RemotionRoot: React.FC = () => {
         component={TimelineComposition}
         defaultProps={{ bundle: defaultTimeline }}
         calculateMetadata={calculateTimelineMetadata}
+      />
+      <Composition
+        id="Explainer"
+        component={ExplainerComposition}
+        defaultProps={{ bundle: defaultExplainer }}
+        calculateMetadata={calculateExplainerMetadata}
       />
     </>
   );

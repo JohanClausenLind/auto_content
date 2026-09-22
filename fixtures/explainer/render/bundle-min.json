@@ -1,0 +1,862 @@
+{
+  "schema_version": 1,
+  "bundle_id": "bndl_min00001",
+  "spec": {
+    "schema_version": 1,
+    "spec_id": "spec_min00001",
+    "script_id": "script_min00001",
+    "script_hash": "e0ff4a6c219773b6aa45bd786bf1266597f535730f5407fd94a0e4c3c7a08be9",
+    "pack_hash": "cebca6248a603570e1c49e92b395f4ebad75e346669349e4ca2a8e5295d5ca4e",
+    "design_system_version": 1,
+    "entities": [
+      {
+        "entity_id": "ent_wind0001",
+        "label": "Wind",
+        "short_label": "Wind",
+        "kind": "series",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_solar001",
+        "label": "Solar",
+        "short_label": "Solar",
+        "kind": "series",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_num00001",
+        "label": "Installed solar capacity",
+        "short_label": "",
+        "kind": "value",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_numlbl01",
+        "label": "installed solar capacity, 2024",
+        "short_label": "",
+        "kind": "text",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_nsun0001",
+        "label": "Sunlight",
+        "short_label": "",
+        "kind": "node",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_npanel01",
+        "label": "Solar panel",
+        "short_label": "",
+        "kind": "node",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_ngrid001",
+        "label": "Grid",
+        "short_label": "",
+        "kind": "node",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_edc00001",
+        "label": "DC",
+        "short_label": "",
+        "kind": "edge",
+        "claim_ids": []
+      },
+      {
+        "entity_id": "ent_eac00001",
+        "label": "AC",
+        "short_label": "",
+        "kind": "edge",
+        "claim_ids": []
+      }
+    ],
+    "assets": [
+      {
+        "asset_id": "ast_dsenergy01",
+        "kind": "dataset",
+        "sha256": "fa4bd43fdd5dd55a79c67f9220c8746e5565130910b52ae017a1d276d5c06de1",
+        "dataset_id": "ds_energy001",
+        "capture_id": null
+      }
+    ],
+    "scenes": [
+      {
+        "scene_id": "scn_bars0001",
+        "section": "build_model",
+        "purpose": "Stack wind and solar capacity by year, then point at solar in 2024",
+        "template": {
+          "template": "chart",
+          "chart_kind": "stacked_bar",
+          "title": "Installed wind and solar capacity",
+          "dataset_asset_id": "ast_dsenergy01",
+          "x": {
+            "field": "year",
+            "kind": "temporal",
+            "unit": "",
+            "title": "Year"
+          },
+          "y": {
+            "field": "wind",
+            "kind": "quantitative",
+            "unit": "GW",
+            "title": "Capacity"
+          },
+          "series_field": null,
+          "series": [
+            {
+              "value": "wind",
+              "entity_id": "ent_wind0001"
+            },
+            {
+              "value": "solar",
+              "entity_id": "ent_solar001"
+            }
+          ],
+          "baseline_zero": true
+        },
+        "layout": "primary",
+        "initial_visible": [],
+        "beats": [
+          {
+            "beat_id": "beat_barwind01",
+            "cue": {
+              "segment_id": "seg_build0001",
+              "token_start": 0,
+              "token_end": 2,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_wind0001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_barsolar1",
+            "cue": {
+              "segment_id": "seg_build0001",
+              "token_start": 3,
+              "token_end": 5,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_solar001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_barhilit1",
+            "cue": {
+              "segment_id": "seg_build0001",
+              "token_start": 6,
+              "token_end": 8,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "highlight",
+                "targets": [
+                  "ent_solar001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_barannot1",
+            "cue": {
+              "segment_id": "seg_build0001",
+              "token_start": 9,
+              "token_end": 12,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "annotate",
+                "targets": [
+                  "ent_solar001"
+                ],
+                "text": "124 GW of solar in 2024",
+                "claim_id": null
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_barclear1",
+            "cue": {
+              "segment_id": "seg_build0001",
+              "token_start": 13,
+              "token_end": 14,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "clear_highlight",
+                "targets": []
+              }
+            ]
+          }
+        ],
+        "claim_ids": [],
+        "source_ids": [],
+        "sponsored": false
+      },
+      {
+        "scene_id": "scn_num00001",
+        "section": "question_stakes",
+        "purpose": "The one number the episode turns on",
+        "template": {
+          "template": "text",
+          "variant": "big_number",
+          "items": [
+            {
+              "entity_id": "ent_num00001",
+              "text": "124 GW",
+              "claim_id": null
+            },
+            {
+              "entity_id": "ent_numlbl01",
+              "text": "installed solar capacity, 2024",
+              "claim_id": null
+            }
+          ]
+        },
+        "layout": "primary",
+        "initial_visible": [],
+        "beats": [
+          {
+            "beat_id": "beat_numshow01",
+            "cue": {
+              "segment_id": "seg_stakes001",
+              "token_start": 0,
+              "token_end": 1,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_num00001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_numlabel1",
+            "cue": {
+              "segment_id": "seg_stakes001",
+              "token_start": 2,
+              "token_end": 4,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_numlbl01"
+                ]
+              }
+            ]
+          }
+        ],
+        "claim_ids": [],
+        "source_ids": [],
+        "sponsored": false
+      },
+      {
+        "scene_id": "scn_flow0001",
+        "section": "run_system",
+        "purpose": "Sunlight becomes DC in the panel and AC on the grid",
+        "template": {
+          "template": "diagram",
+          "direction": "LR",
+          "nodes": [
+            {
+              "entity_id": "ent_nsun0001",
+              "label": "Sunlight"
+            },
+            {
+              "entity_id": "ent_npanel01",
+              "label": "Solar panel"
+            },
+            {
+              "entity_id": "ent_ngrid001",
+              "label": "Grid"
+            }
+          ],
+          "edges": [
+            {
+              "entity_id": "ent_edc00001",
+              "source_entity_id": "ent_nsun0001",
+              "target_entity_id": "ent_npanel01",
+              "label": "DC"
+            },
+            {
+              "entity_id": "ent_eac00001",
+              "source_entity_id": "ent_npanel01",
+              "target_entity_id": "ent_ngrid001",
+              "label": "AC"
+            }
+          ]
+        },
+        "layout": "primary",
+        "initial_visible": [],
+        "beats": [
+          {
+            "beat_id": "beat_flownodes1",
+            "cue": {
+              "segment_id": "seg_system001",
+              "token_start": 0,
+              "token_end": 2,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_nsun0001",
+                  "ent_npanel01",
+                  "ent_ngrid001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_flowdc001",
+            "cue": {
+              "segment_id": "seg_system001",
+              "token_start": 3,
+              "token_end": 4,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "draw",
+                "targets": [
+                  "ent_edc00001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_flowac001",
+            "cue": {
+              "segment_id": "seg_system001",
+              "token_start": 5,
+              "token_end": 6,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "draw",
+                "targets": [
+                  "ent_eac00001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_flowrun01",
+            "cue": {
+              "segment_id": "seg_system001",
+              "token_start": 7,
+              "token_end": 9,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "flow",
+                "targets": [
+                  "ent_edc00001",
+                  "ent_eac00001"
+                ]
+              }
+            ]
+          },
+          {
+            "beat_id": "beat_flowzoom01",
+            "cue": {
+              "segment_id": "seg_system001",
+              "token_start": 10,
+              "token_end": 12,
+              "relation": "on",
+              "duration_class": "short"
+            },
+            "actions": [
+              {
+                "action": "zoom_to",
+                "targets": [
+                  "ent_npanel01"
+                ]
+              }
+            ]
+          }
+        ],
+        "claim_ids": [],
+        "source_ids": [],
+        "sponsored": false
+      }
+    ],
+    "capability_requests": []
+  },
+  "timeline": {
+    "schema_version": 1,
+    "timeline_id": "tl_min0000001",
+    "spec_id": "spec_min00001",
+    "spec_hash": "045470c66c7626797636586b7de578318d3a2ad169316f1e9df13a5d85b46a66",
+    "script_hash": "e0ff4a6c219773b6aa45bd786bf1266597f535730f5407fd94a0e4c3c7a08be9",
+    "pack_hash": "cebca6248a603570e1c49e92b395f4ebad75e346669349e4ca2a8e5295d5ca4e",
+    "narration_manifest_id": null,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "total_frames": 240,
+    "scenes": [
+      {
+        "scene_id": "scn_bars0001",
+        "start_frame": 0,
+        "duration_frames": 90,
+        "regions": [
+          {
+            "name": "title",
+            "box": {
+              "x": 96,
+              "y": 54,
+              "width": 1728,
+              "height": 56
+            }
+          },
+          {
+            "name": "legend",
+            "box": {
+              "x": 96,
+              "y": 118,
+              "width": 1728,
+              "height": 40
+            }
+          },
+          {
+            "name": "plot",
+            "box": {
+              "x": 96,
+              "y": 174,
+              "width": 1728,
+              "height": 852
+            }
+          }
+        ],
+        "colors": [
+          {
+            "entity_id": "ent_wind0001",
+            "token_id": "data.cat.blue",
+            "srgb_hex": "#0172B2"
+          },
+          {
+            "entity_id": "ent_solar001",
+            "token_id": "data.cat.orange",
+            "srgb_hex": "#E69F00"
+          }
+        ],
+        "boxes": [],
+        "actions": [
+          {
+            "beat_id": "beat_barwind01",
+            "index": 0,
+            "action": "reveal",
+            "start_frame": 0,
+            "end_frame": 12,
+            "targets": [
+              "ent_wind0001"
+            ]
+          },
+          {
+            "beat_id": "beat_barsolar1",
+            "index": 0,
+            "action": "reveal",
+            "start_frame": 12,
+            "end_frame": 24,
+            "targets": [
+              "ent_solar001"
+            ]
+          },
+          {
+            "beat_id": "beat_barhilit1",
+            "index": 0,
+            "action": "highlight",
+            "start_frame": 36,
+            "end_frame": 42,
+            "targets": [
+              "ent_solar001"
+            ]
+          },
+          {
+            "beat_id": "beat_barannot1",
+            "index": 0,
+            "action": "annotate",
+            "start_frame": 48,
+            "end_frame": 60,
+            "targets": [
+              "ent_solar001"
+            ]
+          },
+          {
+            "beat_id": "beat_barclear1",
+            "index": 0,
+            "action": "clear_highlight",
+            "start_frame": 78,
+            "end_frame": 84,
+            "targets": []
+          }
+        ]
+      },
+      {
+        "scene_id": "scn_num00001",
+        "start_frame": 90,
+        "duration_frames": 60,
+        "regions": [
+          {
+            "name": "content",
+            "box": {
+              "x": 96,
+              "y": 54,
+              "width": 1728,
+              "height": 972
+            }
+          }
+        ],
+        "colors": [],
+        "boxes": [
+          {
+            "entity_id": "ent_num00001",
+            "box": {
+              "x": 96,
+              "y": 440,
+              "width": 1728,
+              "height": 90
+            },
+            "font_px": 72,
+            "lines": 1,
+            "text": "124 GW"
+          },
+          {
+            "entity_id": "ent_numlbl01",
+            "box": {
+              "x": 96,
+              "y": 546,
+              "width": 1728,
+              "height": 43
+            },
+            "font_px": 34,
+            "lines": 1,
+            "text": "installed solar capacity, 2024"
+          }
+        ],
+        "actions": [
+          {
+            "beat_id": "beat_numshow01",
+            "index": 0,
+            "action": "reveal",
+            "start_frame": 90,
+            "end_frame": 102,
+            "targets": [
+              "ent_num00001"
+            ]
+          },
+          {
+            "beat_id": "beat_numlabel1",
+            "index": 0,
+            "action": "reveal",
+            "start_frame": 100,
+            "end_frame": 112,
+            "targets": [
+              "ent_numlbl01"
+            ]
+          }
+        ]
+      },
+      {
+        "scene_id": "scn_flow0001",
+        "start_frame": 150,
+        "duration_frames": 90,
+        "regions": [
+          {
+            "name": "content",
+            "box": {
+              "x": 96,
+              "y": 54,
+              "width": 1728,
+              "height": 972
+            }
+          }
+        ],
+        "colors": [
+          {
+            "entity_id": "ent_nsun0001",
+            "token_id": "data.cat.orange",
+            "srgb_hex": "#E69F00"
+          },
+          {
+            "entity_id": "ent_npanel01",
+            "token_id": "data.cat.blue",
+            "srgb_hex": "#0172B2"
+          },
+          {
+            "entity_id": "ent_ngrid001",
+            "token_id": "data.cat.green",
+            "srgb_hex": "#009E73"
+          }
+        ],
+        "boxes": [
+          {
+            "entity_id": "ent_nsun0001",
+            "box": {
+              "x": 336,
+              "y": 504,
+              "width": 224,
+              "height": 72
+            },
+            "font_px": 28,
+            "lines": 1,
+            "text": "Sunlight"
+          },
+          {
+            "entity_id": "ent_npanel01",
+            "box": {
+              "x": 848,
+              "y": 504,
+              "width": 256,
+              "height": 72
+            },
+            "font_px": 28,
+            "lines": 1,
+            "text": "Solar panel"
+          },
+          {
+            "entity_id": "ent_ngrid001",
+            "box": {
+              "x": 1392,
+              "y": 504,
+              "width": 192,
+              "height": 72
+            },
+            "font_px": 28,
+            "lines": 1,
+            "text": "Grid"
+          }
+        ],
+        "actions": [
+          {
+            "beat_id": "beat_flownodes1",
+            "index": 0,
+            "action": "reveal",
+            "start_frame": 150,
+            "end_frame": 162,
+            "targets": [
+              "ent_nsun0001",
+              "ent_npanel01",
+              "ent_ngrid001"
+            ]
+          },
+          {
+            "beat_id": "beat_flowdc001",
+            "index": 0,
+            "action": "draw",
+            "start_frame": 165,
+            "end_frame": 180,
+            "targets": [
+              "ent_edc00001"
+            ]
+          },
+          {
+            "beat_id": "beat_flowac001",
+            "index": 0,
+            "action": "draw",
+            "start_frame": 180,
+            "end_frame": 195,
+            "targets": [
+              "ent_eac00001"
+            ]
+          },
+          {
+            "beat_id": "beat_flowrun01",
+            "index": 0,
+            "action": "flow",
+            "start_frame": 195,
+            "end_frame": 207,
+            "targets": [
+              "ent_edc00001",
+              "ent_eac00001"
+            ]
+          },
+          {
+            "beat_id": "beat_flowzoom01",
+            "index": 0,
+            "action": "zoom_to",
+            "start_frame": 213,
+            "end_frame": 239,
+            "targets": [
+              "ent_npanel01"
+            ]
+          }
+        ]
+      }
+    ],
+    "inputs": [],
+    "compiler_version": "fixture-0.1"
+  },
+  "datasets": [
+    {
+      "dataset_id": "ds_energy001",
+      "title": "Installed wind and solar capacity",
+      "columns": [
+        {
+          "name": "year",
+          "kind": "temporal",
+          "unit": ""
+        },
+        {
+          "name": "wind",
+          "kind": "quantitative",
+          "unit": "GW"
+        },
+        {
+          "name": "solar",
+          "kind": "quantitative",
+          "unit": "GW"
+        }
+      ],
+      "rows": [
+        {
+          "key": "2021",
+          "values": [
+            "2021",
+            60.0,
+            70.0
+          ],
+          "claim_ids": []
+        },
+        {
+          "key": "2022",
+          "values": [
+            "2022",
+            68.0,
+            88.0
+          ],
+          "claim_ids": []
+        },
+        {
+          "key": "2023",
+          "values": [
+            "2023",
+            75.0,
+            104.0
+          ],
+          "claim_ids": []
+        },
+        {
+          "key": "2024",
+          "values": [
+            "2024",
+            84.0,
+            124.0
+          ],
+          "claim_ids": []
+        }
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "scene_id": "scn_flow0001",
+      "width": 1248,
+      "height": 72,
+      "nodes": [
+        {
+          "entity_id": "ent_nsun0001",
+          "box": {
+            "x": 336,
+            "y": 504,
+            "width": 224,
+            "height": 72
+          }
+        },
+        {
+          "entity_id": "ent_npanel01",
+          "box": {
+            "x": 848,
+            "y": 504,
+            "width": 256,
+            "height": 72
+          }
+        },
+        {
+          "entity_id": "ent_ngrid001",
+          "box": {
+            "x": 1392,
+            "y": 504,
+            "width": 192,
+            "height": 72
+          }
+        }
+      ],
+      "edges": [
+        {
+          "entity_id": "ent_edc00001",
+          "points": [
+            {
+              "x": 560.0,
+              "y": 540.0
+            },
+            {
+              "x": 848.0,
+              "y": 540.0
+            }
+          ],
+          "label_anchor": {
+            "x": 704.0,
+            "y": 512.0
+          }
+        },
+        {
+          "entity_id": "ent_eac00001",
+          "points": [
+            {
+              "x": 1104.0,
+              "y": 540.0
+            },
+            {
+              "x": 1392.0,
+              "y": 540.0
+            }
+          ],
+          "label_anchor": {
+            "x": 1248.0,
+            "y": 512.0
+          }
+        }
+      ]
+    }
+  ],
+  "design_system_version": 1,
+  "fonts_version": "fontsource-5.3.0"
+}

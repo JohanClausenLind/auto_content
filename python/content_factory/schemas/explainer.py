@@ -601,9 +601,10 @@ class NarrationTake(SchemaModel):
     segment_ids: tuple[OpaqueId, ...] = Field(min_length=1)
     kind: Literal["recorded", "synthesized"]
     audio_sha256: Sha256Hex
+    start_ms: int = Field(default=0, ge=0)
     duration_ms: int = Field(ge=1)
     sample_rate_hz: int = Field(ge=8000)
-    transcript_similarity: float = Field(ge=0, le=1)
+    transcript_similarity: float | None = Field(default=None, ge=0, le=1)
     alignment: Alignment | None = None
 
     @model_validator(mode="after")
@@ -718,13 +719,16 @@ class FieldEncoding(SchemaModel):
 
 
 class SeriesBinding(SchemaModel):
-    value: str = Field(min_length=1, max_length=80)
+    """A series entity; value is the series_field value it draws, empty for a single series."""
+
+    value: str = Field(default="", max_length=80)
     entity_id: OpaqueId
 
 
 class ChartTemplate(SchemaModel):
     template: Literal["chart"]
     chart_kind: Literal["bar", "line", "area", "stacked_bar", "scatter", "slope"]
+    title: str = Field(default="", max_length=60)
     dataset_asset_id: OpaqueId
     x: FieldEncoding
     y: FieldEncoding
@@ -736,6 +740,12 @@ class ChartTemplate(SchemaModel):
     def _bars_start_at_zero(self) -> ChartTemplate:
         if self.chart_kind in {"bar", "stacked_bar"} and not self.baseline_zero:
             msg = "bar charts keep a zero baseline; use a line or slope chart for a truncated axis"
+            raise ValueError(msg)
+        # Long format: value is a series_field value. Wide format: value names the column; a
+        # single wide series may leave it empty and draw y.field.
+        unnamed = [s.entity_id for s in self.series if not s.value]
+        if unnamed and (self.series_field is not None or len(self.series) > 1):
+            msg = f"series {', '.join(unnamed)} need the value or column they draw"
             raise ValueError(msg)
         return self
 
@@ -1019,12 +1029,13 @@ class EntityColor(SchemaModel):
 
 
 class EntityBox(SchemaModel):
-    """Where an entity sits; font_px is the role size the compiler verified, not a shrink."""
+    """Where a text sits; text is what the compiler verified fits (a short_label when needed)."""
 
     entity_id: OpaqueId
     box: PixelBox
     font_px: int | None = Field(default=None, ge=1)
     lines: int = Field(default=1, ge=1)
+    text: str | None = Field(default=None, max_length=400)
 
 
 class NamedRegion(SchemaModel):

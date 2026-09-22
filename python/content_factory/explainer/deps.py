@@ -15,6 +15,9 @@ from content_factory.schemas.explainer import (
     DiagramTemplate,
     EvidencePack,
     EvidenceSource,
+    ExplainerTimeline,
+    NarrationManifest,
+    NarrationTake,
     ReviewReport,
     Scene,
     ScriptPlan,
@@ -27,7 +30,16 @@ from content_factory.schemas.explainer import (
 )
 
 NodeKind = Literal[
-    "source", "capture", "evidence", "claim", "calc", "dataset", "segment", "scene", "review"
+    "source",
+    "capture",
+    "evidence",
+    "claim",
+    "calc",
+    "dataset",
+    "segment",
+    "scene",
+    "review",
+    "take",
 ]
 
 
@@ -257,3 +269,55 @@ def invalidation(
     graph = build_graph(old_pack, script, spec, manifests, reviews)
     seeds = [node_id("source", source_id) for source_id in diff.changed | diff.removed]
     return InvalidationReport(diff=diff, invalidated=graph.dependents(seeds))
+
+
+def invalidated_by_takes(
+    old: NarrationManifest,
+    new: NarrationManifest,
+    script: ScriptPlan,
+    spec: VisualSpec,
+    reviews: Sequence[ReviewReport] = (),
+    *,
+    before: ExplainerTimeline | None = None,
+    after: ExplainerTimeline | None = None,
+) -> frozenset[str]:
+    """Downstream of every take whose audio or length changed, plus every scene that moved."""
+    nodes = {node_id("take", t.take_id) for t in old.takes}
+    nodes.update(node_id("segment", s.segment_id) for s in script.segments)
+    nodes.update(node_id("scene", s.scene_id) for s in spec.scenes)
+    nodes.update(node_id("review", r.report_id) for r in reviews)
+    edges = _Edges(frozenset(nodes))
+    for take in old.takes:
+        for sid in take.segment_ids:
+            edges.link(node_id("take", take.take_id), node_id("segment", sid))
+    _link_scenes(edges, spec)
+    for review in reviews:
+        for span in review.coverage:
+            edges.link(node_id("scene", span.scene_id), node_id("review", review.report_id))
+    graph = edges.graph()
+    invalidated = set(
+        graph.dependents(node_id("take", t.take_id) for t in _changed_takes(old, new))
+    )
+    if before is not None and after is not None:
+        starts = {s.scene_id: s.start_frame for s in after.scenes}
+        moved = {
+            node_id("scene", s.scene_id)
+            for s in before.scenes
+            if starts.get(s.scene_id) != s.start_frame
+        }
+        invalidated |= moved | graph.dependents(moved)
+    return frozenset(invalidated)
+
+
+def _changed_takes(old: NarrationManifest, new: NarrationManifest) -> list[NarrationTake]:
+    """Old takes whose segments are now spoken by other audio, another length, or nothing."""
+    now = {sid: t for t in new.takes for sid in t.segment_ids}
+    changed: list[NarrationTake] = []
+    for take in old.takes:
+        was = (take.audio_sha256, take.duration_ms)
+        if any(
+            (c := now.get(sid)) is None or (c.audio_sha256, c.duration_ms) != was
+            for sid in take.segment_ids
+        ):
+            changed.append(take)
+    return changed

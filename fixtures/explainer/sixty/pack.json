@@ -1,0 +1,762 @@
+{
+  "calculations": [
+    {
+      "calc_id": "calc_ratio_low",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_front_low",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_rear_low",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_ratio_low"
+    },
+    {
+      "calc_id": "calc_ratio_mid",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_front_mid",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_rear_mid",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_ratio_mid"
+    },
+    {
+      "calc_id": "calc_ratio_high",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_front_high",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_rear_high",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_ratio_high"
+    },
+    {
+      "calc_id": "calc_ratio_top",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_front_top",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_rear_top",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_ratio_top"
+    },
+    {
+      "calc_id": "calc_dist_top",
+      "op": "mul",
+      "operands": [
+        {
+          "claim_id": "clm_ratio_top",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_wheel_circ",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_dist_top"
+    },
+    {
+      "calc_id": "calc_dist_low",
+      "op": "mul",
+      "operands": [
+        {
+          "claim_id": "clm_ratio_low",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_wheel_circ",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_dist_low"
+    },
+    {
+      "calc_id": "calc_torque_x4",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_ratio_top",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_ratio_low",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_torque_x4"
+    }
+  ],
+  "claims": [
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_front_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The low gear uses a 30-tooth front chainring",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 30.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_rear_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The low gear uses a 30-tooth rear cog",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 30.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": "calc_ratio_low",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_ratio_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The low gear ratio is 1",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 1.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_front_mid",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The mid gear uses a 30-tooth front chainring",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 30.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_rear_mid",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The mid gear uses a 15-tooth rear cog",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 15.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": "calc_ratio_mid",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_ratio_mid",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The mid gear ratio is 2",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 2.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_front_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The high gear uses a 45-tooth front chainring",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 45.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_rear_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The high gear uses a 15-tooth rear cog",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 15.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": "calc_ratio_high",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_ratio_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The high gear ratio is 3",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 3.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_front_top",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The top gear uses a 48-tooth front chainring",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 48.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_rear_top",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The top gear uses a 12-tooth rear cog",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 12.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": "calc_ratio_top",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_ratio_top",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The top gear ratio is 4",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 4.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_wheel_circ",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "The rear wheel rolls 2.1 m per turn",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 2.1,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": "calc_dist_top",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_dist_top",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "In top gear one pedal turn rolls the bike 8.4 m",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 8.4,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": "calc_dist_low",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_dist_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "In low gear one pedal turn rolls the bike 2.1 m",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 2.1,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": "calc_torque_x4",
+      "checked_at": "2026-09-22",
+      "claim_id": "clm_torque_x4",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative gear set chosen for round numbers, not a measured bicycle",
+      "short_label": "",
+      "stable": false,
+      "statement": "Top gear asks 4 times the pedal effort of low gear",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 4.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "gear",
+          "unit": ""
+        },
+        {
+          "kind": "nominal",
+          "name": "part",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "teeth",
+          "unit": "count"
+        }
+      ],
+      "dataset_id": "ds_gear_teeth",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_front_low"
+          ],
+          "key": "low-front",
+          "values": [
+            "low",
+            "front",
+            30.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_rear_low"
+          ],
+          "key": "low-rear",
+          "values": [
+            "low",
+            "rear",
+            30.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_front_mid"
+          ],
+          "key": "mid-front",
+          "values": [
+            "mid",
+            "front",
+            30.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_rear_mid"
+          ],
+          "key": "mid-rear",
+          "values": [
+            "mid",
+            "rear",
+            15.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_front_high"
+          ],
+          "key": "high-front",
+          "values": [
+            "high",
+            "front",
+            45.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_rear_high"
+          ],
+          "key": "high-rear",
+          "values": [
+            "high",
+            "rear",
+            15.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_front_top"
+          ],
+          "key": "top-front",
+          "values": [
+            "top",
+            "front",
+            48.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_rear_top"
+          ],
+          "key": "top-rear",
+          "values": [
+            "top",
+            "rear",
+            12.0
+          ]
+        }
+      ],
+      "title": "Teeth per gear and part"
+    },
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "gear",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "teeth_front",
+          "unit": "count"
+        },
+        {
+          "kind": "quantitative",
+          "name": "teeth_rear",
+          "unit": "count"
+        },
+        {
+          "kind": "quantitative",
+          "name": "ratio",
+          "unit": "ratio"
+        }
+      ],
+      "dataset_id": "ds_gear_ratios",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_front_low",
+            "clm_rear_low",
+            "clm_ratio_low"
+          ],
+          "key": "low",
+          "values": [
+            "low",
+            30.0,
+            30.0,
+            1.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_front_mid",
+            "clm_rear_mid",
+            "clm_ratio_mid"
+          ],
+          "key": "mid",
+          "values": [
+            "mid",
+            30.0,
+            15.0,
+            2.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_front_high",
+            "clm_rear_high",
+            "clm_ratio_high"
+          ],
+          "key": "high",
+          "values": [
+            "high",
+            45.0,
+            15.0,
+            3.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_front_top",
+            "clm_rear_top",
+            "clm_ratio_top"
+          ],
+          "key": "top",
+          "values": [
+            "top",
+            48.0,
+            12.0,
+            4.0
+          ]
+        }
+      ],
+      "title": "Gear ratios"
+    }
+  ],
+  "frozen_at": "2026-09-22T00:00:00Z",
+  "items": [],
+  "language": "en",
+  "pack_id": "pack_gears_60s",
+  "schema_version": 1,
+  "sources": [
+    {
+      "accessed_at": "2026-09-22",
+      "author": "",
+      "canonical_url": "https://en.wikipedia.org/wiki/Bicycle_gearing",
+      "capture_id": null,
+      "content_sha256": "f52cdc321725083f684cdb159c83e75b4892db30733f405995376cf99c68145c",
+      "published_at": null,
+      "publisher": "Wikipedia",
+      "rights_status": "quotable_excerpt",
+      "source_class": "reference",
+      "source_id": "src_wiki_gear",
+      "title": "Bicycle gearing",
+      "url": "https://en.wikipedia.org/wiki/Bicycle_gearing"
+    }
+  ],
+  "topic": "How a bicycle's gears trade force for distance"
+}

@@ -145,16 +145,30 @@
           "title": "Segment Ids",
           "type": "array"
         },
+        "start_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        },
         "take_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
           "title": "Take Id",
           "type": "string"
         },
         "transcript_similarity": {
-          "maximum": 1,
-          "minimum": 0,
-          "title": "Transcript Similarity",
-          "type": "number"
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transcript Similarity"
         }
       },
       "required": [
@@ -164,6 +178,7 @@
         "kind",
         "sample_rate_hz",
         "segment_ids",
+        "start_ms",
         "take_id",
         "transcript_similarity"
       ],

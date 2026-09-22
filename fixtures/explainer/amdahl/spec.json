@@ -229,6 +229,7 @@
         ],
         "series_field": "part",
         "template": "chart",
+        "title": "",
         "x": {
           "field": "scenario",
           "kind": "nominal",

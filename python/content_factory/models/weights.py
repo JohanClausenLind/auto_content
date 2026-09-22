@@ -990,7 +990,7 @@ WEIGHT_PACKAGES: tuple[WeightPackage, ...] = (
     WeightPackage(
         key="wav2vec2-base-960h",
         name="facebook/wav2vec2-base-960h",
-        purpose="Explainer forced alignment: CTC emissions for torchaudio forced_align (Apache-2.0)",
+        purpose="Explainer forced alignment: CTC emissions for torchaudio forced_align",
         store_dir="wav2vec2-base-960h",
         license="apache-2.0",
         approx_bytes=371_000_000,
@@ -1022,7 +1022,7 @@ WEIGHT_PACKAGES: tuple[WeightPackage, ...] = (
     WeightPackage(
         key="chatterbox-turbo",
         name="ResembleAI/chatterbox-turbo",
-        purpose="Explainer TTS benchmark alternate to Qwen3-TTS (MIT weights, watermarked output)",
+        purpose="Explainer TTS benchmark alternate to Qwen3-TTS (MIT, watermarked output)",
         store_dir="chatterbox-turbo",
         license="mit",
         approx_bytes=4_044_184_736,

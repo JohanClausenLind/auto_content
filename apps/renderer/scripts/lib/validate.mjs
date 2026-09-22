@@ -34,3 +34,13 @@ export function assertValid(name, value) {
   if (!result.ok) throw new Error(`${name} failed validation: ${ajv.errorsText(result.errors)}`);
   return value;
 }
+
+/** Validate against one `$defs` entry of a schema, e.g. ("ExplainerRenderBundle", "DiagramLayout"). */
+export function assertValidDef(name, def, value) {
+  const id = ids.get(name);
+  if (!id) throw new Error(`Unknown schema ${name}`);
+  const fn = ajv.getSchema(`${id}#/$defs/${def}`);
+  if (!fn) throw new Error(`Schema ${name} has no $defs entry ${def}`);
+  if (!fn(value)) throw new Error(`${name}.${def} failed validation: ${ajv.errorsText(fn.errors)}`);
+  return value;
+}

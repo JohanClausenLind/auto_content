@@ -1,0 +1,977 @@
+{
+  "assets": [
+    {
+      "asset_id": "ast_gear_teeth",
+      "capture_id": null,
+      "dataset_id": "ds_gear_teeth",
+      "kind": "dataset",
+      "sha256": "6cf767485a24ec9b5ad94fa3f4f5e164ab59477eab425fc433deda903044095f"
+    },
+    {
+      "asset_id": "ast_gear_ratio",
+      "capture_id": null,
+      "dataset_id": "ds_gear_ratios",
+      "kind": "dataset",
+      "sha256": "c045c5c2500341c946e1213cfc9818faa4aa4cc263457b2a40b3eea2c1a54d90"
+    }
+  ],
+  "capability_requests": [],
+  "design_system_version": 1,
+  "entities": [
+    {
+      "claim_ids": [
+        "clm_dist_top"
+      ],
+      "entity_id": "ent_open_txt",
+      "kind": "text",
+      "label": "Opening statement",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_ratio_top"
+      ],
+      "entity_id": "ent_big_value",
+      "kind": "value",
+      "label": "4x",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_big_label",
+      "kind": "text",
+      "label": "Big number label",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_pedals_n",
+      "kind": "node",
+      "label": "Pedals",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_chainrng",
+      "kind": "node",
+      "label": "Front chainring",
+      "short_label": "Chainring"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_rearcog_n",
+      "kind": "node",
+      "label": "Rear cog",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_wheel_nd",
+      "kind": "node",
+      "label": "Rear wheel",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_crank_ed",
+      "kind": "edge",
+      "label": "crank",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_chain_ed",
+      "kind": "edge",
+      "label": "chain",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_hub_edge",
+      "kind": "edge",
+      "label": "hub",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_front_top"
+      ],
+      "entity_id": "ent_front_ser",
+      "kind": "series",
+      "label": "Front teeth",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_rear_top"
+      ],
+      "entity_id": "ent_rear_ser",
+      "kind": "series",
+      "label": "Rear teeth",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_ratio_top"
+      ],
+      "entity_id": "ent_ratio_ser",
+      "kind": "series",
+      "label": "Gear ratio",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_lim_price",
+      "kind": "text",
+      "label": "The price is force",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_torque_x4"
+      ],
+      "entity_id": "ent_lim_effort",
+      "kind": "text",
+      "label": "Top gear effort",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_dist_low"
+      ],
+      "entity_id": "ent_lim_lowgr",
+      "kind": "text",
+      "label": "Low gear distance",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_lim_hills",
+      "kind": "text",
+      "label": "Steep hills",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_frm_ratio",
+      "kind": "text",
+      "label": "gear ratio =",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_frm_frac",
+      "kind": "text",
+      "label": "T_f over T_r",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_ratio_top"
+      ],
+      "entity_id": "ent_frm_value",
+      "kind": "text",
+      "label": "48 over 12 = 4",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_close_txt",
+      "kind": "text",
+      "label": "Closing statement",
+      "short_label": ""
+    }
+  ],
+  "pack_hash": "6d36764ec80bd0554a8bd9741206666e6c0a00c746bd5ff76cc764bad8fdeb1f",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_open_txt"
+              ]
+            }
+          ],
+          "beat_id": "bt_open_reveal",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_coldopen1",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_open_txt"
+              ]
+            }
+          ],
+          "beat_id": "bt_open_number",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "on",
+            "segment_id": "seg_coldopen1",
+            "token_end": 13,
+            "token_start": 12
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_open_hold00",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_coldopen1",
+            "token_end": 14,
+            "token_start": 14
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "State the surprising distance per pedal turn",
+      "scene_id": "scn_open0001",
+      "section": "cold_open",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_dist_top",
+            "entity_id": "ent_open_txt",
+            "text": "One pedal turn rolls 8.4 m in top gear"
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_big_value"
+              ]
+            }
+          ],
+          "beat_id": "bt_ques_value0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_question1",
+            "token_end": 5,
+            "token_start": 5
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_big_label"
+              ]
+            },
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_ques_label0",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "on",
+            "segment_id": "seg_question1",
+            "token_end": 7,
+            "token_start": 7
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Name the factor the episode explains",
+      "scene_id": "scn_question",
+      "section": "question_stakes",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_ratio_top",
+            "entity_id": "ent_big_value",
+            "text": "4×"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_big_label",
+            "text": "more distance per pedal turn"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_rearcog_n",
+                "ent_chain_ed"
+              ]
+            },
+            {
+              "action": "flow",
+              "targets": [
+                "ent_crank_ed",
+                "ent_chain_ed"
+              ]
+            }
+          ],
+          "beat_id": "bt_model_chain0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_build0001",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hide",
+              "targets": [
+                "ent_pedals_n",
+                "ent_crank_ed"
+              ]
+            }
+          ],
+          "beat_id": "bt_model_hide00",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "before",
+            "segment_id": "seg_build0001",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_wheel_nd",
+                "ent_hub_edge"
+              ]
+            },
+            {
+              "action": "trace",
+              "targets": [
+                "ent_hub_edge"
+              ]
+            }
+          ],
+          "beat_id": "bt_model_wheel0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_build0001",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "zoom_to",
+              "targets": [
+                "ent_rearcog_n"
+              ]
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_rearcog_n",
+                "ent_chainrng"
+              ]
+            }
+          ],
+          "beat_id": "bt_model_zoom00",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "on",
+            "segment_id": "seg_build0001",
+            "token_end": 18,
+            "token_start": 17
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [
+        "ent_pedals_n",
+        "ent_chainrng",
+        "ent_crank_ed"
+      ],
+      "layout": "primary",
+      "purpose": "Build the drivetrain from pedals to wheel",
+      "scene_id": "scn_model001",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "direction": "LR",
+        "edges": [
+          {
+            "entity_id": "ent_crank_ed",
+            "label": "crank",
+            "source_entity_id": "ent_pedals_n",
+            "target_entity_id": "ent_chainrng"
+          },
+          {
+            "entity_id": "ent_chain_ed",
+            "label": "chain",
+            "source_entity_id": "ent_chainrng",
+            "target_entity_id": "ent_rearcog_n"
+          },
+          {
+            "entity_id": "ent_hub_edge",
+            "label": "hub",
+            "source_entity_id": "ent_rearcog_n",
+            "target_entity_id": "ent_wheel_nd"
+          }
+        ],
+        "nodes": [
+          {
+            "entity_id": "ent_pedals_n",
+            "label": "Pedals"
+          },
+          {
+            "entity_id": "ent_chainrng",
+            "label": "Front chainring"
+          },
+          {
+            "entity_id": "ent_rearcog_n",
+            "label": "Rear cog"
+          },
+          {
+            "entity_id": "ent_wheel_nd",
+            "label": "Rear wheel"
+          }
+        ],
+        "template": "diagram"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_front_ser"
+              ]
+            }
+          ],
+          "beat_id": "bt_teeth_front0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_run000001",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_rear_ser"
+              ]
+            }
+          ],
+          "beat_id": "bt_teeth_rear00",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_run000001",
+            "token_end": 7,
+            "token_start": 7
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "compare",
+              "targets": [
+                "ent_front_ser",
+                "ent_rear_ser"
+              ]
+            },
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_teeth_compar",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_run000001",
+            "token_end": 12,
+            "token_start": 12
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "annotate",
+              "claim_id": "clm_front_top",
+              "targets": [
+                "ent_front_ser"
+              ],
+              "text": "48 teeth"
+            }
+          ],
+          "beat_id": "bt_teeth_annot0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_run000001",
+            "token_end": 14,
+            "token_start": 14
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "isolate",
+              "targets": [
+                "ent_rear_ser"
+              ]
+            }
+          ],
+          "beat_id": "bt_teeth_isolat",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_run000001",
+            "token_end": 17,
+            "token_start": 17
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Count the teeth of the low and top gears",
+      "scene_id": "scn_teeth001",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "bar",
+        "dataset_asset_id": "ast_gear_teeth",
+        "series": [
+          {
+            "entity_id": "ent_front_ser",
+            "value": "front"
+          },
+          {
+            "entity_id": "ent_rear_ser",
+            "value": "rear"
+          }
+        ],
+        "series_field": "part",
+        "template": "chart",
+        "title": "",
+        "x": {
+          "field": "gear",
+          "kind": "nominal",
+          "title": "Gear",
+          "unit": ""
+        },
+        "y": {
+          "field": "teeth",
+          "kind": "quantitative",
+          "title": "Teeth",
+          "unit": "count"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_ratio_ser"
+              ]
+            }
+          ],
+          "beat_id": "bt_ratio_reveal",
+          "cue": {
+            "duration_class": "short",
+            "relation": "before",
+            "segment_id": "seg_change001",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "trace",
+              "targets": [
+                "ent_ratio_ser"
+              ]
+            }
+          ],
+          "beat_id": "bt_ratio_trace0",
+          "cue": {
+            "duration_class": "long",
+            "relation": "on",
+            "segment_id": "seg_change001",
+            "token_end": 15,
+            "token_start": 7
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "annotate",
+              "claim_id": "clm_ratio_top",
+              "targets": [
+                "ent_ratio_ser"
+              ],
+              "text": "4×"
+            },
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_ratio_annot0",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "on",
+            "segment_id": "seg_change001",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_ratio_ser"
+              ]
+            }
+          ],
+          "beat_id": "bt_ratio_hilite",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "on",
+            "segment_id": "seg_change001",
+            "token_end": 16,
+            "token_start": 16
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Step the ratio through the four gears",
+      "scene_id": "scn_ratio001",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "line",
+        "dataset_asset_id": "ast_gear_ratio",
+        "series": [
+          {
+            "entity_id": "ent_ratio_ser",
+            "value": "ratio"
+          }
+        ],
+        "series_field": null,
+        "template": "chart",
+        "title": "",
+        "x": {
+          "field": "gear",
+          "kind": "ordinal",
+          "title": "Gear",
+          "unit": ""
+        },
+        "y": {
+          "field": "ratio",
+          "kind": "quantitative",
+          "title": "Gear ratio",
+          "unit": "ratio"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_lim_price"
+              ]
+            }
+          ],
+          "beat_id": "bt_lim_price000",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_limits001",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_lim_effort"
+              ]
+            }
+          ],
+          "beat_id": "bt_lim_effort00",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_limits001",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_lim_lowgr"
+              ]
+            }
+          ],
+          "beat_id": "bt_lim_lowgear0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_limits001",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_lim_hills"
+              ]
+            }
+          ],
+          "beat_id": "bt_lim_hills000",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_limits001",
+            "token_end": 19,
+            "token_start": 19
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show what the distance costs",
+      "scene_id": "scn_limits01",
+      "section": "show_limits",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_lim_price",
+            "text": "The price is force"
+          },
+          {
+            "claim_id": "clm_torque_x4",
+            "entity_id": "ent_lim_effort",
+            "text": "Top gear: 4 times the pedal effort of low gear"
+          },
+          {
+            "claim_id": "clm_dist_low",
+            "entity_id": "ent_lim_lowgr",
+            "text": "Low gear: 2.1 m per pedal turn"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_lim_hills",
+            "text": "Steep hills want low gears"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_frm_ratio",
+                "ent_frm_frac",
+                "ent_frm_value"
+              ]
+            }
+          ],
+          "beat_id": "bt_frm_reveal00",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_synth0001",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "compare",
+              "targets": [
+                "ent_frm_frac",
+                "ent_frm_value"
+              ]
+            }
+          ],
+          "beat_id": "bt_frm_compare0",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_synth0001",
+            "token_end": 7,
+            "token_start": 7
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Write the ratio as a formula",
+      "scene_id": "scn_formula1",
+      "section": "synthesis",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_frm_ratio",
+            "text": "\\text{gear ratio} ="
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_frm_frac",
+            "text": "\\frac{T_f}{T_r}"
+          },
+          {
+            "claim_id": "clm_ratio_top",
+            "entity_id": "ent_frm_value",
+            "text": "= \\frac{48}{12} = 4"
+          }
+        ],
+        "template": "text",
+        "variant": "formula"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_close_txt"
+              ]
+            }
+          ],
+          "beat_id": "bt_close_reveal",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_synth0001",
+            "token_end": 12,
+            "token_start": 12
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_close_hold00",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "on",
+            "segment_id": "seg_synth0001",
+            "token_end": 13,
+            "token_start": 13
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Close on the trade",
+      "scene_id": "scn_close001",
+      "section": "synthesis",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_close_txt",
+            "text": "Gears trade force for distance"
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "script_hash": "6a8575d0aa5c55b6cfbdd9364acd4d67caa9dc77c1c4142131c79a7226f61b4e",
+  "script_id": "scr_gears_60s",
+  "spec_id": "spec_gears_60s"
+}

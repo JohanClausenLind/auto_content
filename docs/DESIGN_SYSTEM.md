@@ -22,8 +22,8 @@ color:
     - { id: ui.surface.1, oklch: [0.22, 0.012, 260], role: panel }
     - { id: ui.surface.2, oklch: [0.26, 0.014, 260], role: raised }
     - { id: ui.ink.primary, oklch: [0.96, 0.010, 80], role: "read text" }
-    - { id: ui.ink.secondary, oklch: [0.82, 0.012, 80], role: labels }
-    - { id: ui.ink.muted, oklch: [0.64, 0.012, 80], role: "axes, captions" }
+    - { id: ui.ink.secondary, oklch: [0.87, 0.012, 80], role: "labels, tick labels" }
+    - { id: ui.ink.muted, oklch: [0.64, 0.012, 80], role: "axis lines and rules, never text" }
     - { id: ui.stroke.soft, oklch: [0.34, 0.012, 260] }
     - { id: ui.stroke.strong, oklch: [0.48, 0.012, 260] }
   data:
@@ -74,7 +74,7 @@ layout:
   grid: { columns: 12, gutter: 24, unit: 8 }
   label_distance_max_px: 48      # a label is "near" its referent within this
 lines:
-  data_stroke_px: 4
+  data_stroke_px: 9              # 3 px at 360 wide; 4 px measured 29.7 edge contrast there (journal 2026-09-22)
   data_stroke_min_px_at_360: 3   # Gate C3 measures edge contrast at this width
   axis_stroke_px: 2
   grid_stroke_px: 1

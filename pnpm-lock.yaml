@@ -29,6 +29,9 @@ importers:
       '@content-factory/content-ui':
         specifier: workspace:*
         version: link:../../packages/content-ui
+      '@content-factory/explainer-ui':
+        specifier: workspace:*
+        version: link:../../packages/explainer-ui
       '@content-factory/video-ui':
         specifier: workspace:*
         version: link:../../packages/video-ui
@@ -56,6 +59,9 @@ importers:
       ajv-formats:
         specifier: 3.0.1
         version: 3.0.1(ajv@8.20.0)
+      elkjs:
+        specifier: 0.12.0
+        version: 0.12.0
       react:
         specifier: 19.2.8
         version: 19.2.8

@@ -43,11 +43,11 @@ export const TOKENS = {
       {
         "id": "ui.ink.secondary",
         "oklch": [
-          0.82,
+          0.87,
           0.012,
           80
         ],
-        "role": "labels"
+        "role": "labels, tick labels"
       },
       {
         "id": "ui.ink.muted",
@@ -56,7 +56,7 @@ export const TOKENS = {
           0.012,
           80
         ],
-        "role": "axes, captions"
+        "role": "axis lines and rules, never text"
       },
       {
         "id": "ui.stroke.soft",
@@ -324,7 +324,7 @@ export const TOKENS = {
     "label_distance_max_px": 48
   },
   "lines": {
-    "data_stroke_px": 4,
+    "data_stroke_px": 9,
     "data_stroke_min_px_at_360": 3,
     "axis_stroke_px": 2,
     "grid_stroke_px": 1

@@ -28,7 +28,7 @@ Rules you must follow:
    `long`). Never describe a cue by quoting a phrase.
 4. Reuse `entity_id`s from the registry for the same real-world thing; create a new one only for a
    new thing. Entities keep identity across scenes.
-5. One main focus per scene. Progressive disclosure: reveal what the narration is about, when it
+5. A `hold` is its own beat with its own duration class. One main focus per scene. Progressive disclosure: reveal what the narration is about, when it
    is about it. Pair every action with the cue it explains. Prefer `hold` over a new action when
    the narration is still about the same thing.
 6. Source documents: reference `section_id` and `quote_id` from the capture manifest only. Never

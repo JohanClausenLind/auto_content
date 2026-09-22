@@ -257,6 +257,12 @@
           "title": "Template",
           "type": "string"
         },
+        "title": {
+          "default": "",
+          "maxLength": 60,
+          "title": "Title",
+          "type": "string"
+        },
         "x": {
           "$ref": "#/$defs/FieldEncoding"
         },
@@ -271,6 +277,7 @@
         "series",
         "series_field",
         "template",
+        "title",
         "x",
         "y"
       ],
@@ -704,7 +711,7 @@
     },
     "EntityBox": {
       "additionalProperties": false,
-      "description": "Where an entity sits; font_px is the role size the compiler verified, not a shrink.",
+      "description": "Where a text sits; text is what the compiler verified fits (a short_label when needed).",
       "properties": {
         "box": {
           "$ref": "#/$defs/PixelBox"
@@ -732,13 +739,27 @@
           "minimum": 1,
           "title": "Lines",
           "type": "integer"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
         }
       },
       "required": [
         "box",
         "entity_id",
         "font_px",
-        "lines"
+        "lines",
+        "text"
       ],
       "title": "EntityBox",
       "type": "object"
@@ -1395,6 +1416,7 @@
     },
     "SeriesBinding": {
       "additionalProperties": false,
+      "description": "A series entity; value is the series_field value it draws, empty for a single series.",
       "properties": {
         "entity_id": {
           "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
@@ -1402,8 +1424,8 @@
           "type": "string"
         },
         "value": {
+          "default": "",
           "maxLength": 80,
-          "minLength": 1,
           "title": "Value",
           "type": "string"
         }

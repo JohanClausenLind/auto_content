@@ -65,7 +65,7 @@
     },
     "EntityBox": {
       "additionalProperties": false,
-      "description": "Where an entity sits; font_px is the role size the compiler verified, not a shrink.",
+      "description": "Where a text sits; text is what the compiler verified fits (a short_label when needed).",
       "properties": {
         "box": {
           "$ref": "#/$defs/PixelBox"
@@ -93,13 +93,27 @@
           "minimum": 1,
           "title": "Lines",
           "type": "integer"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
         }
       },
       "required": [
         "box",
         "entity_id",
         "font_px",
-        "lines"
+        "lines",
+        "text"
       ],
       "title": "EntityBox",
       "type": "object"
