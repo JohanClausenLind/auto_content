@@ -1,0 +1,321 @@
+{
+  "bundle_id": "bndl_967a029a852af8d2",
+  "captures": [],
+  "datasets": [],
+  "design_system_version": 1,
+  "fonts_version": "5.3.0",
+  "layouts": [],
+  "schema_version": 1,
+  "spec": {
+    "assets": [],
+    "capability_requests": [],
+    "design_system_version": 1,
+    "entities": [
+      {
+        "claim_ids": [
+          "clm_stops_gain"
+        ],
+        "entity_id": "ent_open_stmt",
+        "kind": "text",
+        "label": "statement",
+        "short_label": ""
+      },
+      {
+        "claim_ids": [
+          "clm_stops_gain"
+        ],
+        "entity_id": "ent_synth_txt",
+        "kind": "text",
+        "label": "statement",
+        "short_label": ""
+      }
+    ],
+    "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+    "scenes": [
+      {
+        "beats": [
+          {
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_open_stmt"
+                ]
+              }
+            ],
+            "beat_id": "bt_open_reveal0",
+            "cue": {
+              "duration_class": "short",
+              "relation": "on",
+              "segment_id": "seg_open00001",
+              "token_end": 0,
+              "token_start": 0
+            }
+          },
+          {
+            "actions": [
+              {
+                "action": "hold"
+              }
+            ],
+            "beat_id": "bt_open_hold000",
+            "cue": {
+              "duration_class": "beat",
+              "relation": "on",
+              "segment_id": "seg_open00001",
+              "token_end": 2,
+              "token_start": 2
+            }
+          }
+        ],
+        "claim_ids": [
+          "clm_stops_gain"
+        ],
+        "initial_visible": [],
+        "layout": "primary",
+        "purpose": "Say the one sentence the episode rests on",
+        "scene_id": "scn_open0000001",
+        "section": "cold_open",
+        "source_ids": [],
+        "sponsored": false,
+        "template": {
+          "items": [
+            {
+              "claim_id": "clm_stops_gain",
+              "entity_id": "ent_open_stmt",
+              "text": "A faster tram does not shorten the trip"
+            }
+          ],
+          "template": "text",
+          "variant": "statement"
+        }
+      },
+      {
+        "beats": [
+          {
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_synth_txt"
+                ]
+              }
+            ],
+            "beat_id": "bt_synth_reveal",
+            "cue": {
+              "duration_class": "short",
+              "relation": "on",
+              "segment_id": "seg_synth00001",
+              "token_end": 0,
+              "token_start": 0
+            }
+          },
+          {
+            "actions": [
+              {
+                "action": "hold"
+              }
+            ],
+            "beat_id": "bt_synth_hold00",
+            "cue": {
+              "duration_class": "long",
+              "relation": "on",
+              "segment_id": "seg_synth00001",
+              "token_end": 2,
+              "token_start": 2
+            }
+          }
+        ],
+        "claim_ids": [
+          "clm_stops_gain"
+        ],
+        "initial_visible": [],
+        "layout": "primary",
+        "purpose": "Say the one sentence the episode rests on",
+        "scene_id": "scn_synth000001",
+        "section": "synthesis",
+        "source_ids": [],
+        "sponsored": false,
+        "template": {
+          "items": [
+            {
+              "claim_id": "clm_stops_gain",
+              "entity_id": "ent_synth_txt",
+              "text": "The doors decide the timetable"
+            }
+          ],
+          "template": "text",
+          "variant": "statement"
+        }
+      }
+    ],
+    "schema_version": 1,
+    "script_hash": "4ea622573fc51069b66b20cecf13f9a82e9bf49b5b922102fdb63ed6751cfd4c",
+    "script_id": "scr_2f68219adbf2",
+    "spec_id": "spec_db51fe56e4a8"
+  },
+  "timeline": {
+    "compiler_version": "0.1.0",
+    "fps": 30,
+    "height": 1080,
+    "inputs": [
+      {
+        "name": "pack",
+        "sha256": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486"
+      },
+      {
+        "name": "script",
+        "sha256": "4ea622573fc51069b66b20cecf13f9a82e9bf49b5b922102fdb63ed6751cfd4c"
+      },
+      {
+        "name": "spec",
+        "sha256": "cf43034a62f804a49ab715c18f5b583c785b9a74e6c171b10a90ed93245e0f55"
+      },
+      {
+        "name": "design_system_version",
+        "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+      },
+      {
+        "name": "fonts_version",
+        "sha256": "2201bd23fe78debae1200e5d1f3d625af10060a7a2c2c901efe71a9432b4786a"
+      },
+      {
+        "name": "compiler_version",
+        "sha256": "6ad9613a455798d6d92e5f5f390ab4baa70596bc869ed6b17f5cdd2b28635f06"
+      },
+      {
+        "name": "timing_source",
+        "sha256": "d342ed822e55a972f8070862f9433af9c5cedd89d9c3098b249fa4c12dd0dccd"
+      }
+    ],
+    "narration_manifest_id": null,
+    "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+    "scenes": [
+      {
+        "actions": [
+          {
+            "action": "reveal",
+            "beat_id": "bt_open_reveal0",
+            "end_frame": 18,
+            "index": 0,
+            "start_frame": 0,
+            "targets": [
+              "ent_open_stmt"
+            ]
+          },
+          {
+            "action": "hold",
+            "beat_id": "bt_open_hold000",
+            "end_frame": 226,
+            "index": 0,
+            "start_frame": 23,
+            "targets": []
+          }
+        ],
+        "boxes": [
+          {
+            "box": {
+              "height": 43,
+              "width": 1728,
+              "x": 96,
+              "y": 518
+            },
+            "entity_id": "ent_open_stmt",
+            "font_px": 34,
+            "lines": 1,
+            "text": "A faster tram does not shorten the trip"
+          }
+        ],
+        "camera": [],
+        "colors": [
+          {
+            "entity_id": "ent_open_stmt",
+            "srgb_hex": "#F5F1EA",
+            "token_id": "ui.ink.primary"
+          }
+        ],
+        "duration_frames": 196,
+        "highlights": [],
+        "regions": [
+          {
+            "box": {
+              "height": 972,
+              "width": 1728,
+              "x": 96,
+              "y": 54
+            },
+            "name": "content"
+          }
+        ],
+        "scene_id": "scn_open0000001",
+        "start_frame": 0
+      },
+      {
+        "actions": [
+          {
+            "action": "reveal",
+            "beat_id": "bt_synth_reveal",
+            "end_frame": 226,
+            "index": 0,
+            "start_frame": 208,
+            "targets": [
+              "ent_synth_txt"
+            ]
+          },
+          {
+            "action": "hold",
+            "beat_id": "bt_synth_hold00",
+            "end_frame": 378,
+            "index": 0,
+            "start_frame": 231,
+            "targets": []
+          }
+        ],
+        "boxes": [
+          {
+            "box": {
+              "height": 43,
+              "width": 1728,
+              "x": 96,
+              "y": 518
+            },
+            "entity_id": "ent_synth_txt",
+            "font_px": 34,
+            "lines": 1,
+            "text": "The doors decide the timetable"
+          }
+        ],
+        "camera": [],
+        "colors": [
+          {
+            "entity_id": "ent_synth_txt",
+            "srgb_hex": "#F5F1EA",
+            "token_id": "ui.ink.primary"
+          }
+        ],
+        "duration_frames": 212,
+        "highlights": [],
+        "regions": [
+          {
+            "box": {
+              "height": 972,
+              "width": 1728,
+              "x": 96,
+              "y": 54
+            },
+            "name": "content"
+          }
+        ],
+        "scene_id": "scn_synth000001",
+        "start_frame": 196
+      }
+    ],
+    "schema_version": 1,
+    "script_hash": "4ea622573fc51069b66b20cecf13f9a82e9bf49b5b922102fdb63ed6751cfd4c",
+    "spec_hash": "cf43034a62f804a49ab715c18f5b583c785b9a74e6c171b10a90ed93245e0f55",
+    "spec_id": "spec_db51fe56e4a8",
+    "timeline_id": "tl_cf43034a62f8",
+    "total_frames": 408,
+    "width": 1920
+  }
+}

@@ -1,6 +1,7 @@
 // Regions, entity boxes and the camera: pixel geometry the compiler fixed before any frame renders.
 import type { CompiledExplainerScene, DiagramLayout, EntityBox, NamedRegion, PixelBox } from "@content-factory/content-schema-ts";
 
+import { lineHeightPx } from "./text";
 import { TOKENS } from "./tokens.gen";
 
 export type { PixelBox };
@@ -41,6 +42,14 @@ export function entityBoxes(scene: CompiledExplainerScene, layout: DiagramLayout
 
 export function entityBoxIndex(scene: CompiledExplainerScene): ReadonlyMap<string, EntityBox> {
   return new Map(scene.boxes.map((b) => [b.entity_id, b] as const));
+}
+
+/** The line block centred in a compiler box, which carries layout.py's TEXT_PAD (half a unit) around it. */
+export function innerBlock(box: EntityBox, fontPx: number, unit: number, blockPx?: number): PixelBox {
+  const b = box.box;
+  const pad = unit / 2;
+  const height = Math.min(b.height, blockPx ?? box.lines * lineHeightPx(fontPx));
+  return { x: b.x + pad, y: b.y + (b.height - height) / 2, width: b.width - 2 * pad, height };
 }
 
 export function lerp(a: number, b: number, t: number): number {

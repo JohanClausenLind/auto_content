@@ -1,0 +1,48 @@
+{
+  "channel_id": "ch_explain01",
+  "contribution": "The stops, not the motor, set the trip time.",
+  "locked_at": "2026-09-23T00:00:00Z",
+  "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+  "pack_id": "pack_reviewset1",
+  "promises": [
+    {
+      "claim_ids": [
+        "clm_stops_gain"
+      ],
+      "thumbnail_promise": "The seconds go to the stops",
+      "title": "Doors, not motors"
+    }
+  ],
+  "question": "Where do the tram's minutes go?",
+  "schema_version": 1,
+  "script_id": "scr_28bca90be1b2",
+  "segments": [
+    {
+      "claim_ids": [
+        "clm_stops_gain"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "build_model",
+      "segment_id": "seg_source0001",
+      "spoken_text": "The measurements say it plainly: the seconds are spent standing at the busiest stops",
+      "tokens": [
+        "The",
+        "measurements",
+        "say",
+        "it",
+        "plainly:",
+        "the",
+        "seconds",
+        "are",
+        "spent",
+        "standing",
+        "at",
+        "the",
+        "busiest",
+        "stops"
+      ]
+    }
+  ],
+  "sponsor": null
+}

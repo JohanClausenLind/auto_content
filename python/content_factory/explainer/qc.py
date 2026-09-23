@@ -5,9 +5,11 @@ from __future__ import annotations
 import io
 import math
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
+from typing import Protocol
 
 import numpy as np
 from PIL import Image
@@ -39,6 +41,17 @@ _FFMPEG = "ffmpeg"
 
 class QcUnmeasurableError(ValueError):
     """The check could not run on this frame; the finding records why with passed=None."""
+
+
+class Decoder(Protocol):
+    """decode_frames' shape, so a test can hand QC drawn frames instead of an mp4."""
+
+    def __call__(
+        self, mp4: Path, timestamps_ms: Sequence[int], *, width: int | None = None
+    ) -> list[Image.Image]: ...
+
+
+Fetch = Callable[..., Image.Image | None]
 
 
 @dataclass(frozen=True)
@@ -178,9 +191,15 @@ def shared_value_domain(chart: ChartTemplate, dataset: EvidenceDataset) -> tuple
 
 
 def check_rendered(
-    bundle: ExplainerRenderBundle, mp4: Path, *, text_lc_min: float = 75.0, edge_min: float = 40.0
+    bundle: ExplainerRenderBundle,
+    mp4: Path,
+    *,
+    text_lc_min: float = 75.0,
+    edge_min: float = 40.0,
+    decode: Decoder | None = None,
 ) -> list[QcFinding]:
     """Sample each scene at action ends and hold midpoints; passed=None when a check cannot run."""
+    fetch: Fetch = _decode_or_none if decode is None else partial(_decode_with, decode)
     fps = bundle.timeline.fps
     scenes = {s.scene_id: s for s in bundle.spec.scenes}
     datasets = {d.dataset_id: d for d in bundle.datasets}
@@ -189,29 +208,33 @@ def check_rendered(
     findings: list[QcFinding] = []
     for compiled in bundle.timeline.scenes:
         scene = scenes[compiled.scene_id]
-        for frame in sorted(_sample_frames(compiled)):
+        for frame in sorted(sample_frames(compiled)):
             at_ms = math.floor(min(frame, last_frame) * 1000 / fps)
-            visible = _visible_at(scene, compiled, frame)
-            findings += _text_findings(compiled, visible, mp4, at_ms, text_lc_min)
+            visible = visible_at(scene, compiled, frame)
+            findings += _text_findings(compiled, visible, mp4, at_ms, text_lc_min, fetch)
             template = scene.template
             if isinstance(template, ChartTemplate) and template.chart_kind == "line":
                 dataset = datasets.get(assets[template.dataset_asset_id].dataset_id or "")
                 findings += _edge_findings(
-                    bundle, compiled, template, dataset, visible, mp4, at_ms, edge_min
+                    bundle, compiled, template, dataset, visible, mp4, at_ms, edge_min, fetch
                 )
     return findings
 
 
-def _sample_frames(compiled: CompiledExplainerScene) -> set[int]:
+def sample_frames(compiled: CompiledExplainerScene) -> set[int]:
+    """Action ends and hold midpoints: where a reveal has settled and where the eye rests."""
+    # An action may end on the boundary frame, which already shows the next scene: stay inside.
+    last = compiled.start_frame + compiled.duration_frames - 1
     frames: set[int] = set()
     for action in compiled.actions:
-        frames.add(action.end_frame)
+        frames.add(min(last, action.end_frame))
         if action.action == "hold":
-            frames.add((action.start_frame + action.end_frame) // 2)
+            frames.add(min(last, (action.start_frame + action.end_frame) // 2))
     return frames or {compiled.start_frame}
 
 
-def _visible_at(scene: Scene, compiled: CompiledExplainerScene, frame: int) -> set[str]:
+def visible_at(scene: Scene, compiled: CompiledExplainerScene, frame: int) -> set[str]:
+    """Entities on screen at a frame: reveals count once finished, hides as soon as they start."""
     visible = set(scene.initial_visible)
     visible.update(synthetic_id(p, scene.scene_id) for p in ("axisx", "axisy"))
     annotations = {
@@ -236,11 +259,12 @@ def _text_findings(
     mp4: Path,
     at_ms: int,
     lc_min: float,
+    fetch: Fetch,
 ) -> list[QcFinding]:
     boxes = [b for b in compiled.boxes if b.font_px is not None and b.entity_id in visible]
     if not boxes:
         return []
-    frame = _decode_or_none(mp4, at_ms)
+    frame = fetch(mp4, at_ms)
     findings: list[QcFinding] = []
     for box in boxes:
         ink = ink_hex_for(box.font_px or 0)
@@ -273,6 +297,7 @@ def _edge_findings(
     mp4: Path,
     at_ms: int,
     edge_min: float,
+    fetch: Fetch,
 ) -> list[QcFinding]:
     series = [s for s in chart.series if s.entity_id in visible]
     if not series:
@@ -283,7 +308,7 @@ def _edge_findings(
         return [
             _finding("line_edge", compiled, s.entity_id, at_ms, None, edge_min, why) for s in series
         ]
-    frame = _decode_or_none(mp4, at_ms, width=QC_DECODE_WIDTH)
+    frame = fetch(mp4, at_ms, width=QC_DECODE_WIDTH)
     if frame is None:
         return [
             _finding("line_edge", compiled, s.entity_id, at_ms, None, edge_min, "decode failed")
@@ -325,8 +350,14 @@ def _finding(
 
 
 def _decode_or_none(mp4: Path, at_ms: int, width: int | None = None) -> Image.Image | None:
+    return _decode_with(decode_frames, mp4, at_ms, width)
+
+
+def _decode_with(
+    decode: Decoder, mp4: Path, at_ms: int, width: int | None = None
+) -> Image.Image | None:
     try:
-        return decode_frames(mp4, [at_ms], width=width)[0]
+        return decode(mp4, [at_ms], width=width)[0]
     except QcUnmeasurableError:
         return None
 

@@ -1,4 +1,5 @@
-// Nodes and edges at the positions ELK fixed beforehand; layout coordinates are canvas pixels.
+// Nodes, edges and label anchors all from the one DiagramLayout ELK fixed beforehand, in canvas pixels;
+// the compiler copied the same node boxes into CompiledExplainerScene.boxes for QC.
 import type { DiagramLayout, DiagramTemplate as DiagramSpec, LayoutEdge, LayoutNode } from "@content-factory/content-schema-ts";
 import { measureText } from "@content-factory/content-ui";
 import type { ReactElement } from "react";
@@ -156,7 +157,7 @@ export function DiagramTemplate({ compiled, template, state, layout }: TemplateP
           {layout.nodes.map((node) => {
             const box = boxes.get(node.entity_id);
             const label = box?.text ?? nodeLabels.get(node.entity_id) ?? env.entities.get(node.entity_id)?.label ?? node.entity_id;
-            return <Node key={node.entity_id} g={g} node={box ? { entity_id: node.entity_id, box: box.box } : node} label={label} fontPx={box?.font_px ?? labelPx} />;
+            return <Node key={node.entity_id} g={g} node={node} label={label} fontPx={box?.font_px ?? labelPx} />;
           })}
         </g>
       </g>

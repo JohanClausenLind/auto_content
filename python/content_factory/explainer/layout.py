@@ -12,6 +12,7 @@ from content_factory.explainer.tokens_gen import TOKENS
 from content_factory.schemas.explainer import (
     AnnotateAction,
     ChartTemplate,
+    DiagramLayout,
     DiagramTemplate,
     Entity,
     EntityBox,
@@ -48,6 +49,15 @@ MAX_SHORT_LABEL = 40
 # KaTeX metrics are not in the advance tables; a group is estimated at 0.62 em per character.
 FORMULA_EM_PER_CHAR = 0.62
 NODE_LABEL_WEIGHT = 600
+# The quotation card's chrome around its text (TextTemplate.tsx draws the same card): a UNIT
+# accent bar plus 5 UNIT padding on the left, 5 UNIT on the right, 4 UNIT above and below.
+CARD_INSET_LEFT = 6 * UNIT
+CARD_INSET_RIGHT = 5 * UNIT
+CARD_INSET_Y = 4 * UNIT
+NO_INSET = (0, 0, 0)
+# Ink margin on every side of a text box, so a codec halo under a descender stays inside it; text
+# is fitted to the inner width and the renderer centres the line block in the box.
+TEXT_PAD = UNIT // 2
 
 
 @dataclass(frozen=True)
@@ -121,8 +131,7 @@ def region(scene: Scene, name: str) -> PixelBox:
 
 def boxes_for(scene: Scene, spec: VisualSpec) -> SceneBoxes:
     """Every text-bearing entity's box at its role size, or a layout issue naming the fix."""
-    index = next(i for i, s in enumerate(spec.scenes) if s.scene_id == scene.scene_id)
-    placer = _Placer(scene, spec, f"VisualSpec.scenes[{index}]")
+    placer = _placer_for(scene, spec)
     template = scene.template
     if isinstance(template, TextTemplate):
         placer.text(template)
@@ -134,6 +143,22 @@ def boxes_for(scene: Scene, spec: VisualSpec) -> SceneBoxes:
     if placer.issues:
         raise EpisodeInvalidError(placer.issues)
     return SceneBoxes(tuple(placer.boxes), tuple(placer.choices), placer.texts)
+
+
+def adopt_node_boxes(
+    scene: Scene, spec: VisualSpec, placed: SceneBoxes, layout: DiagramLayout
+) -> SceneBoxes:
+    """Diagram node boxes replaced by ELK's, each re-verified at label size, or a layout issue."""
+    placer = _placer_for(scene, spec)
+    boxes = placer.adopt(placed.boxes, layout)
+    if placer.issues:
+        raise EpisodeInvalidError(placer.issues)
+    return SceneBoxes(boxes, placed.choices, placed.texts)
+
+
+def _placer_for(scene: Scene, spec: VisualSpec) -> _Placer:
+    index = next(i for i, s in enumerate(spec.scenes) if s.scene_id == scene.scene_id)
+    return _Placer(scene, spec, f"VisualSpec.scenes[{index}]")
 
 
 @dataclass(frozen=True)
@@ -156,22 +181,25 @@ class _Placer:
 
     def text(self, template: TextTemplate) -> None:
         items = template.items
+        card = template.variant == "quotation_card"
+        inset = (CARD_INSET_LEFT, CARD_INSET_RIGHT, CARD_INSET_Y) if card else NO_INSET
+        width = self.area.width - inset[0] - inset[1] - 2 * TEXT_PAD
         rows: list[tuple[str, _Placed | None, Role, FontFamily, int]] = []
         for k, item in enumerate(items):
             role, family, weight, max_lines = self._text_role(template.variant, k, len(items))
             if template.variant == "formula":
-                width = math.ceil(len(item.text) * FORMULA_EM_PER_CHAR * role_px("body"))
-                placed = _Placed(item.text, (item.text,), width)
+                est = math.ceil(len(item.text) * FORMULA_EM_PER_CHAR * role_px("body"))
+                placed = _Placed(item.text, (item.text,), est)
                 self.texts[item.entity_id] = item.text
             else:
                 placed = self._place(
-                    item.entity_id, (item.text,), self.area.width, max_lines, role, family, weight
+                    item.entity_id, (item.text,), width, max_lines, role, family, weight
                 )
             rows.append((item.entity_id, placed, role, family, weight))
         if template.variant == "formula":
             self._formula_row(rows)
         else:
-            self._stack(rows, gap=UNIT if template.variant == "list" else 2 * UNIT)
+            self._stack(rows, UNIT if template.variant == "list" else 2 * UNIT, inset)
 
     def chart(self, template: ChartTemplate) -> None:
         legend = _chart_regions(self.area)
@@ -212,7 +240,7 @@ class _Placer:
                 edge.entity_id, (edge.label,), plot.width // 2, 1, "label", "Inter", 500
             )
             if placed is not None:
-                width, height = placed.width_px + 2 * UNIT, line_px("label")
+                width, height = placed.width_px + 2 * UNIT, line_px("label") + 2 * TEXT_PAD
                 self._box(edge.entity_id, plot.x, plot.y, width, height, "label", 1)
 
     def annotations(self) -> None:
@@ -227,8 +255,30 @@ class _Placer:
                     entity_id, (action.text,), plot.width // 2, 1, "label", "Inter", 500
                 )
                 if placed is not None:
-                    width, height = placed.width_px + 2 * UNIT, line_px("label")
+                    width, height = placed.width_px + 2 * UNIT, line_px("label") + 2 * TEXT_PAD
                     self._box(entity_id, plot.x + UNIT, plot.y + UNIT, width, height, "label", 1)
+
+    def adopt(self, boxes: tuple[EntityBox, ...], layout: DiagramLayout) -> tuple[EntityBox, ...]:
+        """Node boxes from ELK, kept only where the compiled text still fits at label size."""
+        nodes = {n.entity_id: n.box for n in layout.nodes}
+        adopted: list[EntityBox] = []
+        for box in boxes:
+            node = nodes.get(box.entity_id)
+            if node is None:
+                adopted.append(box)
+                continue
+            text = box.text or ""
+            measured = FIT_SAFETY * measure_text(
+                text, family="Inter", weight=NODE_LABEL_WEIGHT, font_px=role_px("label")
+            )
+            # ELK sized the node for its label plus 6 UNIT, then may have shrunk the graph to the
+            # region; the label must keep a UNIT each side or the scene has to split.
+            available = node.width - 2 * UNIT
+            if measured > available:
+                self._issue(box.entity_id, text, measured, available, 1, 1, "label")
+            else:
+                adopted.append(box.model_copy(update={"box": node}))
+        return tuple(adopted)
 
     def _text_role(self, variant: str, k: int, count: int) -> tuple[Role, FontFamily, int, int]:
         if variant == "big_number":
@@ -246,25 +296,30 @@ class _Placer:
         return "body", "Inter", 400, 2
 
     def _stack(
-        self, rows: list[tuple[str, _Placed | None, Role, FontFamily, int]], gap: int
+        self,
+        rows: list[tuple[str, _Placed | None, Role, FontFamily, int]],
+        gap: int,
+        inset: tuple[int, int, int],
     ) -> None:
-        heights = [len(p.lines) * line_px(role) if p else 0 for _, p, role, _, _ in rows]
+        left, right, pad_y = inset
+        heights = [
+            len(p.lines) * line_px(role) + 2 * TEXT_PAD if p else 0 for _, p, role, _, _ in rows
+        ]
         total = sum(heights) + gap * (len(rows) - 1)
-        if total > self.area.height:
+        if total + 2 * pad_y > self.area.height:
             first = rows[0][0]
-            self._height_issue(first, total, self.area.height)
+            self._height_issue(first, total + 2 * pad_y, self.area.height)
             return
+        x, width = self.area.x + left, self.area.width - left - right
         y = self.area.y + (self.area.height - total) // 2
         for (entity_id, placed, role, _, _), height in zip(rows, heights, strict=True):
             if placed is not None:
-                self._box(
-                    entity_id, self.area.x, y, self.area.width, height, role, len(placed.lines)
-                )
+                self._box(entity_id, x, y, width, height, role, len(placed.lines))
             y += height + gap
 
     def _formula_row(self, rows: list[tuple[str, _Placed | None, Role, FontFamily, int]]) -> None:
-        height = 2 * line_px("body")
-        widths = [p.width_px if p else 0 for _, p, _, _, _ in rows]
+        height = 2 * line_px("body") + 2 * TEXT_PAD
+        widths = [p.width_px + 2 * TEXT_PAD if p else 0 for _, p, _, _, _ in rows]
         total = sum(widths) + 2 * UNIT * (len(rows) - 1)
         if total > self.area.width:
             widest = max(rows, key=lambda r: r[1].width_px if r[1] else 0)
@@ -282,9 +337,10 @@ class _Placer:
     def _legend(self, template: ChartTemplate, legend: PixelBox) -> None:
         n = len(template.series)
         chip_max = min((legend.width - (n - 1) * GUTTER) // n, legend.width // 2)
-        chrome = SWATCH + UNIT + 2 * CHIP_PADDING
+        chrome = SWATCH + UNIT + 2 * CHIP_PADDING + 2 * TEXT_PAD
+        height = line_px("label") + 2 * TEXT_PAD
         x = legend.x
-        y = legend.y + (legend.height - line_px("label")) // 2
+        y = legend.y + (legend.height - height) // 2
         for binding in template.series:
             entity = self.entities[binding.entity_id]
             candidates = (
@@ -296,29 +352,43 @@ class _Placer:
             if placed is None:
                 continue
             width = placed.width_px + chrome
-            self._box(binding.entity_id, x, y, width, line_px("label"), "label", 1)
+            self._box(binding.entity_id, x, y, width, height, "label", 1)
             x += width + GUTTER
 
     def _axis_titles(self, template: ChartTemplate, axis_x: PixelBox, axis_y: PixelBox) -> None:
-        line = line_px("label")
+        line = line_px("label") + 2 * TEXT_PAD
         if template.x.title:
             entity_id = synthetic_id("axisx", self.scene.scene_id)
             placed = self._place(
-                entity_id, (template.x.title,), axis_x.width, 1, "label", "Inter", 500
+                entity_id,
+                (template.x.title,),
+                axis_x.width - 2 * TEXT_PAD,
+                1,
+                "label",
+                "Inter",
+                500,
             )
             if placed is not None:
-                x = axis_x.x + (axis_x.width - placed.width_px) // 2
+                width = placed.width_px + 2 * TEXT_PAD
+                x = axis_x.x + (axis_x.width - width) // 2
                 y = axis_x.y + (axis_x.height - line) // 2
-                self._box(entity_id, x, y, placed.width_px, line, "label", 1)
+                self._box(entity_id, x, y, width, line, "label", 1)
         if template.y.title:
             entity_id = synthetic_id("axisy", self.scene.scene_id)
             placed = self._place(
-                entity_id, (template.y.title,), axis_y.height, 1, "label", "Inter", 500
+                entity_id,
+                (template.y.title,),
+                axis_y.height - 2 * TEXT_PAD,
+                1,
+                "label",
+                "Inter",
+                500,
             )
             if placed is not None:
                 # Drawn rotated: the box is as tall as the text is long.
-                y = axis_y.y + (axis_y.height - placed.width_px) // 2
-                self._box(entity_id, axis_y.x, y, line, placed.width_px, "label", 1)
+                height = placed.width_px + 2 * TEXT_PAD
+                y = axis_y.y + (axis_y.height - height) // 2
+                self._box(entity_id, axis_y.x, y, line, height, "label", 1)
 
     def _place(
         self,

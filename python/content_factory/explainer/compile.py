@@ -15,6 +15,7 @@ from content_factory.explainer.layout import (
     CANVAS_WIDTH,
     LayoutChoice,
     SceneBoxes,
+    adopt_node_boxes,
     boxes_for,
     region,
     regions_for,
@@ -75,6 +76,22 @@ def compile_episode(
     plans = _collect(lambda: source_scene.plan_source_scenes(spec, captures), issues) or {}
     if issues:
         raise EpisodeInvalidError(issues)
+    plots = {
+        s.scene_id: region(s, "plot")
+        for s in spec.scenes
+        if isinstance(s.template, DiagramTemplate)
+    }
+    layouts = tuple((layout_diagrams or render.layout_diagrams)(spec, plots)) if plots else ()
+    # ELK's node boxes are the one geometry edges and anchors are routed against.
+    for layout in layouts:
+        scene = next(s for s in spec.scenes if s.scene_id == layout.scene_id)
+        adopted = _collect(
+            lambda s=scene, lay=layout: adopt_node_boxes(s, spec, boxes[s.scene_id], lay), issues
+        )
+        if adopted is not None:
+            boxes[scene.scene_id] = adopted
+    if issues:
+        raise EpisodeInvalidError(issues)
     clock = TokenClock(script, narration)
     durations = {sid: plan.durations_ms() for sid, plan in plans.items()}
     timed = resolve_timing(spec, clock, {sid: b.texts for sid, b in boxes.items()}, durations)
@@ -130,12 +147,6 @@ def compile_episode(
         ),
         compiler_version=COMPILER_VERSION,
     )
-    plots = {
-        s.scene_id: region(s, "plot")
-        for s in spec.scenes
-        if isinstance(s.template, DiagramTemplate)
-    }
-    layouts = (layout_diagrams or render.layout_diagrams)(spec, plots) if plots else ()
     referenced = {a.dataset_id for a in spec.assets if a.dataset_id is not None}
     assets = {a.asset_id: a for a in spec.assets}
     shown = {
@@ -148,7 +159,7 @@ def compile_episode(
         spec=spec,
         timeline=timeline,
         datasets=tuple(d for d in pack.datasets if d.dataset_id in referenced),
-        layouts=tuple(layouts),
+        layouts=layouts,
         captures=tuple(c for c in captures if c.capture_id in shown),
         design_system_version=DESIGN_SYSTEM_VERSION,
         fonts_version=FONTS_VERSION,

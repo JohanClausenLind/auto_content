@@ -10,7 +10,7 @@ import { continueRender, delayRender } from "remotion";
 import "katex/dist/katex.min.css";
 
 import { useSceneEnv } from "../context";
-import { entityBoxIndex, regionOf, safeAreaBox, type PixelBox } from "../geometry";
+import { entityBoxIndex, innerBlock, regionOf, safeAreaBox, type PixelBox } from "../geometry";
 import { entityColors, mixHex, tokenHex } from "../palette";
 import { entityOpacity, entityState, type SceneState } from "../state";
 import { DISPLAY_STACK, LINE_HEIGHT, TEXT_STACK, lineHeightPx, rolePx, type TypeRole } from "../text";
@@ -67,13 +67,26 @@ function inkFor(g: TextGeometry, entityId: string, base: string): string {
 }
 
 /** Absolute at the compiler's box when there is one, otherwise a block in the flow. */
-function Placed({ g, item, lines, fontPx, style, children }: { g: TextGeometry; item: TextItem; lines: number; fontPx: number; style?: CSSProperties; children: ReactElement | string }): ReactElement {
+function Placed({ g, item, lines, fontPx, style, blockPx, children }: { g: TextGeometry; item: TextItem; lines: number; fontPx: number; style?: CSSProperties; blockPx?: number | undefined; children: ReactElement | string }): ReactElement {
   const box = g.boxes.get(item.entity_id);
   const base: CSSProperties = { lineHeight: `${lineHeightPx(fontPx)}px`, fontSize: fontPx, overflow: "hidden", opacity: entityOpacity(g.state, item.entity_id), ...style };
   if (box) {
-    return <div style={{ ...base, position: "absolute", left: box.box.x, top: box.box.y, width: box.box.width, height: box.box.height }}>{children}</div>;
+    // Boxes are canvas pixels; the containing Flow sits at the content origin.
+    const inner = innerBlock(box, fontPx, g.unit, blockPx);
+    return <div style={{ ...base, position: "absolute", left: inner.x - g.content.x, top: inner.y - g.content.y, width: inner.width, height: inner.height }}>{children}</div>;
   }
   return <div style={{ ...base, maxHeight: lineHeightPx(fontPx) * lines, width: "100%" }}>{children}</div>;
+}
+
+/** The quotation card around its items' compiled boxes: layout.py's CARD_INSET_* in units. */
+function cardBox(g: TextGeometry, items: readonly TextItem[]): PixelBox | null {
+  const boxes = items.map((item) => g.boxes.get(item.entity_id)?.box).filter((b): b is PixelBox => b !== undefined);
+  if (boxes.length !== items.length) return null;
+  const x = Math.min(...boxes.map((b) => b.x)) - 6 * g.unit;
+  const y = Math.min(...boxes.map((b) => b.y)) - 4 * g.unit;
+  const right = Math.max(...boxes.map((b) => b.x + b.width)) + 5 * g.unit;
+  const bottom = Math.max(...boxes.map((b) => b.y + b.height)) + 4 * g.unit;
+  return { x, y, width: right - x, height: bottom - y };
 }
 
 function Flow({ g, gap, children }: { g: TextGeometry; gap: number; children: ReactElement[] | ReactElement }): ReactElement {
@@ -139,18 +152,31 @@ function QuotationCard({ g, items }: { g: TextGeometry; items: readonly TextItem
   const [quote, attribution] = items;
   if (!quote) return <Flow g={g} gap={0}>{[]}</Flow>;
   const quotePx = fontPxFor(g, quote, "body");
+  const chrome: CSSProperties = { boxSizing: "border-box", background: g.ink.surface1, borderRadius: 2 * g.unit, borderLeft: `${g.unit}px solid ${g.ink.emphasis}` };
+  const body = (
+    <>
+      <Placed g={g} item={quote} lines={TOKENS.typography.max_lines.body} fontPx={quotePx} style={{ fontWeight: 500, color: inkFor(g, quote.entity_id, g.ink.primary) }}>
+        {textOf(g, quote)}
+      </Placed>
+      {attribution ? (
+        <Placed g={g} item={attribution} lines={1} fontPx={fontPxFor(g, attribution, "label")} style={{ fontWeight: 500, color: inkFor(g, attribution.entity_id, g.ink.secondary) }}>
+          {`— ${textOf(g, attribution)}`}
+        </Placed>
+      ) : null}
+    </>
+  );
+  const card = cardBox(g, items);
+  if (card) {
+    return (
+      <Flow g={g} gap={0}>
+        <div style={{ ...chrome, position: "absolute", left: card.x - g.content.x, top: card.y - g.content.y, width: card.width, height: card.height }} />
+        {body}
+      </Flow>
+    );
+  }
   return (
     <Flow g={g} gap={0}>
-      <div style={{ width: "100%", boxSizing: "border-box", background: g.ink.surface1, borderRadius: 2 * g.unit, borderLeft: `${g.unit}px solid ${g.ink.emphasis}`, padding: `${4 * g.unit}px ${5 * g.unit}px`, display: "flex", flexDirection: "column", gap: 2 * g.unit }}>
-        <Placed g={g} item={quote} lines={TOKENS.typography.max_lines.body} fontPx={quotePx} style={{ fontWeight: 500, color: inkFor(g, quote.entity_id, g.ink.primary) }}>
-          {textOf(g, quote)}
-        </Placed>
-        {attribution ? (
-          <Placed g={g} item={attribution} lines={1} fontPx={fontPxFor(g, attribution, "label")} style={{ fontWeight: 500, color: inkFor(g, attribution.entity_id, g.ink.secondary) }}>
-            {`— ${textOf(g, attribution)}`}
-          </Placed>
-        ) : null}
-      </div>
+      <div style={{ ...chrome, width: "100%", padding: `${4 * g.unit}px ${5 * g.unit}px`, display: "flex", flexDirection: "column", gap: 2 * g.unit }}>{body}</div>
     </Flow>
   );
 }
@@ -176,8 +202,10 @@ function FormulaGroup({ g, item }: { g: TextGeometry; item: TextItem }): ReactEl
   const tex = textOf(g, item);
   const html = useMemo(() => katex.renderToString(tex, { throwOnError: true, output: "html", displayMode: false }), [tex]);
   const fontPx = fontPxFor(g, item, "h1");
+  // A formula box is two body lines tall for fractions; its whole inner height is the block.
+  const box = g.boxes.get(item.entity_id);
   return (
-    <Placed g={g} item={item} lines={1} fontPx={fontPx} style={{ width: "auto", color: inkFor(g, item.entity_id, g.ink.primary), lineHeight: LINE_HEIGHT }}>
+    <Placed g={g} item={item} lines={1} fontPx={fontPx} blockPx={box ? Math.max(1, box.box.height - g.unit) : undefined} style={{ width: "auto", color: inkFor(g, item.entity_id, g.ink.primary), lineHeight: LINE_HEIGHT }}>
       <span dangerouslySetInnerHTML={{ __html: html }} />
     </Placed>
   );

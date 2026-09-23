@@ -20,7 +20,14 @@ from content_factory.explainer.fonts import (
     measure_text,
     wrap_text,
 )
-from content_factory.explainer.layout import LayoutChoice, boxes_for, region, role_px
+from content_factory.explainer.layout import (
+    TEXT_PAD,
+    LayoutChoice,
+    boxes_for,
+    line_px,
+    region,
+    role_px,
+)
 from content_factory.explainer.render import script_path
 from content_factory.explainer.timing import (
     DURATION_MS,
@@ -454,7 +461,7 @@ def test_seventy_character_label_without_short_label_raises_a_layout_issue() -> 
     issue = _only_issue(caught.value)
     assert issue.kind == "layout"
     assert "ent_series00" in issue.message and LABEL_70 in issue.message
-    assert "measures 942 px" in issue.message and "816 px are available" in issue.message
+    assert "measures 942 px" in issue.message and "808 px are available" in issue.message
     assert "2 lines needed, 1 allowed" in issue.message
     assert "short_label of at most" in issue.fix
     assert "split scene scn_chart001 after beat bt_reveal01" in issue.fix
@@ -648,6 +655,53 @@ def test_sixty_fixture_compiles_to_sixty_seconds() -> None:
         "trace",
         "zoom_to",
     } <= actions
+
+
+def test_text_boxes_carry_the_ink_pad_around_the_line_block() -> None:
+    pack = EvidencePack.model_validate(json.loads((SIXTY / "pack.json").read_text()))
+    script = ScriptPlan.model_validate(json.loads((SIXTY / "script.json").read_text()))
+    spec = VisualSpec.model_validate(json.loads((SIXTY / "spec.json").read_text()))
+    bundle = compile_episode(pack, script, spec, layout_diagrams=_fake_layouts)
+    boxes = {b.entity_id: b for s in bundle.timeline.scenes for b in s.boxes}
+    statement, number = boxes["ent_open_txt"], boxes["ent_big_value"]
+    content = region(spec.scenes[0], "content")
+    assert statement.box.height == statement.lines * line_px("body") + 2 * TEXT_PAD
+    assert (statement.box.x, statement.box.width) == (content.x, content.width)
+    assert number.box.height == line_px("display") + 2 * TEXT_PAD
+    chart = next(s.template for s in spec.scenes if isinstance(s.template, ChartTemplate))
+    chip = boxes[chart.series[0].entity_id]
+    assert chip.box.height == line_px("label") + 2 * TEXT_PAD
+    assert chip.text is not None
+    inner = measure_text(chip.text, family="Inter", weight=500, font_px=role_px("label"))
+    assert chip.box.width >= inner * FIT_SAFETY + 2 * TEXT_PAD
+
+
+def test_diagram_node_boxes_are_the_layout_boxes() -> None:
+    pack, script, spec = _trio()
+    bundle = compile_episode(pack, script, spec, layout_diagrams=_fake_layouts)
+    (layout,) = bundle.layouts
+    compiled = next(s for s in bundle.timeline.scenes if s.scene_id == layout.scene_id)
+    boxes = {b.entity_id: b for b in compiled.boxes}
+    for node in layout.nodes:
+        assert boxes[node.entity_id].box == node.box
+        assert boxes[node.entity_id].font_px == role_px("label")
+        assert boxes[node.entity_id].text is not None
+
+
+def test_a_layout_node_too_narrow_for_its_label_raises_a_layout_issue() -> None:
+    def narrow(spec: VisualSpec, regions: dict[str, PixelBox]) -> tuple[DiagramLayout, ...]:
+        (layout,) = _fake_layouts(spec, regions)
+        first, *rest = layout.nodes
+        squeezed = first.model_copy(update={"box": first.box.model_copy(update={"width": 40})})
+        return (layout.model_copy(update={"nodes": (squeezed, *rest)}),)
+
+    pack, script, spec = _trio()
+    with pytest.raises(EpisodeInvalidError) as error:
+        compile_episode(pack, script, spec, layout_diagrams=narrow)
+    issue = _only_issue(error.value)
+    assert issue.kind == "layout"
+    assert issue.ids == ("scn_diagram1", "ent_panels01")
+    assert "'Panels'" in issue.message and "24 px are available" in issue.message
 
 
 def test_missing_renderer_script_is_named() -> None:

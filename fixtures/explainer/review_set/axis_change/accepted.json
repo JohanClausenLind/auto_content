@@ -1,0 +1,619 @@
+{
+  "bundle_id": "bndl_bf4d253b77f25ecd",
+  "captures": [],
+  "datasets": [
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "stop",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "dwell",
+          "unit": "s"
+        }
+      ],
+      "dataset_id": "ds_dwell_quiet",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_dwell_a1"
+          ],
+          "key": "A",
+          "values": [
+            "A",
+            10.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_a2"
+          ],
+          "key": "B",
+          "values": [
+            "B",
+            20.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_a3"
+          ],
+          "key": "C",
+          "values": [
+            "C",
+            30.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_a4"
+          ],
+          "key": "D",
+          "values": [
+            "D",
+            40.0
+          ]
+        }
+      ],
+      "title": ""
+    },
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "stop",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "dwell",
+          "unit": "s"
+        }
+      ],
+      "dataset_id": "ds_dwell_busy",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_dwell_b1"
+          ],
+          "key": "A",
+          "values": [
+            "A",
+            100.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_b2"
+          ],
+          "key": "B",
+          "values": [
+            "B",
+            200.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_b3"
+          ],
+          "key": "C",
+          "values": [
+            "C",
+            300.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_b4"
+          ],
+          "key": "D",
+          "values": [
+            "D",
+            400.0
+          ]
+        }
+      ],
+      "title": ""
+    }
+  ],
+  "design_system_version": 1,
+  "fonts_version": "5.3.0",
+  "layouts": [],
+  "schema_version": 1,
+  "spec": {
+    "assets": [
+      {
+        "asset_id": "ast_dwell_quiet",
+        "capture_id": null,
+        "dataset_id": "ds_dwell_quiet",
+        "kind": "dataset",
+        "sha256": "68a3873571c0d5c9afbd8faf83f0e22412d0ffc7a7b6d44c0ab2164f815184c3"
+      },
+      {
+        "asset_id": "ast_dwell_busy",
+        "capture_id": null,
+        "dataset_id": "ds_dwell_busy",
+        "kind": "dataset",
+        "sha256": "d1f6ef55ce1c6158eba28045781f3b5bb477266db774359cf53b8927f0a3c135"
+      }
+    ],
+    "capability_requests": [],
+    "design_system_version": 1,
+    "entities": [
+      {
+        "claim_ids": [
+          "clm_dwell_a4",
+          "clm_dwell_b4"
+        ],
+        "entity_id": "ent_dwell_ser",
+        "kind": "series",
+        "label": "Dwell time",
+        "short_label": ""
+      }
+    ],
+    "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+    "scenes": [
+      {
+        "beats": [
+          {
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_dwell_ser"
+                ]
+              }
+            ],
+            "beat_id": "bt_dwell_a_reveal",
+            "cue": {
+              "duration_class": "short",
+              "relation": "on",
+              "segment_id": "seg_run0000001",
+              "token_end": 0,
+              "token_start": 0
+            }
+          },
+          {
+            "actions": [
+              {
+                "action": "hold"
+              }
+            ],
+            "beat_id": "bt_dwell_a_hold00",
+            "cue": {
+              "duration_class": "short",
+              "relation": "on",
+              "segment_id": "seg_run0000001",
+              "token_end": 3,
+              "token_start": 3
+            }
+          }
+        ],
+        "claim_ids": [
+          "clm_dwell_a1",
+          "clm_dwell_a2",
+          "clm_dwell_a3",
+          "clm_dwell_a4"
+        ],
+        "initial_visible": [],
+        "layout": "primary",
+        "purpose": "Show dwell time stop by stop",
+        "scene_id": "scn_dwell_quiet",
+        "section": "run_system",
+        "source_ids": [],
+        "sponsored": false,
+        "template": {
+          "baseline_zero": true,
+          "chart_kind": "line",
+          "dataset_asset_id": "ast_dwell_quiet",
+          "series": [
+            {
+              "entity_id": "ent_dwell_ser",
+              "value": ""
+            }
+          ],
+          "series_field": null,
+          "template": "chart",
+          "title": "Quiet day",
+          "x": {
+            "field": "stop",
+            "kind": "nominal",
+            "title": "Stop",
+            "unit": ""
+          },
+          "y": {
+            "field": "dwell",
+            "kind": "quantitative",
+            "title": "Dwell",
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "beats": [
+          {
+            "actions": [
+              {
+                "action": "reveal",
+                "targets": [
+                  "ent_dwell_ser"
+                ]
+              }
+            ],
+            "beat_id": "bt_dwell_b_reveal",
+            "cue": {
+              "duration_class": "short",
+              "relation": "on",
+              "segment_id": "seg_change0001",
+              "token_end": 2,
+              "token_start": 2
+            }
+          },
+          {
+            "actions": [
+              {
+                "action": "hold"
+              }
+            ],
+            "beat_id": "bt_dwell_b_hold00",
+            "cue": {
+              "duration_class": "short",
+              "relation": "on",
+              "segment_id": "seg_change0001",
+              "token_end": 5,
+              "token_start": 5
+            }
+          }
+        ],
+        "claim_ids": [
+          "clm_dwell_b1",
+          "clm_dwell_b2",
+          "clm_dwell_b3",
+          "clm_dwell_b4"
+        ],
+        "initial_visible": [],
+        "layout": "primary",
+        "purpose": "Show dwell time stop by stop",
+        "scene_id": "scn_dwell_busy0",
+        "section": "change_variable",
+        "source_ids": [],
+        "sponsored": false,
+        "template": {
+          "baseline_zero": true,
+          "chart_kind": "line",
+          "dataset_asset_id": "ast_dwell_busy",
+          "series": [
+            {
+              "entity_id": "ent_dwell_ser",
+              "value": ""
+            }
+          ],
+          "series_field": null,
+          "template": "chart",
+          "title": "Same stops, new axis",
+          "x": {
+            "field": "stop",
+            "kind": "nominal",
+            "title": "Stop",
+            "unit": ""
+          },
+          "y": {
+            "field": "dwell",
+            "kind": "quantitative",
+            "title": "Dwell",
+            "unit": "s"
+          }
+        }
+      }
+    ],
+    "schema_version": 1,
+    "script_hash": "17a7535cf19ca381e2b429ab9f5a6d9b84ba4da8d038c8a862dfdc1e0004eb69",
+    "script_id": "scr_b484cc3ac411",
+    "spec_id": "spec_67a0edba4629"
+  },
+  "timeline": {
+    "compiler_version": "0.1.0",
+    "fps": 30,
+    "height": 1080,
+    "inputs": [
+      {
+        "name": "pack",
+        "sha256": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486"
+      },
+      {
+        "name": "script",
+        "sha256": "17a7535cf19ca381e2b429ab9f5a6d9b84ba4da8d038c8a862dfdc1e0004eb69"
+      },
+      {
+        "name": "spec",
+        "sha256": "a42296f4b816b1f4751b60eca93954860551cd717a8e09618035e76030fab0bc"
+      },
+      {
+        "name": "design_system_version",
+        "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+      },
+      {
+        "name": "fonts_version",
+        "sha256": "2201bd23fe78debae1200e5d1f3d625af10060a7a2c2c901efe71a9432b4786a"
+      },
+      {
+        "name": "compiler_version",
+        "sha256": "6ad9613a455798d6d92e5f5f390ab4baa70596bc869ed6b17f5cdd2b28635f06"
+      },
+      {
+        "name": "timing_source",
+        "sha256": "d342ed822e55a972f8070862f9433af9c5cedd89d9c3098b249fa4c12dd0dccd"
+      }
+    ],
+    "narration_manifest_id": null,
+    "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+    "scenes": [
+      {
+        "actions": [
+          {
+            "action": "reveal",
+            "beat_id": "bt_dwell_a_reveal",
+            "end_frame": 18,
+            "index": 0,
+            "start_frame": 0,
+            "targets": [
+              "ent_dwell_ser"
+            ]
+          },
+          {
+            "action": "hold",
+            "beat_id": "bt_dwell_a_hold00",
+            "end_frame": 119,
+            "index": 0,
+            "start_frame": 35,
+            "targets": []
+          }
+        ],
+        "boxes": [
+          {
+            "box": {
+              "height": 35,
+              "width": 190,
+              "x": 96,
+              "y": 980
+            },
+            "entity_id": "ent_dwell_ser",
+            "font_px": 28,
+            "lines": 1,
+            "text": "Dwell time"
+          },
+          {
+            "box": {
+              "height": 35,
+              "width": 63,
+              "x": 988,
+              "y": 908
+            },
+            "entity_id": "axisx_dwell_quiet",
+            "font_px": 28,
+            "lines": 1,
+            "text": "Stop"
+          },
+          {
+            "box": {
+              "height": 76,
+              "width": 35,
+              "x": 96,
+              "y": 474
+            },
+            "entity_id": "axisy_dwell_quiet",
+            "font_px": 28,
+            "lines": 1,
+            "text": "Dwell"
+          }
+        ],
+        "camera": [],
+        "colors": [
+          {
+            "entity_id": "ent_dwell_ser",
+            "srgb_hex": "#0172B2",
+            "token_id": "data.cat.blue"
+          }
+        ],
+        "duration_frames": 119,
+        "highlights": [],
+        "regions": [
+          {
+            "box": {
+              "height": 972,
+              "width": 1728,
+              "x": 96,
+              "y": 54
+            },
+            "name": "content"
+          },
+          {
+            "box": {
+              "height": 56,
+              "width": 1728,
+              "x": 96,
+              "y": 54
+            },
+            "name": "title"
+          },
+          {
+            "box": {
+              "height": 772,
+              "width": 1608,
+              "x": 216,
+              "y": 126
+            },
+            "name": "plot"
+          },
+          {
+            "box": {
+              "height": 772,
+              "width": 120,
+              "x": 96,
+              "y": 126
+            },
+            "name": "axis_y"
+          },
+          {
+            "box": {
+              "height": 56,
+              "width": 1608,
+              "x": 216,
+              "y": 898
+            },
+            "name": "axis_x"
+          },
+          {
+            "box": {
+              "height": 56,
+              "width": 1728,
+              "x": 96,
+              "y": 970
+            },
+            "name": "legend"
+          }
+        ],
+        "scene_id": "scn_dwell_quiet",
+        "start_frame": 0
+      },
+      {
+        "actions": [
+          {
+            "action": "reveal",
+            "beat_id": "bt_dwell_b_reveal",
+            "end_frame": 145,
+            "index": 0,
+            "start_frame": 127,
+            "targets": [
+              "ent_dwell_ser"
+            ]
+          },
+          {
+            "action": "hold",
+            "beat_id": "bt_dwell_b_hold00",
+            "end_frame": 246,
+            "index": 0,
+            "start_frame": 162,
+            "targets": []
+          }
+        ],
+        "boxes": [
+          {
+            "box": {
+              "height": 35,
+              "width": 190,
+              "x": 96,
+              "y": 980
+            },
+            "entity_id": "ent_dwell_ser",
+            "font_px": 28,
+            "lines": 1,
+            "text": "Dwell time"
+          },
+          {
+            "box": {
+              "height": 35,
+              "width": 63,
+              "x": 988,
+              "y": 908
+            },
+            "entity_id": "axisx_dwell_busy0",
+            "font_px": 28,
+            "lines": 1,
+            "text": "Stop"
+          },
+          {
+            "box": {
+              "height": 76,
+              "width": 35,
+              "x": 96,
+              "y": 474
+            },
+            "entity_id": "axisy_dwell_busy0",
+            "font_px": 28,
+            "lines": 1,
+            "text": "Dwell"
+          }
+        ],
+        "camera": [],
+        "colors": [
+          {
+            "entity_id": "ent_dwell_ser",
+            "srgb_hex": "#0172B2",
+            "token_id": "data.cat.blue"
+          }
+        ],
+        "duration_frames": 157,
+        "highlights": [],
+        "regions": [
+          {
+            "box": {
+              "height": 972,
+              "width": 1728,
+              "x": 96,
+              "y": 54
+            },
+            "name": "content"
+          },
+          {
+            "box": {
+              "height": 56,
+              "width": 1728,
+              "x": 96,
+              "y": 54
+            },
+            "name": "title"
+          },
+          {
+            "box": {
+              "height": 772,
+              "width": 1608,
+              "x": 216,
+              "y": 126
+            },
+            "name": "plot"
+          },
+          {
+            "box": {
+              "height": 772,
+              "width": 120,
+              "x": 96,
+              "y": 126
+            },
+            "name": "axis_y"
+          },
+          {
+            "box": {
+              "height": 56,
+              "width": 1608,
+              "x": 216,
+              "y": 898
+            },
+            "name": "axis_x"
+          },
+          {
+            "box": {
+              "height": 56,
+              "width": 1728,
+              "x": 96,
+              "y": 970
+            },
+            "name": "legend"
+          }
+        ],
+        "scene_id": "scn_dwell_busy0",
+        "start_frame": 119
+      }
+    ],
+    "schema_version": 1,
+    "script_hash": "17a7535cf19ca381e2b429ab9f5a6d9b84ba4da8d038c8a862dfdc1e0004eb69",
+    "spec_hash": "a42296f4b816b1f4751b60eca93954860551cd717a8e09618035e76030fab0bc",
+    "spec_id": "spec_67a0edba4629",
+    "timeline_id": "tl_a42296f4b816",
+    "total_frames": 276,
+    "width": 1920
+  }
+}

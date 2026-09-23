@@ -1,0 +1,401 @@
+{
+  "calculations": [],
+  "claims": [
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_stops_gain",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "evi_stops000001"
+      ],
+      "geography": "",
+      "rationale": "stated in the source",
+      "short_label": "",
+      "stable": false,
+      "statement": "The gain from a faster tram is spent at the stops",
+      "time_basis": "",
+      "value": null
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_a1",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 10 s at stop A",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 10.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_b1",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 100 s at stop A",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 100.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_a2",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 20 s at stop B",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 20.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_b2",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 200 s at stop B",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 200.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_a3",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 30 s at stop C",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 30.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_b3",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 300 s at stop C",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 300.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_a4",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 40 s at stop D",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 40.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-23",
+      "claim_id": "clm_dwell_b4",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "illustrative dwell times chosen for round numbers",
+      "short_label": "",
+      "stable": false,
+      "statement": "The tram dwells 400 s at stop D",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 400.0,
+        "uncertainty": "exact",
+        "unit": "s"
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "stop",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "dwell",
+          "unit": "s"
+        }
+      ],
+      "dataset_id": "ds_dwell_quiet",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_dwell_a1"
+          ],
+          "key": "A",
+          "values": [
+            "A",
+            10.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_a2"
+          ],
+          "key": "B",
+          "values": [
+            "B",
+            20.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_a3"
+          ],
+          "key": "C",
+          "values": [
+            "C",
+            30.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_a4"
+          ],
+          "key": "D",
+          "values": [
+            "D",
+            40.0
+          ]
+        }
+      ],
+      "title": ""
+    },
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "stop",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "dwell",
+          "unit": "s"
+        }
+      ],
+      "dataset_id": "ds_dwell_busy",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_dwell_b1"
+          ],
+          "key": "A",
+          "values": [
+            "A",
+            100.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_b2"
+          ],
+          "key": "B",
+          "values": [
+            "B",
+            200.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_b3"
+          ],
+          "key": "C",
+          "values": [
+            "C",
+            300.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_dwell_b4"
+          ],
+          "key": "D",
+          "values": [
+            "D",
+            400.0
+          ]
+        }
+      ],
+      "title": ""
+    }
+  ],
+  "frozen_at": "2026-09-23T00:00:00Z",
+  "items": [
+    {
+      "context_after": "",
+      "context_before": "",
+      "geography": "",
+      "item_id": "evi_stops000001",
+      "locator": {
+        "end": 107,
+        "kind": "char_range",
+        "start": 0
+      },
+      "passage": "a faster tram does not shorten the trip, because every second gained is spent standing at the busiest stops",
+      "quoted_at": "2026-09-23",
+      "source_id": "src_transit0001",
+      "time_basis": "",
+      "unit": ""
+    }
+  ],
+  "language": "en",
+  "pack_id": "pack_reviewset1",
+  "schema_version": 1,
+  "sources": [
+    {
+      "accessed_at": "2026-09-23",
+      "author": "",
+      "canonical_url": "http://127.0.0.1/synthetic.html",
+      "capture_id": "cap_synthetic01",
+      "content_sha256": "368e0c09a336b24fef5b75ba05e570aea52341bfe7c59dda414e41842aa6d8d8",
+      "published_at": null,
+      "publisher": "Transit Notes",
+      "rights_status": "quotable_excerpt",
+      "source_class": "unknown",
+      "source_id": "src_transit0001",
+      "title": "Why the tram is late",
+      "url": "http://127.0.0.1/synthetic.html"
+    }
+  ],
+  "topic": "Why a faster tram does not shorten the trip"
+}

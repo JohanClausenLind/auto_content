@@ -1,0 +1,67 @@
+{
+  "channel_id": "ch_explain01",
+  "contribution": "The stops, not the motor, set the trip time.",
+  "locked_at": "2026-09-23T00:00:00Z",
+  "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+  "pack_id": "pack_reviewset1",
+  "promises": [
+    {
+      "claim_ids": [
+        "clm_stops_gain"
+      ],
+      "thumbnail_promise": "The seconds go to the stops",
+      "title": "Doors, not motors"
+    }
+  ],
+  "question": "Where do the tram's minutes go?",
+  "schema_version": 1,
+  "script_id": "scr_b484cc3ac411",
+  "segments": [
+    {
+      "claim_ids": [
+        "clm_dwell_a4"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "run_system",
+      "segment_id": "seg_run0000001",
+      "spoken_text": "Dwell time grows stop by stop along the line",
+      "tokens": [
+        "Dwell",
+        "time",
+        "grows",
+        "stop",
+        "by",
+        "stop",
+        "along",
+        "the",
+        "line"
+      ]
+    },
+    {
+      "claim_ids": [
+        "clm_dwell_b4"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "change_variable",
+      "segment_id": "seg_change0001",
+      "spoken_text": "On a busier day the same stops hold the tram far longer",
+      "tokens": [
+        "On",
+        "a",
+        "busier",
+        "day",
+        "the",
+        "same",
+        "stops",
+        "hold",
+        "the",
+        "tram",
+        "far",
+        "longer"
+      ]
+    }
+  ],
+  "sponsor": null
+}

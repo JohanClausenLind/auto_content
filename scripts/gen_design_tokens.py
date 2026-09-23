@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -60,6 +61,7 @@ def write_outputs(tokens: dict[str, Any]) -> None:
         f"SRGB_HEX: dict[str, str] = {hexes!r}\n"
     )
     PY_OUT.write_text(py, encoding="utf-8")
+    subprocess.run(["uv", "run", "ruff", "format", str(PY_OUT)], check=True, capture_output=True)
     TS_OUT.parent.mkdir(parents=True, exist_ok=True)
     ts = (
         f"// {header}\n"

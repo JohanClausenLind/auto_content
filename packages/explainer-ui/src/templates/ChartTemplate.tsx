@@ -1,11 +1,11 @@
 // Bar, stacked bar, line, area, scatter and slope charts as hand-drawn SVG; d3 only computes.
-import type { ChartTemplate as ChartSpec, EvidenceDataset } from "@content-factory/content-schema-ts";
+import type { ChartTemplate as ChartSpec, CompiledExplainerScene, EvidenceDataset } from "@content-factory/content-schema-ts";
 import { measureText } from "@content-factory/content-ui";
 import { area as d3Area, line as d3Line, range, scaleBand, scaleLinear } from "d3";
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
 import { useSceneEnv } from "../context";
-import { cameraTransform, clamp01, regionOf, safeAreaBox, type PixelBox } from "../geometry";
+import { cameraTransform, clamp01, entityBoxIndex, innerBlock, regionOf, safeAreaBox, type PixelBox } from "../geometry";
 import { categoricalTokenId, entityColors, entityHex, tokenHex } from "../palette";
 import { entityDimFactor, entityOpacity, entityState, type SceneState } from "../state";
 import { DISPLAY_STACK, TEXT_STACK, lineHeightPx, rolePx } from "../text";
@@ -447,16 +447,27 @@ function Annotations({ g }: { g: ChartGeometry }): ReactElement {
   );
 }
 
-function Legend({ g, box }: { g: ChartGeometry; box: PixelBox }): ReactElement {
+/** Chips at their compiled boxes (the compiler's text, centred in the padded box), else a flex row. */
+function Legend({ g, compiled, box }: { g: ChartGeometry; compiled: CompiledExplainerScene; box: PixelBox }): ReactElement {
   const env = useSceneEnv();
+  const boxes = entityBoxIndex(compiled);
   return (
     <div style={{ position: "absolute", left: box.x, top: box.y, width: box.width, height: box.height, display: "flex", alignItems: "center", gap: 4 * g.unit, overflow: "hidden", fontFamily: TEXT_STACK, fontSize: g.labelPx, color: g.ink.secondary, whiteSpace: "nowrap" }}>
       {g.template.series.map((binding, si) => {
         const entity = env.entities.get(binding.entity_id);
+        const placed = boxes.get(binding.entity_id);
+        const chip: CSSProperties = { display: "flex", alignItems: "center", gap: g.unit, opacity: entityOpacity(g.state, binding.entity_id) };
+        if (placed) {
+          const fontPx = placed.font_px ?? g.labelPx;
+          const inner = innerBlock(placed, fontPx, g.unit);
+          // The box is canvas pixels and this row sits at the legend origin; 1.5 units of chip padding
+          // are inside the chrome layout.py reserved (CHIP_PADDING).
+          Object.assign(chip, { position: "absolute", left: inner.x - box.x, top: inner.y - box.y, width: inner.width, height: inner.height, padding: `0 ${1.5 * g.unit}px`, boxSizing: "border-box", overflow: "hidden", fontSize: fontPx, lineHeight: `${inner.height}px` });
+        }
         return (
-          <div key={binding.entity_id} style={{ display: "flex", alignItems: "center", gap: g.unit, opacity: entityOpacity(g.state, binding.entity_id) }}>
+          <div key={binding.entity_id} style={chip}>
             <span style={{ width: 1.5 * g.unit, height: 1.5 * g.unit, borderRadius: g.unit / 4, background: g.seriesHex(si), flex: "0 0 auto" }} />
-            <span>{entity?.short_label || entity?.label || binding.value}</span>
+            <span>{placed?.text ?? (entity?.short_label || entity?.label || binding.value)}</span>
           </div>
         );
       })}
@@ -554,7 +565,7 @@ export function ChartTemplate({ compiled, template, state }: TemplateProps<Chart
           {chartTitle(dataset, template)}
         </div>
       ) : null}
-      {legendBox ? <Legend g={g} box={legendBox} /> : null}
+      {legendBox ? <Legend g={g} compiled={compiled} box={legendBox} /> : null}
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ position: "absolute", left: 0, top: 0 }}>
         <defs>
           <clipPath id={`${clipPrefix}-plot`}>

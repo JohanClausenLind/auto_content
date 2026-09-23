@@ -1,0 +1,79 @@
+{
+  "channel_id": "ch_explain01",
+  "contribution": "The stops, not the motor, set the trip time.",
+  "locked_at": "2026-09-23T00:00:00Z",
+  "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
+  "pack_id": "pack_reviewset1",
+  "promises": [
+    {
+      "claim_ids": [
+        "clm_stops_gain"
+      ],
+      "thumbnail_promise": "The seconds go to the stops",
+      "title": "Doors, not motors"
+    }
+  ],
+  "question": "Where do the tram's minutes go?",
+  "schema_version": 1,
+  "script_id": "scr_2f68219adbf2",
+  "segments": [
+    {
+      "claim_ids": [
+        "clm_stops_gain"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "cold_open",
+      "segment_id": "seg_open00001",
+      "spoken_text": "A faster tram does not shorten the trip",
+      "tokens": [
+        "A",
+        "faster",
+        "tram",
+        "does",
+        "not",
+        "shorten",
+        "the",
+        "trip"
+      ]
+    },
+    {
+      "claim_ids": [],
+      "delivery": "either",
+      "display_text": null,
+      "section": "question_stakes",
+      "segment_id": "seg_stakes0001",
+      "spoken_text": "Where do the saved seconds go on a busy line",
+      "tokens": [
+        "Where",
+        "do",
+        "the",
+        "saved",
+        "seconds",
+        "go",
+        "on",
+        "a",
+        "busy",
+        "line"
+      ]
+    },
+    {
+      "claim_ids": [
+        "clm_stops_gain"
+      ],
+      "delivery": "either",
+      "display_text": null,
+      "section": "synthesis",
+      "segment_id": "seg_synth00001",
+      "spoken_text": "The doors decide the timetable",
+      "tokens": [
+        "The",
+        "doors",
+        "decide",
+        "the",
+        "timetable"
+      ]
+    }
+  ],
+  "sponsor": null
+}

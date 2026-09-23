@@ -1,4 +1,6 @@
-"""Author fixtures/explainer/render/bundle-min.json from the Pydantic contracts, so it is valid by construction."""
+"""Build fixtures/explainer/render/bundle-min.json from the models so it stays valid."""
+
+# ruff: noqa: S106 — token_id is a colour token, not a credential
 
 from __future__ import annotations
 
