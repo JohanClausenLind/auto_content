@@ -922,6 +922,9 @@ app.add_typer(workflows_cmd.app, name="workflows")
 app.add_typer(workflows_cmd.pins_app, name="pins")
 app.add_typer(reference_cmd.app, name="reference")
 app.add_typer(libraries_cmd.app, name="datasets")
+from content_factory.cli import explainer_cmd  # noqa: E402
+
+app.add_typer(explainer_cmd.app, name="explainer")
 # `make` is the one command an agent needs: one call runs a whole production.
 app.command("make")(workflows_cmd.make)
 
