@@ -36,6 +36,9 @@ BACKGROUND_MARGIN_PX = 12
 EDGE_SAMPLES = 24
 QC_DECODE_WIDTH = 360
 STROKE_PX_AT_360: int = TOKENS["lines"]["data_stroke_min_px_at_360"]
+DEEMPHASIS_ALPHA: float = next(
+    t["alpha"] for t in TOKENS["color"]["state"] if t["id"] == "state.deemphasis"
+)
 _FFMPEG = "ffmpeg"
 
 
@@ -208,16 +211,35 @@ def check_rendered(
     findings: list[QcFinding] = []
     for compiled in bundle.timeline.scenes:
         scene = scenes[compiled.scene_id]
+        texts = {b.entity_id for b in compiled.boxes if b.font_px is not None}
+        shown: set[str] = set()
+        read: set[str] = set()
         for frame in sorted(sample_frames(compiled)):
             at_ms = math.floor(min(frame, last_frame) * 1000 / fps)
             visible = visible_at(scene, compiled, frame)
-            findings += _text_findings(compiled, visible, mp4, at_ms, text_lc_min, fetch)
+            dimmed = deemphasised_at(compiled, frame, visible)
+            shown |= visible & texts
+            read |= (visible - dimmed) & texts
+            # Dimmed text is not being read at this frame; it must be read in full somewhere.
+            findings += _text_findings(compiled, visible - dimmed, mp4, at_ms, text_lc_min, fetch)
             template = scene.template
             if isinstance(template, ChartTemplate) and template.chart_kind == "line":
                 dataset = datasets.get(assets[template.dataset_asset_id].dataset_id or "")
+                # De-emphasised context is drawn at the token's alpha on purpose; its floor
+                # scales with it, while every line being read keeps the full one.
+                dimmed = deemphasised_at(compiled, frame, visible)
+                floors = {
+                    e: edge_min * DEEMPHASIS_ALPHA if e in dimmed else edge_min for e in visible
+                }
                 findings += _edge_findings(
-                    bundle, compiled, template, dataset, visible, mp4, at_ms, edge_min, fetch
+                    bundle, compiled, template, dataset, visible, mp4, at_ms, floors, fetch
                 )
+        at_ms = math.floor(compiled.start_frame * 1000 / fps)
+        for entity_id in sorted(shown - read):
+            why = "shown only while de-emphasised: never read at full strength"
+            findings.append(
+                _finding("text_apca", compiled, entity_id, at_ms, 0.0, text_lc_min, why)
+            )
     return findings
 
 
@@ -236,7 +258,6 @@ def sample_frames(compiled: CompiledExplainerScene) -> set[int]:
 def visible_at(scene: Scene, compiled: CompiledExplainerScene, frame: int) -> set[str]:
     """Entities on screen at a frame: reveals count once finished, hides as soon as they start."""
     visible = set(scene.initial_visible)
-    visible.update(synthetic_id(p, scene.scene_id) for p in ("axisx", "axisy"))
     annotations = {
         (b.beat_id, k): synthetic_id(f"annot{k}", b.beat_id)
         for b in scene.beats
@@ -296,7 +317,7 @@ def _edge_findings(
     visible: set[str],
     mp4: Path,
     at_ms: int,
-    edge_min: float,
+    floors: dict[str, float],
     fetch: Fetch,
 ) -> list[QcFinding]:
     series = [s for s in chart.series if s.entity_id in visible]
@@ -306,17 +327,27 @@ def _edge_findings(
     if dataset is None or plot is None:
         why = "no dataset in the bundle" if dataset is None else "no plot region"
         return [
-            _finding("line_edge", compiled, s.entity_id, at_ms, None, edge_min, why) for s in series
+            _finding("line_edge", compiled, s.entity_id, at_ms, None, floors[s.entity_id], why)
+            for s in series
         ]
     frame = fetch(mp4, at_ms, width=QC_DECODE_WIDTH)
     if frame is None:
         return [
-            _finding("line_edge", compiled, s.entity_id, at_ms, None, edge_min, "decode failed")
+            _finding(
+                "line_edge",
+                compiled,
+                s.entity_id,
+                at_ms,
+                None,
+                floors[s.entity_id],
+                "decode failed",
+            )
             for s in series
         ]
     sx, sy = frame.width / bundle.timeline.width, frame.height / bundle.timeline.height
     findings: list[QcFinding] = []
     for binding in series:
+        edge_min = floors[binding.entity_id]
         points = [(x * sx, y * sy) for x, y in series_points(chart, dataset, binding, plot)]
         try:
             step = line_edge_contrast(frame, points, STROKE_PX_AT_360)
@@ -328,10 +359,42 @@ def _edge_findings(
         evidence = (
             f"mean luminance step {step:.1f} over {len(points)} points at {frame.width} px wide"
         )
+        if edge_min < max(floors.values()):
+            evidence += (
+                f", de-emphasised to alpha {DEEMPHASIS_ALPHA} so the floor is {edge_min:.1f}"
+            )
         findings.append(
             _finding("line_edge", compiled, binding.entity_id, at_ms, step, edge_min, evidence)
         )
     return findings
+
+
+def deemphasised_at(compiled: CompiledExplainerScene, frame: int, ids: set[str]) -> set[str]:
+    """Which of ids sit at the de-emphasis alpha by this frame, folding actions as state.ts does."""
+    highlighted: set[str] = set()
+    kept: set[str] | None = None
+    focus: str | None = None
+    for action in (a for a in compiled.actions if a.start_frame <= frame):
+        targets = set(action.targets)
+        if action.action == "highlight":
+            highlighted |= targets
+        elif action.action == "clear_highlight":
+            highlighted = highlighted - targets if targets else set()
+            if not targets or focus in targets:
+                kept, focus = None, None
+        elif action.action == "focus" and action.targets:
+            if focus is not None and focus != action.targets[0]:
+                highlighted.discard(focus)
+            focus = action.targets[0]
+            highlighted.add(focus)
+            kept = {focus}
+        elif action.action == "isolate":
+            kept = targets
+    return {
+        e
+        for e in ids
+        if (kept is not None and e not in kept) or (highlighted and e not in highlighted)
+    }
 
 
 def _finding(

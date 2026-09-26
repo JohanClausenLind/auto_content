@@ -168,6 +168,11 @@ def crop_rect(
 def quote_image(tiles: Sequence[Tile], quote: CaptureQuote) -> Image.Image:
     """One quote's line crops stacked and upscaled so a line is about TARGET_LINE_PX tall."""
     crops = [crop_rect(tiles, rect, side_padding_px=SIDE_PADDING_PX) for rect in quote.line_rects]
+    return stack_lines(crops, median(rect.height for rect in quote.line_rects))
+
+
+def stack_lines(crops: Sequence[Image.Image], line_px: float) -> Image.Image:
+    """Line crops on white, one under another, upscaled so a line is about TARGET_LINE_PX tall."""
     width = max(crop.width for crop in crops)
     height = sum(crop.height for crop in crops) + LINE_GAP_PX * (len(crops) + 1)
     stacked = Image.new("RGB", (width + 2 * LINE_GAP_PX, height), "white")
@@ -175,7 +180,6 @@ def quote_image(tiles: Sequence[Tile], quote: CaptureQuote) -> Image.Image:
     for crop in crops:
         stacked.paste(crop, (LINE_GAP_PX, y))
         y += crop.height + LINE_GAP_PX
-    line_px = median(rect.height for rect in quote.line_rects)
     scale = min(4, max(1, math.ceil(TARGET_LINE_PX / max(1.0, line_px))))
     if scale == 1:
         return stacked

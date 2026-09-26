@@ -1,14 +1,14 @@
 {
   "episode_id": "ep_gears_2026",
-  "pack": "episodes/gears/pack.json",
-  "script": "episodes/gears/script.json",
-  "spec": "episodes/gears/spec.json",
+  "pack": "pack.json",
+  "script": "script.json",
+  "spec": "spec.json",
   "captures": [
     {
-      "manifest": "episodes/gears/captures/cap_c240ae88accc.json",
-      "wacz": "output/explainer/sources/gearing/capture-c240ae88accc.wacz",
+      "manifest": "captures/cap_c240ae88accc.json",
+      "wacz": "../../output/explainer/sources/gearing/capture-c240ae88accc.wacz",
       "url": "https://en.wikipedia.org/wiki/Bicycle_gearing",
-      "tiles_dir": "output/explainer/sources/gearing/tiles-c240ae88accc"
+      "tiles_dir": "../../output/explainer/sources/gearing/tiles-c240ae88accc"
     }
   ],
   "voice": {

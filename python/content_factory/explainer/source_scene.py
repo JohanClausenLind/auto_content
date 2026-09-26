@@ -53,8 +53,9 @@ HIGHLIGHT_PAD_PX = 4
 ALPHA_FAMILY = (0.36, 0.30, 0.24, 0.18)
 INK_FRACTION = 0.10
 TEXT_LC_MIN = 75.0
-_EMPHASIS = next(t for t in TOKENS["color"]["state"] if t["id"] == "state.emphasis")
-AMBER: Rgb = oklch_to_srgb(Oklch(*_EMPHASIS["oklch"]))
+# Its own base, not state.emphasis: a tint on white paper wants chroma, text on dark wants light.
+_QUOTE = next(t for t in TOKENS["color"]["state"] if t["id"] == "state.quote_highlight")
+AMBER: Rgb = oklch_to_srgb(Oklch(*_QUOTE["oklch"]))
 EASING: dict[str, tuple[float, float, float, float]] = {
     name: (float(v[0]), float(v[1]), float(v[2]), float(v[3]))
     for name, v in TOKENS["motion"]["easing"].items()
@@ -100,14 +101,14 @@ class PageGeometry:
         return self.clamp(CameraState(scroll_x, section.scroll_y_px - gutter_px, zoom))
 
     def focus(self, quote: CaptureQuote, zoom: float | None = None) -> CameraState:
-        """Centre the quote with a line of context above; zoom so its widest line spans ~70 %."""
+        """Centre the quote with a line of context above; zoom so its lines span ~70 %."""
         rects = quote.line_rects
         x0, x1 = min(r.x for r in rects), max(r.x + r.width for r in rects)
         y0, y1 = min(r.y for r in rects), max(r.y + r.height for r in rects)
         line_h = median(r.height for r in rects)
         if zoom is None:
-            widest = max(r.width for r in rects)
-            fit_w = QUOTE_SPAN * self.region.width / (widest * self.base_scale)
+            # All lines together, not the widest: a quote starting mid-line spans the column.
+            fit_w = QUOTE_SPAN * self.region.width / ((x1 - x0) * self.base_scale)
             fit_h = self.region.height / ((y1 - y0 + 2 * line_h) * self.base_scale)
             zoom = min(MAX_ZOOM, max(1.0, min(fit_w, fit_h)))
         vw, vh = self.visible(zoom)

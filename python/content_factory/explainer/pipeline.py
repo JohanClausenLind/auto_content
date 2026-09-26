@@ -38,9 +38,25 @@ from content_factory.explainer.evidence import (
     check_spec_text_numbers,
 )
 from content_factory.explainer.fonts import FONTS_VERSION
-from content_factory.explainer.mix import MixResult, mix_episode
-from content_factory.explainer.narration import Aligner, Asr, Synth, assemble_narration
+from content_factory.explainer.mix import MIX_VERSION, MixResult, mix_episode
+from content_factory.explainer.narration import (
+    Aligner,
+    Asr,
+    Synth,
+    assemble_narration,
+    pace_stem,
+)
 from content_factory.explainer.passages import EXTRACTOR_VERSION, QuoteRequest, Tile
+from content_factory.explainer.patches import (
+    PATCHES_NAME,
+    SCRIPT_KINDS,
+    SPEC_KINDS,
+    TAKE_KINDS,
+    PatchRecord,
+    apply_patches,
+    load_patches,
+    of_kinds,
+)
 from content_factory.explainer.qc import QcFinding
 from content_factory.explainer.qc_checks import QC_VERSION, run_deterministic_qc, sampled_ms
 from content_factory.explainer.repair import repair_loop
@@ -48,6 +64,7 @@ from content_factory.explainer.review import PROMPT_SHA256 as QC_PROMPT_SHA256
 from content_factory.explainer.review import RUBRIC_VERSION as QC_RUBRIC_VERSION
 from content_factory.explainer.review import propose_repair, report_from_findings
 from content_factory.explainer.reviewer_prompts import RUBRIC_VERSION, prompt_sha256
+from content_factory.explainer.timing import paced_manifest, timeline_pauses
 from content_factory.explainer.tokens_gen import DESIGN_SYSTEM_VERSION
 from content_factory.explainer.tts_bench import (
     CANDIDATE_BY_KEY,
@@ -196,6 +213,7 @@ class EpisodeConfig(_Strict):
     script: Path
     spec: Path
     takes_dir: Path | None = None
+    patches: Path | None = None
     captures: tuple[CaptureInput, ...] = ()
     voice: VoiceSpec
     synth: str = "kokoro"
@@ -218,9 +236,11 @@ class EpisodeConfig(_Strict):
 
     @classmethod
     def load(cls, path: Path) -> EpisodeConfig:
+        """Reviewer patches default to patches.jsonl beside the file; null turns them off."""
         data = json.loads(path.read_text(encoding="utf-8"))
         base = path.resolve().parent
-        for key in ("pack", "script", "spec", "takes_dir", "output_root"):
+        data.setdefault("patches", PATCHES_NAME)
+        for key in ("pack", "script", "spec", "takes_dir", "patches", "output_root"):
             if data.get(key):
                 data[key] = str(base / data[key])
         for item in data.get("captures") or ():
@@ -379,6 +399,9 @@ class Ledger:
         return None if record is None else str(record["sha256"])
 
     def output_digest(self, step: str) -> str:
+        """All of a step's artifacts, or just one when named as step.artifact."""
+        if "." in step:
+            return self.artifact_sha(*step.split(".", 1)) or ""
         entry = self.entry(step)
         if entry is None:
             return ""
@@ -441,8 +464,12 @@ class Ctx:
     def spec(self) -> VisualSpec:
         return read_model(VisualSpec, self.artifact("plan_visuals", "spec"))
 
-    def narration(self) -> NarrationManifest:
-        return read_model(NarrationManifest, self.artifact("narrate", "manifest"))
+    def narration(self, bundle: ExplainerRenderBundle | None = None) -> NarrationManifest:
+        """The narrate step's manifest, paced by a bundle's pauses when one is given."""
+        narration = read_model(NarrationManifest, self.artifact("narrate", "manifest"))
+        if bundle is None:
+            return narration
+        return paced_manifest(narration, timeline_pauses(bundle.timeline), self.script())
 
     def bundle(self, step: str) -> ExplainerRenderBundle:
         return read_model(ExplainerRenderBundle, self.artifact(step, "bundle"))
@@ -583,6 +610,26 @@ def run(
     return finish("done" if last == len(steps) - 1 else "incomplete")
 
 
+def invalidated_steps(config: EpisodeConfig, *, seams: Seams | None = None) -> tuple[str, ...]:
+    """What the next run redoes, computed without running: a changed fingerprint, or upstream."""
+    ledger = Ledger(config.episode_dir, config.episode_id)
+    store = FilesystemArtifactStore(config.output_root.parent / "store")
+    ctx = Ctx(config, seams or Seams(), ledger, store)
+    redo: list[str] = []
+    for step in pipeline_steps(config):
+        if any(dep.split(".")[0] in redo for dep in step.after):
+            redo.append(step.name)
+            continue
+        try:
+            inputs = dict(step.inputs(ctx))
+        except (KeyError, OSError, ValueError):
+            redo.append(step.name)
+            continue
+        if not ledger.reusable(step.name, fingerprint(step, inputs, ledger)):
+            redo.append(step.name)
+    return tuple(redo)
+
+
 def _step_index(name: str | None, flag: str) -> int:
     if name not in STEP_NAMES:
         msg = f"{flag} {name!r} is not a step; steps: {', '.join(STEP_NAMES)}"
@@ -629,8 +676,9 @@ def pipeline_steps(config: EpisodeConfig) -> tuple[Step, ...]:
             after=(*evidence, "compile", "render_animatic"),
         ),
         Step("repair", _repair_inputs, _repair, after=STEP_NAMES[:8]),
-        Step("render_final", _final_inputs, _render_final, after=("repair",)),
-        Step("mix", _mix_inputs, _mix, after=("narrate",)),
+        # The repair reports change with the QC version; the picture follows the bundle alone.
+        Step("render_final", _final_inputs, _render_final, after=("repair.bundle",)),
+        Step("mix", _mix_inputs, _mix, after=("lock_script", "narrate")),
         Step("mux", _mux_inputs, _mux, after=("render_final", "mix")),
         Step(
             "qc_final",
@@ -677,13 +725,30 @@ def _freeze_evidence(ctx: Ctx) -> StepOutput:
     return StepOutput({"pack": write_model(ctx.out("evidence", "pack.json"), pack)})
 
 
+def _patches(ctx: Ctx, kinds: frozenset[str]) -> list[PatchRecord]:
+    return of_kinds(load_patches(ctx.config.patches), kinds)
+
+
+def _patch_inputs(records: Sequence[PatchRecord]) -> dict[str, str]:
+    """Only a patched step gains the key, so an unpatched episode keeps its fingerprints."""
+    return {"patches": canonical_dumps([p.patch_id for p in records])} if records else {}
+
+
+def _patch_root(ctx: Ctx) -> Path:
+    return ctx.config.patches.parent if ctx.config.patches else Path()
+
+
 def _lock_inputs(ctx: Ctx) -> dict[str, str]:
-    return {"script_hash": read_model(ScriptPlan, ctx.config.script).script_hash()}
+    script_hash = read_model(ScriptPlan, ctx.config.script).script_hash()
+    return {"script_hash": script_hash, **_patch_inputs(_patches(ctx, SCRIPT_KINDS))}
 
 
 def _lock_script(ctx: Ctx) -> StepOutput:
     pack = ctx.pack()
     script = read_model(ScriptPlan, ctx.config.script)
+    if records := _patches(ctx, SCRIPT_KINDS):
+        spec = read_model(VisualSpec, ctx.config.spec)
+        _, script, _ = apply_patches(spec, script, {}, records, root=_patch_root(ctx))
     issues: list[ContractIssue] = []
     if script.pack_hash != pack.pack_hash():
         issues.append(
@@ -706,13 +771,18 @@ def _lock_script(ctx: Ctx) -> StepOutput:
 
 def _plan_inputs(ctx: Ctx) -> dict[str, str]:
     spec = read_model(VisualSpec, ctx.config.spec)
-    return {"spec_hash": spec.spec_hash(), "design_system_version": str(DESIGN_SYSTEM_VERSION)}
+    return {
+        "spec_hash": spec.spec_hash(),
+        "design_system_version": str(DESIGN_SYSTEM_VERSION),
+        **_patch_inputs(_patches(ctx, SPEC_KINDS)),
+    }
 
 
 def _plan_visuals(ctx: Ctx) -> StepOutput:
-    """Validate and bind the VisualSpec given as a file; an LLM planner is a Phase 6 piece."""
+    """Validate and bind the VisualSpec file with the reviewer's patches applied first."""
     pack, script = ctx.pack(), ctx.script()
     spec = read_model(VisualSpec, ctx.config.spec)
+    spec, _, _ = apply_patches(spec, script, {}, _patches(ctx, SPEC_KINDS))
     issues = check_bindings(pack, script, spec) + check_state(spec)
     _raise_issues(issues + check_spec_text_numbers(pack, spec))
     return StepOutput({"spec": write_model(ctx.out("visuals", "spec.json"), spec)})
@@ -904,11 +974,17 @@ def _live_capture(ctx: Ctx, pack: EvidencePack, spec: VisualSpec, ref: AssetRef)
 
 
 def _recorded_takes(ctx: Ctx, script: ScriptPlan) -> dict[str, Path]:
+    """<takes_dir>/<segment_id>.wav where present, then each take_selection patch in order."""
     folder = ctx.config.takes_dir
-    if folder is None:
-        return {}
-    takes = {s.segment_id: folder / f"{s.segment_id}.wav" for s in script.segments}
-    return {sid: path for sid, path in takes.items() if path.is_file()}
+    named = (
+        {}
+        if folder is None
+        else {s.segment_id: folder / f"{s.segment_id}.wav" for s in script.segments}
+    )
+    takes = {sid: path for sid, path in named.items() if path.is_file()}
+    if records := _patches(ctx, TAKE_KINDS):
+        _, _, takes = apply_patches(ctx.spec(), script, takes, records, root=_patch_root(ctx))
+    return takes
 
 
 def _narrate_inputs(ctx: Ctx) -> dict[str, str]:
@@ -1013,7 +1089,7 @@ def _run_qc(
             pack=ctx.pack(),
             script=ctx.script(),
             spec=bundle.spec,
-            narration=ctx.narration(),
+            narration=ctx.narration(bundle),
             mix_loudness=loudness,
         )
     )
@@ -1312,14 +1388,28 @@ def _mix_inputs(ctx: Ctx) -> dict[str, str]:
         [cue.sfx_id, cue.at_ms, library_entry(SFX_MANIFEST, cue.sfx_id)[0]["sha256"]]
         for cue in config.sfx
     ]
-    return {"music": music, "sfx": canonical_dumps(sfx), "mix": seam_id(ctx.seams.mix)}
+    return {
+        "music": music,
+        "sfx": canonical_dumps(sfx),
+        "mix": seam_id(ctx.seams.mix),
+        "mix_version": MIX_VERSION,
+        # The final bundle matters to the mix only through where the voice pauses.
+        "pauses": canonical_dumps(sorted(timeline_pauses(ctx.bundle("repair").timeline).items())),
+    }
 
 
 def _mix(ctx: Ctx) -> StepOutput:
     config = ctx.config
     music = _library_wav(ctx, MUSIC_MANIFEST, config.music_id) if config.music_id else None
     sfx = [(cue.at_ms, _library_wav(ctx, SFX_MANIFEST, cue.sfx_id)) for cue in config.sfx]
-    result = ctx.seams.mix(ctx.artifact("narrate", "stem"), music, sfx, ctx.dir / "mix")
+    bundle, unpaced, stem = ctx.bundle("repair"), ctx.narration(), ctx.artifact("narrate", "stem")
+    narration = ctx.narration(bundle)
+    if narration.takes != unpaced.takes:
+        paced_stem = ctx.out("mix", "narration-paced.wav")
+        sha = pace_stem(stem, unpaced, narration, timeline_pauses(bundle.timeline), paced_stem)
+        narration, stem = narration.model_copy(update={"stem_sha256": sha}), paced_stem
+    manifest = write_model(ctx.out("mix", "narration-manifest.json"), narration)
+    result = ctx.seams.mix(stem, music, sfx, ctx.dir / "mix")
     loudness = write_model(ctx.out("mix", "loudness.json"), result.loudness)
     return StepOutput(
         {
@@ -1328,6 +1418,7 @@ def _mix(ctx: Ctx) -> StepOutput:
             "sfx": result.sfx_stem,
             "master": result.master,
             "loudness": loudness,
+            "manifest": manifest,
         },
         facts={
             "integrated_lufs": result.loudness.integrated_lufs,
@@ -1395,7 +1486,7 @@ def queue_item(finding: QcFinding, bundle: ExplainerRenderBundle) -> dict[str, A
     repair = propose_repair(finding, bundle)
     return {
         "scene_id": finding.scene_id,
-        "beat_id": _beat_at(bundle, finding.scene_id, finding.at_ms),
+        "beat_id": beat_at(bundle, finding.scene_id, finding.at_ms),
         "entity_id": finding.entity_id,
         "check": finding.check,
         "at_ms": finding.at_ms,
@@ -1417,7 +1508,7 @@ def _issue_item(issue: ContractIssue) -> dict[str, Any]:
     }
 
 
-def _beat_at(bundle: ExplainerRenderBundle, scene_id: str, at_ms: int) -> str | None:
+def beat_at(bundle: ExplainerRenderBundle, scene_id: str, at_ms: int) -> str | None:
     """The beat whose action last started at or before at_ms in that scene."""
     compiled = next((s for s in bundle.timeline.scenes if s.scene_id == scene_id), None)
     if compiled is None:

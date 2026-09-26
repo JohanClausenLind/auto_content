@@ -11,7 +11,7 @@ import "katex/dist/katex.min.css";
 
 import { useSceneEnv } from "../context";
 import { entityBoxIndex, innerBlock, regionOf, safeAreaBox, type PixelBox } from "../geometry";
-import { entityColors, mixHex, tokenHex } from "../palette";
+import { entityColors, tokenHex } from "../palette";
 import { entityOpacity, entityState, type SceneState } from "../state";
 import { DISPLAY_STACK, LINE_HEIGHT, TEXT_STACK, lineHeightPx, rolePx, type TypeRole } from "../text";
 import { TOKENS } from "../tokens.gen";
@@ -63,8 +63,22 @@ function textOf(g: TextGeometry, item: TextItem): string {
   return g.boxes.get(item.entity_id)?.text ?? item.text;
 }
 
-function inkFor(g: TextGeometry, entityId: string, base: string): string {
-  return mixHex(base, g.ink.emphasis, entityState(g.state, entityId).highlight);
+// Amber text lost 12-15 Lc at 360 px wide to chroma subsampling, so the ink stays put.
+/** Highlighted text keeps its ink and gains an emphasis underline. */
+function inkFor(g: TextGeometry, entityId: string, base: string): CSSProperties {
+  const highlight = entityState(g.state, entityId).highlight;
+  if (highlight <= 0) return { color: base };
+  return {
+    color: base,
+    textDecorationLine: "underline",
+    textDecorationColor: emphasisAt(g, highlight),
+    textDecorationThickness: "0.08em",
+    textUnderlineOffset: "0.16em",
+  };
+}
+
+function emphasisAt(g: TextGeometry, highlight: number): string {
+  return `color-mix(in srgb, ${g.ink.emphasis} ${Math.round(highlight * 100)}%, transparent)`;
 }
 
 /** Absolute at the compiler's box when there is one, otherwise a block in the flow. */
@@ -102,7 +116,7 @@ function Statement({ g, items }: { g: TextGeometry; items: readonly TextItem[] }
   return (
     <Flow g={g} gap={2 * g.unit}>
       {items.map((item) => (
-        <Placed key={item.entity_id} g={g} item={item} lines={3} fontPx={fontPxFor(g, item, "h1")} style={{ fontWeight: 500, color: inkFor(g, item.entity_id, g.ink.primary), textAlign: "left" }}>
+        <Placed key={item.entity_id} g={g} item={item} lines={3} fontPx={fontPxFor(g, item, "h1")} style={{ fontWeight: 500, ...inkFor(g, item.entity_id, g.ink.primary), textAlign: "left" }}>
           {textOf(g, item)}
         </Placed>
       ))}
@@ -117,11 +131,11 @@ function BigNumber({ g, items }: { g: TextGeometry; items: readonly TextItem[] }
   const caption = label ? textOf(g, label) : (env.entities.get(number.entity_id)?.label ?? "");
   return (
     <Flow g={g} gap={g.unit}>
-      <Placed g={g} item={number} lines={1} fontPx={fontPxFor(g, number, "display")} style={{ fontFamily: DISPLAY_STACK, fontWeight: 700, color: inkFor(g, number.entity_id, g.ink.primary), whiteSpace: "nowrap" }}>
+      <Placed g={g} item={number} lines={1} fontPx={fontPxFor(g, number, "display")} style={{ fontFamily: DISPLAY_STACK, fontWeight: 700, ...inkFor(g, number.entity_id, g.ink.primary), whiteSpace: "nowrap" }}>
         {textOf(g, number)}
       </Placed>
       {label ? (
-        <Placed g={g} item={label} lines={2} fontPx={fontPxFor(g, label, "body")} style={{ fontWeight: 500, color: inkFor(g, label.entity_id, g.ink.secondary) }}>
+        <Placed g={g} item={label} lines={2} fontPx={fontPxFor(g, label, "body")} style={{ fontWeight: 500, ...inkFor(g, label.entity_id, g.ink.secondary) }}>
           {caption}
         </Placed>
       ) : (
@@ -137,7 +151,7 @@ function List({ g, items }: { g: TextGeometry; items: readonly TextItem[] }): Re
       {items.map((item) => {
         const fontPx = fontPxFor(g, item, "body");
         return (
-          <Placed key={item.entity_id} g={g} item={item} lines={2} fontPx={fontPx} style={{ fontWeight: 500, color: inkFor(g, item.entity_id, g.ink.primary) }}>
+          <Placed key={item.entity_id} g={g} item={item} lines={2} fontPx={fontPx} style={{ fontWeight: 500, ...inkFor(g, item.entity_id, g.ink.primary) }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 2 * g.unit }}>
               <span style={{ flex: "0 0 auto", width: g.unit, height: g.unit, marginTop: (lineHeightPx(fontPx) - g.unit) / 2, background: g.colors.get(item.entity_id) ?? g.ink.secondary }} />
               <span>{textOf(g, item)}</span>
@@ -156,11 +170,11 @@ function QuotationCard({ g, items }: { g: TextGeometry; items: readonly TextItem
   const chrome: CSSProperties = { boxSizing: "border-box", background: g.ink.surface1, borderRadius: 2 * g.unit, borderLeft: `${g.unit}px solid ${g.ink.emphasis}` };
   const body = (
     <>
-      <Placed g={g} item={quote} lines={TOKENS.typography.max_lines.body} fontPx={quotePx} style={{ fontWeight: 500, color: inkFor(g, quote.entity_id, g.ink.primary) }}>
+      <Placed g={g} item={quote} lines={TOKENS.typography.max_lines.body} fontPx={quotePx} style={{ fontWeight: 500, ...inkFor(g, quote.entity_id, g.ink.primary) }}>
         {textOf(g, quote)}
       </Placed>
       {attribution ? (
-        <Placed g={g} item={attribution} lines={1} fontPx={fontPxFor(g, attribution, "label")} style={{ fontWeight: 500, color: inkFor(g, attribution.entity_id, g.ink.secondary) }}>
+        <Placed g={g} item={attribution} lines={1} fontPx={fontPxFor(g, attribution, "label")} style={{ fontWeight: 500, ...inkFor(g, attribution.entity_id, g.ink.secondary) }}>
           {`— ${textOf(g, attribution)}`}
         </Placed>
       ) : null}
@@ -204,9 +218,14 @@ export function formulaLatex(items: readonly { entity_id: string; text: string }
   return items.map((item) => `\\htmlClass{grp-${item.entity_id}}{${item.text}}`).join("\\,");
 }
 
-/** Per-frame opacity (visible × dim) and ink (emphasis as it highlights) of every group, scoped to the scene. */
+/** Per-frame opacity (visible × dim) and emphasis mark of every group, scoped to the scene. */
 function formulaStyle(g: TextGeometry, scope: string, items: readonly TextItem[]): string {
-  const groups = items.map((item) => `.${scope} .grp-${item.entity_id}{opacity:${entityOpacity(g.state, item.entity_id)};color:${inkFor(g, item.entity_id, g.ink.primary)}}`);
+  const groups = items.map((item) => {
+    // KaTeX sets fractions inline-block, which a text underline skips; a border runs under them.
+    const highlight = entityState(g.state, item.entity_id).highlight;
+    const mark = highlight > 0 ? `border-bottom:0.06em solid ${emphasisAt(g, highlight)};padding-bottom:0.12em;` : "";
+    return `.${scope} .grp-${item.entity_id}{opacity:${entityOpacity(g.state, item.entity_id)};${mark}}`;
+  });
   return [`.${scope} .katex-display{margin:0}`, ...groups].join("");
 }
 

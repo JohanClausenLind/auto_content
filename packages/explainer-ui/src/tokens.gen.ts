@@ -43,7 +43,7 @@ export const TOKENS = {
       {
         "id": "ui.ink.secondary",
         "oklch": [
-          0.87,
+          0.9,
           0.012,
           80
         ],
@@ -246,11 +246,11 @@ export const TOKENS = {
       {
         "id": "state.emphasis",
         "oklch": [
-          0.84,
-          0.15,
+          0.89,
+          0.12,
           78
         ],
-        "role": "the one thing being talked about"
+        "role": "the one thing being talked about; text keeps its ink, underlined in it"
       },
       {
         "id": "state.deemphasis",
@@ -269,8 +269,13 @@ export const TOKENS = {
       },
       {
         "id": "state.quote_highlight",
+        "oklch": [
+          0.84,
+          0.15,
+          78
+        ],
         "rule": "contrast",
-        "role": "source-quote overlay, see Quote highlight"
+        "role": "source-quote overlay base, see Quote highlight"
       },
       {
         "id": "state.error",

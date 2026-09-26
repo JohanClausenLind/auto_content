@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import statistics
 import subprocess
 import tempfile
 from collections.abc import Callable, Sequence
@@ -25,7 +26,6 @@ from content_factory.explainer.layout import (
     CONTENT_BOX,
     region,
     role_px,
-    synthetic_id,
 )
 from content_factory.explainer.qc import (
     Decoder,
@@ -33,6 +33,7 @@ from content_factory.explainer.qc import (
     QcUnmeasurableError,
     check_rendered,
     decode_frames,
+    deemphasised_at,
     ink_hex_for,
     sample_frames,
     shared_value_domain,
@@ -40,7 +41,13 @@ from content_factory.explainer.qc import (
     visible_at,
 )
 from content_factory.explainer.render import PUBLIC_ASSETS, REPO_ROOT, URL_PREFIXES
-from content_factory.explainer.source_scene import PageGeometry, camera_at, padded, screen_rect
+from content_factory.explainer.source_scene import (
+    HIGHLIGHT_PAD_PX,
+    PageGeometry,
+    camera_at,
+    padded,
+    screen_rect,
+)
 from content_factory.explainer.timing import TokenClock, to_frames
 from content_factory.explainer.tokens_gen import TOKENS
 from content_factory.explainer.validate import check_episode
@@ -66,7 +73,7 @@ from content_factory.schemas.explainer import (
     VisualSpec,
 )
 
-QC_VERSION = "0.1.0"
+QC_VERSION = "0.5.0"
 # The order is the reviewer's prompt: review.py hashes it into ReviewerIdentity.prompt_sha256.
 CHECKS: tuple[str, ...] = (
     "contract",
@@ -429,12 +436,11 @@ class _Qc:
         findings: list[QcFinding] = []
         for scene in self.spec.scenes:
             placed = {p.entity_id: p for p in self._placed[scene.scene_id]}
-            chrome = {synthetic_id(p, scene.scene_id) for p in ("axisx", "axisy")}
             formula = _formula_groups(scene)
             seen: set[tuple[str, str]] = set()
             hits: list[QcFinding] = []
             for group in co_visible_sets(scene):
-                shown = [placed[e] for e in (*group, *chrome) if e in placed]
+                shown = [placed[e] for e in group if e in placed]
                 for a, b in combinations(shown, 2):
                     pair = (a.entity_id, b.entity_id)
                     if pair in seen or set(pair) <= formula or not _intersects(a.box, b.box):
@@ -487,7 +493,8 @@ class _Qc:
                 continue
             for frame in sorted(_samples(compiled)):
                 visible = visible_at(scene, compiled, frame)
-                for placed in (p for p in boxes if p.entity_id in visible):
+                read = visible - deemphasised_at(compiled, frame, visible)
+                for placed in (p for p in boxes if p.entity_id in read):
                     findings.append(self._small_finding(compiled, placed, frame))
         return findings or [self._episode("small_screen", True, "no read text to measure")]
 
@@ -862,11 +869,8 @@ class _Qc:
         try:
             image = self.frames.at(frame, self.small_width)
             scale = image.width / CANVAS_WIDTH
-            lc = abs(
-                text_contrast_lc(
-                    image, _scaled(placed.box, scale), ink_hex_for(placed.font_px or 0)
-                )
-            )
+            ink = ink_hex_for(placed.font_px or 0)
+            lc = abs(text_contrast_lc(image, _scaled(placed.box, scale), ink))
         except QcUnmeasurableError as why:
             return self._at("small_screen", compiled, placed.entity_id, at_ms, None, str(why))
         evidence = f"Lc {lc:.1f} at {image.width} px wide for {_describe(placed.box)}"
@@ -982,7 +986,10 @@ class _Qc:
             except QcUnmeasurableError as why:
                 findings.append(self._at("ocr_text", compiled, key.quote_id, at_ms, None, str(why)))
                 continue
-            crops.append((compiled, key.quote_id, at_ms, quote.text, _crop(image, box, at_ms)))
+            # What the highlight covers, with capture-time OCR's side margin rather than its pad.
+            inset = HIGHLIGHT_PAD_PX - ocr_mod.SIDE_PADDING_PX
+            lines = [screen_rect(_narrower(r, inset), camera, geometry) for r in key.rects]
+            crops.append((compiled, key.quote_id, at_ms, quote.text, _lines(image, lines, at_ms)))
         return findings
 
     # --- finding constructors ---
@@ -1143,6 +1150,33 @@ def _crop(image: Image.Image, box: PixelBox, at_ms: int) -> Image.Image:
     crop = image.crop((x0, y0, max(x0 + 1, x1), max(y0 + 1, y1)))
     crop.info["qc_crop"] = (at_ms, x0, y0, x1, y1)
     return crop
+
+
+def _lines(
+    image: Image.Image, lines: Sequence[tuple[float, float, float, float]], at_ms: int
+) -> Image.Image:
+    """Each highlighted line cut on its own and stacked as at capture, so neighbours stay out."""
+    boxes = [
+        (
+            max(0, math.floor(x0)),
+            max(0, math.floor(y0)),
+            min(image.width, math.ceil(x1)),
+            min(image.height, math.ceil(y1)),
+        )
+        for x0, y0, x1, y1 in lines
+    ]
+    # Lines clamped away read as nothing, which the OCR verdict reports as a failure.
+    boxes = [b for b in boxes if b[2] > b[0] and b[3] > b[1]] or [(0, 0, 1, 1)]
+    stacked = ocr_mod.stack_lines(
+        [image.crop(b) for b in boxes], statistics.median(b[3] - b[1] for b in boxes)
+    )
+    union = (min(b[0] for b in boxes), min(b[1] for b in boxes))
+    stacked.info["qc_crop"] = (at_ms, *union, max(b[2] for b in boxes), max(b[3] for b in boxes))
+    return stacked
+
+
+def _narrower(rect: PageRect, inset: float) -> PageRect:
+    return rect.model_copy(update={"x": rect.x + inset, "width": max(1.0, rect.width - 2 * inset)})
 
 
 def _padded_box(box: PixelBox, pad: int = OCR_PAD_PX) -> PixelBox:

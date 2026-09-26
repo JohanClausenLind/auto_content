@@ -1,20 +1,20 @@
 {
   "episode_id": "ep_amdahl_2026",
-  "pack": "episodes/amdahl/pack.json",
-  "script": "episodes/amdahl/script.json",
-  "spec": "episodes/amdahl/spec.json",
+  "pack": "pack.json",
+  "script": "script.json",
+  "spec": "spec.json",
   "captures": [
     {
-      "manifest": "episodes/amdahl/captures/cap_22ceb8a6e963.json",
-      "wacz": "output/explainer/sources/amdahl/capture-22ceb8a6e963.wacz",
+      "manifest": "captures/cap_22ceb8a6e963.json",
+      "wacz": "../../output/explainer/sources/amdahl/capture-22ceb8a6e963.wacz",
       "url": "https://en.wikipedia.org/wiki/Amdahl%27s_law",
-      "tiles_dir": "output/explainer/sources/amdahl/tiles-22ceb8a6e963"
+      "tiles_dir": "../../output/explainer/sources/amdahl/tiles-22ceb8a6e963"
     },
     {
-      "manifest": "episodes/amdahl/captures/cap_e4e7ffb5974e.json",
-      "wacz": "output/explainer/sources/gustafson/capture-e4e7ffb5974e.wacz",
+      "manifest": "captures/cap_e4e7ffb5974e.json",
+      "wacz": "../../output/explainer/sources/gustafson/capture-e4e7ffb5974e.wacz",
       "url": "https://en.wikipedia.org/wiki/Gustafson%27s_law",
-      "tiles_dir": "output/explainer/sources/gustafson/tiles-e4e7ffb5974e"
+      "tiles_dir": "../../output/explainer/sources/gustafson/tiles-e4e7ffb5974e"
     }
   ],
   "voice": {

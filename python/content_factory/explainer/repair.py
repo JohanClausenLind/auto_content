@@ -18,6 +18,7 @@ from content_factory.schemas.base import file_sha256
 from content_factory.schemas.explainer import (
     Beat,
     CueOffsetRepair,
+    DiagramTemplate,
     EvidencePack,
     ExplainerRenderBundle,
     HoldAction,
@@ -32,6 +33,8 @@ from content_factory.schemas.explainer import (
     SourcePassageRepair,
     SplitSceneRepair,
     TakeSelectionRepair,
+    TextCorrectionRepair,
+    TextTemplate,
     TypedRepair,
     VisualSpec,
 )
@@ -63,6 +66,8 @@ def apply_repair(
         spec = _cue_offset(spec, script, repair)
     elif isinstance(repair, LabelWordingRepair):
         spec = _label_wording(spec, repair)
+    elif isinstance(repair, TextCorrectionRepair):
+        spec = _text_correction(spec, repair)
     elif isinstance(repair, LayoutChoiceRepair):
         layout = repair.layout
         spec = _map_scene(spec, repair.scene_id, lambda s: s.model_copy(update={"layout": layout}))
@@ -232,6 +237,48 @@ def _label_wording(spec: VisualSpec, repair: LabelWordingRepair) -> VisualSpec:
         for e in spec.entities
     )
     return spec.model_copy(update={"entities": entities})
+
+
+def _text_correction(spec: VisualSpec, repair: TextCorrectionRepair) -> VisualSpec:
+    """The entity's label, its text item and its node or edge label all take the new words."""
+    if all(e.entity_id != repair.entity_id for e in spec.entities):
+        msg = f"unknown entity {repair.entity_id}"
+        raise ValueError(msg)
+    # A short label kept the old wording; it goes, so the corrected text is what is drawn.
+    entities = tuple(
+        e.model_copy(update={"label": repair.text[:80], "short_label": ""})
+        if e.entity_id == repair.entity_id
+        else e
+        for e in spec.entities
+    )
+    return spec.model_copy(
+        update={
+            "entities": entities,
+            "scenes": tuple(_corrected(s, repair) for s in spec.scenes),
+        }
+    )
+
+
+def _corrected(scene: Scene, repair: TextCorrectionRepair) -> Scene:
+    template = scene.template
+    eid, text = repair.entity_id, repair.text
+    if isinstance(template, TextTemplate):
+        items = tuple(
+            i.model_copy(update={"text": text}) if i.entity_id == eid else i for i in template.items
+        )
+        return scene.model_copy(update={"template": template.model_copy(update={"items": items})})
+    if isinstance(template, DiagramTemplate):
+        nodes = tuple(
+            n.model_copy(update={"label": text}) if n.entity_id == eid else n
+            for n in template.nodes
+        )
+        edges = tuple(
+            e.model_copy(update={"label": text}) if e.entity_id == eid and e.label else e
+            for e in template.edges
+        )
+        update = {"nodes": nodes, "edges": edges}
+        return scene.model_copy(update={"template": template.model_copy(update=update)})
+    return scene
 
 
 def _hold(beat: Beat, duration_class: str) -> Beat:

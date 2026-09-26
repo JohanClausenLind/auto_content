@@ -427,6 +427,7 @@
     "script_hash": "e0ff4a6c219773b6aa45bd786bf1266597f535730f5407fd94a0e4c3c7a08be9",
     "pack_hash": "cebca6248a603570e1c49e92b395f4ebad75e346669349e4ca2a8e5295d5ca4e",
     "narration_manifest_id": null,
+    "narration_pauses": [],
     "fps": 30,
     "width": 1920,
     "height": 1080,

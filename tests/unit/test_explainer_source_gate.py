@@ -53,6 +53,7 @@ from content_factory.schemas.explainer import (
     ExplainerRenderBundle,
     HoldAction,
     PageRect,
+    PixelBox,
     QuoteAction,
     Scene,
     ScriptPlan,
@@ -285,6 +286,27 @@ def test_focus_passage_never_zooms_past_the_ceiling_and_keys_stay_monotonic(
     last = scene.start_frame + scene.duration_frames
     assert all(camera_at(scene.camera, f).zoom <= MAX_ZOOM for f in range(scene.start_frame, last))
     assert bundle.captures == (capture,)
+
+
+def test_a_quote_starting_mid_line_is_framed_whole_on_both_lines() -> None:
+    geometry = PageGeometry(PixelBox(x=96, y=54, width=1728, height=924), 1280.0, 5000.0)
+    quote = CaptureQuote(
+        quote_id="qt_midline00001",
+        section_id="sec_deep0000001",
+        text="a sentence that starts halfway along one line and ends on the next",
+        locator=DomRangeLocator(
+            kind="dom_range", start_path="/p", start_offset=0, end_path="/p", end_offset=8
+        ),
+        occurrence_index=0,
+        line_rects=(
+            PageRect(x=560, y=2000, width=660, height=24),
+            PageRect(x=60, y=2030, width=640, height=24),
+        ),
+    )
+    camera = geometry.focus(quote)
+    for rect in quote.line_rects:
+        x0, _, x1, _ = screen_rect(rect, camera, geometry)
+        assert geometry.region.x <= x0 and x1 <= geometry.region.x + geometry.region.width
 
 
 def test_source_actions_run_one_after_another(tmp_path: Path) -> None:

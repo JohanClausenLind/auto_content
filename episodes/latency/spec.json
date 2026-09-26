@@ -84,7 +84,9 @@
       "short_label": ""
     },
     {
-      "claim_ids": [],
+      "claim_ids": [
+        "clm_lat_c_vacuum"
+      ],
       "entity_id": "ent_latency_f_c",
       "kind": "text",
       "label": "c",
@@ -98,7 +100,9 @@
       "short_label": ""
     },
     {
-      "claim_ids": [],
+      "claim_ids": [
+        "clm_lat_core_index"
+      ],
       "entity_id": "ent_latency_f_n",
       "kind": "text",
       "label": "n",
@@ -205,6 +209,15 @@
       "entity_id": "ent_latency_lim_only",
       "kind": "text",
       "label": "Each one can only add time",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_fib_round"
+      ],
+      "entity_id": "ent_latency_answer_rt",
+      "kind": "text",
+      "label": "Fastest round trip: about 64 ms",
       "short_label": ""
     },
     {
@@ -632,7 +645,7 @@
             "text": "v ="
           },
           {
-            "claim_id": null,
+            "claim_id": "clm_lat_c_vacuum",
             "entity_id": "ent_latency_f_c",
             "text": "c"
           },
@@ -642,7 +655,7 @@
             "text": "\\div"
           },
           {
-            "claim_id": null,
+            "claim_id": "clm_lat_core_index",
             "entity_id": "ent_latency_f_n",
             "text": "n"
           }
@@ -1518,6 +1531,24 @@
             {
               "action": "reveal",
               "targets": [
+                "ent_latency_answer_rt"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_answer_rt",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_answer",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
                 "ent_latency_answer"
               ]
             }
@@ -1557,6 +1588,11 @@
       "sponsored": false,
       "template": {
         "items": [
+          {
+            "claim_id": "clm_lat_fib_round",
+            "entity_id": "ent_latency_answer_rt",
+            "text": "Fastest round trip: about 64 ms"
+          },
           {
             "claim_id": null,
             "entity_id": "ent_latency_answer",

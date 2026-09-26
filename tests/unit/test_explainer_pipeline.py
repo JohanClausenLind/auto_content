@@ -22,10 +22,12 @@ from content_factory.explainer.pipeline import (
     run,
     stored_tiles,
 )
+from content_factory.explainer.qc import QcFinding
 from content_factory.explainer.tts_bench import LicenseGateError
 from content_factory.runners.registry import RunStopped
 from content_factory.schemas.explainer import (
     CaptureSection,
+    ExplainerRenderBundle,
     ReviewReport,
     SourceCaptureManifest,
     Viewport,
@@ -100,6 +102,27 @@ def test_a_second_run_reuses_every_step_and_renders_nothing(finished: Path, tmp_
     assert again.ran == () and again.skipped == STEP_NAMES
     assert renders.calls == []
     assert {e["step"]: e["fingerprint"] for e in _ledger(config)["steps"]} == first
+
+
+class OneMoreCheckQc(CannedQc):
+    """The canned findings plus one more passing check, as a new QC version would add."""
+
+    def __call__(self, bundle: ExplainerRenderBundle, mp4: Path, **kw: object) -> list[QcFinding]:
+        extra = QcFinding(
+            "small_screen", bundle.timeline.scenes[0].scene_id, None, 0, 1.0, 0.0, True, ""
+        )
+        return [*super().__call__(bundle, mp4, **kw), extra]
+
+
+def test_a_qc_change_reruns_qc_and_repair_but_never_the_final_render(
+    finished: Path, tmp_path: Path
+) -> None:
+    config = _copy_of(finished, tmp_path)
+    renders = CountingRender()
+    result = run(config, seams=fake_seams(render_video=renders, qc=OneMoreCheckQc()), log=_quiet)
+    assert result.status == "done"
+    assert {"qc_animatic", "repair", "qc_final"} <= set(result.ran)
+    assert "render_final" in result.skipped and renders.calls == []
 
 
 def test_a_changed_spec_reruns_its_own_step_and_compile_onward_only(

@@ -1189,6 +1189,14 @@
           "default": null,
           "title": "Narration Manifest Id"
         },
+        "narration_pauses": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/NarrationPause"
+          },
+          "title": "Narration Pauses",
+          "type": "array"
+        },
         "pack_hash": {
           "pattern": "^[a-f0-9]{64}$",
           "title": "Pack Hash",
@@ -1245,6 +1253,7 @@
         "height",
         "inputs",
         "narration_manifest_id",
+        "narration_pauses",
         "pack_hash",
         "scenes",
         "schema_version",
@@ -1554,6 +1563,35 @@
         "name"
       ],
       "title": "NamedRegion",
+      "type": "object"
+    },
+    "NarrationPause": {
+      "additionalProperties": false,
+      "description": "Silence before a token (0: the whole take), so the voice waits for the picture.",
+      "properties": {
+        "pause_ms": {
+          "minimum": 1,
+          "title": "Pause Ms",
+          "type": "integer"
+        },
+        "segment_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Segment Id",
+          "type": "string"
+        },
+        "token_index": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Token Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "pause_ms",
+        "segment_id",
+        "token_index"
+      ],
+      "title": "NarrationPause",
       "type": "object"
     },
     "PageRect": {

@@ -26,8 +26,13 @@ MAX_CO_VISIBLE = 6
 MIN_DELTA_E = 0.08
 _OKLCH: dict[str, Oklch] = {
     t["id"]: Oklch(*t["oklch"])
-    for group in (TOKENS["color"]["ui"], TOKENS["color"]["data"]["categorical"])
+    for group in (
+        TOKENS["color"]["ui"],
+        TOKENS["color"]["data"]["categorical"],
+        TOKENS["color"]["state"],
+    )
     for t in group
+    if "oklch" in t
 }
 
 

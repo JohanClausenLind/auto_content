@@ -1,5 +1,5 @@
 {
-  "bundle_id": "bndl_881cb16a2451e7a7",
+  "bundle_id": "bndl_40e785eaea91961f",
   "captures": [],
   "datasets": [
     {
@@ -315,7 +315,7 @@
     "spec_id": "spec_67a0edba4629"
   },
   "timeline": {
-    "compiler_version": "0.1.0",
+    "compiler_version": "0.4.0",
     "fps": 30,
     "height": 1080,
     "inputs": [
@@ -341,7 +341,7 @@
       },
       {
         "name": "compiler_version",
-        "sha256": "6ad9613a455798d6d92e5f5f390ab4baa70596bc869ed6b17f5cdd2b28635f06"
+        "sha256": "cd78534ed15ad46912b71339d1417d0d043d8309c2b94415f3ed1b9d1fdfaed0"
       },
       {
         "name": "timing_source",
@@ -349,6 +349,7 @@
       }
     ],
     "narration_manifest_id": null,
+    "narration_pauses": [],
     "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
     "scenes": [
       {
@@ -366,7 +367,7 @@
           {
             "action": "hold",
             "beat_id": "bt_dwell_a_hold00",
-            "end_frame": 119,
+            "end_frame": 66,
             "index": 0,
             "start_frame": 35,
             "targets": []
@@ -384,30 +385,6 @@
             "font_px": 28,
             "lines": 1,
             "text": "Dwell time"
-          },
-          {
-            "box": {
-              "height": 43,
-              "width": 71,
-              "x": 984,
-              "y": 904
-            },
-            "entity_id": "axisx_dwell_quiet",
-            "font_px": 28,
-            "lines": 1,
-            "text": "Stop"
-          },
-          {
-            "box": {
-              "height": 84,
-              "width": 43,
-              "x": 96,
-              "y": 470
-            },
-            "entity_id": "axisy_dwell_quiet",
-            "font_px": 28,
-            "lines": 1,
-            "text": "Dwell"
           }
         ],
         "camera": [],
@@ -418,7 +395,7 @@
             "token_id": "data.cat.blue"
           }
         ],
-        "duration_frames": 119,
+        "duration_frames": 115,
         "highlights": [],
         "regions": [
           {
@@ -494,7 +471,7 @@
           {
             "action": "hold",
             "beat_id": "bt_dwell_b_hold00",
-            "end_frame": 246,
+            "end_frame": 193,
             "index": 0,
             "start_frame": 162,
             "targets": []
@@ -512,30 +489,6 @@
             "font_px": 28,
             "lines": 1,
             "text": "Dwell time"
-          },
-          {
-            "box": {
-              "height": 43,
-              "width": 71,
-              "x": 984,
-              "y": 904
-            },
-            "entity_id": "axisx_dwell_busy0",
-            "font_px": 28,
-            "lines": 1,
-            "text": "Stop"
-          },
-          {
-            "box": {
-              "height": 84,
-              "width": 43,
-              "x": 96,
-              "y": 470
-            },
-            "entity_id": "axisy_dwell_busy0",
-            "font_px": 28,
-            "lines": 1,
-            "text": "Dwell"
           }
         ],
         "camera": [],
@@ -546,7 +499,7 @@
             "token_id": "data.cat.blue"
           }
         ],
-        "duration_frames": 157,
+        "duration_frames": 158,
         "highlights": [],
         "regions": [
           {
@@ -605,7 +558,7 @@
           }
         ],
         "scene_id": "scn_dwell_busy0",
-        "start_frame": 119
+        "start_frame": 115
       }
     ],
     "schema_version": 1,
@@ -613,7 +566,7 @@
     "spec_hash": "960e7c5d58a95c35060a14bddf86c4a273d62ce67ad5861396b42078318213dd",
     "spec_id": "spec_67a0edba4629",
     "timeline_id": "tl_960e7c5d58a9",
-    "total_frames": 276,
+    "total_frames": 273,
     "width": 1920
   }
 }

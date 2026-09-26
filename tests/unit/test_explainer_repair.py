@@ -40,6 +40,7 @@ from content_factory.schemas.explainer import (
     SplitSceneRepair,
     TakeSelectionRepair,
     TargetAction,
+    TextCorrectionRepair,
     TextItem,
     TextTemplate,
     TitlePromise,
@@ -255,6 +256,28 @@ def test_label_wording_sets_the_short_label_and_nothing_else() -> None:
     assert changed["ent_series_other"].short_label == "Rest"
     assert changed["ent_series_other"].label == "Other work"
     assert new_spec.model_copy(update={"entities": spec.entities}) == spec
+
+
+def test_text_correction_rewrites_the_words_wherever_they_are_drawn() -> None:
+    _, script, spec = _trio("sixty")
+    node = TextCorrectionRepair(repair="text_correction", entity_id="ent_chainrng", text="Big ring")
+    item = TextCorrectionRepair(
+        repair="text_correction", entity_id="ent_close_txt", text="Gears trade force for speed."
+    )
+    for repair, scene_id in ((node, "scn_model001"), (item, "scn_close001")):
+        new_spec, new_script = apply_repair(spec, script, repair)
+        assert new_script == script
+        entity = next(e for e in new_spec.entities if e.entity_id == repair.entity_id)
+        assert entity.label == repair.text and entity.short_label == ""
+        template = _scene(new_spec, scene_id).template
+        shown = [
+            getattr(part, "label", None) or getattr(part, "text", None)
+            for part in (*getattr(template, "nodes", ()), *getattr(template, "items", ()))
+            if part.entity_id == repair.entity_id
+        ]
+        assert shown == [repair.text]
+    with pytest.raises(ValueError, match="unknown entity"):
+        apply_repair(spec, script, node.model_copy(update={"entity_id": "ent_nothere1"}))
 
 
 def test_layout_choice_changes_the_scene_layout() -> None:

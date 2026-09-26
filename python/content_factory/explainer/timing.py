@@ -6,14 +6,16 @@ import hashlib
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from content_factory.explainer.errors import ContractIssue, EpisodeInvalidError
 from content_factory.explainer.layout import synthetic_id
 from content_factory.schemas.explainer import (
     AnnotateAction,
     Cue,
+    ExplainerTimeline,
     NarrationManifest,
+    NarrationTake,
     Scene,
     ScriptPlan,
     VisualSpec,
@@ -185,7 +187,7 @@ def _scene_actions(
         for eid in scene.initial_visible
         if eid in texts
     ]
-    unread: list[str] = [s.text for s in shown]
+    unread: list[tuple[str, int]] = [(s.text, s.from_ms) for s in shown]
     for beat in scene.beats:
         anchor = max(clock.anchor_ms(beat.cue), scene_start)
         for k, action in enumerate(beat.actions):
@@ -195,18 +197,19 @@ def _scene_actions(
                 duration = overrides.get((beat.beat_id, k), duration)
             targets: tuple[str, ...] = tuple(getattr(action, "targets", ()))
             if action.action == "hold":
-                # A hold reads what appeared since the last hold as one passage, then pauses.
-                duration += (reading_ms(" ".join(unread)) if unread else 0) + INSPECTION_MS
+                # The viewer reads while the voice goes on, each text from when it appeared, so
+                # a hold lasts only until the last of them is read and inspected.
+                duration = max(duration, _read_by(unread, anchor) + INSPECTION_MS - anchor)
                 unread.clear()
             elif action.action == "reveal":
                 for eid in targets:
                     if eid in texts:
                         shown.append(_Shown(eid, texts[eid], anchor, None, None))
-                        unread.append(texts[eid])
+                        unread.append((texts[eid], anchor))
             elif isinstance(action, AnnotateAction):
                 eid = synthetic_id(f"annot{k}", beat.beat_id)
                 shown.append(_Shown(eid, action.text, anchor, None, None))
-                unread.append(action.text)
+                unread.append((action.text, anchor))
             elif action.action == "hide":
                 for eid in targets:
                     shown = [
@@ -220,6 +223,140 @@ def _scene_actions(
             )
             cursor = anchor + duration
     return tuple(actions), shown
+
+
+def _read_by(unread: list[tuple[str, int]], anchor: int) -> int:
+    """When a reader who takes each text in turn, from its appearance, has read them all."""
+    done = 0
+    for text, shown_at in unread:
+        done = max(done, shown_at) + reading_ms(text)
+    return max(done, anchor)
+
+
+Pauses = Mapping[tuple[str, int], int]
+SENTENCE_ENDS = (".", "!", "?", ":", ";")
+
+
+def reading_pauses(
+    spec: VisualSpec,
+    script: ScriptPlan,
+    narration: NarrationManifest,
+    texts: Mapping[str, Mapping[str, str]],
+    durations: Mapping[str, Durations] | None = None,
+) -> dict[tuple[str, int], int]:
+    """Silence before (segment, token) wherever a scene would start after its cue is spoken."""
+    aligned = {
+        (w.segment_id, w.token_index)
+        for t in narration.takes
+        if t.alignment is not None
+        for w in t.alignment.words
+    }
+    pauses: dict[tuple[str, int], int] = {}
+    for _ in spec.scenes:
+        clock = TokenClock(script, paced_manifest(narration, pauses, script))
+        timed = resolve_timing(spec, clock, texts, durations)
+        late = _first_late(spec, script, clock, timed, aligned)
+        if late is None:
+            break
+        pauses[late[0]] = pauses.get(late[0], 0) + late[1]
+    return pauses
+
+
+def _first_late(
+    spec: VisualSpec,
+    script: ScriptPlan,
+    clock: TokenClock,
+    timed: tuple[TimedScene, ...],
+    aligned: set[tuple[str, int]],
+) -> tuple[tuple[str, int], int] | None:
+    cued: dict[str, int] = {}
+    for i, scene in enumerate(spec.scenes):
+        cue = scene.beats[0].cue
+        late = timed[i].start_ms - clock.anchor_ms(cue)
+        at = _pause_point(script, cue, cued.get(cue.segment_id), aligned)
+        if i > 0 and late > 0 and at is not None:
+            return at, late
+        for beat in scene.beats:
+            sid = beat.cue.segment_id
+            cued[sid] = max(cued.get(sid, -1), beat.cue.token_end)
+    return None
+
+
+def _pause_point(
+    script: ScriptPlan, cue: Cue, cued_to: int | None, aligned: set[tuple[str, int]]
+) -> tuple[str, int] | None:
+    """Before the segment, or else at the last sentence break past what earlier scenes cue."""
+    if cued_to is None:
+        return cue.segment_id, 0
+    tokens = script.segment(cue.segment_id).tokens
+    for k in range(cue.token_start, cued_to, -1):
+        wanted = {(cue.segment_id, k - 1), (cue.segment_id, k)}
+        if tokens[k - 1].endswith(SENTENCE_ENDS) and wanted <= aligned:
+            return cue.segment_id, k
+    return None
+
+
+def take_cuts(take: NarrationTake, pauses: Pauses) -> list[tuple[int, int]]:
+    """(ms into the take, pause ms) for pauses inside it, cut midway between the two words."""
+    words = (
+        {(w.segment_id, w.token_index): w for w in take.alignment.words} if take.alignment else {}
+    )
+    cuts: list[tuple[int, int]] = []
+    for (sid, k), ms in pauses.items():
+        before, after = words.get((sid, k - 1)), words.get((sid, k))
+        if k > 0 and ms > 0 and before is not None and after is not None:
+            cuts.append(((before.end_ms + after.start_ms) // 2, ms))
+    return sorted(cuts)
+
+
+def paced_manifest(
+    narration: NarrationManifest, pauses: Pauses, script: ScriptPlan
+) -> NarrationManifest:
+    """The manifest with silence added at each pause and every later word moved by it."""
+    if not any(pauses.values()):
+        return narration
+    order = {s.segment_id: i for i, s in enumerate(script.segments)}
+    takes = sorted(
+        narration.takes, key=lambda t: min(order.get(s, len(order)) for s in t.segment_ids)
+    )
+    explicit = any(t.start_ms for t in takes)
+    moved: list[dict[str, Any]] = []
+    cursor = shift = 0
+    for take in takes:
+        start = take.start_ms if explicit else cursor
+        cursor = start + take.duration_ms
+        shift += sum(pauses.get((s, 0), 0) for s in take.segment_ids)
+        cuts = take_cuts(take, pauses)
+        fields = take.model_dump()
+        fields["start_ms"] = start + shift
+        fields["duration_ms"] = take.duration_ms + sum(ms for _, ms in cuts)
+        if take.alignment is not None:
+            fields["alignment"]["words"] = [
+                w.model_dump()
+                | {"start_ms": w.start_ms + (d := _added(cuts, w.start_ms)), "end_ms": w.end_ms + d}
+                for w in take.alignment.words
+            ]
+        moved.append(fields)
+        shift += sum(ms for _, ms in cuts)
+    key = f"{narration.manifest_id}:{sorted(pauses.items())}"
+    return NarrationManifest.model_validate(
+        narration.model_dump()
+        | {
+            "manifest_id": "nar_" + hashlib.sha256(key.encode()).hexdigest()[:12],
+            "takes": moved,
+            "stem_sha256": None,
+            "total_duration_ms": max(narration.total_duration_ms, cursor) + shift,
+        }
+    )
+
+
+def _added(cuts: list[tuple[int, int]], at_ms: int) -> int:
+    return sum(ms for cut, ms in cuts if cut <= at_ms)
+
+
+def timeline_pauses(timeline: ExplainerTimeline) -> dict[tuple[str, int], int]:
+    """A compiled timeline's pauses in the shape paced_manifest takes."""
+    return {(p.segment_id, p.token_index): p.pause_ms for p in timeline.narration_pauses}
 
 
 def _reading_floor_issues(

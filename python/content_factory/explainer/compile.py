@@ -22,6 +22,8 @@ from content_factory.explainer.layout import (
 )
 from content_factory.explainer.timing import (
     TokenClock,
+    paced_manifest,
+    reading_pauses,
     resolve_timing,
     scene_frames,
     source_hash,
@@ -39,6 +41,7 @@ from content_factory.schemas.explainer import (
     ExplainerTimeline,
     InputHash,
     NarrationManifest,
+    NarrationPause,
     PixelBox,
     ResolvedAction,
     ScriptPlan,
@@ -47,7 +50,7 @@ from content_factory.schemas.explainer import (
     VisualSpec,
 )
 
-COMPILER_VERSION = "0.1.0"
+COMPILER_VERSION = "0.4.0"
 LayoutDiagrams = Callable[[VisualSpec, dict[str, PixelBox]], tuple[DiagramLayout, ...]]
 
 
@@ -92,9 +95,15 @@ def compile_episode(
             boxes[scene.scene_id] = adopted
     if issues:
         raise EpisodeInvalidError(issues)
-    clock = TokenClock(script, narration)
     durations = {sid: plan.durations_ms() for sid, plan in plans.items()}
-    timed = resolve_timing(spec, clock, {sid: b.texts for sid, b in boxes.items()}, durations)
+    texts = {sid: b.texts for sid, b in boxes.items()}
+    pauses: dict[tuple[str, int], int] = {}
+    if narration is not None:
+        pauses = reading_pauses(spec, script, narration, texts, durations)
+        narration = paced_manifest(narration, pauses, script)
+    clock = TokenClock(script, narration)
+    timed = resolve_timing(spec, clock, texts, durations)
+    order = {s.segment_id: i for i, s in enumerate(script.segments)}
     frames = scene_frames(timed, fps)
     scenes: list[CompiledExplainerScene] = []
     for scene, t, (start, duration) in zip(spec.scenes, timed, frames, strict=True):
@@ -131,6 +140,10 @@ def compile_episode(
         script_hash=script.script_hash(),
         pack_hash=pack.pack_hash(),
         narration_manifest_id=narration.manifest_id if narration else None,
+        narration_pauses=tuple(
+            NarrationPause(segment_id=sid, token_index=k, pause_ms=ms)
+            for (sid, k), ms in sorted(pauses.items(), key=lambda p: (order[p[0][0]], p[0][1]))
+        ),
         fps=fps,
         width=CANVAS_WIDTH,
         height=CANVAS_HEIGHT,

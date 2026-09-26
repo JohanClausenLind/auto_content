@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from PIL import Image
@@ -15,6 +16,9 @@ from content_factory.sequences.subject_locate import (
     pad_box,
     to_box,
 )
+
+if TYPE_CHECKING:
+    from content_factory.models.gateway import ModelGateway
 
 
 @dataclass
@@ -64,7 +68,7 @@ def test_locate_returns_the_box_it_was_given() -> None:
     from content_factory.sequences import subject_locate
 
     gateway = _StubGateway(subject_locate._Located(present=True, box=[200, 100, 600, 900]))
-    box = locate_subject(_png(), "the walking man", gateway=gateway, pad=0.0)
+    box = locate_subject(_png(), "the walking man", gateway=cast("ModelGateway", gateway), pad=0.0)
     assert box == Box(x=0.2, y=0.1, w=0.4, h=0.8)
 
 
@@ -74,13 +78,13 @@ def test_absent_subject_raises_rather_than_boxing_nothing() -> None:
 
     gateway = _StubGateway(subject_locate._Located(present=False, box=[0, 0, 10, 10]))
     with pytest.raises(SubjectLocationError, match="did not find"):
-        locate_subject(_png(), "the walking man", gateway=gateway)
+        locate_subject(_png(), "the walking man", gateway=cast("ModelGateway", gateway))
 
 
 def test_empty_subject_is_refused_before_the_model_is_asked() -> None:
     gateway = _StubGateway(None)
     with pytest.raises(SubjectLocationError, match="must name what to find"):
-        locate_subject(_png(), "   ", gateway=gateway)
+        locate_subject(_png(), "   ", gateway=cast("ModelGateway", gateway))
     assert gateway.messages == []
 
 
@@ -88,7 +92,7 @@ def test_the_image_is_attached_and_downscaled() -> None:
     from content_factory.sequences import subject_locate
 
     gateway = _StubGateway(subject_locate._Located(present=True, box=[10, 10, 900, 900]))
-    locate_subject(_png((4096, 2048)), "the man", gateway=gateway)
+    locate_subject(_png((4096, 2048)), "the man", gateway=cast("ModelGateway", gateway))
     parts = gateway.messages[0]["content"]
     assert parts[1]["type"] == "image_url"
     assert parts[1]["image_url"]["url"].startswith("data:image/jpeg;base64,")

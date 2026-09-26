@@ -76,7 +76,7 @@ LEDGER_BOUND: dict[str, tuple[str, str]] = {
     "manifests/script.json": ("lock_script", "script"),
     "manifests/spec.json": ("repair", "spec"),
     "manifests/bundle.json": ("repair", "bundle"),
-    "manifests/narration-manifest.json": ("narrate", "manifest"),
+    "manifests/narration-manifest.json": ("mix", "manifest"),
     "review/qc_animatic.json": ("qc_animatic", "report"),
     "review/review_animatic.json": ("review_animatic", "report"),
     "review/qc_final.json": ("qc_final", "report"),
@@ -116,7 +116,7 @@ def export_bundle(
     ledger = Ledger.load(episode_dir)
     pack = read_model(EvidencePack, ledger.artifact("freeze_evidence", "pack"))
     script = read_model(ScriptPlan, ledger.artifact("lock_script", "script"))
-    narration = read_model(NarrationManifest, ledger.artifact("narrate", "manifest"))
+    narration = read_model(NarrationManifest, ledger.artifact("mix", "manifest"))
     bundle = read_model(ExplainerRenderBundle, ledger.artifact("repair", "bundle"))
     captures = _captures(ledger)
     tmp = episode_dir / f".{EXPORTS_DIR}-{os.getpid()}"

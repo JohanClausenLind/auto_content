@@ -93,6 +93,8 @@ def check_journal(path: str, lines: list[str], out: list[str]) -> None:
     starts = [i for i, line in enumerate(lines) if line.startswith("## ")]
     for k, i in enumerate(starts):
         end = starts[k + 1] if k + 1 < len(starts) else len(lines)
+        while end > i and not lines[end - 1].strip():
+            end -= 1
         if end - i > JOURNAL_SECTION_MAX:
             out.append(
                 f"{path}:{i + 1}: journal entry of {end - i} lines; max {JOURNAL_SECTION_MAX}"

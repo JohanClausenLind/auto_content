@@ -448,6 +448,18 @@ def test_mix_episode_writes_three_stems_and_a_measured_master(tmp_path: Path) ->
     assert np.abs(effects[int(2.55 * rate)]) > 0.1 and np.abs(effects[: int(2.4 * rate)]).max() == 0
 
 
+def test_recorded_speech_under_a_bed_masters_to_the_delivery_loudness(tmp_path: Path) -> None:
+    speech = _read(FIXTURES / "narration" / "kokoro_sixty.wav")
+    stem = tmp_path / "stem.wav"
+    _write(stem, np.tile(np.concatenate([speech, np.zeros(4800)]), 10), 16000)
+    music = tmp_path / "music.wav"
+    t = np.arange(STEM_RATE_HZ) / STEM_RATE_HZ
+    _write(music, 0.5 * np.sin(2 * math.pi * 110 * t), STEM_RATE_HZ)
+    report = mix_episode(stem, music, [], tmp_path / "mix").loudness
+    assert report.integrated_lufs == pytest.approx(-14.0, abs=0.3)
+    assert report.true_peak_dbtp <= -1.0
+
+
 def _write(path: Path, samples: np.ndarray, rate: int) -> None:
     with wave.open(str(path), "wb") as wf:
         wf.setnchannels(1)

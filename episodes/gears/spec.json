@@ -565,24 +565,6 @@
         {
           "actions": [
             {
-              "action": "highlight",
-              "targets": [
-                "ent_gears_series_dev"
-              ]
-            }
-          ],
-          "beat_id": "bt_gears_devchart_low",
-          "cue": {
-            "duration_class": "short",
-            "relation": "on",
-            "segment_id": "seg_gears_devtable",
-            "token_end": 18,
-            "token_start": 18
-          }
-        },
-        {
-          "actions": [
-            {
               "action": "hold"
             }
           ],
@@ -733,24 +715,6 @@
         {
           "actions": [
             {
-              "action": "highlight",
-              "targets": [
-                "ent_gears_series_turns"
-              ]
-            }
-          ],
-          "beat_id": "bt_gears_turns_low",
-          "cue": {
-            "duration_class": "short",
-            "relation": "on",
-            "segment_id": "seg_gears_turns",
-            "token_end": 13,
-            "token_start": 13
-          }
-        },
-        {
-          "actions": [
-            {
               "action": "hold"
             }
           ],
@@ -799,7 +763,7 @@
           "field": "turns",
           "kind": "quantitative",
           "title": "turns",
-          "unit": "ratio"
+          "unit": ""
         }
       }
     },

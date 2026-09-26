@@ -552,9 +552,9 @@ def build() -> None:
         "formula",
         [
             ("ent_latency_f_lhs", r"v =", None),
-            ("ent_latency_f_c", r"c", None),
+            ("ent_latency_f_c", r"c", "clm_lat_c_vacuum"),
             ("ent_latency_f_div", r"\div", None),
-            ("ent_latency_f_n", r"n", None),
+            ("ent_latency_f_n", r"n", "clm_lat_core_index"),
         ],
         [
             beat(
@@ -904,8 +904,16 @@ def build() -> None:
         "synthesis",
         "Close on the practical rule.",
         "statement",
-        [("ent_latency_answer", "To talk faster, be closer.", None)],
         [
+            ("ent_latency_answer_rt", "Fastest round trip: about 64 ms", "clm_lat_fib_round"),
+            ("ent_latency_answer", "To talk faster, be closer.", None),
+        ],
+        [
+            beat(
+                "bt_latency_answer_rt",
+                s.cue("seg_latency_answer", "fastest"),
+                act("reveal", "ent_latency_answer_rt"),
+            ),
             beat(
                 "bt_latency_answer",
                 s.cue("seg_latency_answer", "To"),

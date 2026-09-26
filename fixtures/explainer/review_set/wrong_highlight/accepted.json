@@ -1,5 +1,5 @@
 {
-  "bundle_id": "bndl_fa95ac0b656ef2af",
+  "bundle_id": "bndl_2d93249e4966c064",
   "captures": [
     {
       "capture_id": "cap_synthetic01",
@@ -238,7 +238,7 @@
     "spec_id": "spec_beb9597c5d3f"
   },
   "timeline": {
-    "compiler_version": "0.1.0",
+    "compiler_version": "0.4.0",
     "fps": 30,
     "height": 1080,
     "inputs": [
@@ -264,7 +264,7 @@
       },
       {
         "name": "compiler_version",
-        "sha256": "6ad9613a455798d6d92e5f5f390ab4baa70596bc869ed6b17f5cdd2b28635f06"
+        "sha256": "cd78534ed15ad46912b71339d1417d0d043d8309c2b94415f3ed1b9d1fdfaed0"
       },
       {
         "name": "timing_source",
@@ -272,6 +272,7 @@
       }
     ],
     "narration_manifest_id": null,
+    "narration_pauses": [],
     "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
     "scenes": [
       {
@@ -311,7 +312,7 @@
           {
             "action": "hold",
             "beat_id": "bt_src_hold0001",
-            "end_frame": 388,
+            "end_frame": 358,
             "index": 0,
             "start_frame": 286,
             "targets": []
@@ -349,7 +350,7 @@
           }
         ],
         "colors": [],
-        "duration_frames": 418,
+        "duration_frames": 388,
         "highlights": [
           {
             "clear_end_frame": null,
@@ -409,7 +410,7 @@
     "spec_hash": "d6c936e3d23b805412e08ef6079a3dc43178da96c4f5461ccc214cf3f3929fda",
     "spec_id": "spec_beb9597c5d3f",
     "timeline_id": "tl_d6c936e3d23b",
-    "total_frames": 418,
+    "total_frames": 388,
     "width": 1920
   }
 }

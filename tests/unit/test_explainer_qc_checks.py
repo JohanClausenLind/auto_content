@@ -16,7 +16,13 @@ from content_factory.explainer.color import rgb_of
 from content_factory.explainer.colors import token_hex
 from content_factory.explainer.compile import compile_episode
 from content_factory.explainer.layout import region
-from content_factory.explainer.qc import QcFinding, ink_hex_for, series_points, visible_at
+from content_factory.explainer.qc import (
+    QcFinding,
+    deemphasised_at,
+    ink_hex_for,
+    series_points,
+    visible_at,
+)
 from content_factory.explainer.qc_checks import (
     CHECKS,
     TEXT_LC_MIN,
@@ -36,6 +42,7 @@ from content_factory.schemas.explainer import (
     NarrationManifest,
     NarrationTake,
     PixelBox,
+    ResolvedAction,
     ScriptPlan,
     SourceDocumentTemplate,
     TargetAction,
@@ -664,3 +671,58 @@ def test_pixel_box_mutations_keep_the_bundle_valid() -> None:
     box = next(b for b in rejected.timeline.scenes[0].boxes if b.entity_id == "ent_open_stmt").box
     assert isinstance(box, PixelBox) and box.x + box.width > rejected.timeline.width
     assert rejected.timeline.spec_hash == accepted.timeline.spec_hash
+
+
+def test_emphasis_dims_the_others_until_it_is_cleared_as_the_renderer_does() -> None:
+    def act(k: int, action: str, start: int, *targets: str) -> ResolvedAction:
+        return ResolvedAction(
+            beat_id=f"bt_dimrule{k:04d}",
+            index=0,
+            action=action,
+            start_frame=start,
+            end_frame=start + 10,
+            targets=targets,
+        )
+
+    lines = {"ent_line_aaaa", "ent_line_bbbb", "ent_line_cccc"}
+    compiled = CompiledExplainerScene.model_construct(
+        scene_id="scn_dimrule01",
+        actions=(
+            act(0, "highlight", 30, "ent_line_aaaa"),
+            act(1, "clear_highlight", 60),
+            act(2, "focus", 90, "ent_line_bbbb"),
+            act(3, "clear_highlight", 120, "ent_line_bbbb"),
+            act(4, "isolate", 150, "ent_line_cccc"),
+        ),
+    )
+    assert deemphasised_at(compiled, 10, lines) == set()
+    assert deemphasised_at(compiled, 40, lines) == {"ent_line_bbbb", "ent_line_cccc"}
+    assert deemphasised_at(compiled, 70, lines) == set()
+    assert deemphasised_at(compiled, 100, lines) == {"ent_line_aaaa", "ent_line_cccc"}
+    assert deemphasised_at(compiled, 130, lines) == set()
+    assert deemphasised_at(compiled, 160, lines) == {"ent_line_aaaa", "ent_line_bbbb"}
+
+
+def test_text_shown_only_while_de_emphasised_fails_as_never_read() -> None:
+    pack, script, accepted, _ = _pair("axis_change")
+    first = accepted.timeline.scenes[0]
+
+    def isolate_elsewhere(compiled: CompiledExplainerScene) -> CompiledExplainerScene:
+        isolate = ResolvedAction(
+            beat_id=compiled.actions[0].beat_id,
+            index=9,
+            action="isolate",
+            start_frame=compiled.start_frame,
+            end_frame=compiled.start_frame,
+            targets=("ent_elsewhere1",),
+        )
+        return compiled.model_copy(update={"actions": (isolate, *compiled.actions)})
+
+    def never_read(bundle: ExplainerRenderBundle) -> list[tuple[str | None, bool | None]]:
+        found = _qc(pack, script, bundle)
+        return [(f.entity_id, f.passed) for f in found if "never read" in f.evidence]
+
+    assert never_read(accepted) == []
+    assert never_read(_with_scene(accepted, first.scene_id, isolate_elsewhere)) == [
+        ("ent_dwell_ser", False)
+    ]

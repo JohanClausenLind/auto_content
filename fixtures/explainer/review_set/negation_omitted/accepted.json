@@ -1,5 +1,5 @@
 {
-  "bundle_id": "bndl_c83bb8fac65eb69a",
+  "bundle_id": "bndl_cdd5cd0257f2c044",
   "captures": [],
   "datasets": [],
   "design_system_version": 1,
@@ -103,7 +103,7 @@
     "spec_id": "spec_e81dca2cd294"
   },
   "timeline": {
-    "compiler_version": "0.1.0",
+    "compiler_version": "0.4.0",
     "fps": 30,
     "height": 1080,
     "inputs": [
@@ -129,7 +129,7 @@
       },
       {
         "name": "compiler_version",
-        "sha256": "6ad9613a455798d6d92e5f5f390ab4baa70596bc869ed6b17f5cdd2b28635f06"
+        "sha256": "cd78534ed15ad46912b71339d1417d0d043d8309c2b94415f3ed1b9d1fdfaed0"
       },
       {
         "name": "timing_source",
@@ -137,6 +137,7 @@
       }
     ],
     "narration_manifest_id": null,
+    "narration_pauses": [],
     "pack_hash": "d202cdc7d1a6940d18eb23188fd48f0cad19be642e6bbf33984082421f5b4486",
     "scenes": [
       {
@@ -155,7 +156,7 @@
           {
             "action": "hold",
             "beat_id": "bt_quote_hold00",
-            "end_frame": 216,
+            "end_frame": 139,
             "index": 0,
             "start_frame": 23,
             "targets": []
@@ -200,7 +201,7 @@
             "token_id": "ui.ink.primary"
           }
         ],
-        "duration_frames": 246,
+        "duration_frames": 169,
         "highlights": [],
         "regions": [
           {
@@ -222,7 +223,7 @@
     "spec_hash": "0b8ef6f636cae360022bbe360651f9e6f5851267ba53980afcd719493785989b",
     "spec_id": "spec_e81dca2cd294",
     "timeline_id": "tl_0b8ef6f636ca",
-    "total_frames": 246,
+    "total_frames": 169,
     "width": 1920
   }
 }

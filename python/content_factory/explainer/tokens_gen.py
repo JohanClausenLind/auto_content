@@ -13,7 +13,7 @@ TOKENS: dict[str, Any] = {
             {"id": "ui.surface.1", "oklch": [0.22, 0.012, 260], "role": "panel"},
             {"id": "ui.surface.2", "oklch": [0.26, 0.014, 260], "role": "raised"},
             {"id": "ui.ink.primary", "oklch": [0.96, 0.01, 80], "role": "read text"},
-            {"id": "ui.ink.secondary", "oklch": [0.87, 0.012, 80], "role": "labels, tick labels"},
+            {"id": "ui.ink.secondary", "oklch": [0.9, 0.012, 80], "role": "labels, tick labels"},
             {
                 "id": "ui.ink.muted",
                 "oklch": [0.64, 0.012, 80],
@@ -55,8 +55,8 @@ TOKENS: dict[str, Any] = {
         "state": [
             {
                 "id": "state.emphasis",
-                "oklch": [0.84, 0.15, 78],
-                "role": "the one thing being talked about",
+                "oklch": [0.89, 0.12, 78],
+                "role": "the one thing being talked about; text keeps its ink, underlined in it",
             },
             {
                 "id": "state.deemphasis",
@@ -71,8 +71,9 @@ TOKENS: dict[str, Any] = {
             },
             {
                 "id": "state.quote_highlight",
+                "oklch": [0.84, 0.15, 78],
                 "rule": "contrast",
-                "role": "source-quote overlay, see Quote highlight",
+                "role": "source-quote overlay base, see Quote highlight",
             },
             {"id": "state.error", "oklch": [0.65, 0.18, 25], "role": "failure states only"},
         ],
@@ -140,12 +141,13 @@ SRGB_HEX: dict[str, str] = {
     "data.sequential[6]": "#A69D75",
     "data.sequential[7]": "#C4B56C",
     "data.sequential[8]": "#FFEA46",
-    "state.emphasis": "#FFBD4A",
+    "state.emphasis": "#FFD38F",
     "state.error": "#E85854",
+    "state.quote_highlight": "#FFBD4A",
     "state.uncertain": "#B5A282",
     "ui.ink.muted": "#908B84",
     "ui.ink.primary": "#F5F1EA",
-    "ui.ink.secondary": "#D8D3CC",
+    "ui.ink.secondary": "#E2DDD5",
     "ui.stroke.soft": "#34383E",
     "ui.stroke.strong": "#5A5E65",
     "ui.surface.0": "#0F1216",

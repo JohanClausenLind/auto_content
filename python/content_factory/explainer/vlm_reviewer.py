@@ -81,7 +81,7 @@ TEXT_LIMIT = 600
 NOTE_LIMIT = 240
 EPISODE_CATEGORIES: tuple[ReviewCategory, ...] = ("communication", "continuity")
 LABEL_TEMPLATES = frozenset({"chart", "diagram"})
-THIN_ORDER = (4, 3, 2)
+THIN_ORDER = (4, 3, 2, 1)
 
 
 class ReviewerUnavailableError(RuntimeError):
@@ -592,6 +592,7 @@ class ReviewStats:
     frames: int = 0
     crops: int = 0
     thinned: int = 0
+    paired_crops: bool = False
     cache_hit: bool = False
 
     def record(self, result: AdapterResult) -> None:
@@ -721,10 +722,19 @@ def _plan_looks(
     stats: ReviewStats,
 ) -> tuple[list[Look], FrameStore, dict[str, set[int]]]:
     crops = crop_plan(bundle)
+    # Crops, boundaries and each scene's unthinnable ends take calls first; past the budget,
+    # one scene's crops share a call without their full frame, and samples get what is left.
+    scenes = len(bundle.timeline.scenes)
+    boundaries = scenes - 1 if per_call >= 2 else 0
+    paired = per_call >= 2 and len(crops) + boundaries + scenes + 4 > call_budget()
+    by_scene: dict[str, list[Crop]] = {}
+    for crop in crops:
+        by_scene.setdefault(crop.scene_id, []).append(crop)
+    crop_calls = sum(-(-len(cs) // per_call) for cs in by_scene.values()) if paired else len(crops)
     samples, dropped = thin_samples(
-        planned_samples(bundle), max(0, call_budget() - len(crops) - 4) * per_call
+        planned_samples(bundle), max(0, call_budget() - crop_calls - boundaries - 4) * per_call
     )
-    stats.thinned = dropped
+    stats.thinned, stats.paired_crops = dropped, paired
     frames: dict[str, set[int]] = {s.scene_id: set() for s in bundle.timeline.scenes}
     why: dict[tuple[str, int], str] = {}
     for sample in samples:
@@ -745,7 +755,14 @@ def _plan_looks(
     stats.crops = len(crops)
     looks: list[Look] = []
     used: set[tuple[str, int]] = set()
-    for crop in crops:
+    if paired:
+        for scene_id, scene_crops in by_scene.items():
+            for i in range(0, len(scene_crops), per_call):
+                chunk = scene_crops[i : i + per_call]
+                what = ", ".join(f"{c.kind} {c.target_id}" for c in chunk)
+                looks.append(Look(scene_id, tuple(store.crop(c) for c in chunk), what))
+                used.update((c.scene_id, c.frame) for c in chunk)
+    for crop in () if paired else crops:
         if per_call < 2:
             looks.append(Look(crop.scene_id, (store.crop(crop),), f"{crop.kind} {crop.target_id}"))
             continue

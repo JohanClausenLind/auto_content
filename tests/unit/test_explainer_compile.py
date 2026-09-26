@@ -25,6 +25,7 @@ from content_factory.explainer.layout import (
     FORMULA_JOIN,
     TEXT_PAD,
     LayoutChoice,
+    adopt_node_boxes,
     boxes_for,
     formula_width_px,
     line_px,
@@ -442,6 +443,28 @@ def test_fonts_version_comes_from_the_tables() -> None:
 # --- layout ---
 
 
+def test_an_edge_label_box_sits_where_the_diagram_draws_it() -> None:
+    scene = _diagram("scn_diagram1", (_beat("bt_hold00001", 2, HoldAction(action="hold")),))
+    template = scene.template
+    assert isinstance(template, DiagramTemplate)
+    edge = template.edges[0].model_copy(update={"label": "power"})
+    scene = scene.model_copy(update={"template": template.model_copy(update={"edges": (edge,)})})
+    entities = (
+        Entity(entity_id="ent_panels01", label="Panels", kind="node"),
+        Entity(entity_id="ent_grid0001", label="Grid", kind="node"),
+        Entity(entity_id="ent_feed0001", label="feed", kind="edge"),
+    )
+    spec = _spec(entities, (scene,))
+    (layout,) = _fake_layouts(spec, {scene.scene_id: region(scene, "plot")})
+    anchored = layout.edges[0].model_copy(update={"label_anchor": LayoutPoint(x=900, y=500)})
+    layout = layout.model_copy(update={"edges": (anchored,)})
+    boxes = adopt_node_boxes(scene, spec, boxes_for(scene, spec), layout).boxes
+    label = next(b for b in boxes if b.entity_id == "ent_feed0001")
+    assert label.font_px == role_px("caption")
+    assert abs(label.box.x + label.box.width / 2 - 900) <= 1
+    assert abs(label.box.y + label.box.height / 2 - 500) <= 1
+
+
 def test_forty_character_label_fits_the_legend_at_label_size() -> None:
     assert len(LABEL_40) == 40
     spec, scene = _legend_spec(LABEL_40)
@@ -451,9 +474,7 @@ def test_forty_character_label_fits_the_legend_at_label_size() -> None:
     assert chip.font_px == role_px("label") and chip.lines == 1
     assert legend.y <= chip.box.y and chip.box.y + chip.box.height <= legend.y + legend.height
     assert placed.choices == ()
-    assert {b.entity_id for b in placed.boxes} == {
-        "ent_series00", "axisx_chart001", "axisy_chart001"
-    }  # fmt: skip
+    assert {b.entity_id for b in placed.boxes} == {"ent_series00"}
 
 
 def test_seventy_character_label_without_short_label_raises_a_layout_issue() -> None:
@@ -633,7 +654,7 @@ def test_anchor_before_on_after() -> None:
     assert clock.narration_end_ms == 21 * 385
 
 
-def test_hold_duration_includes_reading_time() -> None:
+def test_a_hold_lasts_until_text_is_read_counting_from_its_reveal() -> None:
     text = "Solar capacity grew fast"
     scene = _text(
         "scn_text0001",
@@ -646,9 +667,24 @@ def test_hold_duration_includes_reading_time() -> None:
     )
     spec = _spec((Entity(entity_id="ent_text0001", label="Line", kind="text"),), (scene,))
     timed = resolve_timing(spec, TokenClock(_script()), {"scn_text0001": {"ent_text0001": text}})
+    reveal = next(a for a in timed[0].actions if a.action == "reveal")
     hold = next(a for a in timed[0].actions if a.action == "hold")
     assert reading_ms(text) == 1213
-    assert hold.end_ms - hold.start_ms == DURATION_MS["short"] + 1213 + INSPECTION_MS
+    # The reading began at the reveal, two words before the hold, while the voice went on.
+    assert hold.end_ms == reveal.start_ms + 1213 + INSPECTION_MS
+    assert hold.end_ms - hold.start_ms > DURATION_MS["short"]
+
+
+def test_a_hold_with_nothing_new_to_read_keeps_its_duration_class() -> None:
+    scene = _text(
+        "scn_text0001",
+        "ent_text0001",
+        "Line",
+        (_beat("bt_hold00001", 2, HoldAction(action="hold"), duration="long"),),
+    )
+    spec = _spec((Entity(entity_id="ent_text0001", label="Line", kind="text"),), (scene,))
+    hold = resolve_timing(spec, TokenClock(_script()), {})[0].actions[0]
+    assert hold.end_ms - hold.start_ms == DURATION_MS["long"]
 
 
 def test_reading_floor_raises_timing_with_the_split_fix() -> None:
@@ -708,7 +744,7 @@ def test_scenes_are_contiguous_and_total_frames_is_the_sum() -> None:
         for action in scene.actions:
             assert scene.start_frame <= action.start_frame <= action.end_frame
     assert cursor == timeline.total_frames
-    assert timeline.total_frames == to_frames(11_815, 30)
+    assert timeline.total_frames == to_frames(11_215, 30)
 
 
 def test_compile_is_deterministic() -> None:

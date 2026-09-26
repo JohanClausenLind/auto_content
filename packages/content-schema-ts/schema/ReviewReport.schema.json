@@ -299,6 +299,9 @@
                   "$ref": "#/$defs/LabelWordingRepair"
                 },
                 {
+                  "$ref": "#/$defs/TextCorrectionRepair"
+                },
+                {
                   "$ref": "#/$defs/LayoutChoiceRepair"
                 },
                 {
@@ -519,6 +522,35 @@
         "take_id"
       ],
       "title": "TakeSelectionRepair",
+      "type": "object"
+    },
+    "TextCorrectionRepair": {
+      "additionalProperties": false,
+      "description": "A person's correction of the words an entity shows, wherever the spec draws them.",
+      "properties": {
+        "entity_id": {
+          "pattern": "^[a-z][a-z0-9]{1,7}_[A-Za-z0-9_-]{8,32}$",
+          "title": "Entity Id",
+          "type": "string"
+        },
+        "repair": {
+          "const": "text_correction",
+          "title": "Repair",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "repair",
+        "text"
+      ],
+      "title": "TextCorrectionRepair",
       "type": "object"
     },
     "TimeInterval": {

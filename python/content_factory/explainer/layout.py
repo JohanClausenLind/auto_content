@@ -17,6 +17,7 @@ from content_factory.schemas.explainer import (
     DiagramTemplate,
     Entity,
     EntityBox,
+    LayoutPoint,
     NamedRegion,
     PixelBox,
     Scene,
@@ -202,6 +203,19 @@ def adopt_node_boxes(
     return SceneBoxes(boxes, placed.choices, placed.texts)
 
 
+def _edge_label_box(box: EntityBox, anchor: LayoutPoint) -> EntityBox:
+    """Where DiagramTemplate draws an edge label: caption text on a chip centred on ELK's anchor."""
+    font_px = role_px("caption")
+    width = math.ceil(measure_text(box.text or "", family="Inter", weight=500, font_px=font_px))
+    width += 2 * UNIT
+    # Half up, as the renderer's Math.round does; Python's round would halve to even.
+    height = math.floor(font_px * LINE_HEIGHT + 0.5) + UNIT
+    x, y = math.floor(anchor.x - width / 2 + 0.5), math.floor(anchor.y - height / 2 + 0.5)
+    return box.model_copy(
+        update={"box": PixelBox(x=x, y=y, width=width, height=height), "font_px": font_px}
+    )
+
+
 def _placer_for(scene: Scene, spec: VisualSpec) -> _Placer:
     index = next(i for i, s in enumerate(spec.scenes) if s.scene_id == scene.scene_id)
     return _Placer(scene, spec, f"VisualSpec.scenes[{index}]")
@@ -246,7 +260,6 @@ class _Placer:
         legend = _chart_regions(self.area)
         by_name = {r.name: r.box for r in legend}
         self._legend(template, by_name["legend"])
-        self._axis_titles(template, by_name["axis_x"], by_name["axis_y"])
 
     def diagram(self, template: DiagramTemplate) -> None:
         plot = self.area
@@ -302,8 +315,13 @@ class _Placer:
     def adopt(self, boxes: tuple[EntityBox, ...], layout: DiagramLayout) -> tuple[EntityBox, ...]:
         """Node boxes from ELK, kept only where the compiled text still fits at label size."""
         nodes = {n.entity_id: n.box for n in layout.nodes}
+        anchors = {e.entity_id: e.label_anchor for e in layout.edges if e.label_anchor}
         adopted: list[EntityBox] = []
         for box in boxes:
+            anchor = anchors.get(box.entity_id)
+            if anchor is not None and box.text:
+                adopted.append(_edge_label_box(box, anchor))
+                continue
             node = nodes.get(box.entity_id)
             if node is None:
                 adopted.append(box)
@@ -394,41 +412,6 @@ class _Placer:
             width = placed.width_px + chrome
             self._box(binding.entity_id, x, y, width, height, "label", 1)
             x += width + GUTTER
-
-    def _axis_titles(self, template: ChartTemplate, axis_x: PixelBox, axis_y: PixelBox) -> None:
-        line = line_px("label") + 2 * TEXT_PAD
-        if template.x.title:
-            entity_id = synthetic_id("axisx", self.scene.scene_id)
-            placed = self._place(
-                entity_id,
-                (template.x.title,),
-                axis_x.width - 2 * TEXT_PAD,
-                1,
-                "label",
-                "Inter",
-                500,
-            )
-            if placed is not None:
-                width = placed.width_px + 2 * TEXT_PAD
-                x = axis_x.x + (axis_x.width - width) // 2
-                y = axis_x.y + (axis_x.height - line) // 2
-                self._box(entity_id, x, y, width, line, "label", 1)
-        if template.y.title:
-            entity_id = synthetic_id("axisy", self.scene.scene_id)
-            placed = self._place(
-                entity_id,
-                (template.y.title,),
-                axis_y.height - 2 * TEXT_PAD,
-                1,
-                "label",
-                "Inter",
-                500,
-            )
-            if placed is not None:
-                # Drawn rotated: the box is as tall as the text is long.
-                height = placed.width_px + 2 * TEXT_PAD
-                y = axis_y.y + (axis_y.height - height) // 2
-                self._box(entity_id, axis_y.x, y, line, height, "label", 1)
 
     def _place(
         self,

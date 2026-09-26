@@ -1,26 +1,26 @@
 {
   "episode_id": "ep_latency_2026",
-  "pack": "episodes/latency/pack.json",
-  "script": "episodes/latency/script.json",
-  "spec": "episodes/latency/spec.json",
+  "pack": "pack.json",
+  "script": "script.json",
+  "spec": "spec.json",
   "captures": [
     {
-      "manifest": "episodes/latency/captures/cap_14e872638810.json",
-      "wacz": "output/explainer/sources/optical-fiber/capture-14e872638810.wacz",
+      "manifest": "captures/cap_14e872638810.json",
+      "wacz": "../../output/explainer/sources/optical-fiber/capture-14e872638810.wacz",
       "url": "https://en.wikipedia.org/wiki/Optical_fiber",
-      "tiles_dir": "output/explainer/sources/optical-fiber/tiles-14e872638810"
+      "tiles_dir": "../../output/explainer/sources/optical-fiber/tiles-14e872638810"
     },
     {
-      "manifest": "episodes/latency/captures/cap_1ce265548ced.json",
-      "wacz": "output/explainer/sources/speed-of-light/capture-1ce265548ced.wacz",
+      "manifest": "captures/cap_1ce265548ced.json",
+      "wacz": "../../output/explainer/sources/speed-of-light/capture-1ce265548ced.wacz",
       "url": "https://en.wikipedia.org/wiki/Speed_of_light",
-      "tiles_dir": "output/explainer/sources/speed-of-light/tiles-1ce265548ced"
+      "tiles_dir": "../../output/explainer/sources/speed-of-light/tiles-1ce265548ced"
     },
     {
-      "manifest": "episodes/latency/captures/cap_85ca44678a06.json",
-      "wacz": "output/explainer/sources/marea/capture-85ca44678a06.wacz",
+      "manifest": "captures/cap_85ca44678a06.json",
+      "wacz": "../../output/explainer/sources/marea/capture-85ca44678a06.wacz",
       "url": "https://en.wikipedia.org/wiki/MAREA",
-      "tiles_dir": "output/explainer/sources/marea/tiles-85ca44678a06"
+      "tiles_dir": "../../output/explainer/sources/marea/tiles-85ca44678a06"
     }
   ],
   "voice": {

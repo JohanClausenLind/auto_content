@@ -24,9 +24,11 @@ from content_factory.explainer.validate import check_episode
 from content_factory.schemas.explainer import (
     ChartTemplate,
     DatasetColumn,
+    EvidenceDataset,
     FieldEncoding,
     QuoteAction,
     Scene,
+    Section,
     SeriesBinding,
     ShowSourceAction,
     TitlePromise,
@@ -222,7 +224,9 @@ def build() -> None:
         short_label="6.25× the turns",
     )
 
-    def gear_dataset(dataset_id: str, title: str, column: str, unit: str, claim: str) -> object:
+    def gear_dataset(
+        dataset_id: str, title: str, column: str, unit: str, claim: str
+    ) -> EvidenceDataset:
         return pack.dataset(
             dataset_id,
             title,
@@ -405,7 +409,7 @@ def build() -> None:
 
     def gear_chart(
         scene_id: str,
-        section: str,
+        section: Section,
         purpose: str,
         title: str,
         asset: str,
@@ -620,9 +624,6 @@ def build() -> None:
                 "bt_gears_devchart_show", s.cue("seg_gears_devtable", "table"), act("reveal", dev)
             ),
             beat(
-                "bt_gears_devchart_low", s.cue("seg_gears_devtable", "1.6"), act("highlight", dev)
-            ),
-            beat(
                 "bt_gears_devchart_hold",
                 s.cue(
                     "seg_gears_devtable",
@@ -668,12 +669,12 @@ def build() -> None:
         "Pedal turns per kilometre (computed)",
         a_turns,
         "turns",
-        "ratio",
+        # Turns per kilometre are counted, not a multiple of anything: the axis shows bare numbers.
+        "",
         "turns",
         turns,
         [
             beat("bt_gears_turns_show", s.cue("seg_gears_turns", "flip"), act("reveal", turns)),
-            beat("bt_gears_turns_low", s.cue("seg_gears_turns", "625"), act("highlight", turns)),
             beat(
                 "bt_gears_turns_hold",
                 s.cue("seg_gears_turns", "100.", relation="after", duration="short"),

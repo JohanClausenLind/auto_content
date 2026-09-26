@@ -22,6 +22,7 @@ from content_factory.audio.continuity import match_levels
 from content_factory.audio.normalize import NUMBER_TOKEN, fold_spelling, is_number_word
 from content_factory.audio.takes import faster_whisper_words
 from content_factory.explainer.errors import ContractIssue, EpisodeInvalidError
+from content_factory.explainer.timing import Pauses, take_cuts
 from content_factory.explainer.units import UNIT_WORDS
 from content_factory.human_tasks.validation import validate_take
 from content_factory.schemas.base import canonical_dumps
@@ -508,10 +509,9 @@ def assemble_narration(
         samples = duration_ms * STEM_RATE_HZ // 1000
         stem_parts.append(np.pad(clip[:samples], (0, max(0, samples - len(clip)))))
         audio_sha = hashlib.sha256(path.read_bytes()).hexdigest()
-        identity = hashlib.sha256(f"{segment.segment_id}:{audio_sha}".encode()).hexdigest()
         manifest_takes.append(
             NarrationTake(
-                take_id=f"take_{identity[:16]}",
+                take_id=take_id_for(segment.segment_id, audio_sha),
                 segment_ids=(segment.segment_id,),
                 kind=kind,
                 audio_sha256=audio_sha,
@@ -541,6 +541,33 @@ def assemble_narration(
         manifest.canonical_json() + "\n", encoding="utf-8"
     )
     return manifest, stem
+
+
+def pace_stem(
+    stem: Path, narration: NarrationManifest, paced: NarrationManifest, pauses: Pauses, out: Path
+) -> str:
+    """The stem re-laid at the paced starts, silence cut in mid-take; returns its sha256."""
+    audio = read_wav_48k(stem)
+    laid = np.zeros(_samples(paced.total_duration_ms), dtype=np.float32)
+    starts = {t.take_id: t.start_ms for t in paced.takes}
+    for take in narration.takes:
+        begin, added = 0, 0
+        for cut, ms in [*take_cuts(take, pauses), (take.duration_ms, 0)]:
+            piece = audio[_samples(take.start_ms + begin) : _samples(take.start_ms + cut)]
+            at = _samples(starts[take.take_id] + begin + added)
+            laid[at : at + len(piece)] = piece[: max(0, len(laid) - at)]
+            begin, added = cut, added + ms
+    write_wav(out, laid, STEM_RATE_HZ)
+    return hashlib.sha256(out.read_bytes()).hexdigest()
+
+
+def _samples(ms: int) -> int:
+    return ms * STEM_RATE_HZ // 1000
+
+
+def take_id_for(segment_id: str, audio_sha256: str) -> str:
+    """The NarrationTake id of one segment spoken by one exact recording."""
+    return "take_" + hashlib.sha256(f"{segment_id}:{audio_sha256}".encode()).hexdigest()[:16]
 
 
 def _mismatch(

@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-import subprocess
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
-from content_factory.audio.mix import DEFAULT_MASTER_CHAIN, master
+from content_factory.audio.mix import DEFAULT_MASTER_CHAIN, ffmpeg, master, measure_loudness
 from content_factory.explainer.narration import STEM_RATE_HZ, read_wav_48k, write_wav
 from content_factory.schemas.audio import LoudnessReport
 
+MIX_VERSION = "2"
 MUSIC_BED_DB = -18.0
 DUCK_DEPTH_DB = -12.0
 DUCK_ATTACK_S = 0.08
@@ -69,32 +70,41 @@ def duck_curve(
 
 
 # Speech peaks sit 15-20 dB over its loudness; a linear master reaches -14 LUFS under -1.3 dBTP
-# only if narration arrives with under ~12.7 dB of that headroom (journal 2026-09-26).
-NARRATION_LEVEL = "loudnorm=I=-16:TP=-4:LRA=7,aresample=48000"
+# only if they arrive within 12.7 dB, so the voice sits at -16 LUFS with true peaks at -5.
+NARRATION_LUFS = -16.0
+NARRATION_PEAK_DBTP = -5.0
+LEVEL_TOLERANCE_LU = 0.5
+LEVEL_PASSES = 6
 
 
 def level_narration(stem: Path, out: Path) -> None:
-    """Dynamic loudness and true-peak control on the voice alone, so music never pumps with it."""
-    subprocess.run(
+    """Gain then limit the voice, re-gaining until the limiter's loss is made up."""
+    measured = measure_loudness(stem).integrated_lufs
+    gain_db = NARRATION_LUFS - measured if math.isfinite(measured) else 0.0
+    for _ in range(LEVEL_PASSES):
+        _gain_and_limit(stem, out, gain_db)
+        measured = measure_loudness(out).integrated_lufs
+        if not math.isfinite(measured) or abs(measured - NARRATION_LUFS) <= LEVEL_TOLERANCE_LU:
+            return
+        gain_db += NARRATION_LUFS - measured
+
+
+def _gain_and_limit(stem: Path, out: Path, gain_db: float) -> None:
+    # Limiting at 4x the stem rate makes the sample-peak ceiling a true-peak one.
+    limit = 10 ** (NARRATION_PEAK_DBTP / 20)
+    ffmpeg(
         [
-            "ffmpeg",
-            "-hide_banner",
-            "-nostdin",
-            "-y",
-            "-loglevel",
-            "error",
             "-i",
             str(stem),
             "-af",
-            NARRATION_LEVEL,
+            f"aresample={4 * STEM_RATE_HZ},volume={gain_db:.2f}dB,alimiter=limit={limit:.6f}"
+            f":attack=2:release=20:level=disabled:latency=true,aresample={STEM_RATE_HZ}",
             "-ac",
             "1",
             "-c:a",
             "pcm_s16le",
             str(out),
-        ],
-        check=True,
-        capture_output=True,
+        ]
     )
 
 

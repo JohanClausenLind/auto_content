@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-09-15. Hosts: vegaserv (Ubuntu 24.04, 31 GB RAM, RTX 3090 24 GB) and nova
+Last updated: 2026-09-26. Hosts: vegaserv (Ubuntu 24.04, 31 GB RAM, RTX 3090 24 GB) and nova
 (76 GB RAM, RTX 3090, `docs/gpu-hosts.md`). The proof behind every line here is in `docs/journal/`.
 
 ## Where things stand
@@ -42,13 +42,14 @@ runtime (`docs/CHANNEL_PROFILE.md`, `EDITORIAL.md`, `DESIGN_SYSTEM.md`, `PLANNER
 - [x] 2 compiler and render core — GREEN (2026-09-22): C1 seek determinism, C2 label bounds, C3 post-encode APCA and edge contrast, C4 60 s compile
 - [x] 3 real source documents — GREEN (2026-09-22): D1 highlight tracking, D2 passage cases, D3 OCR rejection, D4 replay after change
 - [x] 4 narration and alignment — GREEN (2026-09-23): E1, E2; VoiceDesign measured best; creator reference recording still missing
-- [ ] 5 QC, reviewer, repair, delivery — gates F1–F6 (Qwen3.8-27B W4A16 reviewer, advisory first)
-- [ ] 6 editorial workflow and demonstration episodes
+- [x] 5 QC, reviewer, repair, delivery — GREEN (2026-09-26): F1–F6; the Qwen3.8-27B reviewer stays advisory (7 of 7 false alarms on the fixtures)
+- [x] 6 editorial workflow and demonstration episodes — GREEN (2026-09-26): three episodes from captured Wikipedia pages, export verified (amdahl 8:29, latency 3:14, gears 2:51); nobody has watched them yet
 
 ## Next smallest task
 
-Explainer Phase 5: deterministic QC, the Qwen3.8-27B reviewer on vLLM, repair loop, delivery.
-Before that, the three operator gates below stand as they were:
+Explainer: a person watches the three finals (`output/explainer/episodes/*/exports/final.mp4`,
+`content-factory explainer page <id>`) and reviews the six context docs; then a creator reference
+recording, and the runtime planner writing one episode's spec. The operator gates stand as they were:
 
 1. **Live Bluesky gate.** Put a designated TEST account's `BLUESKY_HANDLE` /
    `BLUESKY_APP_PASSWORD` in `.env`, then

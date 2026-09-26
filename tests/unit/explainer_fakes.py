@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
-from content_factory.explainer.narration import STEM_RATE_HZ
+from content_factory.explainer.narration import STEM_RATE_HZ, Asr, synth_cache_key
 from content_factory.explainer.pipeline import EpisodeConfig, Seams
 from content_factory.explainer.qc import QcFinding
 from content_factory.explainer.timing import ESTIMATED_TOKEN_MS
@@ -24,6 +24,7 @@ from content_factory.schemas.explainer import (
     LayoutNode,
     LayoutPoint,
     PixelBox,
+    ScriptPlan,
     ScriptSegment,
     VisualSpec,
     VoiceSpec,
@@ -105,6 +106,18 @@ def even_aligner(audio: Path, words: Sequence[str]) -> dict[str, Any]:
         "aligner_version": "0",
         "model_id": "test",
     }
+
+
+def heard_script(script: ScriptPlan, voice: VoiceSpec = VOICE, seed: int = 0) -> Asr:
+    """An ASR that hears a take's segment word for word: by synth cache key or take folder."""
+    by_key = {synth_cache_key(s, voice, seed=seed): s for s in script.segments}
+    by_id = {s.segment_id: s for s in script.segments}
+
+    def hear(audio: Path) -> list[str]:
+        segment = by_key.get(audio.stem) or by_id.get(audio.parent.name) or by_id.get(audio.stem)
+        return list(segment.tokens) if segment else []
+
+    return hear
 
 
 class CountingRender:

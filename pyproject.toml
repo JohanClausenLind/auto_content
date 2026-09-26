@@ -77,7 +77,6 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 "skills/audio/qwen3tts/samples.py" = ["RUF001"]  # Chinese sample text uses fullwidth punctuation
 "python/content_factory/audio/*.py" = ["S603", "S607"]  # ffmpeg/ffprobe from PATH, argument arrays only
 "python/content_factory/qc/*.py" = ["S603", "S607"]
-"python/content_factory/explainer/mix.py" = ["S603", "S607"]  # ffmpeg from PATH, argument arrays only
 "python/content_factory/sequences/engine.py" = ["S603", "S607"]
 "python/content_factory/ingest/convert.py" = ["S607"]
 "python/content_factory/media/video_generate.py" = ["S607"]

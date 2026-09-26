@@ -1128,6 +1128,14 @@ class InputHash(SchemaModel):
     sha256: Sha256Hex
 
 
+class NarrationPause(SchemaModel):
+    """Silence before a token (0: the whole take), so the voice waits for the picture."""
+
+    segment_id: OpaqueId
+    token_index: int = Field(default=0, ge=0)
+    pause_ms: int = Field(ge=1)
+
+
 class ExplainerTimeline(VersionedModel):
     """The explainer's compiled timeline: frames, geometry and colours resolved from the spec."""
 
@@ -1137,6 +1145,7 @@ class ExplainerTimeline(VersionedModel):
     script_hash: Sha256Hex
     pack_hash: Sha256Hex
     narration_manifest_id: OpaqueId | None = None
+    narration_pauses: tuple[NarrationPause, ...] = ()
     fps: int = Field(ge=24, le=60)
     width: int = Field(ge=320)
     height: int = Field(ge=180)
@@ -1325,6 +1334,14 @@ class LabelWordingRepair(SchemaModel):
     short_label: str = Field(min_length=1, max_length=40)
 
 
+class TextCorrectionRepair(SchemaModel):
+    """A person's correction of the words an entity shows, wherever the spec draws them."""
+
+    repair: Literal["text_correction"]
+    entity_id: OpaqueId
+    text: str = Field(min_length=1, max_length=160)
+
+
 class LayoutChoiceRepair(SchemaModel):
     repair: Literal["layout_choice"]
     scene_id: OpaqueId
@@ -1358,6 +1375,7 @@ class SplitSceneRepair(SchemaModel):
 TypedRepair = Annotated[
     CueOffsetRepair
     | LabelWordingRepair
+    | TextCorrectionRepair
     | LayoutChoiceRepair
     | HoldRepair
     | TakeSelectionRepair

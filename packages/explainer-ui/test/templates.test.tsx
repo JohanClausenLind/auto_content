@@ -103,12 +103,13 @@ describe("formula", () => {
     expect(html).toContain(`enclosing grp-${rhs}`);
   });
 
-  it("styles each group per frame: the highlighted one in emphasis ink, the other dimmed", () => {
+  it("styles each group per frame: the highlighted one underlined in emphasis, the other dimmed", () => {
     const { compiled, scene, template } = formulaScene();
     const state = resolveSceneState(compiled, scene, compiled.duration_frames - 1, bundle.timeline.fps);
     const html = markup(<TextTemplate compiled={compiled} scene={scene} template={template} state={state} />);
     const scope = `.formula-${compiled.scene_id}`;
-    expect(html).toContain(`${scope} .grp-${rhs}{opacity:1;color:${tokenHex("state.emphasis")}}`);
-    expect(html).toContain(`${scope} .grp-${lhs}{opacity:${DEEMPHASIS_ALPHA};color:${tokenHex("ui.ink.primary")}}`);
+    const mark = `border-bottom:0.06em solid color-mix(in srgb, ${tokenHex("state.emphasis")} 100%, transparent);padding-bottom:0.12em;`;
+    expect(html).toContain(`${scope} .grp-${rhs}{opacity:1;${mark}}`);
+    expect(html).toContain(`${scope} .grp-${lhs}{opacity:${DEEMPHASIS_ALPHA};}`);
   });
 });

@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageDraw
 
+from content_factory.explainer import vlm_reviewer
 from content_factory.explainer.compile import compile_episode
 from content_factory.explainer.review import ReviewCache
 from content_factory.explainer.vlm_reviewer import (
@@ -153,6 +154,19 @@ def test_crop_plan_cuts_every_text_box_once_settled(sixty) -> None:
     for crop in crops:
         compiled = next(s for s in bundle.timeline.scenes if s.scene_id == crop.scene_id)
         assert compiled.start_frame <= crop.frame < compiled.start_frame + compiled.duration_frames
+
+
+def test_a_crowded_episode_pairs_its_crops_to_stay_inside_the_call_budget(
+    sixty, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pack, script, bundle = sixty
+    monkeypatch.setattr(vlm_reviewer, "call_budget", lambda minutes=20: 40)
+    adapter = FakeAdapter([EMPTY])
+    _review(bundle, pack, script, adapter, tmp_path)
+    bulk = [c for c in adapter.calls if c.images]
+    assert len(bulk) <= 40
+    # One frame per crop file name: f<frame>-<target>.png.
+    assert any(all("-" in path.stem for path in c.images) and len(c.images) == 2 for c in bulk)
 
 
 def test_two_frames_per_call_fit_the_measured_window() -> None:
