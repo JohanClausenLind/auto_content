@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -67,12 +68,45 @@ def duck_curve(
     return np.interp(np.arange(len(voice)), points, smoothed).astype(np.float32)
 
 
+# Speech peaks sit 15-20 dB over its loudness; a linear master reaches -14 LUFS under -1.3 dBTP
+# only if narration arrives with under ~12.7 dB of that headroom (journal 2026-09-26).
+NARRATION_LEVEL = "loudnorm=I=-16:TP=-4:LRA=7,aresample=48000"
+
+
+def level_narration(stem: Path, out: Path) -> None:
+    """Dynamic loudness and true-peak control on the voice alone, so music never pumps with it."""
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-nostdin",
+            "-y",
+            "-loglevel",
+            "error",
+            "-i",
+            str(stem),
+            "-af",
+            NARRATION_LEVEL,
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+            str(out),
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+
 def mix_episode(
     stem: Path, music: Path | None, sfx: Sequence[tuple[int, Path]], out_dir: Path
 ) -> MixResult:
     """Three stems written separately, summed once, mastered through the programme chain."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    voice = read_wav_48k(stem)
+    leveled = out_dir / "narration-leveled.wav"
+    level_narration(stem, leveled)
+    voice = read_wav_48k(leveled)
+    leveled.unlink(missing_ok=True)
     n = len(voice)
     bed = np.zeros(n, dtype=np.float32)
     if music is not None:

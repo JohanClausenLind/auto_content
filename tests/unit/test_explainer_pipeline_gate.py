@@ -153,13 +153,6 @@ def test_f4_a_second_run_reuses_every_finished_step_and_renders_nothing(gate: Ga
     assert gate.videos_second == 0 and gate.stills_second == 0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "audio.mix.master lands Kokoro speech at -15.3 LUFS / -1.3 dBTP, outside qc_checks' "
-        "-14 +/-1 LU, so qc_final blocks before export (2026-09-26)"
-    ),
-)
 def test_f6_the_run_finishes_ready_and_its_export_verifies(gate: Gate) -> None:
     assert gate.first.status == "done" and gate.first.ready, _why(gate.config)
     assert gate.second.ran == () and gate.second.skipped == STEP_NAMES
