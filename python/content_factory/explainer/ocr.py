@@ -97,6 +97,9 @@ def compare_texts(expected: str, ocr: str) -> TextComparison:
             continue
         only_a.extend(words_a[i1:i2])
         only_b.extend(words_b[j1:j2])
+    # Punctuation-only tokens carry no meaning; padding often catches a neighbour's full stop.
+    only_a = [w for w in only_a if any(ch.isalnum() for ch in w)]
+    only_b = [w for w in only_b if any(ch.isalnum() for ch in w)]
     return TextComparison(round(similarity, 4), tuple(only_a), tuple(only_b))
 
 

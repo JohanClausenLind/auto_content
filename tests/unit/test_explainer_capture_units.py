@@ -184,3 +184,16 @@ def test_rekeyed_index_matches_pywb_lookup_for_percent_encoded_urls(tmp_path: Pa
     index.write_text(f"org,wikipedia,en)/wiki/amdahl%27s_law 20260926055637 {record}\n")
     subprocess.run([str(PYWB_BIN / "python"), "-c", REKEY_INDEX, str(index)], check=True)
     assert index.read_text().startswith("org,wikipedia,en)/wiki/amdahl's_law 20260926055637 ")
+
+
+def test_a_neighbours_punctuation_in_the_crop_does_not_fail_ocr() -> None:
+    quote = "The part that scans the directory cannot be sped up."
+    assert compare_texts(quote, ". " + quote).passed
+    assert compare_texts(quote, "; " + quote).passed
+
+
+def test_a_dropped_negation_still_fails_ocr() -> None:
+    verdict = compare_texts(
+        "The gain does not survive the stops.", "The gain does survive the stops."
+    )
+    assert not verdict.passed and verdict.only_expected == ("not",)

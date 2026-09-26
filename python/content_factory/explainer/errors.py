@@ -22,6 +22,7 @@ IssueKind = Literal[
     "layout",
     "color",
     "timing",
+    "evidence",
 ]
 
 

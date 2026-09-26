@@ -114,10 +114,17 @@ def capture_source(
         allow_loopback=allow_loopback,
         provenance_summary=provenance_summary,
     )
+    return manifest_from_capture(capture, quotes, out_dir, source=source)
+
+
+def manifest_from_capture(
+    capture: CaptureResult, quotes: Sequence[QuoteRequest], out_dir: Path, *, source: SourceInfo
+) -> tuple[SourceCaptureManifest, tuple[Tile, ...]]:
+    """Replay a stored capture, locate the quotes, refuse any whose pixels disagree."""
     tiles_dir = out_dir / f"tiles-{capture.artifact_sha256[:12]}"
     with ReplayServer(capture.wacz_path) as replay:
         resolved = resolve_quotes(
-            replay.replay_url(url), quotes, viewport=viewport, tiles_dir=tiles_dir
+            replay.replay_url(capture.url), quotes, viewport=capture.viewport, tiles_dir=tiles_dir
         )
     manifest = build_manifest(source, capture, resolved)
     return verify_manifest(manifest, resolved.tiles), resolved.tiles

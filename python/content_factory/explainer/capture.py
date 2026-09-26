@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import io
 import json
@@ -9,10 +10,12 @@ import shutil
 import ssl
 import subprocess
 import tempfile
+import zipfile
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 import httpx
 from pypdf import PdfReader
@@ -199,6 +202,46 @@ def capture_url(
         signature_domain=signature.domain if signature else "",
         title=str((summary.get("pageInfo") or {}).get("title") or ""),
     )
+
+
+def load_capture(wacz_path: Path, url: str, viewport: Viewport = DEFAULT_VIEWPORT) -> CaptureResult:
+    """Reopen a stored capture without touching the live page: summary beside it, cert inside."""
+    wacz_path = Path(wacz_path)
+    summary_path = wacz_path.with_suffix("").with_suffix(".summary.json")
+    summary: dict[str, Any] = json.loads(summary_path.read_text()) if summary_path.is_file() else {}
+    signature = read_signature(wacz_path)
+    return CaptureResult(
+        url=url,
+        wacz_path=wacz_path,
+        summary=summary,
+        artifact_sha256=file_sha256(wacz_path),
+        captured_at=str(summary.get("startedAt") or ""),
+        viewport=viewport,
+        tls_certificate_sha256=_archived_certificate_sha256(
+            wacz_path, urlsplit(url).hostname or ""
+        ),
+        signed=signature is not None,
+        signature_domain=signature.domain if signature else "",
+        title=str((summary.get("pageInfo") or {}).get("title") or ""),
+    )
+
+
+def _archived_certificate_sha256(wacz_path: Path, host: str) -> str | None:
+    """The leaf certificate Scoop archived as `file:///<host>.pem`, hashed like a fresh capture."""
+    target = f"file:///{host}.pem".encode()
+    with zipfile.ZipFile(wacz_path) as archive:
+        for name in archive.namelist():
+            if not (name.startswith("archive/") and name.endswith(".warc.gz")):
+                continue
+            data = gzip.decompress(archive.read(name))
+            at = data.find(b"WARC-Target-URI: " + target)
+            if at < 0:
+                continue
+            body = data[data.find(b"\r\n\r\n", at) + 4 :]
+            pem = body[body.find(b"-----BEGIN CERTIFICATE-----") :].decode("ascii", "replace")
+            der = ssl.PEM_cert_to_DER_cert(_first_pem_block(pem))
+            return hashlib.sha256(der).hexdigest()
+    return None
 
 
 def read_signature(wacz_path: Path) -> WaczSignature | None:
