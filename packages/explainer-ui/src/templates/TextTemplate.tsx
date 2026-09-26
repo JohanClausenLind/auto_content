@@ -25,6 +25,7 @@ interface TextInk {
 }
 
 interface TextGeometry {
+  sceneId: string;
   state: SceneState;
   boxes: ReadonlyMap<string, EntityBox>;
   colors: ReadonlyMap<string, string>;
@@ -67,12 +68,12 @@ function inkFor(g: TextGeometry, entityId: string, base: string): string {
 }
 
 /** Absolute at the compiler's box when there is one, otherwise a block in the flow. */
-function Placed({ g, item, lines, fontPx, style, blockPx, children }: { g: TextGeometry; item: TextItem; lines: number; fontPx: number; style?: CSSProperties; blockPx?: number | undefined; children: ReactElement | string }): ReactElement {
+function Placed({ g, item, lines, fontPx, style, children }: { g: TextGeometry; item: TextItem; lines: number; fontPx: number; style?: CSSProperties; children: ReactElement | string }): ReactElement {
   const box = g.boxes.get(item.entity_id);
   const base: CSSProperties = { lineHeight: `${lineHeightPx(fontPx)}px`, fontSize: fontPx, overflow: "hidden", opacity: entityOpacity(g.state, item.entity_id), ...style };
   if (box) {
     // Boxes are canvas pixels; the containing Flow sits at the content origin.
-    const inner = innerBlock(box, fontPx, g.unit, blockPx);
+    const inner = innerBlock(box, fontPx, g.unit);
     return <div style={{ ...base, position: "absolute", left: inner.x - g.content.x, top: inner.y - g.content.y, width: inner.width, height: inner.height }}>{children}</div>;
   }
   return <div style={{ ...base, maxHeight: lineHeightPx(fontPx) * lines, width: "100%" }}>{children}</div>;
@@ -101,7 +102,7 @@ function Statement({ g, items }: { g: TextGeometry; items: readonly TextItem[] }
   return (
     <Flow g={g} gap={2 * g.unit}>
       {items.map((item) => (
-        <Placed key={item.entity_id} g={g} item={item} lines={2} fontPx={fontPxFor(g, item, "body")} style={{ fontWeight: 500, color: inkFor(g, item.entity_id, g.ink.primary), textAlign: "left" }}>
+        <Placed key={item.entity_id} g={g} item={item} lines={3} fontPx={fontPxFor(g, item, "h1")} style={{ fontWeight: 500, color: inkFor(g, item.entity_id, g.ink.primary), textAlign: "left" }}>
           {textOf(g, item)}
         </Placed>
       ))}
@@ -198,26 +199,40 @@ function useKatexFontsReady(): void {
   }, [handle]);
 }
 
-function FormulaGroup({ g, item }: { g: TextGeometry; item: TextItem }): ReactElement {
-  const tex = textOf(g, item);
-  const html = useMemo(() => katex.renderToString(tex, { throwOnError: true, output: "html", displayMode: false }), [tex]);
-  const fontPx = fontPxFor(g, item, "h1");
-  // A formula box is two body lines tall for fractions; its whole inner height is the block.
-  const box = g.boxes.get(item.entity_id);
-  return (
-    <Placed g={g} item={item} lines={1} fontPx={fontPx} blockPx={box ? Math.max(1, box.box.height - g.unit) : undefined} style={{ width: "auto", color: inkFor(g, item.entity_id, g.ink.primary), lineHeight: LINE_HEIGHT }}>
-      <span dangerouslySetInnerHTML={{ __html: html }} />
-    </Placed>
-  );
+/** The groups as one LaTeX string, each wrapped in a class the per-frame style block addresses. */
+export function formulaLatex(items: readonly { entity_id: string; text: string }[]): string {
+  return items.map((item) => `\\htmlClass{grp-${item.entity_id}}{${item.text}}`).join("\\,");
 }
 
+/** Per-frame opacity (visible × dim) and ink (emphasis as it highlights) of every group, scoped to the scene. */
+function formulaStyle(g: TextGeometry, scope: string, items: readonly TextItem[]): string {
+  const groups = items.map((item) => `.${scope} .grp-${item.entity_id}{opacity:${entityOpacity(g.state, item.entity_id)};color:${inkFor(g, item.entity_id, g.ink.primary)}}`);
+  return [`.${scope} .katex-display{margin:0}`, ...groups].join("");
+}
+
+/** Typeset once at the compiler's shared box (centred in the template area), never wrapped. */
 function Formula({ g, items }: { g: TextGeometry; items: readonly TextItem[] }): ReactElement {
   useKatexFontsReady();
+  const latex = formulaLatex(items.map((item) => ({ entity_id: item.entity_id, text: textOf(g, item) })));
+  const html = useMemo(
+    () =>
+      katex.renderToString(latex, {
+        throwOnError: true,
+        output: "html",
+        displayMode: true,
+        trust: (ctx) => ctx.command === "\\htmlClass",
+        strict: (code) => (code === "htmlExtension" ? "ignore" : "warn"),
+      }),
+    [latex],
+  );
+  const first = items[0];
+  const at = (first && g.boxes.get(first.entity_id)?.box) ?? g.content;
+  const fontPx = first ? fontPxFor(g, first, "display") : rolePx("display", g.scale);
+  const scope = `formula-${g.sceneId}`;
   return (
-    <div style={{ position: "absolute", left: g.content.x, top: g.content.y, width: g.content.width, height: g.content.height, display: "flex", flexDirection: "row", flexWrap: "wrap", alignItems: "center", alignContent: "center", gap: 8 * g.unit, fontFamily: TEXT_STACK, color: g.ink.primary }}>
-      {items.map((item) => (
-        <FormulaGroup key={item.entity_id} g={g} item={item} />
-      ))}
+    <div className={scope} style={{ position: "absolute", left: at.x, top: at.y, width: at.width, height: at.height, display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap", fontSize: fontPx, lineHeight: LINE_HEIGHT, color: g.ink.primary }}>
+      <style>{formulaStyle(g, scope, items)}</style>
+      <div dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   );
 }
@@ -226,6 +241,7 @@ export function TextTemplate({ compiled, template, state }: TemplateProps<TextSp
   const env = useSceneEnv();
   const { width, height } = env.bundle.timeline;
   const g: TextGeometry = {
+    sceneId: compiled.scene_id,
     state,
     boxes: entityBoxIndex(compiled),
     colors: entityColors(compiled),

@@ -430,13 +430,14 @@ class _Qc:
         for scene in self.spec.scenes:
             placed = {p.entity_id: p for p in self._placed[scene.scene_id]}
             chrome = {synthetic_id(p, scene.scene_id) for p in ("axisx", "axisy")}
+            formula = _formula_groups(scene)
             seen: set[tuple[str, str]] = set()
             hits: list[QcFinding] = []
             for group in co_visible_sets(scene):
                 shown = [placed[e] for e in (*group, *chrome) if e in placed]
                 for a, b in combinations(shown, 2):
                     pair = (a.entity_id, b.entity_id)
-                    if pair in seen or not _intersects(a.box, b.box):
+                    if pair in seen or set(pair) <= formula or not _intersects(a.box, b.box):
                         continue
                     seen.add(pair)
                     evidence = (
@@ -465,7 +466,7 @@ class _Qc:
         findings: list[QcFinding] = []
         for scene in self.spec.scenes:
             template = scene.template
-            # A formula box is an estimate (layout.FORMULA_EM_PER_CHAR), not a verified fit.
+            # A formula box is an estimate (layout.formula_width_px), not a verified fit.
             if not isinstance(template, TextTemplate) or template.variant == "formula":
                 continue
             compiled = self.compiled[scene.scene_id]
@@ -1084,6 +1085,14 @@ def _floor_px(scene: Scene, entity_id: str) -> int:
     if template.variant == "quotation_card" and count > 1 and k == count - 1:
         return FLOORS_PX["label"]
     return FLOORS_PX["read_text"]
+
+
+def _formula_groups(scene: Scene) -> set[str]:
+    """A formula's groups, which share its one typeset box by construction (layout._formula)."""
+    template = scene.template
+    if isinstance(template, TextTemplate) and template.variant == "formula":
+        return {item.entity_id for item in template.items}
+    return set()
 
 
 def _reveal_end(compiled: CompiledExplainerScene, entity_id: str) -> int:

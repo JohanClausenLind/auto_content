@@ -30,6 +30,7 @@ from content_factory.schemas.explainer import (
     Alignment,
     ChartTemplate,
     CompiledExplainerScene,
+    Entity,
     EvidencePack,
     ExplainerRenderBundle,
     NarrationManifest,
@@ -37,6 +38,10 @@ from content_factory.schemas.explainer import (
     PixelBox,
     ScriptPlan,
     SourceDocumentTemplate,
+    TargetAction,
+    TextItem,
+    TextTemplate,
+    VisualSpec,
     VoiceSpec,
 )
 
@@ -488,6 +493,31 @@ def test_overlap_fails_when_two_visible_boxes_intersect() -> None:
     assert _failed(findings) == {"overlap"}
     (bad,) = [f for f in findings if f.passed is False]
     assert "ent_quote_txt" in bad.evidence and "ent_quote_att" in bad.evidence
+
+
+def test_formula_groups_share_their_typeset_box_without_an_overlap() -> None:
+    pack, script, accepted, _ = _pair("tiny_text")
+    spec, scene = accepted.spec, accepted.spec.scenes[0]
+    ids = ("ent_open_stmt", "ent_open_frm2")
+    template = TextTemplate(
+        template="text",
+        variant="formula",
+        items=(
+            TextItem(entity_id=ids[0], text="t = d \\div v", claim_id="clm_stops_gain"),
+            TextItem(entity_id=ids[1], text="+ s"),
+        ),
+    )
+    reveal = scene.beats[0].model_copy(
+        update={"actions": (TargetAction(action="reveal", targets=ids),)}
+    )
+    formula = scene.model_copy(update={"template": template, "beats": (reveal, *scene.beats[1:])})
+    extra = Entity(entity_id=ids[1], label="stop time", kind="text")
+    changed = spec.model_copy(update={"entities": (*spec.entities, extra), "scenes": (formula,)})
+    bundle = compile_episode(pack, script, VisualSpec.model_validate(changed.model_dump()))
+    first, *rest = bundle.timeline.scenes[0].boxes
+    assert rest and all(b.box == first.box for b in rest)
+    overlap = _by_check(_qc(pack, script, bundle), "overlap")
+    assert [f.passed for f in overlap] == [True], [f.evidence for f in overlap]
 
 
 def test_safe_area_fails_for_a_box_inside_the_canvas_but_outside_the_margin() -> None:

@@ -45,10 +45,10 @@ export function entityBoxIndex(scene: CompiledExplainerScene): ReadonlyMap<strin
 }
 
 /** The line block centred in a compiler box, which carries layout.py's TEXT_PAD (half a unit) around it. */
-export function innerBlock(box: EntityBox, fontPx: number, unit: number, blockPx?: number): PixelBox {
+export function innerBlock(box: EntityBox, fontPx: number, unit: number): PixelBox {
   const b = box.box;
   const pad = unit / 2;
-  const height = Math.min(b.height, blockPx ?? box.lines * lineHeightPx(fontPx));
+  const height = Math.min(b.height, box.lines * lineHeightPx(fontPx));
   return { x: b.x + pad, y: b.y + (b.height - height) / 2, width: b.width - 2 * pad, height };
 }
 

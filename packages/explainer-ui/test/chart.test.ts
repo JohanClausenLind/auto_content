@@ -1,7 +1,7 @@
 import type { ChartTemplate, EvidenceDataset } from "@content-factory/content-schema-ts";
 import { describe, expect, it } from "vitest";
 
-import { categorySlot, cellMatches, chartCategories, filterMask, formatValue, lineSegments, seriesPolyline, sortOrder, stackCategory, valueDomain, valueLabelSide } from "../src/templates/chart";
+import { categorySlot, cellMatches, chartCategories, endLabelAt, filterMask, formatValue, lineSegments, seriesPolyline, sortOrder, stackCategory, valueDomain } from "../src/templates/chart";
 
 const WIND = "ent_wind0001";
 const SOLAR = "ent_solar001";
@@ -122,11 +122,22 @@ describe("chart helpers", () => {
     expect(categorySlot(0, order, null, 1, 0).position).toBe(2);
   });
 
-  it("formats values deterministically with their unit", () => {
-    expect(formatValue(124, "GW")).toBe("124 GW");
-    expect(formatValue(24, "%")).toBe("24%");
+  it("formats values deterministically, a unit after a thin space", () => {
+    expect(formatValue(124, "GW")).toBe("124\u2009GW");
     expect(formatValue(3.14159)).toBe("3.14");
-    expect(formatValue(12.5, "GW")).toBe("12.5 GW");
+    expect(formatValue(12.5, "GW")).toBe("12.5\u2009GW");
+    expect(formatValue(40, "s")).toBe("40\u2009s");
+  });
+
+  it("attaches a percent sign", () => {
+    expect(formatValue(24, "%")).toBe("24%");
+    expect(formatValue(40, "%")).toBe("40%");
+  });
+
+  it("shows a ratio or an x unit as an attached multiplication sign, never the word", () => {
+    expect(formatValue(15.4, "ratio")).toBe("15.4×");
+    expect(formatValue(4, "x")).toBe("4×");
+    expect(formatValue(0, "ratio")).toBe("0×");
   });
 });
 
@@ -171,10 +182,28 @@ describe("line geometry over the compiled plot region", () => {
     expect(seriesPolyline({ ...LINE, series: [wind] }, DATASET, wind, PLOT)).toHaveLength(3);
   });
 
-  it("flips a value label below a mark within one label height of the plot top, inside-left for the last", () => {
-    expect(valueLabelSide(PLOT.y + 35, PLOT, 35, false)).toBe("above");
-    expect(valueLabelSide(PLOT.y + 34, PLOT, 35, false)).toBe("below");
-    expect(valueLabelSide(PLOT.y + 34, PLOT, 35, true)).toBe("left");
-    expect(valueLabelSide(PLOT.y, PLOT, 35, true)).toBe("left");
+  it("sets an end label right of the last point, its digits centred on it", () => {
+    const point = { x: PLOT.x + PLOT.width - 120, y: PLOT.y + 400 };
+    expect(endLabelAt(point, 80, 28, 12, PLOT)).toEqual({ x: point.x + 12, y: point.y + 0.35 * 28, anchor: "start" });
+  });
+
+  it("flips an end label left of the point, above a line arriving from below", () => {
+    const point = { x: PLOT.x + PLOT.width - 60, y: PLOT.y + 400 };
+    const from = { x: point.x - 150, y: point.y + 5 };
+    expect(endLabelAt(point, 80, 28, 12, PLOT, from)).toEqual({ x: point.x - 12, y: point.y - 12, anchor: "end" });
+  });
+
+  it("flips an end label below the point when its line arrives from above or the plot top is too close", () => {
+    const point = { x: PLOT.x + PLOT.width - 60, y: PLOT.y + 400 };
+    const below = point.y + 12 + 0.75 * 28;
+    expect(endLabelAt(point, 80, 28, 12, PLOT, { x: point.x - 150, y: point.y - 5 }).y).toBe(below);
+    const nearTop = { x: point.x, y: PLOT.y + 10 };
+    expect(endLabelAt(nearTop, 80, 28, 12, PLOT, { x: point.x - 150, y: nearTop.y + 5 }).y).toBe(nearTop.y + 12 + 0.75 * 28);
+  });
+
+  it("keeps an end label between the plot's top and bottom edges", () => {
+    const x = PLOT.x + 100;
+    expect(endLabelAt({ x, y: PLOT.y }, 80, 28, 12, PLOT).y).toBe(PLOT.y + 0.75 * 28);
+    expect(endLabelAt({ x, y: PLOT.y + PLOT.height }, 80, 28, 12, PLOT).y).toBe(PLOT.y + PLOT.height);
   });
 });

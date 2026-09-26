@@ -84,6 +84,12 @@ supported templates named; a `capability_request` is the planner's way to ask fo
 
 ## Working examples
 
+- `episodes/amdahl/` — 8.6 min episode: stacked bars with progressive filters, a line
+  chart, a diagram, a formula, lists, big numbers and five source-document scenes.
+- `episodes/latency/` — 2.9 min: source documents from three captures, a two-node
+  diagram, stacked bars, a formula.
+- `episodes/gears/` — 2.8 min: three bar charts from one article's table, five source
+  scenes.
 - `fixtures/explainer/amdahl/` — stacked bar chart, big number, statement (Gate B1).
 - `fixtures/explainer/sixty/` — statement, big number, diagram, bar, line, list, formula
   (Gate C4).

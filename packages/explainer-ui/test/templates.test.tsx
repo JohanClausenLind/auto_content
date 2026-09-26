@@ -6,9 +6,10 @@ import { describe, expect, it } from "vitest";
 
 import { SceneEnvContext, buildSceneEnv } from "../src/context";
 import { regionOf } from "../src/geometry";
+import { DEEMPHASIS_ALPHA, tokenHex } from "../src/palette";
 import { resolveSceneState } from "../src/state";
 import { DiagramTemplate } from "../src/templates/DiagramTemplate";
-import { TextTemplate } from "../src/templates/TextTemplate";
+import { TextTemplate, formulaLatex } from "../src/templates/TextTemplate";
 import { lineHeightPx } from "../src/text";
 import { TOKENS } from "../src/tokens.gen";
 
@@ -68,5 +69,46 @@ describe("TextTemplate", () => {
       const block = Math.min(b.height, box.lines * lineHeightPx(box.font_px));
       expect(html).toContain(rect(b.x + pad - content.x, b.y + (b.height - block) / 2 - content.y, b.width - 2 * pad, block));
     }
+  });
+});
+
+describe("formula", () => {
+  const [lhs, rhs] = ["ent_num00001", "ent_numlbl01"];
+  const box = { x: 700, y: 446, width: 520, height: 188 };
+
+  function formulaScene(): { compiled: CompiledExplainerScene; scene: Scene; template: TextSpec } {
+    const base = sceneNamed("scn_num00001");
+    const template: TextSpec = { template: "text", variant: "formula", items: [{ entity_id: lhs, text: "S = 1 \\div", claim_id: null }, { entity_id: rhs, text: "\\tfrac{p}{N}", claim_id: null }] };
+    const [reveal] = base.compiled.actions;
+    if (!reveal) throw new Error("scn_num00001 has no reveal");
+    const actions = [
+      { ...reveal, index: 0, targets: [lhs, rhs] },
+      { ...reveal, index: 1, action: "highlight" as const, targets: [rhs] },
+    ];
+    const compiled: CompiledExplainerScene = { ...base.compiled, actions, boxes: [lhs, rhs].map((entity_id) => ({ entity_id, box, font_px: 72, lines: 1, text: null })) };
+    return { compiled, scene: { ...base.scene, template }, template };
+  }
+
+  it("wraps each group in its own class, a thin space between groups", () => {
+    expect(formulaLatex([{ entity_id: lhs, text: "S =" }, { entity_id: rhs, text: "1" }])).toBe(`\\htmlClass{grp-${lhs}}{S =}\\,\\htmlClass{grp-${rhs}}{1}`);
+  });
+
+  it("typesets the whole formula once, centred in the shared compiled box", () => {
+    const { compiled, scene, template } = formulaScene();
+    const state = resolveSceneState(compiled, scene, compiled.duration_frames - 1, bundle.timeline.fps);
+    const html = markup(<TextTemplate compiled={compiled} scene={scene} template={template} state={state} />);
+    expect(html.match(/class="katex-display"/g)).toHaveLength(1);
+    expect(html).toContain(`${rect(box.x, box.y, box.width, box.height)};display:flex;align-items:center;justify-content:center;white-space:nowrap`);
+    expect(html).toContain(`enclosing grp-${lhs}`);
+    expect(html).toContain(`enclosing grp-${rhs}`);
+  });
+
+  it("styles each group per frame: the highlighted one in emphasis ink, the other dimmed", () => {
+    const { compiled, scene, template } = formulaScene();
+    const state = resolveSceneState(compiled, scene, compiled.duration_frames - 1, bundle.timeline.fps);
+    const html = markup(<TextTemplate compiled={compiled} scene={scene} template={template} state={state} />);
+    const scope = `.formula-${compiled.scene_id}`;
+    expect(html).toContain(`${scope} .grp-${rhs}{opacity:1;color:${tokenHex("state.emphasis")}}`);
+    expect(html).toContain(`${scope} .grp-${lhs}{opacity:${DEEMPHASIS_ALPHA};color:${tokenHex("ui.ink.primary")}}`);
   });
 });

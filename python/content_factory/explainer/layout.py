@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -46,8 +47,14 @@ NODE_PADDING = 24
 SWATCH = 16
 CHIP_PADDING = 12
 MAX_SHORT_LABEL = 40
-# KaTeX metrics are not in the advance tables; a group is estimated at 0.62 em per character.
+# KaTeX metrics are not in the advance tables: a drawn character is estimated at 0.62 em, an
+# operator adds a thick space (0.278 em) each side, and katex.css sets math at 1.21 em.
 FORMULA_EM_PER_CHAR = 0.62
+FORMULA_OP_PAD_EM = 2 * 0.278
+KATEX_EM = 1.21
+# The renderer typesets the groups as one formula, a thin space between them (TextTemplate.tsx).
+FORMULA_JOIN = r"\,"
+STATEMENT_WEIGHT = 500
 NODE_LABEL_WEIGHT = 600
 # The quotation card's chrome around its text (TextTemplate.tsx draws the same card): a UNIT
 # accent bar plus 5 UNIT padding on the left, 5 UNIT on the right, 4 UNIT above and below.
@@ -58,6 +65,20 @@ NO_INSET = (0, 0, 0)
 # Ink margin on every side of a text box, so a codec halo under a descender stays inside it; text
 # is fitted to the inner width and the renderer centres the line block in the box.
 TEXT_PAD = UNIT // 2
+_TEX_TOKEN = re.compile(r"\\[A-Za-z]+|\\.|[^\\]", re.DOTALL)
+_TEX_TEXT = frozenset({r"\text", r"\textrm", r"\textbf", r"\textit", r"\mbox"})
+_TEX_SPACE_EM = {r"\,": 0.167, r"\:": 0.222, r"\>": 0.222, r"\;": 0.278, "\\ ": 0.333}
+_TEX_SPACE_EM |= {"~": 0.333, r"\quad": 1.0, r"\qquad": 2.0}
+_TEX_SILENT = frozenset(
+    {"^", "_", r"\!", r"\frac", r"\tfrac", r"\dfrac", r"\left", r"\right", r"\displaystyle"}
+    | {r"\big", r"\Big", r"\bigg", r"\Bigg", r"\bigl", r"\bigr", r"\Bigl", r"\Bigr"}
+    | {r"\mathrm", r"\mathbf", r"\mathit", r"\mathsf", r"\operatorname"}
+)
+_TEX_OPS = frozenset(
+    {"+", "-", "=", "<", ">", r"\div", r"\times", r"\cdot", r"\pm", r"\mp", r"\approx"}
+    | {r"\le", r"\leq", r"\ge", r"\geq", r"\ne", r"\neq", r"\equiv", r"\sim", r"\propto"}
+    | {r"\to", r"\rightarrow", r"\Rightarrow", r"\sum", r"\prod", r"\int"}
+)
 
 
 @dataclass(frozen=True)
@@ -84,6 +105,31 @@ def role_px(role: Role) -> int:
 
 def line_px(role: Role) -> int:
     return math.ceil(role_px(role) * LINE_HEIGHT)
+
+
+def formula_width_px(latex: str, font_px: int) -> int:
+    """KaTeX's width for `latex` at `font_px`, estimated; markup that draws nothing counts zero."""
+    em = 0.0
+    depth, text_depth, opening_text = 0, -1, False
+    for piece in _TEX_TOKEN.findall(latex):
+        if piece == "{":
+            depth += 1
+            if opening_text:
+                text_depth, opening_text = depth, False
+        elif piece == "}":
+            text_depth = -1 if depth == text_depth else text_depth
+            depth -= 1
+        elif piece in _TEX_TEXT:
+            opening_text = True
+        elif piece in _TEX_SPACE_EM:
+            em += _TEX_SPACE_EM[piece]
+        elif piece.isspace():
+            # Math mode drops source spaces; inside \text{} they are drawn.
+            em += FORMULA_EM_PER_CHAR if text_depth >= 0 else 0.0
+        elif piece not in _TEX_SILENT:
+            pad = FORMULA_OP_PAD_EM if piece in _TEX_OPS and text_depth < 0 else 0.0
+            em += FORMULA_EM_PER_CHAR + pad
+    return math.ceil(em * KATEX_EM * font_px)
 
 
 def synthetic_id(prefix: str, record_id: str) -> str:
@@ -180,6 +226,9 @@ class _Placer:
         self.issues: list[ContractIssue] = []
 
     def text(self, template: TextTemplate) -> None:
+        if template.variant == "formula":
+            self._formula(template)
+            return
         items = template.items
         card = template.variant == "quotation_card"
         inset = (CARD_INSET_LEFT, CARD_INSET_RIGHT, CARD_INSET_Y) if card else NO_INSET
@@ -187,19 +236,11 @@ class _Placer:
         rows: list[tuple[str, _Placed | None, Role, FontFamily, int]] = []
         for k, item in enumerate(items):
             role, family, weight, max_lines = self._text_role(template.variant, k, len(items))
-            if template.variant == "formula":
-                est = math.ceil(len(item.text) * FORMULA_EM_PER_CHAR * role_px("body"))
-                placed = _Placed(item.text, (item.text,), est)
-                self.texts[item.entity_id] = item.text
-            else:
-                placed = self._place(
-                    item.entity_id, (item.text,), width, max_lines, role, family, weight
-                )
+            placed = self._place(
+                item.entity_id, (item.text,), width, max_lines, role, family, weight
+            )
             rows.append((item.entity_id, placed, role, family, weight))
-        if template.variant == "formula":
-            self._formula_row(rows)
-        else:
-            self._stack(rows, UNIT if template.variant == "list" else 2 * UNIT, inset)
+        self._stack(rows, UNIT if template.variant == "list" else 2 * UNIT, inset)
 
     def chart(self, template: ChartTemplate) -> None:
         legend = _chart_regions(self.area)
@@ -291,9 +332,7 @@ class _Placer:
             if k == count - 1:
                 return "caption", "Inter", 400, 1
             return "body", "Inter", 400, 2
-        if variant == "formula":
-            return "body", "Inter", 400, 1
-        return "body", "Inter", 400, 2
+        return "h1", "Inter", STATEMENT_WEIGHT, 3
 
     def _stack(
         self,
@@ -317,22 +356,23 @@ class _Placer:
                 self._box(entity_id, x, y, width, height, role, len(placed.lines))
             y += height + gap
 
-    def _formula_row(self, rows: list[tuple[str, _Placed | None, Role, FontFamily, int]]) -> None:
-        height = 2 * line_px("body") + 2 * TEXT_PAD
-        widths = [p.width_px + 2 * TEXT_PAD if p else 0 for _, p, _, _, _ in rows]
-        total = sum(widths) + 2 * UNIT * (len(rows) - 1)
-        if total > self.area.width:
-            widest = max(rows, key=lambda r: r[1].width_px if r[1] else 0)
-            assert widest[1] is not None
-            self._issue(
-                widest[0], widest[1].text, widest[1].width_px, self.area.width, 1, 1, "body"
-            )
+    def _formula(self, template: TextTemplate) -> None:
+        """One centred box for the whole formula at display size; every group shares it."""
+        latex = FORMULA_JOIN.join(item.text for item in template.items)
+        estimate = formula_width_px(latex, role_px("display"))
+        available = self.area.width - 2 * TEXT_PAD
+        first = template.items[0].entity_id
+        if estimate > available:
+            self._issue(first, latex, estimate, available, 1, 1, "display")
             return
-        x = self.area.x + (self.area.width - total) // 2
+        # Three display lines: a display-style fraction inks about 2.2 KaTeX em (191 px on the
+        # sixty fixture), past the 180 px of two.
+        width, height = estimate + 2 * TEXT_PAD, 3 * line_px("display") + 2 * TEXT_PAD
+        x = self.area.x + (self.area.width - width) // 2
         y = self.area.y + (self.area.height - height) // 2
-        for (entity_id, _, _, _, _), width in zip(rows, widths, strict=True):
-            self._box(entity_id, x, y, width, height, "body", 1)
-            x += width + 2 * UNIT
+        for item in template.items:
+            self.texts[item.entity_id] = item.text
+            self._box(item.entity_id, x, y, width, height, "display", 1)
 
     def _legend(self, template: ChartTemplate, legend: PixelBox) -> None:
         n = len(template.series)

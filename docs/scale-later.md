@@ -27,3 +27,17 @@ codebase deliberately contains **none** of the following:
 What exists instead, and why it is enough for one operator: budgets + cost ledger
 (estimate → reserve → settle against operator caps), local auth with passkeys/TOTP, Tailscale
 access, a single MCP agent surface, and one workspace/brand hierarchy.
+
+## Explainer lane: deferred until episodes are published
+
+Built only when a published episode shows the need; none of these exists as a stub.
+
+| Deferred | What would trigger it |
+|---|---|
+| Manim (glyph-level equation morphing) | A storyboard where the explanation is the transformation of one equation into another, which KaTeX group reveals and highlights cannot show. It would enter as a cached offline asset behind the common asset interface, never as a frame renderer. |
+| Blender | A scene that needs lit, physically shaped 3D objects beyond what Three.js inside Remotion can draw. |
+| MapLibre / deck.gl | A map that must show tiled basemap detail or tens of thousands of points; until then D3-geo projects into the shared SVG renderer with no tile licensing or attribution plumbing. |
+| Motion Canvas | A template Remotion cannot render as a pure function of the frame. |
+| Analytics import | Published episodes with retention and click-through data worth feeding back into topic ranking and pacing. |
+| Sponsor tooling | A signed sponsor; `docs/SPONSORS.md` already fixes the disclosure and isolation rules the script and spec enforce. |
+| Multi-episode series structure | A second episode that depends on an earlier one's setup, so continuity of entities and terms has to span episodes. |

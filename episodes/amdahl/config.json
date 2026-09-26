@@ -1,0 +1,33 @@
+{
+  "episode_id": "ep_amdahl_2026",
+  "pack": "episodes/amdahl/pack.json",
+  "script": "episodes/amdahl/script.json",
+  "spec": "episodes/amdahl/spec.json",
+  "captures": [
+    {
+      "manifest": "episodes/amdahl/captures/cap_22ceb8a6e963.json",
+      "wacz": "output/explainer/sources/amdahl/capture-22ceb8a6e963.wacz",
+      "url": "https://en.wikipedia.org/wiki/Amdahl%27s_law",
+      "tiles_dir": "output/explainer/sources/amdahl/tiles-22ceb8a6e963"
+    },
+    {
+      "manifest": "episodes/amdahl/captures/cap_e4e7ffb5974e.json",
+      "wacz": "output/explainer/sources/gustafson/capture-e4e7ffb5974e.wacz",
+      "url": "https://en.wikipedia.org/wiki/Gustafson%27s_law",
+      "tiles_dir": "output/explainer/sources/gustafson/tiles-e4e7ffb5974e"
+    }
+  ],
+  "voice": {
+    "kind": "designed",
+    "voice_id": "channel-narrator-v1",
+    "model_id": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3"
+  },
+  "synth": "qwen3-tts-voicedesign",
+  "music_id": "data_calm_pulse",
+  "sfx": [],
+  "reviewer": {
+    "enabled": false
+  },
+  "seed": 7
+}

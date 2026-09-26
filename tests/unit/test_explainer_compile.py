@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from PIL import Image, ImageDraw
@@ -21,9 +22,11 @@ from content_factory.explainer.fonts import (
     wrap_text,
 )
 from content_factory.explainer.layout import (
+    FORMULA_JOIN,
     TEXT_PAD,
     LayoutChoice,
     boxes_for,
+    formula_width_px,
     line_px,
     region,
     role_px,
@@ -485,7 +488,94 @@ def test_text_is_never_shrunk_below_its_role_size() -> None:
     with pytest.raises(EpisodeInvalidError) as caught:
         boxes_for(scene, spec)
     issue = _only_issue(caught.value)
-    assert issue.kind == "layout" and "lines needed, 2 allowed" in issue.message
+    assert issue.kind == "layout" and "lines needed, 3 allowed" in issue.message
+    assert f"at h1 size ({role_px('h1')} px)" in issue.message
+
+
+def _items_scene(
+    variant: Literal["statement", "list", "formula"], texts: tuple[str, ...]
+) -> tuple[VisualSpec, Scene]:
+    ids = tuple(f"ent_item000{k}" for k in range(len(texts)))
+    template = TextTemplate(
+        template="text",
+        variant=variant,
+        items=tuple(TextItem(entity_id=i, text=t) for i, t in zip(ids, texts, strict=True)),
+    )
+    beats = (_beat("bt_rev00001", 0, _reveal(*ids)),)
+    scene = Scene(
+        scene_id="scn_items001",
+        section="synthesis",
+        purpose="Say it",
+        template=template,
+        beats=beats,
+    )
+    entities = tuple(Entity(entity_id=i, label="Item", kind="text") for i in ids)
+    return _spec(entities, (scene,)), scene
+
+
+def test_a_statement_is_set_at_h1_left_aligned_and_vertically_centred() -> None:
+    spec, scene = _items_scene("statement", ("Twice the cores. Not half the wait.",))
+    (box,) = boxes_for(scene, spec).boxes
+    content = region(scene, "content")
+    assert (box.font_px, box.lines) == (role_px("h1"), 1)
+    assert box.box.height == line_px("h1") + 2 * TEXT_PAD
+    assert (box.box.x, box.box.width) == (content.x, content.width)
+    assert abs(2 * box.box.y + box.box.height - (2 * content.y + content.height)) <= 1
+
+
+def test_a_long_statement_wraps_to_three_h1_lines() -> None:
+    text = " ".join(["Some work can only happen one step at a time"] * 3)
+    spec, scene = _items_scene("statement", (text,))
+    (box,) = boxes_for(scene, spec).boxes
+    assert (box.font_px, box.lines) == (role_px("h1"), 3)
+    assert box.box.height == 3 * line_px("h1") + 2 * TEXT_PAD
+
+
+def test_list_items_stay_at_body_size_in_a_vertically_centred_block() -> None:
+    spec, scene = _items_scene("list", ("Four cores: 40 seconds", "Eight cores: 30 seconds"))
+    boxes = boxes_for(scene, spec).boxes
+    content = region(scene, "content")
+    assert {b.font_px for b in boxes} == {role_px("body")}
+    top, bottom = boxes[0].box.y, boxes[-1].box.y + boxes[-1].box.height
+    assert abs((top + bottom) - (2 * content.y + content.height)) <= 1
+
+
+def test_formula_groups_share_one_display_box_centred_in_content() -> None:
+    texts = ("S = 1 \\div \\big[", "(1-p)", "+\\ \\tfrac{p}{N}", "\\big]")
+    spec, scene = _items_scene("formula", texts)
+    placed = boxes_for(scene, spec)
+    content = region(scene, "content")
+    assert [b.entity_id for b in placed.boxes] == [f"ent_item000{k}" for k in range(4)]
+    box = placed.boxes[0]
+    assert all(b.box == box.box for b in placed.boxes)
+    assert (box.font_px, box.lines) == (role_px("display"), 1)
+    estimate = formula_width_px(FORMULA_JOIN.join(texts), role_px("display"))
+    assert box.box.width == estimate + 2 * TEXT_PAD
+    assert box.box.height == 3 * line_px("display") + 2 * TEXT_PAD
+    assert abs(2 * box.box.x + box.box.width - (2 * content.x + content.width)) <= 1
+    assert abs(2 * box.box.y + box.box.height - (2 * content.y + content.height)) <= 1
+    assert [placed.texts[b.entity_id] for b in placed.boxes] == list(texts)
+
+
+def test_a_formula_wider_than_the_content_raises_a_layout_issue_naming_it() -> None:
+    texts = ("a + b + c + d + e + f + g + h", "+ i + j + k + l + m + n + o + p + q + r")
+    spec, scene = _items_scene("formula", texts)
+    with pytest.raises(EpisodeInvalidError) as caught:
+        boxes_for(scene, spec)
+    issue = _only_issue(caught.value)
+    assert issue.kind == "layout" and "ent_item0000" in issue.message
+    assert repr(FORMULA_JOIN.join(texts)) in issue.message
+    assert f"at display size ({role_px('display')} px)" in issue.message
+
+
+def test_formula_estimate_counts_only_what_katex_draws() -> None:
+    px = role_px("display")
+    assert formula_width_px("\\frac{p}{N}", px) == formula_width_px("pN", px)
+    assert formula_width_px("x^{2}", px) == formula_width_px("x2", px)
+    assert formula_width_px("a b", px) == formula_width_px("ab", px)
+    assert formula_width_px("\\text{a b}", px) == formula_width_px("abc", px)
+    assert formula_width_px("a+b", px) > formula_width_px("abc", px)
+    assert formula_width_px("a\\,b", px) > formula_width_px("ab", px)
 
 
 # --- colours ---
@@ -665,7 +755,7 @@ def test_text_boxes_carry_the_ink_pad_around_the_line_block() -> None:
     boxes = {b.entity_id: b for s in bundle.timeline.scenes for b in s.boxes}
     statement, number = boxes["ent_open_txt"], boxes["ent_big_value"]
     content = region(spec.scenes[0], "content")
-    assert statement.box.height == statement.lines * line_px("body") + 2 * TEXT_PAD
+    assert statement.box.height == statement.lines * line_px("h1") + 2 * TEXT_PAD
     assert (statement.box.x, statement.box.width) == (content.x, content.width)
     assert number.box.height == line_px("display") + 2 * TEXT_PAD
     chart = next(s.template for s in spec.scenes if isinstance(s.template, ChartTemplate))

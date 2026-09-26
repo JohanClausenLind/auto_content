@@ -13,6 +13,7 @@ import { TOKENS } from "../tokens.gen";
 import {
   categorySlot,
   chartCategories,
+  endLabelAt,
   filterMask,
   formatValue,
   lineSegments,
@@ -23,10 +24,8 @@ import {
   stackCategory,
   stackedTotals,
   valueDomain,
-  valueLabelSide,
   valueScale,
   type ChartCategory,
-  type LabelSide,
   type Slot,
   type ValueDomain,
 } from "./chart";
@@ -68,8 +67,6 @@ interface ChartGeometry {
   xLabelY: number;
   ink: { primary: string; secondary: string; muted: string; emphasis: string; surface2: string; strokeSoft: string };
 }
-
-const N_LABEL_MAX = 8;
 
 function chartTitle(dataset: EvidenceDataset, template: ChartSpec): string {
   if (template.title !== "") return template.title;
@@ -114,11 +111,10 @@ function seriesIndex(template: ChartSpec, entityId: string): number {
   return template.series.findIndex((s) => s.entity_id === entityId);
 }
 
-/** Baseline and anchor of a label `gap` px off a mark at (x, y) on `side`; 0.75 em is Inter's cap height. */
-function labelAt(g: ChartGeometry, x: number, y: number, side: LabelSide, gap: number): { x: number; y: number; anchor: Anchor } {
-  if (side === "left") return { x: x - gap, y: y + 0.35 * g.labelPx, anchor: "end" };
-  if (side === "below") return { x, y: y + gap + 0.75 * g.labelPx, anchor: "middle" };
-  return { x, y: y - gap, anchor: "middle" };
+/** The end label at a series' last present point `p`, `previous` being the point its line arrives from. */
+function EndValueLabel({ g, p, previous, text, opacity }: { g: ChartGeometry; p: Pt; previous: Pt | null; text: string; opacity: number }): ReactElement {
+  const at = endLabelAt(p, measureText(text, { weight: 600, fontSize: g.labelPx }), g.labelPx, 1.5 * g.unit, g.frame, previous);
+  return <ValueLabel g={g} x={at.x} y={at.y} anchor={at.anchor} text={text} opacity={opacity} />;
 }
 
 function ValueLabel({ g, x, y, text, opacity, anchor = "middle" }: { g: ChartGeometry; x: number; y: number; text: string; opacity: number; anchor?: Anchor }): ReactElement {
@@ -215,7 +211,6 @@ function Lines({ g, filled, clipPrefix, layer }: { g: ChartGeometry; filled: boo
     .y1((d) => d.y);
   const strokePx = TOKENS.lines.data_stroke_px * g.scale;
   const unit = g.template.y.unit;
-  const labelH = lineHeightPx(g.labelPx);
   return (
     <g>
       {g.template.series.map((binding, si) => {
@@ -226,19 +221,17 @@ function Lines({ g, filled, clipPrefix, layer }: { g: ChartGeometry; filled: boo
           const slot = g.slots[i];
           return v === null || v === undefined || !slot ? null : { x: g.pointX(slot.position), y: g.y(v), value: v, alpha: slot.alpha };
         });
-        // The reveal clip grows from the left; a label fades in as the clip's right edge passes its mark.
+        // The reveal clip grows from the left; the end label fades in as the clip's right edge passes its mark.
         const revealX = g.frame.x - g.unit;
         const revealW = (g.frame.width + 2 * g.unit) * es.visible;
         if (layer === "labels") {
-          if (g.categories.length > N_LABEL_MAX) return null;
           const last = lastPresent(g, si);
+          const p = points[last];
+          if (!p) return null;
+          const previous = points.slice(0, last).filter((q) => q !== null).pop() ?? null;
           return (
             <g key={binding.entity_id} opacity={opacity}>
-              {points.map((p, j) => {
-                if (p === null) return null;
-                const at = labelAt(g, p.x, p.y, valueLabelSide(p.y, g.frame, labelH, j === last), 1.5 * g.unit);
-                return <ValueLabel key={j} g={g} x={at.x} y={at.y} anchor={at.anchor} text={formatValue(p.value, unit)} opacity={p.alpha * clamp01((revealX + revealW - p.x) / g.unit)} />;
-              })}
+              <EndValueLabel g={g} p={p} previous={previous} text={formatValue(p.value, unit)} opacity={p.alpha * clamp01((revealX + revealW - p.x) / g.unit)} />
             </g>
           );
         }
@@ -310,8 +303,7 @@ function Slope({ g, clipPrefix, layer }: { g: ChartGeometry; clipPrefix: string;
           const label = env.entities.get(binding.entity_id);
           return (
             <g key={binding.entity_id} opacity={opacity}>
-              <ValueLabel g={g} x={xl - 1.5 * g.unit} y={g.y(a) + g.labelPx * 0.35} text={formatValue(a, unit)} opacity={clamp01((revealX + revealW - xl) / g.unit)} anchor="end" />
-              <ValueLabel g={g} x={xr + 1.5 * g.unit} y={g.y(b) + g.labelPx * 0.35} text={`${formatValue(b, unit)}  ${label?.short_label || label?.label || ""}`} opacity={clamp01((revealX + revealW - xr) / g.unit)} anchor="start" />
+              <EndValueLabel g={g} p={{ x: xr, y: g.y(b) }} previous={{ x: xl, y: g.y(a) }} text={`${formatValue(b, unit)}  ${label?.short_label || label?.label || ""}`} opacity={clamp01((revealX + revealW - xr) / g.unit)} />
             </g>
           );
         }
@@ -416,9 +408,9 @@ function Annotations({ g }: { g: ChartGeometry }): ReactElement {
   const padX = g.unit;
   const labelH = lineHeightPx(g.labelPx);
   const chipH = labelH + g.unit;
-  // Marks that carry a value label get the chip just above that label: label + gaps stay under the
-  // 48 px label distance (35 + 4 + 8 at 1080p), and the leader no longer crosses the value.
-  const overValueLabel = g.template.chart_kind !== "scatter";
+  // Bars carry their value label above the mark, so the chip sits just above that label: label + gaps
+  // stay under the 48 px label distance (35 + 4 + 8 at 1080p). Line end labels sit beside the point.
+  const overValueLabel = g.template.chart_kind === "bar" || g.template.chart_kind === "stacked_bar";
   const anchorGap = overValueLabel ? labelH + g.unit / 2 : g.unit / 2;
   const gap = overValueLabel ? g.unit : Math.min(TOKENS.layout.label_distance_max_px * g.scale, 3 * g.unit);
   return (

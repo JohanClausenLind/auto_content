@@ -134,12 +134,29 @@ export function seriesPolyline(template: ChartTemplate, dataset: EvidenceDataset
   return out;
 }
 
-export type LabelSide = "above" | "below" | "left";
+export interface EndLabel {
+  x: number;
+  /** Baseline; beside the point it sits 0.35 em below it, centring Inter's digits on the point. */
+  y: number;
+  anchor: "start" | "end";
+}
 
-/** Above the mark unless that leaves the plot top; then below it, or inside-left for the last mark. */
-export function valueLabelSide(markY: number, plot: PixelBox, labelHeightPx: number, isLast: boolean): LabelSide {
-  if (markY - plot.y >= labelHeightPx) return "above";
-  return isLast ? "left" : "below";
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** A series' end label: right of its last point in the plot, else left of it and off the line arriving there. */
+export function endLabelAt(point: Point, labelWidthPx: number, labelPx: number, gapPx: number, plot: PixelBox, previous: Point | null = null): EndLabel {
+  // 0.75 em is Inter's cap height: a baseline in [top, bottom] keeps the digits inside the plot.
+  const top = plot.y + 0.75 * labelPx;
+  const bottom = plot.y + plot.height;
+  const clampY = (y: number): number => Math.min(bottom, Math.max(top, y));
+  if (point.x + gapPx + labelWidthPx <= plot.x + plot.width) return { x: point.x + gapPx, y: clampY(point.y + 0.35 * labelPx), anchor: "start" };
+  const above = point.y - gapPx;
+  const below = point.y + gapPx + 0.75 * labelPx;
+  const fromAbove = previous !== null && previous.y < point.y;
+  return { x: point.x - gapPx, y: clampY((fromAbove || above < top) && below <= bottom ? below : above), anchor: "end" };
 }
 
 /** Sum of the present values per category: the height a stacked bar reaches. */
@@ -236,13 +253,14 @@ export function lineSegments<P>(points: readonly (P | null)[]): P[][] {
   return out;
 }
 
-/** Deterministic value label: up to two decimals, trimmed, unit attached or spaced. */
+/** Deterministic value label: up to two decimals, trimmed; a ratio reads "×", a percent attaches, the rest take a thin space. */
 export function formatValue(value: number, unit = ""): string {
   const abs = Math.abs(value);
   const decimals = abs >= 100 ? 0 : abs >= 10 ? 1 : 2;
   const numeral = toDecimal(value, decimals, true);
   if (unit === "") return numeral;
-  return /^[%‰°]/.test(unit) ? `${numeral}${unit}` : `${numeral} ${unit}`;
+  if (unit === "ratio" || unit === "x") return `${numeral}×`;
+  return /^[%‰°]/.test(unit) ? `${numeral}${unit}` : `${numeral}\u2009${unit}`;
 }
 
 export function polylineLength(points: readonly { x: number; y: number }[]): number {
