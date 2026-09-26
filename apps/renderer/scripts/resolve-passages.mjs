@@ -248,8 +248,8 @@ try {
   } finally {
     await browser.close();
   }
-  process.stdout.write(`${JSON.stringify(output)}\n`);
-  process.exit(output.errors.length > 0 ? 2 : 0);
+  // Exit from the write callback: process.exit right after a pipe write can truncate the JSON.
+  process.stdout.write(`${JSON.stringify(output)}\n`, () => process.exit(output.errors.length > 0 ? 2 : 0));
 } catch (err) {
   fail(err);
 }

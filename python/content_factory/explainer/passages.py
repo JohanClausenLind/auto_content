@@ -156,6 +156,8 @@ def _run_resolver(
     if node is None:
         msg = "node is not on PATH"
         raise PassageResolveError(msg)
+    # Absolute: the resolver runs with its own cwd, so a relative path would land beside it.
+    tiles_dir = tiles_dir.resolve()
     tiles_dir.mkdir(parents=True, exist_ok=True)
     requests = [{"text": q.text, "occurrence_index": q.occurrence_index} for q in quotes]
     with tempfile.TemporaryDirectory(prefix="resolve-") as tmp:

@@ -6,6 +6,7 @@ import argparse
 import json
 import platform
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -23,6 +24,8 @@ REPO = Path(__file__).resolve().parents[3]
 PASSAGES_PATH = REPO / "fixtures" / "explainer" / "tts_bench" / "passages.json"
 QWEN_SKILL = REPO / "skills" / "audio" / "qwen3tts"
 CHATTERBOX_SKILL = REPO / "skills" / "audio" / "chatterbox"
+KOKORO_SKILL = REPO / "skills" / "audio" / "kokoro"
+KOKORO_VOICE = "af_heart"
 ASR_MODEL, ASR_COMPUTE = "base.en", "int8"
 ASR_TIMEOUT_S = 1800
 SYNTH_TIMEOUT_S = 3600
@@ -180,6 +183,21 @@ def _chatterbox_runner(req: SynthRequest) -> SynthResult:
     )
 
 
+def _kokoro_runner(req: SynthRequest) -> SynthResult:
+    """Kokoro on the CPU; it writes a temp wav, which is moved to the requested path."""
+    cmd = [*_skill_python(KOKORO_SKILL), "--voice", KOKORO_VOICE, "--lang", "en", "--device", "cpu"]
+    out = _run_executor(cmd, stdin=req.text)
+    req.out.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(out["wav"], req.out)
+    return SynthResult(
+        wav=req.out,
+        duration_s=float(out["duration_ms"]) / 1000,
+        sample_rate=int(out["sample_rate"]),
+        synth_s=0.0,
+        mode="preset",
+    )
+
+
 def _speaker_similarity(ref: Path, wav: Path) -> float:
     cmd = [
         "uv",
@@ -236,6 +254,14 @@ CANDIDATES: tuple[Candidate, ...] = (
         commercial_output_allowed=True,
         license_note="MIT code and weights; every output carries the Resemble Perth watermark.",
         runner=_chatterbox_runner,
+    ),
+    Candidate(
+        key="kokoro",
+        label=f"Kokoro 82M ({KOKORO_VOICE}, CPU)",
+        license="Apache-2.0",
+        commercial_output_allowed=True,
+        license_note="Apache-2.0 weights; preset voice; espeak-ng fallback runs as a library.",
+        runner=_kokoro_runner,
     ),
     Candidate(
         key="voxtral-tts",

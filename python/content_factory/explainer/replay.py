@@ -28,6 +28,22 @@ def free_port() -> int:
 
 
 PYWB_CONFIG = "framed_replay: false\nenable_auto_fetch: false\nenable_memento: false\n"
+# pywb's indexer keeps %27 in a key while its lookup decodes it, so re-key with the lookup's rule.
+REKEY_INDEX = """
+import json, sys
+from pywb.utils.canonicalize import canonicalize
+path = sys.argv[1]
+lines = []
+for line in open(path, encoding="utf-8"):
+    key, stamp, record = line.rstrip("\\n").split(" ", 2)
+    url = json.loads(record).get("url", "")
+    try:
+        key = canonicalize(url) if url.startswith("http") else key
+    except Exception:
+        pass
+    lines.append(f"{key} {stamp} {record}")
+open(path, "w", encoding="utf-8").write("\\n".join(sorted(lines)) + "\\n")
+"""
 
 
 class ReplayServer:
@@ -61,6 +77,8 @@ class ReplayServer:
         manager = str(self._pywb_bin / "wb-manager")
         self._run([manager, "init", COLLECTION], root)
         self._run([manager, "add", "--unpack-wacz", COLLECTION, str(self._wacz_path)], root)
+        index = root / "collections" / COLLECTION / "indexes" / "index.cdxj"
+        self._run([str(self._pywb_bin / "python"), "-c", REKEY_INDEX, str(index)], root)
         # Framed replay injects a script that bounces a top-level page into pywb's banner UI.
         (root / "config.yaml").write_text(PYWB_CONFIG, encoding="utf-8")
         self.port = free_port()

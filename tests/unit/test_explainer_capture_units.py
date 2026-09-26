@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import zipfile
 from hashlib import sha256
 from pathlib import Path
@@ -29,6 +30,7 @@ from content_factory.explainer.passages import (
     section_id,
     text_sha256,
 )
+from content_factory.explainer.replay import PYWB_BIN, REKEY_INDEX
 from content_factory.explainer.sources import capture_id
 from content_factory.schemas.explainer import PageRect
 
@@ -173,3 +175,12 @@ def test_read_signature_rejects_a_digest_that_does_not_cover_the_package(tmp_pat
     bad = _wacz(tmp_path / "bad.wacz", {"signature": "AA=="}, hash_override="sha256:" + "0" * 64)
     with pytest.raises(CaptureError, match="does not cover"):
         read_signature(bad)
+
+
+@pytest.mark.skipif(not (PYWB_BIN / "python").exists(), reason="pywb venv not installed")
+def test_rekeyed_index_matches_pywb_lookup_for_percent_encoded_urls(tmp_path: Path) -> None:
+    record = json.dumps({"url": "https://en.wikipedia.org/wiki/Amdahl%27s_law", "status": "200"})
+    index = tmp_path / "index.cdxj"
+    index.write_text(f"org,wikipedia,en)/wiki/amdahl%27s_law 20260926055637 {record}\n")
+    subprocess.run([str(PYWB_BIN / "python"), "-c", REKEY_INDEX, str(index)], check=True)
+    assert index.read_text().startswith("org,wikipedia,en)/wiki/amdahl's_law 20260926055637 ")

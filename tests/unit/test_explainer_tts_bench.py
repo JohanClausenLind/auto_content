@@ -82,6 +82,7 @@ def test_selectable_is_exactly_the_commercial_output_flag() -> None:
         "qwen3-tts-customvoice",
         "qwen3-tts-voicedesign",
         "chatterbox-turbo",
+        "kokoro",
     }
     assert {c.key for c in EXCLUDED} == {"voxtral-tts", "breeze-tts2", "fish-s2-pro"}
     assert all(c.runner is None for c in EXCLUDED)
