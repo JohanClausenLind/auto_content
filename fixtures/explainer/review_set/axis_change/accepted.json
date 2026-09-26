@@ -1,5 +1,5 @@
 {
-  "bundle_id": "bndl_bf4d253b77f25ecd",
+  "bundle_id": "bndl_c059dd4a33aa4600",
   "captures": [],
   "datasets": [
     {
@@ -375,10 +375,10 @@
         "boxes": [
           {
             "box": {
-              "height": 35,
-              "width": 190,
+              "height": 43,
+              "width": 198,
               "x": 96,
-              "y": 980
+              "y": 976
             },
             "entity_id": "ent_dwell_ser",
             "font_px": 28,
@@ -387,10 +387,10 @@
           },
           {
             "box": {
-              "height": 35,
-              "width": 63,
-              "x": 988,
-              "y": 908
+              "height": 43,
+              "width": 71,
+              "x": 984,
+              "y": 904
             },
             "entity_id": "axisx_dwell_quiet",
             "font_px": 28,
@@ -399,10 +399,10 @@
           },
           {
             "box": {
-              "height": 76,
-              "width": 35,
+              "height": 84,
+              "width": 43,
               "x": 96,
-              "y": 474
+              "y": 470
             },
             "entity_id": "axisy_dwell_quiet",
             "font_px": 28,
@@ -503,10 +503,10 @@
         "boxes": [
           {
             "box": {
-              "height": 35,
-              "width": 190,
+              "height": 43,
+              "width": 198,
               "x": 96,
-              "y": 980
+              "y": 976
             },
             "entity_id": "ent_dwell_ser",
             "font_px": 28,
@@ -515,10 +515,10 @@
           },
           {
             "box": {
-              "height": 35,
-              "width": 63,
-              "x": 988,
-              "y": 908
+              "height": 43,
+              "width": 71,
+              "x": 984,
+              "y": 904
             },
             "entity_id": "axisx_dwell_busy0",
             "font_px": 28,
@@ -527,10 +527,10 @@
           },
           {
             "box": {
-              "height": 76,
-              "width": 35,
+              "height": 84,
+              "width": 43,
               "x": 96,
-              "y": 474
+              "y": 470
             },
             "entity_id": "axisy_dwell_busy0",
             "font_px": 28,

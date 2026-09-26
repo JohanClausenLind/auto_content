@@ -1,5 +1,5 @@
 {
-  "bundle_id": "bndl_7fa995093cac2c7d",
+  "bundle_id": "bndl_c83bb8fac65eb69a",
   "captures": [],
   "datasets": [],
   "design_system_version": 1,
@@ -164,10 +164,10 @@
         "boxes": [
           {
             "box": {
-              "height": 43,
-              "width": 1728,
-              "x": 96,
-              "y": 494
+              "height": 51,
+              "width": 1640,
+              "x": 144,
+              "y": 486
             },
             "entity_id": "ent_quote_txt",
             "font_px": 34,
@@ -176,9 +176,9 @@
           },
           {
             "box": {
-              "height": 33,
-              "width": 1728,
-              "x": 96,
+              "height": 41,
+              "width": 1640,
+              "x": 144,
               "y": 553
             },
             "entity_id": "ent_quote_att",

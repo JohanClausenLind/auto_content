@@ -1,5 +1,5 @@
 {
-  "bundle_id": "bndl_f6070274c0ffaa60",
+  "bundle_id": "bndl_a651347556434be5",
   "captures": [],
   "datasets": [],
   "design_system_version": 1,
@@ -148,10 +148,10 @@
         "boxes": [
           {
             "box": {
-              "height": 43,
+              "height": 78,
               "width": 1728,
               "x": 96,
-              "y": 518
+              "y": 501
             },
             "entity_id": "ent_open_stmt",
             "font_px": 18,
