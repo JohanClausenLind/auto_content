@@ -1,0 +1,956 @@
+{
+  "calculations": [
+    {
+      "calc_id": "calc_lat_fiber_speed",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_c_vacuum",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_core_index",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_fiber_speed"
+    },
+    {
+      "calc_id": "calc_lat_fiber_share",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_fiber_speed",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_c_vacuum",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_fiber_share"
+    },
+    {
+      "calc_id": "calc_lat_fib_oneway",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_marea_len",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_fiber_speed",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_fib_oneway"
+    },
+    {
+      "calc_id": "calc_lat_fib_round",
+      "op": "mul",
+      "operands": [
+        {
+          "claim_id": "clm_lat_fib_oneway",
+          "kind": "claim"
+        },
+        {
+          "kind": "constant",
+          "value": {
+            "high": null,
+            "low": null,
+            "magnitude": 2.0,
+            "uncertainty": "exact",
+            "unit": "ratio"
+          }
+        }
+      ],
+      "result_claim_id": "clm_lat_fib_round"
+    },
+    {
+      "calc_id": "calc_lat_vac_oneway",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_marea_len",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_c_vacuum",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_vac_oneway"
+    },
+    {
+      "calc_id": "calc_lat_vac_round",
+      "op": "mul",
+      "operands": [
+        {
+          "claim_id": "clm_lat_vac_oneway",
+          "kind": "claim"
+        },
+        {
+          "kind": "constant",
+          "value": {
+            "high": null,
+            "low": null,
+            "magnitude": 2.0,
+            "uncertainty": "exact",
+            "unit": "ratio"
+          }
+        }
+      ],
+      "result_claim_id": "clm_lat_vac_round"
+    },
+    {
+      "calc_id": "calc_lat_glass_extra",
+      "op": "sub",
+      "operands": [
+        {
+          "claim_id": "clm_lat_fib_round",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_vac_round",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_glass_extra"
+    },
+    {
+      "calc_id": "calc_lat_syd_check",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_syd_dist",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_rule_speed",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_syd_check"
+    },
+    {
+      "calc_id": "calc_lat_syd_fib_one",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_syd_dist",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_fiber_speed",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_syd_fib_one"
+    },
+    {
+      "calc_id": "calc_lat_syd_fib_rt",
+      "op": "mul",
+      "operands": [
+        {
+          "claim_id": "clm_lat_syd_fib_one",
+          "kind": "claim"
+        },
+        {
+          "kind": "constant",
+          "value": {
+            "high": null,
+            "low": null,
+            "magnitude": 2.0,
+            "uncertainty": "exact",
+            "unit": "ratio"
+          }
+        }
+      ],
+      "result_claim_id": "clm_lat_syd_fib_rt"
+    },
+    {
+      "calc_id": "calc_lat_syd_vac_one",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_lat_syd_dist",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_lat_c_vacuum",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_lat_syd_vac_one"
+    }
+  ],
+  "claims": [
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_c_vacuum",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_c_exact"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "c = 299,792,458 m/s",
+      "stable": true,
+      "statement": "The speed of light in vacuum is defined as exactly 299,792,458 m/s.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 299792458.0,
+        "uncertainty": "exact",
+        "unit": "m/s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_core_index",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_core_index"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "Core index ≈ 1.4475",
+      "stable": true,
+      "statement": "A typical telecom fibre core of doped silica has a refractive index around 1.4475.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 1.4475,
+        "uncertainty": "estimate",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_rule_speed",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_rule_thumb"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "A fibre signal travels at around 200,000 km/s as a rule of thumb.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 200000.0,
+        "uncertainty": "estimate",
+        "unit": "km/s"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_syd_dist",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_sydney_nyc"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "Sydney to New York by fibre is a 16,000-kilometre distance in the article's example.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 16000.0,
+        "uncertainty": "exact",
+        "unit": "km"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_syd_delay",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_sydney_nyc"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "The article gives a minimum delay of 80 milliseconds for that call.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 80.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_marea_len",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_marea_len"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "MAREA: 6,605 km",
+      "stable": true,
+      "statement": "MAREA is a 6,605 km transatlantic cable between the United States and Spain.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 6605.0,
+        "uncertainty": "exact",
+        "unit": "km"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_marea_ends",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_lat_marea_ends"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "MAREA connects Virginia Beach in the United States with Sopelana, near Bilbao, Spain.",
+      "time_basis": "",
+      "value": null
+    },
+    {
+      "calculation_id": "calc_lat_fiber_speed",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_fiber_speed",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "Speed in fibre",
+      "stable": true,
+      "statement": "Light in that fibre travels at c divided by the core index.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 207110.50639032814,
+        "uncertainty": "exact",
+        "unit": "km/s"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_fiber_share",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_fiber_share",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "Light in the fibre moves at this share of its vacuum speed.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 69.08462867012089,
+        "uncertainty": "exact",
+        "unit": "%"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_fib_oneway",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_fib_oneway",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "One way in fibre",
+      "stable": true,
+      "statement": "Crossing MAREA's 6,605 km in fibre takes this long, one way.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 31.89118753614542,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_fib_round",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_fib_round",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "Round trip in fibre",
+      "stable": true,
+      "statement": "The fastest possible round trip over MAREA in fibre.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 63.78237507229084,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_vac_oneway",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_vac_oneway",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "Crossing 6,605 km at the vacuum speed of light takes this long, one way.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 22.031908487837946,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_vac_round",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_vac_round",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "The round trip over 6,605 km at the vacuum speed of light.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 44.06381697567589,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_glass_extra",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_glass_extra",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "The glass adds this much to every MAREA round trip.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 19.71855809661495,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_syd_check",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_syd_check",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "16,000 km at 200,000 km/s takes this long, one way.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 80.0,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_syd_fib_one",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_syd_fib_one",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "Sydney to New York in fibre at c/1.4475, one way.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 77.25344444789202,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_syd_fib_rt",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_syd_fib_rt",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "Sydney to New York in fibre, round trip.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 154.50688889578404,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    },
+    {
+      "calculation_id": "calc_lat_syd_vac_one",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_lat_syd_vac_one",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the sourced inputs",
+      "short_label": "",
+      "stable": true,
+      "statement": "Sydney to New York at the vacuum speed of light, one way.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 53.370255231704334,
+        "uncertainty": "exact",
+        "unit": "ms"
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "columns": [
+        {
+          "kind": "nominal",
+          "name": "route",
+          "unit": ""
+        },
+        {
+          "kind": "nominal",
+          "name": "label",
+          "unit": ""
+        },
+        {
+          "kind": "nominal",
+          "name": "leg",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "ms",
+          "unit": "ms"
+        }
+      ],
+      "dataset_id": "ds_latency_routes",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_lat_vac_oneway"
+          ],
+          "key": "Virginia–Spain-vacuum-there",
+          "values": [
+            "Virginia–Spain",
+            "Virginia–Spain, vacuum",
+            "there",
+            22.031908487837946
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_vac_oneway"
+          ],
+          "key": "Virginia–Spain-vacuum-back",
+          "values": [
+            "Virginia–Spain",
+            "Virginia–Spain, vacuum",
+            "back",
+            22.031908487837946
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_fib_oneway"
+          ],
+          "key": "Virginia–Spain-fibre-there",
+          "values": [
+            "Virginia–Spain",
+            "Virginia–Spain, fibre",
+            "there",
+            31.89118753614542
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_fib_oneway"
+          ],
+          "key": "Virginia–Spain-fibre-back",
+          "values": [
+            "Virginia–Spain",
+            "Virginia–Spain, fibre",
+            "back",
+            31.89118753614542
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_syd_vac_one"
+          ],
+          "key": "Sydney–New York-vacuum-there",
+          "values": [
+            "Sydney–New York",
+            "Sydney–New York, vacuum",
+            "there",
+            53.370255231704334
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_syd_vac_one"
+          ],
+          "key": "Sydney–New York-vacuum-back",
+          "values": [
+            "Sydney–New York",
+            "Sydney–New York, vacuum",
+            "back",
+            53.370255231704334
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_syd_fib_one"
+          ],
+          "key": "Sydney–New York-fibre-there",
+          "values": [
+            "Sydney–New York",
+            "Sydney–New York, fibre",
+            "there",
+            77.25344444789202
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_lat_syd_fib_one"
+          ],
+          "key": "Sydney–New York-fibre-back",
+          "values": [
+            "Sydney–New York",
+            "Sydney–New York, fibre",
+            "back",
+            77.25344444789202
+          ]
+        }
+      ],
+      "title": "Fastest possible travel times (computed)"
+    }
+  ],
+  "frozen_at": "2026-09-26T09:00:00Z",
+  "items": [
+    {
+      "context_after": " This fixed value is used to define the metre as exactly the distance that light travels in vacuum in 1⁄299792458 of a second. The second is, in turn, defined t",
+      "context_before": "the speed of waves in any material medium, and c0 for the speed of light in vacuum.[14] In unit systems Further information: Metre § Speed of light definition ",
+      "geography": "",
+      "item_id": "ev_lat_c_exact",
+      "locator": {
+        "end": 6764,
+        "kind": "char_range",
+        "start": 6671
+      },
+      "passage": "The constant c is defined in the International System of Units (SI) as exactly 299792458 m/s.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_speedlight",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": "[66] The larger the index of refraction, the slower light travels in that medium. From this information, a simple rule of thumb is that a signal using optical f",
+      "context_before": "dium is calculated by dividing the speed of light in vacuum by the speed of light in that medium. The refractive index of vacuum is therefore 1, by definition. ",
+      "geography": "",
+      "item_id": "ev_lat_core_index",
+      "locator": {
+        "end": 21636,
+        "kind": "char_range",
+        "start": 21454
+      },
+      "passage": "A typical single-mode fiber used for telecommunications has a cladding made of pure silica, with an index of 1.444 at 1500 nm, and a core of doped silica with an index around 1.4475.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_fiber",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Thus a phone call carried by fiber between Sydney and New York, a 16,000-kilometer distance, means that there is a minimum delay of 80 milliseconds (about 1 12",
+      "context_before": "and a core of doped silica with an index around 1.4475.[66] The larger the index of refraction, the slower light travels in that medium. From this information, ",
+      "geography": "",
+      "item_id": "ev_lat_rule_thumb",
+      "locator": {
+        "end": 21871,
+        "kind": "char_range",
+        "start": 21741
+      },
+      "passage": "a simple rule of thumb is that a signal using optical fiber for communication will travel at around 200,000 kilometers per second.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_fiber",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " (about 1 12 of a second) between when one caller speaks and the other hears.[c] Total internal reflectionedit When light traveling in an optically dense medium",
+      "context_before": "dium. From this information, a simple rule of thumb is that a signal using optical fiber for communication will travel at around 200,000 kilometers per second. ",
+      "geography": "",
+      "item_id": "ev_lat_sydney_nyc",
+      "locator": {
+        "end": 22019,
+        "kind": "char_range",
+        "start": 21872
+      },
+      "passage": "Thus a phone call carried by fiber between Sydney and New York, a 16,000-kilometer distance, means that there is a minimum delay of 80 milliseconds",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_fiber",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " It is owned and funded by Microsoft and Facebook, but constructed and operated by Telxius, a subsidiary of the Spanish telecom company Telefónica.[2] As of 201",
+      "context_before": "Standard Wide Color Automatic Light Dark From Wikipedia, the free encyclopedia For other uses, see Marea. The MAREA cable connects the United States and Spain ",
+      "geography": "",
+      "item_id": "ev_lat_marea_len",
+      "locator": {
+        "end": 504,
+        "kind": "char_range",
+        "start": 387
+      },
+      "passage": "MAREA is a 6,605 km (4,104 miles)[1] long transatlantic communications cable connecting the United States with Spain.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_marea",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " It began operations in February 2018.[7] In January 2019, Telxius announced that AWS had signed an IRU agreement to use one of MAREA's eight fiber pairs (Micro",
+      "context_before": "ervice disruptions caused by Hurricane Sandy in October 2012.[5][6] Construction began shortly afterwards, in August 2016, and was completed in September 2017, ",
+      "geography": "",
+      "item_id": "ev_lat_marea_ends",
+      "locator": {
+        "end": 1492,
+        "kind": "char_range",
+        "start": 1392
+      },
+      "passage": "connecting Virginia Beach, Virginia, in the United States, with Sopelana, a town near Bilbao, Spain.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_marea",
+      "time_basis": "",
+      "unit": ""
+    }
+  ],
+  "language": "en",
+  "pack_id": "pk_latency_2026",
+  "schema_version": 1,
+  "sources": [
+    {
+      "accessed_at": "2026-09-26T05:57:36.902Z",
+      "author": "Wikipedia contributors",
+      "canonical_url": "https://en.wikipedia.org/wiki/Speed_of_light",
+      "capture_id": "cap_1ce265548ced",
+      "content_sha256": "c89d4d7663c393d2715b3f569dbcbffd7f79cb9996668667c1fad60d9ea44754",
+      "published_at": null,
+      "publisher": "Wikipedia",
+      "rights_status": "quotable_excerpt",
+      "source_class": "reference",
+      "source_id": "src_wiki_speedlight",
+      "title": "Speed of light",
+      "url": "https://en.wikipedia.org/wiki/Speed_of_light"
+    },
+    {
+      "accessed_at": "2026-09-26T06:11:04.897Z",
+      "author": "Wikipedia contributors",
+      "canonical_url": "https://en.wikipedia.org/wiki/Optical_fiber",
+      "capture_id": "cap_14e872638810",
+      "content_sha256": "c11d7f76bc037779a1ffaabc07d498e306ad5b33ebb72e23ba3d5f2dd17b2896",
+      "published_at": null,
+      "publisher": "Wikipedia",
+      "rights_status": "quotable_excerpt",
+      "source_class": "reference",
+      "source_id": "src_wiki_fiber",
+      "title": "Optical fiber",
+      "url": "https://en.wikipedia.org/wiki/Optical_fiber"
+    },
+    {
+      "accessed_at": "2026-09-26T06:11:47.144Z",
+      "author": "Wikipedia contributors",
+      "canonical_url": "https://en.wikipedia.org/wiki/MAREA",
+      "capture_id": "cap_85ca44678a06",
+      "content_sha256": "cd2d9cda74636d9f7d416e92b52714c37561e7bc8cb762c1b8d8f7c9d614bb8d",
+      "published_at": null,
+      "publisher": "Wikipedia",
+      "rights_status": "quotable_excerpt",
+      "source_class": "reference",
+      "source_id": "src_wiki_marea",
+      "title": "MAREA",
+      "url": "https://en.wikipedia.org/wiki/MAREA"
+    }
+  ],
+  "topic": "The physical floor under transatlantic latency"
+}

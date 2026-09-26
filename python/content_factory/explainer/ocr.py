@@ -27,6 +27,8 @@ PADDLE_SCRIPT = REPO / "skills" / "ocr" / "paddle_detect.py"
 OCR_THRESHOLD = 0.90
 WORD_THRESHOLD = 0.75
 PADDING_PX = 6
+# Horizontal padding stays small: a neighbouring word often starts right after the quote.
+SIDE_PADDING_PX = 2
 LINE_GAP_PX = 10
 TARGET_LINE_PX = 40
 _QUOTES = str.maketrans(
@@ -72,11 +74,16 @@ class TextComparison:
         return self.similarity >= OCR_THRESHOLD and not self.only_expected and not self.only_ocr
 
 
+_DIGIT_GROUP = re.compile(r"(?<=\d) (?=\d{3}(?!\d))")
+
+
 def normalize_text(text: str) -> str:
     """Fold what OCR cannot be blamed for: quote and dash glyphs, case, whitespace, NFKC forms."""
     folded = unicodedata.normalize("NFKC", text).translate(_QUOTES)
     folded = _DASHES.sub("-", folded).replace("…", "...")
-    return " ".join(folded.split()).casefold()
+    folded = " ".join(folded.split())
+    # Digit groups spaced by CSS (299 792 458) are one number in the text layer.
+    return _DIGIT_GROUP.sub("", folded).casefold()
 
 
 def compare_texts(expected: str, ocr: str) -> TextComparison:
@@ -91,15 +98,27 @@ def compare_texts(expected: str, ocr: str) -> TextComparison:
             continue
         if tag == "replace" and i2 - i1 == j2 - j1:
             for wa, wb in zip(words_a[i1:i2], words_b[j1:j2], strict=True):
-                if difflib.SequenceMatcher(None, wa, wb).ratio() < WORD_THRESHOLD:
+                numeric = any(ch.isdigit() for ch in wa)  # only a number in the text is exact
+                if (numeric and wa.strip(".,;:") != wb.strip(".,;:")) or (
+                    difflib.SequenceMatcher(None, wa, wb).ratio() < WORD_THRESHOLD
+                ):
                     only_a.append(wa)
                     only_b.append(wb)
             continue
+        joined_a, joined_b = "".join(words_a[i1:i2]), "".join(words_b[j1:j2])
+        digits_a = "".join(ch for ch in joined_a if ch.isdigit())
+        if tag == "replace" and digits_a == "".join(ch for ch in joined_b if ch.isdigit()):
+            # OCR merges or splits words ("a phone" -> "aphone"); compare the letters, not spaces.
+            if difflib.SequenceMatcher(None, joined_a, joined_b).ratio() >= WORD_THRESHOLD:
+                continue
         only_a.extend(words_a[i1:i2])
         only_b.extend(words_b[j1:j2])
     # Punctuation-only tokens carry no meaning; padding often catches a neighbour's full stop.
     only_a = [w for w in only_a if any(ch.isalnum() for ch in w)]
     only_b = [w for w in only_b if any(ch.isalnum() for ch in w)]
+    # One stray letter at either edge of the OCR is a neighbour's glyph, not part of the quote.
+    edges = {words_b[0], words_b[-1]} if words_b else set()
+    only_b = [w for w in only_b if not (len(w) == 1 and w.isalpha() and w in edges)]
     return TextComparison(round(similarity, 4), tuple(only_a), tuple(only_b))
 
 
@@ -123,14 +142,20 @@ def tile_spans(
     return pieces
 
 
-def crop_rect(tiles: Sequence[Tile], rect: PageRect, padding_px: int = PADDING_PX) -> Image.Image:
+def crop_rect(
+    tiles: Sequence[Tile],
+    rect: PageRect,
+    padding_px: int = PADDING_PX,
+    side_padding_px: int | None = None,
+) -> Image.Image:
     """Page pixels under a rect, stitched across tile boundaries, padded and clamped to the page."""
     images = [Image.open(tile.path).convert("RGB") for tile in tiles]
     geometry = [(tile.y_px, image.height) for tile, image in zip(tiles, images, strict=True)]
     page_width = min(image.width for image in images)
     page_bottom = max(top + height for top, height in geometry)
-    x0 = max(0, math.floor(rect.x - padding_px))
-    x1 = min(page_width, math.ceil(rect.x + rect.width + padding_px))
+    side = padding_px if side_padding_px is None else side_padding_px
+    x0 = max(0, math.floor(rect.x - side))
+    x1 = min(page_width, math.ceil(rect.x + rect.width + side))
     y0 = max(0, math.floor(rect.y - padding_px))
     y1 = min(page_bottom, math.ceil(rect.y + rect.height + padding_px))
     canvas = Image.new("RGB", (max(1, x1 - x0), max(1, y1 - y0)), "white")
@@ -142,7 +167,7 @@ def crop_rect(tiles: Sequence[Tile], rect: PageRect, padding_px: int = PADDING_P
 
 def quote_image(tiles: Sequence[Tile], quote: CaptureQuote) -> Image.Image:
     """One quote's line crops stacked and upscaled so a line is about TARGET_LINE_PX tall."""
-    crops = [crop_rect(tiles, rect) for rect in quote.line_rects]
+    crops = [crop_rect(tiles, rect, side_padding_px=SIDE_PADDING_PX) for rect in quote.line_rects]
     width = max(crop.width for crop in crops)
     height = sum(crop.height for crop in crops) + LINE_GAP_PX * (len(crops) + 1)
     stacked = Image.new("RGB", (width + 2 * LINE_GAP_PX, height), "white")

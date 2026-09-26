@@ -197,3 +197,15 @@ def test_a_dropped_negation_still_fails_ocr() -> None:
         "The gain does not survive the stops.", "The gain does survive the stops."
     )
     assert not verdict.passed and verdict.only_expected == ("not",)
+
+
+def test_css_digit_grouping_reads_as_the_same_number() -> None:
+    assert compare_texts("exactly 299792458 m/s.", "exactly 299 792 458 m/s.").passed
+    assert not compare_texts("exactly 299792458 m/s.", "exactly 299 792 459 m/s.").passed
+
+
+def test_ocr_merging_two_words_is_not_a_content_change() -> None:
+    assert compare_texts(
+        "Thus a phone call carried by fiber", "Thus aphone call carried by fiber"
+    ).passed
+    assert not compare_texts("a delay of 80 ms", "a delay of8 ms").passed

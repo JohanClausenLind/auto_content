@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from content_factory.explainer import units
-from content_factory.explainer.passages import text_sha256
+from content_factory.explainer.capture import load_capture
+from content_factory.explainer.passages import QuoteRequest, text_sha256
+from content_factory.explainer.sources import SourceInfo, manifest_from_capture
 from content_factory.explainer.tokens_gen import DESIGN_SYSTEM_VERSION
 from content_factory.schemas.explainer import (
     Action,
     AssetRef,
     Beat,
     Calculation,
+    CaptureQuote,
     Claim,
     ClaimOperand,
     ConstantOperand,
@@ -31,18 +35,26 @@ from content_factory.schemas.explainer import (
     EvidenceItem,
     EvidencePack,
     EvidenceSource,
+    HoldAction,
     Quantity,
     Scene,
     ScriptPlan,
     ScriptSegment,
     Section,
+    SourceCaptureManifest,
+    SourceDocumentTemplate,
     TargetAction,
+    TextItem,
+    TextTemplate,
     TitlePromise,
     VisualSpec,
     tokenize,
 )
 from content_factory.schemas.research import EvidenceLocator, SourceClass
 
+REPO = Path(__file__).resolve().parents[3]
+SOURCES_DIR = REPO / "output" / "explainer" / "sources"
+HOLD = HoldAction(action="hold")
 _PUNCT = re.compile(r"^[^\w%\u00d7]+|[^\w%\u00d7]+$")
 
 
@@ -66,6 +78,101 @@ class CapturedPage:
     @property
     def content_sha256(self) -> str:
         return text_sha256(self.text)
+
+
+def captured_page(
+    slug: str,
+    url: str,
+    title: str,
+    *,
+    publisher: str = "Wikipedia",
+    author: str = "Wikipedia contributors",
+) -> CapturedPage:
+    """A stored capture's replayed text, with its capture time as the access time."""
+    folder = SOURCES_DIR / slug
+    wacz = sorted(folder.glob("capture-*.wacz"))[0]
+    return CapturedPage(
+        url=url,
+        wacz=wacz,
+        text=(folder / "page.txt").read_text(),
+        publisher=publisher,
+        title=title,
+        author=author,
+        accessed_at=load_capture(wacz, url).captured_at,
+    )
+
+
+@dataclass(frozen=True)
+class EpisodeCapture:
+    """A source capture resolved for an episode's quotes, with its tile positions."""
+
+    manifest: SourceCaptureManifest
+    tiles: list[dict[str, object]]
+
+    def quote_id(self, text: str) -> str:
+        return self._quote(text).quote_id
+
+    def section_of(self, text: str) -> str:
+        return self._quote(text).section_id
+
+    def _quote(self, text: str) -> CaptureQuote:
+        want = " ".join(text.split())
+        return next(q for q in self.manifest.quotes if " ".join(q.text.split()) == want)
+
+
+def capture_quotes(
+    page: CapturedPage, source_id: str, quotes: Sequence[tuple[str, Sequence[str]]]
+) -> EpisodeCapture:
+    """Resolve quotes against the stored capture and verify them against its pixels."""
+    stored = load_capture(page.wacz, page.url)
+    requests = [QuoteRequest(text=t, occurrence_index=None, claim_ids=tuple(c)) for t, c in quotes]
+    info = SourceInfo(
+        source_id=source_id, publisher=page.publisher, title=page.title, author=page.author
+    )
+    manifest, tiles = manifest_from_capture(stored, requests, page.wacz.parent, source=info)
+    records: list[dict[str, object]] = [
+        {"path": str(Path(t.path).resolve().relative_to(REPO)), "y_px": t.y_px} for t in tiles
+    ]
+    return EpisodeCapture(manifest, records)
+
+
+def link_captures(pack: EvidencePack, captures: Mapping[str, EpisodeCapture]) -> EvidencePack:
+    """Point each source at its capture; the pack hash ignores the link's provenance."""
+    sources = tuple(
+        s.model_copy(update={"capture_id": captures[s.source_id].manifest.capture_id})
+        if s.source_id in captures
+        else s
+        for s in pack.sources
+    )
+    return EvidencePack.model_validate(pack.model_copy(update={"sources": sources}).model_dump())
+
+
+def write_episode(
+    out_dir: Path,
+    pack: EvidencePack,
+    script: ScriptPlan,
+    spec: VisualSpec,
+    captures: Sequence[EpisodeCapture],
+) -> dict[str, object]:
+    """Write pack, script, spec and capture manifests with their tile positions."""
+
+    def dump(path: Path, data: object) -> None:
+        path.write_text(json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+
+    for name, model in (("pack", pack), ("script", script), ("spec", spec)):
+        dump(out_dir / f"{name}.json", model.model_dump(mode="json"))
+    folder = out_dir / "captures"
+    folder.mkdir(exist_ok=True)
+    for cap in captures:
+        dump(folder / f"{cap.manifest.capture_id}.json", cap.manifest.model_dump(mode="json"))
+        dump(folder / f"{cap.manifest.capture_id}.tiles.json", cap.tiles)
+    return {
+        "pack": pack.pack_hash()[:12],
+        "claims": len(pack.claims),
+        "segments": len(script.segments),
+        "words": sum(len(g.tokens) for g in script.segments),
+        "scenes": len(spec.scenes),
+    }
 
 
 def sha256_text(text: str) -> str:
@@ -417,6 +524,66 @@ class SpecDraft:
             )
         )
         return asset_id
+
+    def text_scene(
+        self,
+        scene_id: str,
+        section: Section,
+        purpose: str,
+        variant: str,
+        items: Sequence[tuple[str, str, str | None]],
+        beats: Sequence[Beat],
+        *,
+        claims: Sequence[str] = (),
+    ) -> Scene:
+        """A text scene whose items become text entities bound to their claims."""
+        for entity_id, label, claim in items:
+            self.entity(entity_id, label[:80], "text", claims=[claim] if claim else [])
+        template = TextTemplate(
+            template="text",
+            variant=variant,  # type: ignore[arg-type]
+            items=tuple(TextItem(entity_id=e, text=t, claim_id=c) for e, t, c in items),
+        )
+        return self.add(
+            Scene(
+                scene_id=scene_id,
+                section=section,
+                purpose=purpose,
+                template=template,
+                beats=tuple(beats),
+                claim_ids=tuple(claims),
+            )
+        )
+
+    def source_scene(
+        self,
+        scene_id: str,
+        section: Section,
+        purpose: str,
+        asset_id: str,
+        capture: EpisodeCapture,
+        first_quote: str,
+        beats: Sequence[Beat],
+        *,
+        claims: Sequence[str],
+    ) -> Scene:
+        """A source-document scene that opens on the section holding its first quote."""
+        template = SourceDocumentTemplate(
+            template="source_document",
+            capture_asset_id=asset_id,
+            initial_section_id=capture.section_of(first_quote),
+        )
+        return self.add(
+            Scene(
+                scene_id=scene_id,
+                section=section,
+                purpose=purpose,
+                template=template,
+                beats=tuple(beats),
+                claim_ids=tuple(claims),
+                source_ids=(capture.manifest.source_id,),
+            )
+        )
 
     def add(self, scene: Scene) -> Scene:
         self.scenes.append(scene)

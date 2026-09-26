@@ -1,0 +1,368 @@
+{
+  "artifact_sha256": "22ceb8a6e96389c5fa8b4462b13de172391700030ff37d63712e447537b0b858",
+  "author": "Wikipedia contributors",
+  "capture_id": "cap_22ceb8a6e963",
+  "capture_kind": "wacz",
+  "captured_at": "2026-09-26T05:56:36.674Z",
+  "claim_ids": [
+    "clm_amdahl_def",
+    "clm_amdahl_1967",
+    "clm_amdahl_example",
+    "clm_limit_50pc",
+    "clm_limit_95pc",
+    "clm_amdahl_fraction",
+    "clm_opt_small"
+  ],
+  "extractor": "resolve-passages.mjs",
+  "extractor_version": "0.1.0",
+  "page_height_px": 6959.0,
+  "published_at": null,
+  "publisher": "Wikipedia",
+  "quotes": [
+    {
+      "claim_ids": [
+        "clm_amdahl_def"
+      ],
+      "context_after": ". The law can be stated as[disputed – discuss]: the overall performance improvement gained by optimizing a single part o",
+      "context_before": "peedup is constrained by the unparallelizable portion. In computer architecture, Amdahl's law (or Amdahl's argument[1])",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 163.62,
+          "x": 436.73,
+          "y": 273.39
+        },
+        {
+          "height": 17.0,
+          "width": 316.66,
+          "x": 264.0,
+          "y": 299.39
+        },
+        {
+          "height": 17.0,
+          "width": 215.22,
+          "x": 264.0,
+          "y": 325.39
+        }
+      ],
+      "locator": {
+        "end_offset": 102,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[0]/#text[3]",
+        "kind": "dom_range",
+        "start_offset": 2,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[0]/#text[3]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 0.995,
+      "ocr_verified": true,
+      "quote_id": "qt_d58249f683a4",
+      "section_id": "sec_8ecba6fec672",
+      "text": "is a formula limiting the speedup of a task as resources are added to the system executing that task"
+    },
+    {
+      "claim_ids": [
+        "clm_amdahl_1967"
+      ],
+      "context_after": ". Amdahl's law is often used in parallel computing to predict the theoretical speedup when using multiple processors. De",
+      "context_before": "fraction of time that the improved part is actually used.[2] It is named after computer scientist Gene Amdahl, and was",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 186.8,
+          "x": 391.17,
+          "y": 589.39
+        },
+        {
+          "height": 17.0,
+          "width": 331.73,
+          "x": 264.0,
+          "y": 615.39
+        },
+        {
+          "height": 17.0,
+          "width": 324.59,
+          "x": 264.0,
+          "y": 641.39
+        },
+        {
+          "height": 17.0,
+          "width": 35.59,
+          "x": 264.0,
+          "y": 667.39
+        }
+      ],
+      "locator": {
+        "end_offset": 49,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[2]/#text[2]",
+        "kind": "dom_range",
+        "start_offset": 10,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[2]/#text[1]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 0.9959,
+      "ocr_verified": true,
+      "quote_id": "qt_cf3c85fde11a",
+      "section_id": "sec_8ecba6fec672",
+      "text": "presented at the American Federation of Information Processing Societies (AFIPS) Spring Joint Computer Conference in 1967"
+    },
+    {
+      "claim_ids": [
+        "clm_amdahl_example"
+      ],
+      "context_after": "The execution time of the whole task before the improvement of the resources of the system is denoted as T . It include",
+      "context_before": "les internally in memory. After that, another part of the program passes each file to a separate thread for processing.",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 467.83,
+          "x": 545.66,
+          "y": 1821.09
+        },
+        {
+          "height": 17.0,
+          "width": 511.42,
+          "x": 264.0,
+          "y": 1847.09
+        }
+      ],
+      "locator": {
+        "end_offset": 161,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[2]/p[1]/#text[1]",
+        "kind": "dom_range",
+        "start_offset": 17,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[2]/p[1]/#text[1]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_afc3676571d8",
+      "section_id": "sec_c14229991b9f",
+      "text": "The part that scans the directory and creates the file list cannot be sped up on a parallel computer, but the part that processes the files can."
+    },
+    {
+      "claim_ids": [
+        "clm_limit_50pc",
+        "clm_limit_95pc"
+      ],
+      "context_after": "According to the law, even with an infinite number of processors, the speedup is constrained by the unparallelizable po",
+      "context_before": "n overall system and the concept of diminishing returns. Plotted here is logarithmic parallelization vs linear speedup.",
+      "line_rects": [
+        {
+          "height": 16.0,
+          "width": 160.95,
+          "x": 841.86,
+          "y": 617.94
+        },
+        {
+          "height": 16.0,
+          "width": 369.05,
+          "x": 633.0,
+          "y": 637.73
+        },
+        {
+          "height": 16.0,
+          "width": 336.86,
+          "x": 633.0,
+          "y": 657.53
+        },
+        {
+          "height": 16.0,
+          "width": 129.56,
+          "x": 633.0,
+          "y": 677.33
+        }
+      ],
+      "locator": {
+        "end_offset": 289,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/figure[0]/figcaption[0]/#text[1]",
+        "kind": "dom_range",
+        "start_offset": 125,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/figure[0]/figcaption[0]/#text[1]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_90aced097f89",
+      "section_id": "sec_8ecba6fec672",
+      "text": "If exactly 50% of the work can be parallelized, the best possible speedup is 2 times. If 95% of the work can be parallelized, the best possible speedup is 20 times."
+    },
+    {
+      "claim_ids": [
+        "clm_amdahl_fraction"
+      ],
+      "context_after": "[2] It is named after computer scientist Gene Amdahl, and was presented at the American Federation of Information Proces",
+      "context_before": "eedup of a task as resources are added to the system executing that task. The law can be stated as[disputed – discuss]:",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 265.02,
+          "x": 296.0,
+          "y": 409.39
+        },
+        {
+          "height": 17.0,
+          "width": 268.61,
+          "x": 296.0,
+          "y": 435.39
+        },
+        {
+          "height": 17.0,
+          "width": 274.77,
+          "x": 296.0,
+          "y": 461.39
+        },
+        {
+          "height": 17.0,
+          "width": 230.34,
+          "x": 296.0,
+          "y": 487.39
+        },
+        {
+          "height": 17.0,
+          "width": 39.14,
+          "x": 296.0,
+          "y": 513.39
+        }
+      ],
+      "locator": {
+        "end_offset": 158,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/blockquote[0]/p[0]/#text[0]",
+        "kind": "dom_range",
+        "start_offset": 0,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/blockquote[0]/p[0]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 0.9968,
+      "ocr_verified": true,
+      "quote_id": "qt_badf7ce9b130",
+      "section_id": "sec_8ecba6fec672",
+      "text": "the overall performance improvement gained by optimizing a single part of a system is limited by the fraction of time that the improved part is actually used."
+    },
+    {
+      "claim_ids": [
+        "clm_opt_small"
+      ],
+      "context_after": "In another example, if the programmer optimizes a section that accounts for 99% of the execution time (i.e. Time optimi",
+      "context_before": "ptimized of 10,000, then Speedup overall becomes 1.11 which means only 11% improvement in total speedup of the program.",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 387.77,
+          "x": 591.28,
+          "y": 1415.05
+        },
+        {
+          "height": 17.0,
+          "width": 200.98,
+          "x": 264.0,
+          "y": 1441.05
+        }
+      ],
+      "locator": {
+        "end_offset": 165,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/p[6]/#text[4]",
+        "kind": "dom_range",
+        "start_offset": 80,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/p[6]/#text[4]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_26cd91f3b62c",
+      "section_id": "sec_89102ea9c564",
+      "text": "So, despite a massive improvement in one section, the overall benefit is quite small."
+    }
+  ],
+  "schema_version": 1,
+  "sections": [
+    {
+      "heading": "Contents",
+      "order": 0,
+      "scroll_y_px": 136.94,
+      "section_id": "sec_c6f8edc39543"
+    },
+    {
+      "heading": "Amdahl's law",
+      "order": 1,
+      "scroll_y_px": 90.05,
+      "section_id": "sec_8ecba6fec672"
+    },
+    {
+      "heading": "Definition",
+      "order": 2,
+      "scroll_y_px": 814.39,
+      "section_id": "sec_89102ea9c564"
+    },
+    {
+      "heading": "Derivation",
+      "order": 3,
+      "scroll_y_px": 1600.42,
+      "section_id": "sec_c14229991b9f"
+    },
+    {
+      "heading": "Parallel programs",
+      "order": 4,
+      "scroll_y_px": 2411.58,
+      "section_id": "sec_3c0ec7b18abf"
+    },
+    {
+      "heading": "Serial programs",
+      "order": 5,
+      "scroll_y_px": 2912.39,
+      "section_id": "sec_aa7368f219ee"
+    },
+    {
+      "heading": "Optimizing the sequential part of parallel programs",
+      "order": 6,
+      "scroll_y_px": 3787.72,
+      "section_id": "sec_4f648bc687bb"
+    },
+    {
+      "heading": "Transforming sequential parts of parallel programs into parallelizable",
+      "order": 7,
+      "scroll_y_px": 4329.2,
+      "section_id": "sec_2d4ee1c88131"
+    },
+    {
+      "heading": "Relation to the law of diminishing returns",
+      "order": 8,
+      "scroll_y_px": 4612.0,
+      "section_id": "sec_aff042536aa8"
+    },
+    {
+      "heading": "See also",
+      "order": 9,
+      "scroll_y_px": 5302.05,
+      "section_id": "sec_fa11d837dcb5"
+    },
+    {
+      "heading": "References",
+      "order": 10,
+      "scroll_y_px": 5583.28,
+      "section_id": "sec_e7dc8630a48c"
+    },
+    {
+      "heading": "Further reading",
+      "order": 11,
+      "scroll_y_px": 6099.89,
+      "section_id": "sec_87423402dda0"
+    },
+    {
+      "heading": "External links",
+      "order": 12,
+      "scroll_y_px": 6265.97,
+      "section_id": "sec_e1202b952c41"
+    }
+  ],
+  "signature_domain": "",
+  "signed": false,
+  "source_id": "src_wiki_amdahl",
+  "text_sha256": "0d611e5fe34938ed6c9816c89c66f9262b2235666ad6ec4c72bbce69480a43fd",
+  "title": "Amdahl's law",
+  "tls_certificate_sha256": "08e0b65df41fb075ec91c1dcd2cacc4e8c7dda53b754806525117b32f7b73253",
+  "url": "https://en.wikipedia.org/wiki/Amdahl%27s_law",
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

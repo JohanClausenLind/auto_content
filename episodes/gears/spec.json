@@ -1,0 +1,1116 @@
+{
+  "assets": [
+    {
+      "asset_id": "ast_gears_development",
+      "capture_id": null,
+      "dataset_id": "ds_gears_development",
+      "kind": "dataset",
+      "sha256": "8e3db4d937f6d7fcc8560f88c991be99c5d72e8ca62b89550e1546ff25760a63"
+    },
+    {
+      "asset_id": "ast_gears_speed_80rpm",
+      "capture_id": null,
+      "dataset_id": "ds_gears_speed_80rpm",
+      "kind": "dataset",
+      "sha256": "767bdbcf331cae6a080f7acb683488fbf4356c9ce5a0dd6ab697f216986174c2"
+    },
+    {
+      "asset_id": "ast_gears_turns_per_km",
+      "capture_id": null,
+      "dataset_id": "ds_gears_turns_per_km",
+      "kind": "dataset",
+      "sha256": "863ed6beae33d0db210fbded4fc2f9aae36c19af000872ae6ee1aeff1ed31efe"
+    },
+    {
+      "asset_id": "ast_wiki_gearing",
+      "capture_id": "cap_c240ae88accc",
+      "dataset_id": null,
+      "kind": "capture",
+      "sha256": "c240ae88accc42a8a79d7051dd8c92aa7609d32c92092703043c2b968b3609f0"
+    }
+  ],
+  "capability_requests": [],
+  "design_system_version": 1,
+  "entities": [
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_series_dev",
+      "kind": "series",
+      "label": "Metres per pedal turn",
+      "short_label": "Metres per turn"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_series_kmh",
+      "kind": "series",
+      "label": "Speed at 80 rpm",
+      "short_label": "km/h at 80 rpm"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_series_turns",
+      "kind": "series",
+      "label": "Pedal turns per kilometre",
+      "short_label": "Turns per km"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_hook",
+      "kind": "text",
+      "label": "Slower bike. Easier climb. What changed?",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_question",
+      "kind": "text",
+      "label": "Gears can't add energy. So what do they trade?",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_gears_ratio53_19"
+      ],
+      "entity_id": "ent_gears_ratio_big",
+      "kind": "text",
+      "label": "Big chainring, 19-tooth sprocket: 2.79",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_gears_ratio39_14"
+      ],
+      "entity_id": "ent_gears_ratio_small",
+      "kind": "text",
+      "label": "Small chainring, 14-tooth sprocket: 2.79",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_gears_turn_ratio"
+      ],
+      "entity_id": "ent_gears_ratio_num",
+      "kind": "text",
+      "label": "6.25×",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_ratio_label",
+      "kind": "text",
+      "label": "more pedal turns per kilometre, each with less force",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_gears_answer",
+      "kind": "text",
+      "label": "Gears don't add energy. They choose how it's delivered.",
+      "short_label": ""
+    }
+  ],
+  "pack_hash": "90db632fe7d311e3eed5c9aa99228ab22b85323c6296ec99a0297d9a1abf1fb0",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_hook"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_hook",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_hook",
+            "token_end": 18,
+            "token_start": 18
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_hook_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_hook",
+            "token_end": 32,
+            "token_start": 32
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Name the everyday puzzle.",
+      "scene_id": "scn_gears_hook",
+      "section": "cold_open",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_gears_hook",
+            "text": "Slower bike. Easier climb. What changed?"
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_question"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_question",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_question",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_question_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_question",
+            "token_end": 14,
+            "token_start": 14
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Pose the question.",
+      "scene_id": "scn_gears_question",
+      "section": "question_stakes",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_gears_question",
+            "text": "Gears can't add energy. So what do they trade?"
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_gears_def_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_definition",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_b5268eb498de"
+            }
+          ],
+          "beat_id": "bt_gears_def_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_definition",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_def_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_definition",
+            "token_end": 37,
+            "token_start": 37
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_definition"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the article's definition.",
+      "scene_id": "scn_gears_src_definition",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_gearing"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_gearing",
+        "initial_section_id": "sec_3caf0e6f6770",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_gears_same_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_712252b33ba6"
+            }
+          ],
+          "beat_id": "bt_gears_same_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 21,
+            "token_start": 21
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_712252b33ba6"
+            }
+          ],
+          "beat_id": "bt_gears_same_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 27,
+            "token_start": 27
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_same_hold",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "after",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 41,
+            "token_start": 41
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_same_ratio",
+        "clm_gears_big_ring",
+        "clm_gears_sprocket_19",
+        "clm_gears_small_ring",
+        "clm_gears_sprocket_14"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Quote the article's two equivalent gears.",
+      "scene_id": "scn_gears_src_same",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_gearing"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_gearing",
+        "initial_section_id": "sec_1aa93c97af39",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_ratio_big"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_ratio_big",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 42,
+            "token_start": 42
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_ratio_small"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_ratio_small",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 50,
+            "token_start": 50
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_ratio_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_ratio",
+            "token_end": 50,
+            "token_start": 50
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_ratio53_19",
+        "clm_gears_ratio39_14"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Do the division for both gears.",
+      "scene_id": "scn_gears_ratios",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_gears_ratio53_19",
+            "entity_id": "ent_gears_ratio_big",
+            "text": "Big chainring, 19-tooth sprocket: 2.79"
+          },
+          {
+            "claim_id": "clm_gears_ratio39_14",
+            "entity_id": "ent_gears_ratio_small",
+            "text": "Small chainring, 14-tooth sprocket: 2.79"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_gears_dev_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_devdef",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_1ebd3b1a1935"
+            }
+          ],
+          "beat_id": "bt_gears_dev_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_devdef",
+            "token_end": 7,
+            "token_start": 7
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_1ebd3b1a1935"
+            }
+          ],
+          "beat_id": "bt_gears_dev_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_devdef",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_dev_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_devdef",
+            "token_end": 18,
+            "token_start": 18
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_devdef"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Define metres of development on the page.",
+      "scene_id": "scn_gears_src_development",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_gearing"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_gearing",
+        "initial_section_id": "sec_1aa93c97af39",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_series_dev"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_devchart_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_devtable",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_gears_series_dev"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_devchart_low",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_devtable",
+            "token_end": 18,
+            "token_start": 18
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_devchart_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_devtable",
+            "token_end": 31,
+            "token_start": 31
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_dev_very_low",
+        "clm_gears_dev_very_high"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show how far each gear moves the bike per pedal turn.",
+      "scene_id": "scn_gears_chart_development",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "bar",
+        "dataset_asset_id": "ast_gears_development",
+        "series": [
+          {
+            "entity_id": "ent_gears_series_dev",
+            "value": "metres"
+          }
+        ],
+        "series_field": null,
+        "template": "chart",
+        "title": "Metres per pedal turn (article's table)",
+        "x": {
+          "field": "gear",
+          "kind": "ordinal",
+          "title": "gear",
+          "unit": ""
+        },
+        "y": {
+          "field": "metres",
+          "kind": "quantitative",
+          "title": "metres",
+          "unit": "m"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_series_kmh"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_speed_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_speeds",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_speed_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_speeds",
+            "token_end": 37,
+            "token_start": 37
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_cadence80",
+        "clm_gears_kmh_very_low",
+        "clm_gears_kmh_medium",
+        "clm_gears_kmh_very_high"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the speed each gear gives at the same cadence.",
+      "scene_id": "scn_gears_chart_speed",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "bar",
+        "dataset_asset_id": "ast_gears_speed_80rpm",
+        "series": [
+          {
+            "entity_id": "ent_gears_series_kmh",
+            "value": "kmh"
+          }
+        ],
+        "series_field": null,
+        "template": "chart",
+        "title": "Speed at 80 rpm (article's table)",
+        "x": {
+          "field": "gear",
+          "kind": "ordinal",
+          "title": "gear",
+          "unit": ""
+        },
+        "y": {
+          "field": "kmh",
+          "kind": "quantitative",
+          "title": "km/h",
+          "unit": "km/h"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_series_turns"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_turns_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_turns",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_gears_series_turns"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_turns_low",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_turns",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_turns_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_turns",
+            "token_end": 22,
+            "token_start": 22
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_one_km",
+        "clm_gears_turns_very_low",
+        "clm_gears_turns_very_high"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Flip the table: pedal turns needed for one kilometre.",
+      "scene_id": "scn_gears_chart_turns",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "bar",
+        "dataset_asset_id": "ast_gears_turns_per_km",
+        "series": [
+          {
+            "entity_id": "ent_gears_series_turns",
+            "value": "turns"
+          }
+        ],
+        "series_field": null,
+        "template": "chart",
+        "title": "Pedal turns per kilometre (computed)",
+        "x": {
+          "field": "gear",
+          "kind": "ordinal",
+          "title": "gear",
+          "unit": ""
+        },
+        "y": {
+          "field": "turns",
+          "kind": "quantitative",
+          "title": "turns",
+          "unit": "ratio"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_gears_trade_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_trade",
+            "token_end": 3,
+            "token_start": 3
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_3b04c54a4d9a"
+            }
+          ],
+          "beat_id": "bt_gears_trade_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_trade",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_3b04c54a4d9a"
+            }
+          ],
+          "beat_id": "bt_gears_trade_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_trade",
+            "token_end": 21,
+            "token_start": 21
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_trade_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_trade",
+            "token_end": 40,
+            "token_start": 40
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_trade_off"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Quote the trade-off in the article's words.",
+      "scene_id": "scn_gears_src_trade",
+      "section": "run_system",
+      "source_ids": [
+        "src_wiki_gearing"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_gearing",
+        "initial_section_id": "sec_3caf0e6f6770",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_ratio_num"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_ratio_num",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_force",
+            "token_end": 27,
+            "token_start": 27
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_ratio_label"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_ratio_label",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_force",
+            "token_end": 41,
+            "token_start": 41
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_ratio_numhold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_force",
+            "token_end": 53,
+            "token_start": 53
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_turns_very_low",
+        "clm_gears_turns_very_high",
+        "clm_gears_turn_ratio"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "State how many more turns the low gear takes.",
+      "scene_id": "scn_gears_turn_ratio",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_gears_turn_ratio",
+            "entity_id": "ent_gears_ratio_num",
+            "text": "6.25×"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_gears_ratio_label",
+            "text": "more pedal turns per kilometre, each with less force"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_gears_sprint_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_limits",
+            "token_end": 3,
+            "token_start": 3
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_49c70f628fbe"
+            }
+          ],
+          "beat_id": "bt_gears_sprint_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_limits",
+            "token_end": 27,
+            "token_start": 27
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_49c70f628fbe"
+            }
+          ],
+          "beat_id": "bt_gears_sprint_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_limits",
+            "token_end": 29,
+            "token_start": 29
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_sprint_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_gears_limits",
+            "token_end": 42,
+            "token_start": 42
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gears_sprint_rpm"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show where spinning faster stops helping.",
+      "scene_id": "scn_gears_src_sprint",
+      "section": "show_limits",
+      "source_ids": [
+        "src_wiki_gearing"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_gearing",
+        "initial_section_id": "sec_3caf0e6f6770",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_gears_answer"
+              ]
+            }
+          ],
+          "beat_id": "bt_gears_answer",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_gears_answer",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_gears_answer_hold",
+          "cue": {
+            "duration_class": "long",
+            "relation": "after",
+            "segment_id": "seg_gears_answer",
+            "token_end": 36,
+            "token_start": 36
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Close on the answer.",
+      "scene_id": "scn_gears_answer",
+      "section": "synthesis",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_gears_answer",
+            "text": "Gears don't add energy. They choose how it's delivered."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "script_hash": "f543cc1f5f79fc837fcbe0ac03bef94be49d041e6174ac5062a42187f5795df8",
+  "script_id": "scr_gears_ep03",
+  "spec_id": "vs_gears_ep03"
+}

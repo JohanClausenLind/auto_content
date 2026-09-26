@@ -1,0 +1,178 @@
+{
+  "artifact_sha256": "e4e7ffb5974eda81c3e65bd79aaf9aaab6eca51d263ad6f05c4804eda0fc98f8",
+  "author": "Wikipedia contributors",
+  "capture_id": "cap_e4e7ffb5974e",
+  "capture_kind": "wacz",
+  "captured_at": "2026-09-26T05:57:01.789Z",
+  "claim_ids": [
+    "clm_gus_contrast",
+    "clm_gus_serial"
+  ],
+  "extractor": "resolve-passages.mjs",
+  "extractor_version": "0.1.0",
+  "page_height_px": 4626.0,
+  "published_at": null,
+  "publisher": "Wikipedia",
+  "quotes": [
+    {
+      "claim_ids": [
+        "clm_gus_contrast"
+      ],
+      "context_after": "Definitionedit Gustafson estimated the speedup S of a program gained by using parallel computing as follows: S = s + p",
+      "context_before": "L. Gustafson and his colleague Edwin H. Barsis, and was presented in the article Reevaluating Amdahl's Law in 1988.[2]",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 358.8,
+          "x": 264.0,
+          "y": 489.39
+        },
+        {
+          "height": 17.0,
+          "width": 397.0,
+          "x": 264.0,
+          "y": 515.39
+        },
+        {
+          "height": 17.0,
+          "width": 366.39,
+          "x": 264.0,
+          "y": 541.39
+        },
+        {
+          "height": 17.0,
+          "width": 357.22,
+          "x": 264.0,
+          "y": 567.39
+        },
+        {
+          "height": 17.0,
+          "width": 231.25,
+          "x": 264.0,
+          "y": 593.39
+        }
+      ],
+      "locator": {
+        "end_offset": 216,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[1]/#text[1]",
+        "kind": "dom_range",
+        "start_offset": 0,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[1]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_9d834c6eacbb",
+      "section_id": "sec_429cbe085a48",
+      "text": "In contrast to Amdahl's law, which assumes a fixed problem size and yields pessimistic scaling, Gustafson's law assumes that problem sizes grow with available computing resources, allowing far greater effective speedup from parallel execution."
+    },
+    {
+      "claim_ids": [
+        "clm_gus_serial"
+      ],
+      "context_after": ",[2] that is, s is fixed. This gives a linear model between the processor count N and the speedup S with slope 1 − s , a",
+      "context_before": "tend to increase the size of problems to fully exploit the computing power that becomes available as resources grow.[2]",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 731.02,
+          "x": 264.0,
+          "y": 1233.78
+        },
+        {
+          "height": 17.0,
+          "width": 365.53,
+          "x": 264.0,
+          "y": 1259.78
+        }
+      ],
+      "locator": {
+        "end_offset": 156,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/p[6]/#text[0]",
+        "kind": "dom_range",
+        "start_offset": 0,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/p[6]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 0.9968,
+      "ocr_verified": true,
+      "quote_id": "qt_bf42fe8510c5",
+      "section_id": "sec_89102ea9c564",
+      "text": "Gustafson and his colleagues further observed from their workloads that time for the serial part typically does not grow as the problem and the system scale"
+    }
+  ],
+  "schema_version": 1,
+  "sections": [
+    {
+      "heading": "Contents",
+      "order": 0,
+      "scroll_y_px": 136.94,
+      "section_id": "sec_c6f8edc39543"
+    },
+    {
+      "heading": "Gustafson's law",
+      "order": 1,
+      "scroll_y_px": 90.05,
+      "section_id": "sec_429cbe085a48"
+    },
+    {
+      "heading": "Definition",
+      "order": 2,
+      "scroll_y_px": 646.39,
+      "section_id": "sec_89102ea9c564"
+    },
+    {
+      "heading": "Derivation",
+      "order": 3,
+      "scroll_y_px": 1536.78,
+      "section_id": "sec_c14229991b9f"
+    },
+    {
+      "heading": "Uses",
+      "order": 4,
+      "scroll_y_px": 2132.81,
+      "section_id": "sec_9895fb7ec6c1"
+    },
+    {
+      "heading": "In research",
+      "order": 5,
+      "scroll_y_px": 2187.48,
+      "section_id": "sec_f70866d67896"
+    },
+    {
+      "heading": "In everyday computer systems",
+      "order": 6,
+      "scroll_y_px": 2501.8,
+      "section_id": "sec_a3bb90319d1d"
+    },
+    {
+      "heading": "Limits",
+      "order": 7,
+      "scroll_y_px": 2843.52,
+      "section_id": "sec_76aa48ec62e4"
+    },
+    {
+      "heading": "See also",
+      "order": 8,
+      "scroll_y_px": 3461.36,
+      "section_id": "sec_f772cb61bfee"
+    },
+    {
+      "heading": "References",
+      "order": 9,
+      "scroll_y_px": 3604.62,
+      "section_id": "sec_b422a389bc9d"
+    }
+  ],
+  "signature_domain": "",
+  "signed": false,
+  "source_id": "src_wiki_gustafson",
+  "text_sha256": "7f66f6dbc24ad9f4403b6a818bfd5f255ce615042fddd216c2d180514beb5447",
+  "title": "Gustafson's law",
+  "tls_certificate_sha256": "08e0b65df41fb075ec91c1dcd2cacc4e8c7dda53b754806525117b32f7b73253",
+  "url": "https://en.wikipedia.org/wiki/Gustafson%27s_law",
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

@@ -1,0 +1,1575 @@
+{
+  "assets": [
+    {
+      "asset_id": "ast_latency_routes",
+      "capture_id": null,
+      "dataset_id": "ds_latency_routes",
+      "kind": "dataset",
+      "sha256": "e1644d534268f5c672bfc4dbc66c55e7214a9b6df47e51715029b0bf5df23b9d"
+    },
+    {
+      "asset_id": "ast_wiki_speedlight",
+      "capture_id": "cap_1ce265548ced",
+      "dataset_id": null,
+      "kind": "capture",
+      "sha256": "1ce265548cedf1bef8a1c375245d322d22ad2398863a682415437884145b0804"
+    },
+    {
+      "asset_id": "ast_wiki_fiber",
+      "capture_id": "cap_14e872638810",
+      "dataset_id": null,
+      "kind": "capture",
+      "sha256": "14e872638810eb231d3d43b9652c9d117a033bc05ef1953e542c26197b362f48"
+    },
+    {
+      "asset_id": "ast_wiki_marea",
+      "capture_id": "cap_85ca44678a06",
+      "dataset_id": null,
+      "kind": "capture",
+      "sha256": "85ca44678a068e2a1f9114b3b71330c5f53030f96ac07004c108a5b54883210e"
+    }
+  ],
+  "capability_requests": [],
+  "design_system_version": 1,
+  "entities": [
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_leg_there",
+      "kind": "series",
+      "label": "Signal going there",
+      "short_label": "There"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_leg_back",
+      "kind": "series",
+      "label": "Reply coming back",
+      "short_label": "Back"
+    },
+    {
+      "claim_ids": [
+        "clm_lat_fib_round"
+      ],
+      "entity_id": "ent_latency_hook_num",
+      "kind": "text",
+      "label": "64 ms",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_hook_label",
+      "kind": "text",
+      "label": "fastest possible round trip, Virginia to Spain",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_hook_line",
+      "kind": "text",
+      "label": "Set by light, and by glass.",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_question",
+      "kind": "text",
+      "label": "How fast can a signal really cross an ocean?",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_f_lhs",
+      "kind": "text",
+      "label": "v =",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_f_c",
+      "kind": "text",
+      "label": "c",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_f_div",
+      "kind": "text",
+      "label": "\\div",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_f_n",
+      "kind": "text",
+      "label": "n",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_fiber_speed"
+      ],
+      "entity_id": "ent_latency_speed_num",
+      "kind": "text",
+      "label": "207,111 km/s",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_speed_label",
+      "kind": "text",
+      "label": "light in telecom fibre, about 69% of its vacuum speed",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_node_usa",
+      "kind": "node",
+      "label": "Virginia Beach, USA",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_node_spain",
+      "kind": "node",
+      "label": "Sopelana, Spain",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_marea_len"
+      ],
+      "entity_id": "ent_latency_edge_marea",
+      "kind": "edge",
+      "label": "MAREA cable",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_marea_len"
+      ],
+      "entity_id": "ent_latency_sum_dist",
+      "kind": "text",
+      "label": "Distance: 6,605 km",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_fiber_speed"
+      ],
+      "entity_id": "ent_latency_sum_speed",
+      "kind": "text",
+      "label": "Speed in fibre: 207,111 km/s",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_fib_oneway"
+      ],
+      "entity_id": "ent_latency_sum_one",
+      "kind": "text",
+      "label": "One way: 31.9 ms",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_lat_fib_round"
+      ],
+      "entity_id": "ent_latency_sum_round",
+      "kind": "text",
+      "label": "Round trip: 63.8 ms",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_lim_routers",
+      "kind": "text",
+      "label": "Routers",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_lim_detours",
+      "kind": "text",
+      "label": "Detours",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_lim_processing",
+      "kind": "text",
+      "label": "Processing",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_lim_only",
+      "kind": "text",
+      "label": "Each one can only add time",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_latency_answer",
+      "kind": "text",
+      "label": "To talk faster, be closer.",
+      "short_label": ""
+    }
+  ],
+  "pack_hash": "d0bbcd1a621332e85cc4bfcb3e6f2bb3b19502d15b4c9e3d7036df581f89eb5c",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_hook_num",
+                "ent_latency_hook_label"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_hook_num",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_hook",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_hook_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_hook",
+            "token_end": 26,
+            "token_start": 26
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_fib_round"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Open on the number the episode explains.",
+      "scene_id": "scn_latency_hook_number",
+      "section": "cold_open",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_lat_fib_round",
+            "entity_id": "ent_latency_hook_num",
+            "text": "64 ms"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_hook_label",
+            "text": "fastest possible round trip, Virginia to Spain"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_hook_line"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_hook_line",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_hook_two",
+            "token_end": 12,
+            "token_start": 12
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_hook_line_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_hook_two",
+            "token_end": 22,
+            "token_start": 22
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Name what sets the floor.",
+      "scene_id": "scn_latency_hook_line",
+      "section": "cold_open",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_hook_line",
+            "text": "Set by light, and by glass."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_question"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_question",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_question",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_question_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_question",
+            "token_end": 28,
+            "token_start": 28
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Pose the question.",
+      "scene_id": "scn_latency_question",
+      "section": "question_stakes",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_question",
+            "text": "How fast can a signal really cross an ocean?"
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_latency_c_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_vacuum",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_b7fa80571c07"
+            }
+          ],
+          "beat_id": "bt_latency_c_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_vacuum",
+            "token_end": 17,
+            "token_start": 17
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_b7fa80571c07"
+            }
+          ],
+          "beat_id": "bt_latency_c_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_vacuum",
+            "token_end": 24,
+            "token_start": 24
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_c_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_vacuum",
+            "token_end": 28,
+            "token_start": 28
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_c_vacuum"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show that c is defined, not measured.",
+      "scene_id": "scn_latency_src_speed",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_speedlight"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_speedlight",
+        "initial_section_id": "sec_c9c73c968542",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_latency_idx_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_glass",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_1beb26529e07"
+            }
+          ],
+          "beat_id": "bt_latency_idx_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_glass",
+            "token_end": 22,
+            "token_start": 22
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_1beb26529e07"
+            }
+          ],
+          "beat_id": "bt_latency_idx_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_glass",
+            "token_end": 33,
+            "token_start": 33
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_idx_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_glass",
+            "token_end": 41,
+            "token_start": 41
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_core_index"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the refractive index of a real telecom fibre.",
+      "scene_id": "scn_latency_src_index",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_fiber"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_fiber",
+        "initial_section_id": "sec_6b01e198fc14",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_f_lhs",
+                "ent_latency_f_c",
+                "ent_latency_f_div",
+                "ent_latency_f_n"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_f_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_speed",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_latency_f_n"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_f_n",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_speed",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_f_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_speed",
+            "token_end": 10,
+            "token_start": 10
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Write the speed in fibre as c divided by the index.",
+      "scene_id": "scn_latency_speed_formula",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_f_lhs",
+            "text": "v ="
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_f_c",
+            "text": "c"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_f_div",
+            "text": "\\div"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_f_n",
+            "text": "n"
+          }
+        ],
+        "template": "text",
+        "variant": "formula"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_speed_num"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_speed_num",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_speed",
+            "token_end": 21,
+            "token_start": 21
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_speed_label"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_speed_label",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_speed",
+            "token_end": 26,
+            "token_start": 26
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_speed_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_speed",
+            "token_end": 32,
+            "token_start": 32
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_fiber_speed",
+        "clm_lat_fiber_share"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "State light's speed in the fibre.",
+      "scene_id": "scn_latency_speed_number",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_lat_fiber_speed",
+            "entity_id": "ent_latency_speed_num",
+            "text": "207,111 km/s"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_speed_label",
+            "text": "light in telecom fibre, about 69% of its vacuum speed"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_node_usa"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_route_usa",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_cable",
+            "token_end": 14,
+            "token_start": 14
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_node_spain",
+                "ent_latency_edge_marea"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_route_spain",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_cable",
+            "token_end": 21,
+            "token_start": 21
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "flow",
+              "targets": [
+                "ent_latency_edge_marea"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_route_flow",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_cable",
+            "token_end": 23,
+            "token_start": 23
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_route_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_latency_cable",
+            "token_end": 23,
+            "token_start": 23
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_marea_ends",
+        "clm_lat_marea_len"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Draw the cable's two landing points.",
+      "scene_id": "scn_latency_route",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "direction": "LR",
+        "edges": [
+          {
+            "entity_id": "ent_latency_edge_marea",
+            "label": "MAREA cable",
+            "source_entity_id": "ent_latency_node_usa",
+            "target_entity_id": "ent_latency_node_spain"
+          }
+        ],
+        "nodes": [
+          {
+            "entity_id": "ent_latency_node_usa",
+            "label": "Virginia Beach, USA"
+          },
+          {
+            "entity_id": "ent_latency_node_spain",
+            "label": "Sopelana, Spain"
+          }
+        ],
+        "template": "diagram"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_latency_marea_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_cable",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_cee9e10a95c9"
+            }
+          ],
+          "beat_id": "bt_latency_marea_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_cable",
+            "token_end": 28,
+            "token_start": 28
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_marea_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_cable",
+            "token_end": 31,
+            "token_start": 31
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_marea_ends",
+        "clm_lat_marea_len"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the cable's article.",
+      "scene_id": "scn_latency_src_marea",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_marea"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_marea",
+        "initial_section_id": "sec_29cf13694b75",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_sum_dist"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_sum_dist",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_oneway",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_sum_speed"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_sum_speed",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_oneway",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_sum_one"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_sum_one",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_oneway",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_sum_round"
+              ]
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_latency_sum_round"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_sum_round",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_roundtrip",
+            "token_end": 17,
+            "token_start": 17
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_sum_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_roundtrip",
+            "token_end": 18,
+            "token_start": 18
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_marea_len",
+        "clm_lat_fiber_speed",
+        "clm_lat_fib_oneway",
+        "clm_lat_fib_round"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Work the crossing time out line by line.",
+      "scene_id": "scn_latency_sum",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_lat_marea_len",
+            "entity_id": "ent_latency_sum_dist",
+            "text": "Distance: 6,605 km"
+          },
+          {
+            "claim_id": "clm_lat_fiber_speed",
+            "entity_id": "ent_latency_sum_speed",
+            "text": "Speed in fibre: 207,111 km/s"
+          },
+          {
+            "claim_id": "clm_lat_fib_oneway",
+            "entity_id": "ent_latency_sum_one",
+            "text": "One way: 31.9 ms"
+          },
+          {
+            "claim_id": "clm_lat_fib_round",
+            "entity_id": "ent_latency_sum_round",
+            "text": "Round trip: 63.8 ms"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_leg_there",
+                "ent_latency_leg_back"
+              ]
+            },
+            {
+              "action": "filter",
+              "field": "route",
+              "op": "eq",
+              "value": "Virginia–Spain"
+            }
+          ],
+          "beat_id": "bt_latency_bars_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_compare",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_latency_leg_back"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_bars_back",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_compare",
+            "token_end": 19,
+            "token_start": 19
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            },
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_bars_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_compare",
+            "token_end": 33,
+            "token_start": 33
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_vac_oneway",
+        "clm_lat_vac_round",
+        "clm_lat_glass_extra",
+        "clm_lat_fib_oneway",
+        "clm_lat_fib_round"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Compare the MAREA round trip in vacuum and in glass.",
+      "scene_id": "scn_latency_bars_marea",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "stacked_bar",
+        "dataset_asset_id": "ast_latency_routes",
+        "series": [
+          {
+            "entity_id": "ent_latency_leg_there",
+            "value": "there"
+          },
+          {
+            "entity_id": "ent_latency_leg_back",
+            "value": "back"
+          }
+        ],
+        "series_field": "leg",
+        "template": "chart",
+        "title": "Fastest possible round trips (computed)",
+        "x": {
+          "field": "label",
+          "kind": "nominal",
+          "title": "",
+          "unit": ""
+        },
+        "y": {
+          "field": "ms",
+          "kind": "quantitative",
+          "title": "milliseconds",
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_latency_rule_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_rule",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_fb86722120a9"
+            }
+          ],
+          "beat_id": "bt_latency_rule_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_rule",
+            "token_end": 11,
+            "token_start": 11
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_fb86722120a9"
+            }
+          ],
+          "beat_id": "bt_latency_rule_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_rule",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_rule_hold",
+          "cue": {
+            "duration_class": "beat",
+            "relation": "after",
+            "segment_id": "seg_latency_rule",
+            "token_end": 26,
+            "token_start": 26
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            }
+          ],
+          "beat_id": "bt_latency_syd_clear",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_sydney",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_98b1d8de504a"
+            }
+          ],
+          "beat_id": "bt_latency_syd_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_sydney",
+            "token_end": 8,
+            "token_start": 8
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_98b1d8de504a"
+            }
+          ],
+          "beat_id": "bt_latency_syd_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_sydney",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_syd_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_sydney",
+            "token_end": 29,
+            "token_start": 29
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_rule_speed",
+        "clm_lat_syd_dist",
+        "clm_lat_syd_delay",
+        "clm_lat_syd_check"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Check the method against the article's own rule and example.",
+      "scene_id": "scn_latency_src_rule",
+      "section": "run_system",
+      "source_ids": [
+        "src_wiki_fiber"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_fiber",
+        "initial_section_id": "sec_6b01e198fc14",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "route",
+              "op": "neq",
+              "value": "none"
+            }
+          ],
+          "beat_id": "bt_latency_far_filter",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_far",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_far_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_latency_far",
+            "token_end": 28,
+            "token_start": 28
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_lat_syd_fib_rt",
+        "clm_lat_syd_dist",
+        "clm_lat_syd_fib_one",
+        "clm_lat_syd_vac_one"
+      ],
+      "initial_visible": [
+        "ent_latency_leg_there",
+        "ent_latency_leg_back"
+      ],
+      "layout": "primary",
+      "purpose": "Add the longer route and show distance moving the floor.",
+      "scene_id": "scn_latency_bars_far",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "stacked_bar",
+        "dataset_asset_id": "ast_latency_routes",
+        "series": [
+          {
+            "entity_id": "ent_latency_leg_there",
+            "value": "there"
+          },
+          {
+            "entity_id": "ent_latency_leg_back",
+            "value": "back"
+          }
+        ],
+        "series_field": "leg",
+        "template": "chart",
+        "title": "Fastest possible round trips (computed)",
+        "x": {
+          "field": "label",
+          "kind": "nominal",
+          "title": "",
+          "unit": ""
+        },
+        "y": {
+          "field": "ms",
+          "kind": "quantitative",
+          "title": "milliseconds",
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_lim_routers"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_lim_routers",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_limits",
+            "token_end": 22,
+            "token_start": 22
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_lim_detours"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_lim_detours",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_limits",
+            "token_end": 23,
+            "token_start": 23
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_lim_processing"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_lim_processing",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_limits",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_lim_only"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_lim_only",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_limits",
+            "token_end": 34,
+            "token_start": 34
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_lim_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_latency_limits",
+            "token_end": 36,
+            "token_start": 36
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "List what a real connection adds on top of the floor.",
+      "scene_id": "scn_latency_limits",
+      "section": "show_limits",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_lim_routers",
+            "text": "Routers"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_lim_detours",
+            "text": "Detours"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_lim_processing",
+            "text": "Processing"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_lim_only",
+            "text": "Each one can only add time"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_latency_answer"
+              ]
+            }
+          ],
+          "beat_id": "bt_latency_answer",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_latency_answer",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_latency_answer_hold",
+          "cue": {
+            "duration_class": "long",
+            "relation": "after",
+            "segment_id": "seg_latency_answer",
+            "token_end": 32,
+            "token_start": 32
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Close on the practical rule.",
+      "scene_id": "scn_latency_answer",
+      "section": "synthesis",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_latency_answer",
+            "text": "To talk faster, be closer."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "script_hash": "2da146af867d602e565087ef4a033e7cf4c503721dcec010df7740c2902d67cc",
+  "script_id": "scr_latency_ep02",
+  "spec_id": "vs_latency_ep02"
+}

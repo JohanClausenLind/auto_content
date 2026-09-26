@@ -1,0 +1,305 @@
+{
+  "artifact_sha256": "1ce265548cedf1bef8a1c375245d322d22ad2398863a682415437884145b0804",
+  "author": "Wikipedia contributors",
+  "capture_id": "cap_1ce265548ced",
+  "capture_kind": "wacz",
+  "captured_at": "2026-09-26T05:57:36.902Z",
+  "claim_ids": [
+    "clm_lat_c_vacuum"
+  ],
+  "extractor": "resolve-passages.mjs",
+  "extractor_version": "0.1.0",
+  "page_height_px": 34847.0,
+  "published_at": null,
+  "publisher": "Wikipedia",
+  "quotes": [
+    {
+      "claim_ids": [
+        "clm_lat_c_vacuum"
+      ],
+      "context_after": "This fixed value is used to define the metre as exactly the distance that light travels in vacuum in 1⁄299792458 of a s",
+      "context_before": "um, and c0 for the speed of light in vacuum.[14] In unit systems Further information: Metre § Speed of light definition",
+      "line_rects": [
+        {
+          "height": 21.0,
+          "width": 663.91,
+          "x": 264.0,
+          "y": 2279.16
+        }
+      ],
+      "locator": {
+        "end_offset": 1,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[2]/p[0]/#text[4]",
+        "kind": "dom_range",
+        "start_offset": 0,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[2]/p[0]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_b7fa80571c07",
+      "section_id": "sec_c9c73c968542",
+      "text": "The constant c is defined in the International System of Units (SI) as exactly 299792458 m/s."
+    }
+  ],
+  "schema_version": 1,
+  "sections": [
+    {
+      "heading": "Contents",
+      "order": 0,
+      "scroll_y_px": 136.94,
+      "section_id": "sec_c6f8edc39543"
+    },
+    {
+      "heading": "Speed of light",
+      "order": 1,
+      "scroll_y_px": 90.05,
+      "section_id": "sec_27be19d43c43"
+    },
+    {
+      "heading": "Notation",
+      "order": 2,
+      "scroll_y_px": 1801.0,
+      "section_id": "sec_528c1bef5daf"
+    },
+    {
+      "heading": "In unit systems",
+      "order": 3,
+      "scroll_y_px": 2203.08,
+      "section_id": "sec_c9c73c968542"
+    },
+    {
+      "heading": "Role in physics",
+      "order": 4,
+      "scroll_y_px": 2851.16,
+      "section_id": "sec_c8d641f85cb6"
+    },
+    {
+      "heading": "Boundary for effects of special relativity",
+      "order": 5,
+      "scroll_y_px": 2905.83,
+      "section_id": "sec_92ed5b933269"
+    },
+    {
+      "heading": "Synthesis of space and time",
+      "order": 6,
+      "scroll_y_px": 3877.0,
+      "section_id": "sec_dfca9d698c6b"
+    },
+    {
+      "heading": "Mass and massless particles",
+      "order": 7,
+      "scroll_y_px": 4403.09,
+      "section_id": "sec_0be9b50feea7"
+    },
+    {
+      "heading": "Causality",
+      "order": 8,
+      "scroll_y_px": 4649.41,
+      "section_id": "sec_38cad18e625b"
+    },
+    {
+      "heading": "One-way speed of light",
+      "order": 9,
+      "scroll_y_px": 5171.72,
+      "section_id": "sec_a824a2e765c3"
+    },
+    {
+      "heading": "Variable speed of light",
+      "order": 10,
+      "scroll_y_px": 5542.83,
+      "section_id": "sec_23a8c00d265e"
+    },
+    {
+      "heading": "Faster-than-light observations and experiments",
+      "order": 11,
+      "scroll_y_px": 5795.34,
+      "section_id": "sec_5e6459026718"
+    },
+    {
+      "heading": "Propagation of light",
+      "order": 12,
+      "scroll_y_px": 7001.42,
+      "section_id": "sec_f5713bb1a0f6"
+    },
+    {
+      "heading": "In a medium",
+      "order": 13,
+      "scroll_y_px": 7731.48,
+      "section_id": "sec_6bebe9e69556"
+    },
+    {
+      "heading": "Practical effects of finiteness",
+      "order": 14,
+      "scroll_y_px": 9102.0,
+      "section_id": "sec_faf03e8360e7"
+    },
+    {
+      "heading": "Small scales",
+      "order": 15,
+      "scroll_y_px": 9252.67,
+      "section_id": "sec_4ae44bf78fc4"
+    },
+    {
+      "heading": "Large distances on Earth",
+      "order": 16,
+      "scroll_y_px": 9498.98,
+      "section_id": "sec_acc8275b498f"
+    },
+    {
+      "heading": "Spaceflight and astronomy",
+      "order": 17,
+      "scroll_y_px": 9917.3,
+      "section_id": "sec_f096fefd534d"
+    },
+    {
+      "heading": "Distance measurement",
+      "order": 18,
+      "scroll_y_px": 10705.61,
+      "section_id": "sec_0abcd71a924c"
+    },
+    {
+      "heading": "Determination",
+      "order": 19,
+      "scroll_y_px": 11010.12,
+      "section_id": "sec_9c0d0d83a67f"
+    },
+    {
+      "heading": "Astronomical measurements",
+      "order": 20,
+      "scroll_y_px": 11358.8,
+      "section_id": "sec_7b2df6b6dd0d"
+    },
+    {
+      "heading": "Time of flight techniques",
+      "order": 21,
+      "scroll_y_px": 12686.7,
+      "section_id": "sec_5aa100f53586"
+    },
+    {
+      "heading": "Electromagnetic constants",
+      "order": 22,
+      "scroll_y_px": 13718.45,
+      "section_id": "sec_3ce6bb9502b3"
+    },
+    {
+      "heading": "Cavity resonance",
+      "order": 23,
+      "scroll_y_px": 13990.77,
+      "section_id": "sec_ba2419c66c23"
+    },
+    {
+      "heading": "Interferometry",
+      "order": 24,
+      "scroll_y_px": 14685.08,
+      "section_id": "sec_9e3fa45ae729"
+    },
+    {
+      "heading": "History",
+      "order": 25,
+      "scroll_y_px": 15276.8,
+      "section_id": "sec_1a405a6a29d9"
+    },
+    {
+      "heading": "Early history",
+      "order": 26,
+      "scroll_y_px": 15453.47,
+      "section_id": "sec_93b6a5322a2f"
+    },
+    {
+      "heading": "First measurement attempts",
+      "order": 27,
+      "scroll_y_px": 16293.78,
+      "section_id": "sec_7ae98c11a15e"
+    },
+    {
+      "heading": "Improved measurements",
+      "order": 28,
+      "scroll_y_px": 17196.09,
+      "section_id": "sec_e66821569330"
+    },
+    {
+      "heading": "Connections with electromagnetism",
+      "order": 29,
+      "scroll_y_px": 18082.03,
+      "section_id": "sec_6d63e9bfcef8"
+    },
+    {
+      "heading": "\"Luminiferous aether\"",
+      "order": 30,
+      "scroll_y_px": 18385.14,
+      "section_id": "sec_444a46c6ad40"
+    },
+    {
+      "heading": "Special relativity",
+      "order": 31,
+      "scroll_y_px": 19146.25,
+      "section_id": "sec_1e5ec0952312"
+    },
+    {
+      "heading": "Increased accuracy of c and redefinition of the metre and second",
+      "order": 32,
+      "scroll_y_px": 19366.56,
+      "section_id": "sec_261a5a40f963"
+    },
+    {
+      "heading": "Defined as an explicit constant",
+      "order": 33,
+      "scroll_y_px": 19815.67,
+      "section_id": "sec_b58afbb7fcb3"
+    },
+    {
+      "heading": "See also",
+      "order": 34,
+      "scroll_y_px": 20355.39,
+      "section_id": "sec_33a0bb9c311d"
+    },
+    {
+      "heading": "Notes",
+      "order": 35,
+      "scroll_y_px": 20583.03,
+      "section_id": "sec_e897f024e09b"
+    },
+    {
+      "heading": "References",
+      "order": 36,
+      "scroll_y_px": 20700.55,
+      "section_id": "sec_4cca2ba49759"
+    },
+    {
+      "heading": "Further reading",
+      "order": 37,
+      "scroll_y_px": 32939.3,
+      "section_id": "sec_336f86ceaaa4"
+    },
+    {
+      "heading": "Historical references",
+      "order": 38,
+      "scroll_y_px": 32993.97,
+      "section_id": "sec_417880c1aafa"
+    },
+    {
+      "heading": "Modern references",
+      "order": 39,
+      "scroll_y_px": 33575.58,
+      "section_id": "sec_b7e6e394f454"
+    },
+    {
+      "heading": "External links",
+      "order": 40,
+      "scroll_y_px": 33870.53,
+      "section_id": "sec_b998f8f332af"
+    }
+  ],
+  "signature_domain": "",
+  "signed": false,
+  "source_id": "src_wiki_speedlight",
+  "text_sha256": "c89d4d7663c393d2715b3f569dbcbffd7f79cb9996668667c1fad60d9ea44754",
+  "title": "Speed of light",
+  "tls_certificate_sha256": "08e0b65df41fb075ec91c1dcd2cacc4e8c7dda53b754806525117b32f7b73253",
+  "url": "https://en.wikipedia.org/wiki/Speed_of_light",
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

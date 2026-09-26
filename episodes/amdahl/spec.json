@@ -1,0 +1,3456 @@
+{
+  "assets": [
+    {
+      "asset_id": "ast_amdahl_cores",
+      "capture_id": null,
+      "dataset_id": "ds_amdahl_cores",
+      "kind": "dataset",
+      "sha256": "6b0ae1245171feea878f5e4a70a0708c6a6c6122c531aa350c9fc6fb5c6fc496"
+    },
+    {
+      "asset_id": "ast_amdahl_curves",
+      "capture_id": null,
+      "dataset_id": "ds_amdahl_curves",
+      "kind": "dataset",
+      "sha256": "ee6b6f4e4a73232a3425bf11027afef5c6ce97bee91d1507512c8f4860a26373"
+    },
+    {
+      "asset_id": "ast_amdahl_upgrades",
+      "capture_id": null,
+      "dataset_id": "ds_amdahl_upgrades",
+      "kind": "dataset",
+      "sha256": "e9ec4b6f97e15038c00b7d82d5b5cdd9882858d65c74dbb00b0a0a7867d8483a"
+    },
+    {
+      "asset_id": "ast_wiki_amdahl",
+      "capture_id": "cap_22ceb8a6e963",
+      "dataset_id": null,
+      "kind": "capture",
+      "sha256": "22ceb8a6e96389c5fa8b4462b13de172391700030ff37d63712e447537b0b858"
+    },
+    {
+      "asset_id": "ast_wiki_gustafson",
+      "capture_id": "cap_e4e7ffb5974e",
+      "dataset_id": null,
+      "kind": "capture",
+      "sha256": "e4e7ffb5974eda81c3e65bd79aaf9aaab6eca51d263ad6f05c4804eda0fc98f8"
+    }
+  ],
+  "capability_requests": [],
+  "design_system_version": 1,
+  "entities": [
+    {
+      "claim_ids": [
+        "clm_serial_20s"
+      ],
+      "entity_id": "ent_amdahl_serial_bar",
+      "kind": "series",
+      "label": "Serial part",
+      "short_label": "Serial"
+    },
+    {
+      "claim_ids": [
+        "clm_parallel_80s"
+      ],
+      "entity_id": "ent_amdahl_parallel_bar",
+      "kind": "series",
+      "label": "Parallel part",
+      "short_label": "Parallel"
+    },
+    {
+      "claim_ids": [
+        "clm_tot_004c"
+      ],
+      "entity_id": "ent_amdahl_hook_four",
+      "kind": "text",
+      "label": "Four cores: 40 seconds",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_tot_008c"
+      ],
+      "entity_id": "ent_amdahl_hook_eight",
+      "kind": "text",
+      "label": "Eight cores: 30 seconds",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_hook_line",
+      "kind": "text",
+      "label": "Twice the cores. Not half the wait.",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_question",
+      "kind": "text",
+      "label": "If a computer is twice as fast, why doesn't the work finish in half the time?",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_stake_laptop",
+      "kind": "text",
+      "label": "A faster laptop",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_stake_cloud",
+      "kind": "text",
+      "label": "A bigger cloud server",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_stake_gpu",
+      "kind": "text",
+      "label": "A stack of graphics cards",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_node_scan",
+      "kind": "node",
+      "label": "Scan the folder",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_node_list",
+      "kind": "node",
+      "label": "Build the file list",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_node_w1",
+      "kind": "node",
+      "label": "Worker 1",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_node_w2",
+      "kind": "node",
+      "label": "Worker 2",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_node_w3",
+      "kind": "node",
+      "label": "Worker 3",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_node_done",
+      "kind": "node",
+      "label": "Done",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_sl",
+      "kind": "edge",
+      "label": "ent_amdahl_node_scan to ent_amdahl_node_list",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_l1",
+      "kind": "edge",
+      "label": "ent_amdahl_node_list to ent_amdahl_node_w1",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_l2",
+      "kind": "edge",
+      "label": "ent_amdahl_node_list to ent_amdahl_node_w2",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_l3",
+      "kind": "edge",
+      "label": "ent_amdahl_node_list to ent_amdahl_node_w3",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_1d",
+      "kind": "edge",
+      "label": "ent_amdahl_node_w1 to ent_amdahl_node_done",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_2d",
+      "kind": "edge",
+      "label": "ent_amdahl_node_w2 to ent_amdahl_node_done",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_edge_3d",
+      "kind": "edge",
+      "label": "ent_amdahl_node_w3 to ent_amdahl_node_done",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_spd_002c"
+      ],
+      "entity_id": "ent_amdahl_spd_two",
+      "kind": "text",
+      "label": "Two cores: about 1.7 times faster",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_spd_004c"
+      ],
+      "entity_id": "ent_amdahl_spd_four",
+      "kind": "text",
+      "label": "Four cores: 2.5 times faster",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_spd_008c"
+      ],
+      "entity_id": "ent_amdahl_spd_eight",
+      "kind": "text",
+      "label": "Eight cores: about 3.3 times faster",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_spd_016c"
+      ],
+      "entity_id": "ent_amdahl_spd_sixteen",
+      "kind": "text",
+      "label": "Sixteen cores: 4 times faster",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_ceiling_5x"
+      ],
+      "entity_id": "ent_amdahl_ceiling_num",
+      "kind": "text",
+      "label": "5×",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_ceiling_label",
+      "kind": "text",
+      "label": "the most this job can ever gain",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_tot_064c"
+      ],
+      "entity_id": "ent_amdahl_dim_num",
+      "kind": "text",
+      "label": "21.25 s",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_dim_label",
+      "kind": "text",
+      "label": "on 64 cores, against 25 s on 16",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_f_lhs",
+      "kind": "text",
+      "label": "S = 1 \\div \\big[",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_f_serial",
+      "kind": "text",
+      "label": "(1-p)",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_f_parallel",
+      "kind": "text",
+      "label": "+\\ \\tfrac{p}{N}",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_f_close",
+      "kind": "text",
+      "label": "\\big]",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_curve_half",
+      "kind": "series",
+      "label": "Half serial",
+      "short_label": "Half serial"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_curve_fifth",
+      "kind": "series",
+      "label": "A fifth serial",
+      "short_label": "A fifth serial"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_curve_tw",
+      "kind": "series",
+      "label": "A twentieth serial",
+      "short_label": "A twentieth serial"
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_rule",
+      "kind": "text",
+      "label": "The ceiling is always one divided by the serial share.",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_ceiling_10x"
+      ],
+      "entity_id": "ent_amdahl_new_ceiling",
+      "kind": "text",
+      "label": "10×",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_new_ceiling_label",
+      "kind": "text",
+      "label": "the new ceiling after the faster scan",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_opt_share"
+      ],
+      "entity_id": "ent_amdahl_opt_share",
+      "kind": "text",
+      "label": "Part improved: 10% of the running time",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_opt_factor"
+      ],
+      "entity_id": "ent_amdahl_opt_factor",
+      "kind": "text",
+      "label": "Made 10,000 times faster",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_opt_overall"
+      ],
+      "entity_id": "ent_amdahl_opt_overall",
+      "kind": "text",
+      "label": "Whole program: 1.11 times faster",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_tot_002c"
+      ],
+      "entity_id": "ent_amdahl_clock_cores",
+      "kind": "text",
+      "label": "Twice the cores: 60 seconds",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_tot_2xcore"
+      ],
+      "entity_id": "ent_amdahl_clock_fast",
+      "kind": "text",
+      "label": "Each core twice as fast: 50 seconds",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_fixed",
+      "kind": "text",
+      "label": "Amdahl assumes the job stays the same size.",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_gus_onecore"
+      ],
+      "entity_id": "ent_amdahl_gus_one",
+      "kind": "text",
+      "label": "Bigger job on one core: 660 seconds",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_gus_eight"
+      ],
+      "entity_id": "ent_amdahl_gus_eight",
+      "kind": "text",
+      "label": "Bigger job on eight cores: 100 seconds",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [
+        "clm_gus_scaled"
+      ],
+      "entity_id": "ent_amdahl_gus_scaled",
+      "kind": "text",
+      "label": "Scaled speedup: 6.6 times",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_lo_coord",
+      "kind": "text",
+      "label": "Coordinating the cores",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_lo_memory",
+      "kind": "text",
+      "label": "Sharing memory",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_lo_data",
+      "kind": "text",
+      "label": "Moving data",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_lo_best",
+      "kind": "text",
+      "label": "So these curves are the best case",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_answer",
+      "kind": "text",
+      "label": "Some work can only happen one step at a time.",
+      "short_label": ""
+    },
+    {
+      "claim_ids": [],
+      "entity_id": "ent_amdahl_advice",
+      "kind": "text",
+      "label": "Find the serial part. Its share is your ceiling.",
+      "short_label": ""
+    }
+  ],
+  "pack_hash": "f0126e1751955c1cf07b01017b29ea4f92d7b16ede282b5f3075631fa1e76ada",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_hook_four"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_hook_four",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_hook_one",
+            "token_end": 14,
+            "token_start": 14
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_hook_eight"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_hook_eight",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_hook_one",
+            "token_end": 18,
+            "token_start": 18
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_hook_times_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_hook_one",
+            "token_end": 18,
+            "token_start": 18
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_tot_004c",
+        "clm_tot_008c"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the disappointing upgrade as two plain times.",
+      "scene_id": "scn_amdahl_hook_times",
+      "section": "cold_open",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_tot_004c",
+            "entity_id": "ent_amdahl_hook_four",
+            "text": "Four cores: 40 seconds"
+          },
+          {
+            "claim_id": "clm_tot_008c",
+            "entity_id": "ent_amdahl_hook_eight",
+            "text": "Eight cores: 30 seconds"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_hook_line"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_hook_line",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_hook_two",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_hook_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_hook_two",
+            "token_end": 29,
+            "token_start": 29
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Name the gap between expectation and result.",
+      "scene_id": "scn_amdahl_hook_line",
+      "section": "cold_open",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_hook_line",
+            "text": "Twice the cores. Not half the wait."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_question"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_question",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_question",
+            "token_end": 5,
+            "token_start": 5
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_question_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_question",
+            "token_end": 21,
+            "token_start": 21
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Pose the episode's question.",
+      "scene_id": "scn_amdahl_question",
+      "section": "question_stakes",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_question",
+            "text": "If a computer is twice as fast, why doesn't the work finish in half the time?"
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_stake_laptop"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_stake_laptop",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_stakes",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_stake_cloud"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_stake_cloud",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_stakes",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_stake_gpu"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_stake_gpu",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_stakes",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_stake_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_stakes",
+            "token_end": 27,
+            "token_start": 27
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show where the answer costs money.",
+      "scene_id": "scn_amdahl_stakes",
+      "section": "question_stakes",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_stake_laptop",
+            "text": "A faster laptop"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_stake_cloud",
+            "text": "A bigger cloud server"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_stake_gpu",
+            "text": "A stack of graphics cards"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_amdahl_def_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_def",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_d58249f683a4"
+            }
+          ],
+          "beat_id": "bt_amdahl_def_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_def",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_d58249f683a4"
+            }
+          ],
+          "beat_id": "bt_amdahl_def_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_def",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_def_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_def",
+            "token_end": 26,
+            "token_start": 26
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            }
+          ],
+          "beat_id": "bt_amdahl_1967_clear",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_1967",
+            "token_end": 2,
+            "token_start": 2
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_cf3c85fde11a"
+            }
+          ],
+          "beat_id": "bt_amdahl_1967_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_1967",
+            "token_end": 7,
+            "token_start": 7
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_1967_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_1967",
+            "token_end": 16,
+            "token_start": 16
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_amdahl_def",
+        "clm_amdahl_1967"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the law's definition and origin on the real article.",
+      "scene_id": "scn_amdahl_src_definition",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_amdahl"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_amdahl",
+        "initial_section_id": "sec_8ecba6fec672",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_node_scan"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_flow_scan",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_program",
+            "token_end": 20,
+            "token_start": 20
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_node_list",
+                "ent_amdahl_edge_sl"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_flow_list",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_program",
+            "token_end": 26,
+            "token_start": 26
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_node_w1",
+                "ent_amdahl_node_w2",
+                "ent_amdahl_node_w3",
+                "ent_amdahl_edge_l1",
+                "ent_amdahl_edge_l2",
+                "ent_amdahl_edge_l3"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_flow_workers",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_program",
+            "token_end": 38,
+            "token_start": 38
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_node_done",
+                "ent_amdahl_edge_1d",
+                "ent_amdahl_edge_2d",
+                "ent_amdahl_edge_3d"
+              ]
+            },
+            {
+              "action": "flow",
+              "targets": [
+                "ent_amdahl_edge_l1",
+                "ent_amdahl_edge_l2",
+                "ent_amdahl_edge_l3"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_flow_done",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_program",
+            "token_end": 47,
+            "token_start": 47
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "trace",
+              "targets": [
+                "ent_amdahl_node_scan",
+                "ent_amdahl_edge_sl",
+                "ent_amdahl_node_list"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_flow_trace",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_program",
+            "token_end": 48,
+            "token_start": 48
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_flow_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_program",
+            "token_end": 48,
+            "token_start": 48
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Draw the program as one serial path feeding parallel workers.",
+      "scene_id": "scn_amdahl_program_flow",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "direction": "LR",
+        "edges": [
+          {
+            "entity_id": "ent_amdahl_edge_sl",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_scan",
+            "target_entity_id": "ent_amdahl_node_list"
+          },
+          {
+            "entity_id": "ent_amdahl_edge_l1",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_list",
+            "target_entity_id": "ent_amdahl_node_w1"
+          },
+          {
+            "entity_id": "ent_amdahl_edge_l2",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_list",
+            "target_entity_id": "ent_amdahl_node_w2"
+          },
+          {
+            "entity_id": "ent_amdahl_edge_l3",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_list",
+            "target_entity_id": "ent_amdahl_node_w3"
+          },
+          {
+            "entity_id": "ent_amdahl_edge_1d",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_w1",
+            "target_entity_id": "ent_amdahl_node_done"
+          },
+          {
+            "entity_id": "ent_amdahl_edge_2d",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_w2",
+            "target_entity_id": "ent_amdahl_node_done"
+          },
+          {
+            "entity_id": "ent_amdahl_edge_3d",
+            "label": "",
+            "source_entity_id": "ent_amdahl_node_w3",
+            "target_entity_id": "ent_amdahl_node_done"
+          }
+        ],
+        "nodes": [
+          {
+            "entity_id": "ent_amdahl_node_scan",
+            "label": "Scan the folder"
+          },
+          {
+            "entity_id": "ent_amdahl_node_list",
+            "label": "Build the file list"
+          },
+          {
+            "entity_id": "ent_amdahl_node_w1",
+            "label": "Worker 1"
+          },
+          {
+            "entity_id": "ent_amdahl_node_w2",
+            "label": "Worker 2"
+          },
+          {
+            "entity_id": "ent_amdahl_node_w3",
+            "label": "Worker 3"
+          },
+          {
+            "entity_id": "ent_amdahl_node_done",
+            "label": "Done"
+          }
+        ],
+        "template": "diagram"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_amdahl_ex_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_example",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_afc3676571d8"
+            }
+          ],
+          "beat_id": "bt_amdahl_ex_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_example",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_afc3676571d8"
+            }
+          ],
+          "beat_id": "bt_amdahl_ex_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_example",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_ex_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_example",
+            "token_end": 33,
+            "token_start": 33
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_amdahl_example"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Quote the article's own serial-versus-parallel example.",
+      "scene_id": "scn_amdahl_src_example",
+      "section": "build_model",
+      "source_ids": [
+        "src_wiki_amdahl"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_amdahl",
+        "initial_section_id": "sec_c14229991b9f",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_serial_bar"
+              ]
+            },
+            {
+              "action": "filter",
+              "field": "cores",
+              "op": "lte",
+              "value": 1.0
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_serial",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_numbers",
+            "token_end": 16,
+            "token_start": 16
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_parallel_bar"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_parallel",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_numbers",
+            "token_end": 23,
+            "token_start": 23
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_serial_bar"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_serial_hi",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_kinds",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": [
+                "ent_amdahl_serial_bar"
+              ]
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_parallel_bar"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_parallel_hi",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_kinds",
+            "token_end": 18,
+            "token_start": 18
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_serial_bar"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_clear",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_kinds",
+            "token_end": 26,
+            "token_start": 26
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_single_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_kinds",
+            "token_end": 87,
+            "token_start": 87
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_serial_20s",
+        "clm_parallel_80s",
+        "clm_total_1core"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Build the job on one core as serial plus parallel time.",
+      "scene_id": "scn_amdahl_bars_single",
+      "section": "build_model",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "stacked_bar",
+        "dataset_asset_id": "ast_amdahl_cores",
+        "series": [
+          {
+            "entity_id": "ent_amdahl_serial_bar",
+            "value": "serial"
+          },
+          {
+            "entity_id": "ent_amdahl_parallel_bar",
+            "value": "parallel"
+          }
+        ],
+        "series_field": "part",
+        "template": "chart",
+        "title": "The job's time on more cores (illustrative)",
+        "x": {
+          "field": "label",
+          "kind": "nominal",
+          "title": "",
+          "unit": ""
+        },
+        "y": {
+          "field": "seconds",
+          "kind": "quantitative",
+          "title": "seconds",
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "cores",
+              "op": "lte",
+              "value": 2.0
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_two",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_two",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "cores",
+              "op": "lte",
+              "value": 4.0
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_four",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_four",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "cores",
+              "op": "lte",
+              "value": 8.0
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_eight",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_eight",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "cores",
+              "op": "lte",
+              "value": 16.0
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_sixteen",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_eight",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_serial_bar"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_watch",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_watch",
+            "token_end": 3,
+            "token_start": 3
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_bars_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_watch",
+            "token_end": 28,
+            "token_start": 28
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_serial_20s",
+        "clm_parallel_80s",
+        "clm_par_002c",
+        "clm_tot_002c",
+        "clm_cores_002",
+        "clm_cores_004",
+        "clm_par_004c",
+        "clm_tot_004c",
+        "clm_cores_008",
+        "clm_par_008c",
+        "clm_tot_008c",
+        "clm_cores_016",
+        "clm_par_016c",
+        "clm_tot_016c"
+      ],
+      "initial_visible": [
+        "ent_amdahl_serial_bar",
+        "ent_amdahl_parallel_bar"
+      ],
+      "layout": "primary",
+      "purpose": "Add cores bar by bar while the serial part stays put.",
+      "scene_id": "scn_amdahl_bars_cores",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "stacked_bar",
+        "dataset_asset_id": "ast_amdahl_cores",
+        "series": [
+          {
+            "entity_id": "ent_amdahl_serial_bar",
+            "value": "serial"
+          },
+          {
+            "entity_id": "ent_amdahl_parallel_bar",
+            "value": "parallel"
+          }
+        ],
+        "series_field": "part",
+        "template": "chart",
+        "title": "The job's time on more cores (illustrative)",
+        "x": {
+          "field": "label",
+          "kind": "nominal",
+          "title": "",
+          "unit": ""
+        },
+        "y": {
+          "field": "seconds",
+          "kind": "quantitative",
+          "title": "seconds",
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_spd_two"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_spd_two",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_speedup",
+            "token_end": 14,
+            "token_start": 14
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_spd_four"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_spd_four",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_speedup",
+            "token_end": 19,
+            "token_start": 19
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_spd_eight"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_spd_eight",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_speedup",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_spd_sixteen"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_spd_sixteen",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_speedup",
+            "token_end": 32,
+            "token_start": 32
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_spd_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_speedup",
+            "token_end": 32,
+            "token_start": 32
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_spd_002c",
+        "clm_spd_004c",
+        "clm_spd_008c",
+        "clm_spd_016c",
+        "clm_cores_001",
+        "clm_cores_002",
+        "clm_cores_004",
+        "clm_cores_008",
+        "clm_cores_016",
+        "clm_save_1to2",
+        "clm_save_8to16"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Turn the times into speedups, one line at a time.",
+      "scene_id": "scn_amdahl_speedups",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_spd_002c",
+            "entity_id": "ent_amdahl_spd_two",
+            "text": "Two cores: about 1.7 times faster"
+          },
+          {
+            "claim_id": "clm_spd_004c",
+            "entity_id": "ent_amdahl_spd_four",
+            "text": "Four cores: 2.5 times faster"
+          },
+          {
+            "claim_id": "clm_spd_008c",
+            "entity_id": "ent_amdahl_spd_eight",
+            "text": "Eight cores: about 3.3 times faster"
+          },
+          {
+            "claim_id": "clm_spd_016c",
+            "entity_id": "ent_amdahl_spd_sixteen",
+            "text": "Sixteen cores: 4 times faster"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_ceiling_num"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_ceiling_num",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_ceiling",
+            "token_end": 27,
+            "token_start": 27
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_ceiling_label"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_ceiling_label",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_ceiling",
+            "token_end": 31,
+            "token_start": 31
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_ceiling_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_ceiling",
+            "token_end": 40,
+            "token_start": 40
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_ceiling_5x",
+        "clm_serial_20s",
+        "clm_total_1core"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "State the job's hard ceiling as one number.",
+      "scene_id": "scn_amdahl_ceiling",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_ceiling_5x",
+            "entity_id": "ent_amdahl_ceiling_num",
+            "text": "5×"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_ceiling_label",
+            "text": "the most this job can ever gain"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_dim_num"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_dim_num",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_diminish",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_dim_label"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_dim_label",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_diminish",
+            "token_end": 20,
+            "token_start": 20
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_dim_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_diminish",
+            "token_end": 23,
+            "token_start": 23
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_tot_064c",
+        "clm_gain_16_64",
+        "clm_cores_064",
+        "clm_cores_016"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show how little 48 more cores buy.",
+      "scene_id": "scn_amdahl_diminish",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_tot_064c",
+            "entity_id": "ent_amdahl_dim_num",
+            "text": "21.25 s"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_dim_label",
+            "text": "on 64 cores, against 25 s on 16"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_f_lhs",
+                "ent_amdahl_f_serial",
+                "ent_amdahl_f_parallel",
+                "ent_amdahl_f_close"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_f_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_formula",
+            "token_end": 5,
+            "token_start": 5
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_f_serial"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_f_serial",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_formula",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": [
+                "ent_amdahl_f_serial"
+              ]
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_f_parallel"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_f_parallel",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_formula",
+            "token_end": 30,
+            "token_start": 30
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_f_serial",
+                "ent_amdahl_f_parallel"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_f_sum",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_formula",
+            "token_end": 46,
+            "token_start": 46
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_f_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_formula",
+            "token_end": 46,
+            "token_start": 46
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Write the law as one line and light up each term as it is named.",
+      "scene_id": "scn_amdahl_formula",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_f_lhs",
+            "text": "S = 1 \\div \\big["
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_f_serial",
+            "text": "(1-p)"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_f_parallel",
+            "text": "+\\ \\tfrac{p}{N}"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_f_close",
+            "text": "\\big]"
+          }
+        ],
+        "template": "text",
+        "variant": "formula"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_curve_half"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_half",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_curves",
+            "token_end": 17,
+            "token_start": 17
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_curve_fifth"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_fifth",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_curves",
+            "token_end": 23,
+            "token_start": 23
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_curve_tw"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_tw",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_curves",
+            "token_end": 28,
+            "token_start": 28
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_curve_half"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_bend",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_plateau",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_curve_fifth"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_ours",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_plateau",
+            "token_end": 15,
+            "token_start": 15
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            },
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_curve_tw"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_third",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_plateau",
+            "token_end": 20,
+            "token_start": 20
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_cv_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_plateau",
+            "token_end": 29,
+            "token_start": 29
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_cores_001",
+        "clm_cores_1024",
+        "clm_cv_fifth_s1024",
+        "clm_limit_50pc",
+        "clm_ceiling_5x",
+        "clm_limit_95pc"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Compare three jobs whose only difference is their serial share.",
+      "scene_id": "scn_amdahl_curves",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "line",
+        "dataset_asset_id": "ast_amdahl_curves",
+        "series": [
+          {
+            "entity_id": "ent_amdahl_curve_half",
+            "value": "half"
+          },
+          {
+            "entity_id": "ent_amdahl_curve_fifth",
+            "value": "fifth"
+          },
+          {
+            "entity_id": "ent_amdahl_curve_tw",
+            "value": "tw"
+          }
+        ],
+        "series_field": "job",
+        "template": "chart",
+        "title": "Speedup as cores double (illustrative)",
+        "x": {
+          "field": "cores_label",
+          "kind": "ordinal",
+          "title": "cores",
+          "unit": ""
+        },
+        "y": {
+          "field": "speedup",
+          "kind": "quantitative",
+          "title": "times faster",
+          "unit": "ratio"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_amdahl_lim_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_limits",
+            "token_end": 5,
+            "token_start": 5
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_90aced097f89"
+            }
+          ],
+          "beat_id": "bt_amdahl_lim_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_limits",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_90aced097f89"
+            }
+          ],
+          "beat_id": "bt_amdahl_lim_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_limits",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_lim_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_limits",
+            "token_end": 41,
+            "token_start": 41
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_frac_50pc",
+        "clm_limit_50pc",
+        "clm_frac_95pc",
+        "clm_limit_95pc"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show that the article states the same ceilings.",
+      "scene_id": "scn_amdahl_src_limits",
+      "section": "run_system",
+      "source_ids": [
+        "src_wiki_amdahl"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_amdahl",
+        "initial_section_id": "sec_8ecba6fec672",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_rule"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_rule",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_rule",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_rule_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_rule",
+            "token_end": 17,
+            "token_start": 17
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_limit_50pc",
+        "clm_limit_95pc"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "State the general rule the curves obey.",
+      "scene_id": "scn_amdahl_rule",
+      "section": "run_system",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_rule",
+            "text": "The ceiling is always one divided by the serial share."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_serial_bar",
+                "ent_amdahl_parallel_bar"
+              ]
+            },
+            {
+              "action": "filter",
+              "field": "option",
+              "op": "eq",
+              "value": "8 cores today"
+            }
+          ],
+          "beat_id": "bt_amdahl_upg_now",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_upgrades",
+            "token_end": 12,
+            "token_start": 12
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "option",
+              "op": "neq",
+              "value": "8 cores, faster scan"
+            }
+          ],
+          "beat_id": "bt_amdahl_upg_double",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_double",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "filter",
+              "field": "option",
+              "op": "neq",
+              "value": "none"
+            }
+          ],
+          "beat_id": "bt_amdahl_upg_scan",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_rewrite",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_serial_bar"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_upg_serial",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_rewrite",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_upg_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_rewrite",
+            "token_end": 23,
+            "token_start": 23
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_cores_008",
+        "clm_tot_008c",
+        "clm_cores_016",
+        "clm_tot_016c",
+        "clm_serial_fast",
+        "clm_serial_20s",
+        "clm_tot_fast8"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Compare doubling the cores with halving the serial part.",
+      "scene_id": "scn_amdahl_upgrades",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "baseline_zero": true,
+        "chart_kind": "stacked_bar",
+        "dataset_asset_id": "ast_amdahl_upgrades",
+        "series": [
+          {
+            "entity_id": "ent_amdahl_serial_bar",
+            "value": "serial"
+          },
+          {
+            "entity_id": "ent_amdahl_parallel_bar",
+            "value": "parallel"
+          }
+        ],
+        "series_field": "part",
+        "template": "chart",
+        "title": "Two upgrades from 8 cores (illustrative)",
+        "x": {
+          "field": "option",
+          "kind": "nominal",
+          "title": "",
+          "unit": ""
+        },
+        "y": {
+          "field": "seconds",
+          "kind": "quantitative",
+          "title": "seconds",
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_new_ceiling"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_newc_num",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_moved",
+            "token_end": 17,
+            "token_start": 17
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_new_ceiling_label"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_newc_label",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_moved",
+            "token_end": 36,
+            "token_start": 36
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_newc_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_moved",
+            "token_end": 37,
+            "token_start": 37
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_ceiling_10x",
+        "clm_serial_fast",
+        "clm_total_1core"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show that the smaller serial part raised the ceiling.",
+      "scene_id": "scn_amdahl_new_ceiling",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_ceiling_10x",
+            "entity_id": "ent_amdahl_new_ceiling",
+            "text": "10×"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_new_ceiling_label",
+            "text": "the new ceiling after the faster scan"
+          }
+        ],
+        "template": "text",
+        "variant": "big_number"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_amdahl_fr_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_fraction",
+            "token_end": 1,
+            "token_start": 1
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_badf7ce9b130"
+            }
+          ],
+          "beat_id": "bt_amdahl_fr_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_fraction",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_badf7ce9b130"
+            }
+          ],
+          "beat_id": "bt_amdahl_fr_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_fraction",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_fr_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_fraction",
+            "token_end": 33,
+            "token_start": 33
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_amdahl_fraction"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Quote the article's general rule.",
+      "scene_id": "scn_amdahl_src_fraction",
+      "section": "change_variable",
+      "source_ids": [
+        "src_wiki_amdahl"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_amdahl",
+        "initial_section_id": "sec_8ecba6fec672",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_opt_share"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_opt_share",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_wrongpart",
+            "token_end": 17,
+            "token_start": 17
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_opt_factor"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_opt_factor",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_wrongpart",
+            "token_end": 25,
+            "token_start": 25
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_opt_overall"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_opt_overall",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_wrongpart",
+            "token_end": 33,
+            "token_start": 33
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_opt_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_wrongpart",
+            "token_end": 38,
+            "token_start": 38
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_opt_share",
+        "clm_opt_factor",
+        "clm_opt_overall",
+        "clm_opt_gain",
+        "clm_opt_model"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Lay out the article's optimize-the-wrong-part example.",
+      "scene_id": "scn_amdahl_wrongpart",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_opt_share",
+            "entity_id": "ent_amdahl_opt_share",
+            "text": "Part improved: 10% of the running time"
+          },
+          {
+            "claim_id": "clm_opt_factor",
+            "entity_id": "ent_amdahl_opt_factor",
+            "text": "Made 10,000 times faster"
+          },
+          {
+            "claim_id": "clm_opt_overall",
+            "entity_id": "ent_amdahl_opt_overall",
+            "text": "Whole program: 1.11 times faster"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_amdahl_small_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_small",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_26cd91f3b62c"
+            }
+          ],
+          "beat_id": "bt_amdahl_small_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_small",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_26cd91f3b62c"
+            }
+          ],
+          "beat_id": "bt_amdahl_small_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_small",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_small_hold",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_small",
+            "token_end": 18,
+            "token_start": 18
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_opt_small"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Show the article's own conclusion to the example.",
+      "scene_id": "scn_amdahl_src_small",
+      "section": "change_variable",
+      "source_ids": [
+        "src_wiki_amdahl"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_amdahl",
+        "initial_section_id": "sec_89102ea9c564",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_clock_cores"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_clock_cores",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_clock",
+            "token_end": 20,
+            "token_start": 20
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_clock_fast"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_clock_fast",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_clock",
+            "token_end": 43,
+            "token_start": 43
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight",
+              "targets": [
+                "ent_amdahl_clock_fast"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_clock_hi",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_clock",
+            "token_end": 54,
+            "token_start": 54
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_clock_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_clock",
+            "token_end": 66,
+            "token_start": 66
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_tot_002c",
+        "clm_tot_2xcore",
+        "clm_serial_2xcore",
+        "clm_par_2xcore",
+        "clm_total_1core",
+        "clm_serial_20s",
+        "clm_parallel_80s"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Contrast more cores with faster cores.",
+      "scene_id": "scn_amdahl_clock",
+      "section": "change_variable",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_tot_002c",
+            "entity_id": "ent_amdahl_clock_cores",
+            "text": "Twice the cores: 60 seconds"
+          },
+          {
+            "claim_id": "clm_tot_2xcore",
+            "entity_id": "ent_amdahl_clock_fast",
+            "text": "Each core twice as fast: 50 seconds"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_fixed"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_fixed",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_fixed",
+            "token_end": 8,
+            "token_start": 8
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_fixed_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_fixed",
+            "token_end": 18,
+            "token_start": 18
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gus_contrast"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Name the assumption the law makes.",
+      "scene_id": "scn_amdahl_fixed_size",
+      "section": "show_limits",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_fixed",
+            "text": "Amdahl assumes the job stays the same size."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "show_source"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_show",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gustafson",
+            "token_end": 3,
+            "token_start": 3
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_9d834c6eacbb"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_focus",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gustafson",
+            "token_end": 14,
+            "token_start": 14
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_9d834c6eacbb"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_mark",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gustafson",
+            "token_end": 22,
+            "token_start": 22
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_gustafson",
+            "token_end": 54,
+            "token_start": 54
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "clear_highlight",
+              "targets": []
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_clear",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gus_serial",
+            "token_end": 0,
+            "token_start": 0
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "focus_passage",
+              "quote_id": "qt_bf42fe8510c5"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_focus2",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gus_serial",
+            "token_end": 4,
+            "token_start": 4
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "highlight_quote",
+              "quote_id": "qt_bf42fe8510c5"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_mark2",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gus_serial",
+            "token_end": 10,
+            "token_start": 10
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_gus_hold2",
+          "cue": {
+            "duration_class": "medium",
+            "relation": "after",
+            "segment_id": "seg_amdahl_gus_serial",
+            "token_end": 48,
+            "token_start": 48
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_gus_1988",
+        "clm_gus_contrast",
+        "clm_gus_serial"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Set Gustafson's growing workloads against Amdahl's fixed size.",
+      "scene_id": "scn_amdahl_src_gustafson",
+      "section": "show_limits",
+      "source_ids": [
+        "src_wiki_gustafson"
+      ],
+      "sponsored": false,
+      "template": {
+        "capture_asset_id": "ast_wiki_gustafson",
+        "initial_section_id": "sec_429cbe085a48",
+        "template": "source_document"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_gus_one"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_gusw_one",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gusworked",
+            "token_end": 31,
+            "token_start": 31
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_gus_eight"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_gusw_eight",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gusworked",
+            "token_end": 52,
+            "token_start": 52
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_gus_scaled"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_gusw_scaled",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_gusworked",
+            "token_end": 61,
+            "token_start": 61
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_gusw_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_gusworked",
+            "token_end": 74,
+            "token_start": 74
+          }
+        }
+      ],
+      "claim_ids": [
+        "clm_cores_008",
+        "clm_gus_par8",
+        "clm_gus_onecore",
+        "clm_gus_share8",
+        "clm_gus_eight",
+        "clm_gus_scaled",
+        "clm_ceiling_5x"
+      ],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Run Gustafson's view on our own program.",
+      "scene_id": "scn_amdahl_gus_worked",
+      "section": "show_limits",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": "clm_gus_onecore",
+            "entity_id": "ent_amdahl_gus_one",
+            "text": "Bigger job on one core: 660 seconds"
+          },
+          {
+            "claim_id": "clm_gus_eight",
+            "entity_id": "ent_amdahl_gus_eight",
+            "text": "Bigger job on eight cores: 100 seconds"
+          },
+          {
+            "claim_id": "clm_gus_scaled",
+            "entity_id": "ent_amdahl_gus_scaled",
+            "text": "Scaled speedup: 6.6 times"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_lo_coord"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_lo_coord",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_leaves_out",
+            "token_end": 9,
+            "token_start": 9
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_lo_memory"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_lo_memory",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_leaves_out",
+            "token_end": 13,
+            "token_start": 13
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_lo_data"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_lo_data",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_leaves_out",
+            "token_end": 17,
+            "token_start": 17
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_lo_best"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_lo_best",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_leaves_out",
+            "token_end": 30,
+            "token_start": 30
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_lo_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_leaves_out",
+            "token_end": 34,
+            "token_start": 34
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "List what the ideal model ignores.",
+      "scene_id": "scn_amdahl_leaves_out",
+      "section": "show_limits",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_lo_coord",
+            "text": "Coordinating the cores"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_lo_memory",
+            "text": "Sharing memory"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_lo_data",
+            "text": "Moving data"
+          },
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_lo_best",
+            "text": "So these curves are the best case"
+          }
+        ],
+        "template": "text",
+        "variant": "list"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_answer"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_answer",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_answer",
+            "token_end": 12,
+            "token_start": 12
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_answer_hold",
+          "cue": {
+            "duration_class": "short",
+            "relation": "after",
+            "segment_id": "seg_amdahl_answer",
+            "token_end": 36,
+            "token_start": 36
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Answer the question in one sentence.",
+      "scene_id": "scn_amdahl_answer",
+      "section": "synthesis",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_answer",
+            "text": "Some work can only happen one step at a time."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    },
+    {
+      "beats": [
+        {
+          "actions": [
+            {
+              "action": "reveal",
+              "targets": [
+                "ent_amdahl_advice"
+              ]
+            }
+          ],
+          "beat_id": "bt_amdahl_advice",
+          "cue": {
+            "duration_class": "short",
+            "relation": "on",
+            "segment_id": "seg_amdahl_advice",
+            "token_end": 6,
+            "token_start": 6
+          }
+        },
+        {
+          "actions": [
+            {
+              "action": "hold"
+            }
+          ],
+          "beat_id": "bt_amdahl_advice_hold",
+          "cue": {
+            "duration_class": "long",
+            "relation": "after",
+            "segment_id": "seg_amdahl_advice",
+            "token_end": 32,
+            "token_start": 32
+          }
+        }
+      ],
+      "claim_ids": [],
+      "initial_visible": [],
+      "layout": "primary",
+      "purpose": "Leave the viewer with the practical rule.",
+      "scene_id": "scn_amdahl_advice",
+      "section": "synthesis",
+      "source_ids": [],
+      "sponsored": false,
+      "template": {
+        "items": [
+          {
+            "claim_id": null,
+            "entity_id": "ent_amdahl_advice",
+            "text": "Find the serial part. Its share is your ceiling."
+          }
+        ],
+        "template": "text",
+        "variant": "statement"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "script_hash": "14978504e00af5a4fb108590af12a2a507a3e56058a6ada17938edc27940959f",
+  "script_id": "scr_amdahl_ep01",
+  "spec_id": "vs_amdahl_ep01"
+}

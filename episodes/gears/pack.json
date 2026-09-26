@@ -1,0 +1,1357 @@
+{
+  "calculations": [
+    {
+      "calc_id": "calc_gears_ratio53_19",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_big_ring",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_sprocket_19",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_ratio53_19"
+    },
+    {
+      "calc_id": "calc_gears_ratio39_14",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_small_ring",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_sprocket_14",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_ratio39_14"
+    },
+    {
+      "calc_id": "calc_gears_turns_very_low",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_one_km",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_dev_very_low",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_turns_very_low"
+    },
+    {
+      "calc_id": "calc_gears_turns_low",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_one_km",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_dev_low",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_turns_low"
+    },
+    {
+      "calc_id": "calc_gears_turns_medium",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_one_km",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_dev_medium",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_turns_medium"
+    },
+    {
+      "calc_id": "calc_gears_turns_high",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_one_km",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_dev_high",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_turns_high"
+    },
+    {
+      "calc_id": "calc_gears_turns_very_high",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_one_km",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_dev_very_high",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_turns_very_high"
+    },
+    {
+      "calc_id": "calc_gears_turn_ratio",
+      "op": "div",
+      "operands": [
+        {
+          "claim_id": "clm_gears_turns_very_low",
+          "kind": "claim"
+        },
+        {
+          "claim_id": "clm_gears_turns_very_high",
+          "kind": "claim"
+        }
+      ],
+      "result_claim_id": "clm_gears_turn_ratio"
+    }
+  ],
+  "claims": [
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_definition",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_definition"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "Gearing sets the relation between the rider's cadence and the drive wheel's rate.",
+      "time_basis": "",
+      "value": null
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_big_ring",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_same_ratio"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "The article's example gear uses 53 teeth.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 53.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_sprocket_19",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_same_ratio"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "The article's example gear uses 19 teeth.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 19.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_small_ring",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_same_ratio"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "The article's example gear uses 39 teeth.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 39.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_sprocket_14",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_same_ratio"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "The article's example gear uses 14 teeth.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 14.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_same_ratio",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_same_ratio"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "The article says 53/19 and 39/14 are effectively the same gear ratio.",
+      "time_basis": "",
+      "value": null
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_devdef",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_development"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "Metres of development is the distance travelled for one rotation of the pedals.",
+      "time_basis": "",
+      "value": null
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_trade_off",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_trade_off"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "A lower gear needs a faster cadence but less force for the same speed.",
+      "time_basis": "",
+      "value": null
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_sprint_rpm",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_sprint_rpm"
+      ],
+      "geography": "",
+      "rationale": "stated in the captured Wikipedia article",
+      "short_label": "",
+      "stable": true,
+      "statement": "Cadence above 100 rpm becomes less effective after short bursts.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 100.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_cadence80",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_rpm_header",
+        "ev_gears_table_note"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "80 pedal turns a minute",
+      "stable": true,
+      "statement": "The article's table gives speeds at 80 pedal turns a minute.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 80.0,
+        "uncertainty": "exact",
+        "unit": "count"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_ratio53_19",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_ratio53_19",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "53 teeth over 19 teeth.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 2.789473684210526,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_ratio39_14",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_ratio39_14",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "interpretation",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "39 teeth over 14 teeth.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 2.7857142857142856,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_one_km",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "a round distance chosen to compare gears",
+      "short_label": "1 km",
+      "stable": true,
+      "statement": "The comparison distance is one kilometre.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 1.0,
+        "uncertainty": "exact",
+        "unit": "km"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_dev_very_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_very_low",
+        "ev_gears_table_note"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Very low: 1.6 m",
+      "stable": true,
+      "statement": "The table's very low gear travels 1.6 m per pedal turn.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 1.6,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_kmh_very_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_very_low",
+        "ev_gears_rpm_header"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Very low: 7.6 km/h",
+      "stable": true,
+      "statement": "The table's very low gear at 80 rpm goes 7.6 km/h.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 7.6,
+        "uncertainty": "exact",
+        "unit": "km/h"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_turns_very_low",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_turns_very_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "Pedal turns to cover 1 km in the very low gear.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 625.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_dev_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_low",
+        "ev_gears_table_note"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Low: 3.2 m",
+      "stable": true,
+      "statement": "The table's low gear travels 3.2 m per pedal turn.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 3.2,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_kmh_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_low",
+        "ev_gears_rpm_header"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Low: 15.4 km/h",
+      "stable": true,
+      "statement": "The table's low gear at 80 rpm goes 15.4 km/h.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 15.4,
+        "uncertainty": "exact",
+        "unit": "km/h"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_turns_low",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_turns_low",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "Pedal turns to cover 1 km in the low gear.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 312.5,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_dev_medium",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_medium",
+        "ev_gears_table_note"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Medium: 5.6 m",
+      "stable": true,
+      "statement": "The table's medium gear travels 5.6 m per pedal turn.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 5.6,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_kmh_medium",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_medium",
+        "ev_gears_rpm_header"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Medium: 26.7 km/h",
+      "stable": true,
+      "statement": "The table's medium gear at 80 rpm goes 26.7 km/h.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 26.7,
+        "uncertainty": "exact",
+        "unit": "km/h"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_turns_medium",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_turns_medium",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "Pedal turns to cover 1 km in the medium gear.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 178.57142857142858,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_dev_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_high",
+        "ev_gears_table_note"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "High: 8.0 m",
+      "stable": true,
+      "statement": "The table's high gear travels 8.0 m per pedal turn.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 8.0,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_kmh_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_high",
+        "ev_gears_rpm_header"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "High: 38.6 km/h",
+      "stable": true,
+      "statement": "The table's high gear at 80 rpm goes 38.6 km/h.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 38.6,
+        "uncertainty": "exact",
+        "unit": "km/h"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_turns_high",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_turns_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "Pedal turns to cover 1 km in the high gear.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 125.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_dev_very_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_very_high",
+        "ev_gears_table_note"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Very high: 10.0 m",
+      "stable": true,
+      "statement": "The table's very high gear travels 10.0 m per pedal turn.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 10.0,
+        "uncertainty": "exact",
+        "unit": "m"
+      }
+    },
+    {
+      "calculation_id": null,
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_kmh_very_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "observation",
+      "evidence_ids": [
+        "ev_gears_row_very_high",
+        "ev_gears_rpm_header"
+      ],
+      "geography": "",
+      "rationale": "a cell of the captured article's gear table (170 mm cranks, 700C wheels, 25 mm tyres)",
+      "short_label": "Very high: 47.8 km/h",
+      "stable": true,
+      "statement": "The table's very high gear at 80 rpm goes 47.8 km/h.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 47.8,
+        "uncertainty": "exact",
+        "unit": "km/h"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_turns_very_high",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_turns_very_high",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "",
+      "stable": true,
+      "statement": "Pedal turns to cover 1 km in the very high gear.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 100.0,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    },
+    {
+      "calculation_id": "calc_gears_turn_ratio",
+      "checked_at": "2026-09-26",
+      "claim_id": "clm_gears_turn_ratio",
+      "consequential": false,
+      "corroboration": {
+        "independent_source_ids": [],
+        "note": "",
+        "status": "not_required"
+      },
+      "disputed": false,
+      "epistemic_class": "illustrative_assumption",
+      "evidence_ids": [],
+      "geography": "",
+      "rationale": "our arithmetic on the article's table",
+      "short_label": "6.25× the turns",
+      "stable": true,
+      "statement": "The lowest gear needs this many times more turns per km than the highest.",
+      "time_basis": "",
+      "value": {
+        "high": null,
+        "low": null,
+        "magnitude": 6.25,
+        "uncertainty": "exact",
+        "unit": "ratio"
+      }
+    }
+  ],
+  "datasets": [
+    {
+      "columns": [
+        {
+          "kind": "ordinal",
+          "name": "gear",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "metres",
+          "unit": "m"
+        }
+      ],
+      "dataset_id": "ds_gears_development",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_gears_dev_very_low"
+          ],
+          "key": "very_low",
+          "values": [
+            "Very low",
+            1.6
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_dev_low"
+          ],
+          "key": "low",
+          "values": [
+            "Low",
+            3.2
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_dev_medium"
+          ],
+          "key": "medium",
+          "values": [
+            "Medium",
+            5.6
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_dev_high"
+          ],
+          "key": "high",
+          "values": [
+            "High",
+            8.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_dev_very_high"
+          ],
+          "key": "very_high",
+          "values": [
+            "Very high",
+            10.0
+          ]
+        }
+      ],
+      "title": "Metres per pedal turn (article's table)"
+    },
+    {
+      "columns": [
+        {
+          "kind": "ordinal",
+          "name": "gear",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "kmh",
+          "unit": "km/h"
+        }
+      ],
+      "dataset_id": "ds_gears_speed_80rpm",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_gears_kmh_very_low"
+          ],
+          "key": "very_low",
+          "values": [
+            "Very low",
+            7.6
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_kmh_low"
+          ],
+          "key": "low",
+          "values": [
+            "Low",
+            15.4
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_kmh_medium"
+          ],
+          "key": "medium",
+          "values": [
+            "Medium",
+            26.7
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_kmh_high"
+          ],
+          "key": "high",
+          "values": [
+            "High",
+            38.6
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_kmh_very_high"
+          ],
+          "key": "very_high",
+          "values": [
+            "Very high",
+            47.8
+          ]
+        }
+      ],
+      "title": "Speed at 80 rpm (article's table)"
+    },
+    {
+      "columns": [
+        {
+          "kind": "ordinal",
+          "name": "gear",
+          "unit": ""
+        },
+        {
+          "kind": "quantitative",
+          "name": "turns",
+          "unit": "ratio"
+        }
+      ],
+      "dataset_id": "ds_gears_turns_per_km",
+      "rows": [
+        {
+          "claim_ids": [
+            "clm_gears_turns_very_low"
+          ],
+          "key": "very_low",
+          "values": [
+            "Very low",
+            625.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_turns_low"
+          ],
+          "key": "low",
+          "values": [
+            "Low",
+            312.5
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_turns_medium"
+          ],
+          "key": "medium",
+          "values": [
+            "Medium",
+            178.57142857142858
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_turns_high"
+          ],
+          "key": "high",
+          "values": [
+            "High",
+            125.0
+          ]
+        },
+        {
+          "claim_ids": [
+            "clm_gears_turns_very_high"
+          ],
+          "key": "very_high",
+          "values": [
+            "Very high",
+            100.0
+          ]
+        }
+      ],
+      "title": "Pedal turns per kilometre (computed)"
+    }
+  ],
+  "frozen_at": "2026-09-26T09:00:00Z",
+  "items": [
+    {
+      "context_after": " On some bicycles there is only one gear and, therefore, the gear ratio is fixed, but most modern bicycles have multiple gears and thus multiple gear ratios. A",
+      "context_before": "From Wikipedia, the free encyclopedia A Rohloff Speedhub model hub gear A Shimano XT rear derailleur on a mountain bike A bicycle gearbox with chain tensioner ",
+      "geography": "",
+      "item_id": "ev_gears_definition",
+      "locator": {
+        "end": 1154,
+        "kind": "char_range",
+        "start": 970
+      },
+      "passage": "Bicycle gearing is the aspect of a bicycle drivetrain that determines the relation between the cadence, the rate at which the rider pedals, and the rate at which the drive wheel turns.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Examplesedit The following table provides some comparison of the various methods of measuring gears (the particular numbers are for bicycles with 170 mm cranks",
+      "context_before": "s the ratio between the distance travelled by the bicycle and the distance travelled by a pedal, and is a pure number, independent of any units of measurement. ",
+      "geography": "",
+      "item_id": "ev_gears_same_ratio",
+      "locator": {
+        "end": 6077,
+        "kind": "char_range",
+        "start": 5773
+      },
+      "passage": "Front/rear gear measurement uses two numbers (e.g. 53/19) where the first is the number of teeth in the front chainring and the second is the number of teeth in the rear sprocket. Without doing some arithmetic, it is not immediately obvious that 53/19 and 39/14 represent effectively the same gear ratio.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Gain ratio is the ratio between the distance travelled by the bicycle and the distance travelled by a pedal, and is a pure number, independent of any units of",
+      "context_before": "to one decimal place. Gear inches corresponds to the diameter (in inches) of the main wheel of an old-fashioned penny-farthing bicycle with equivalent gearing. ",
+      "geography": "",
+      "item_id": "ev_gears_development",
+      "locator": {
+        "end": 5600,
+        "kind": "char_range",
+        "start": 5483
+      },
+      "passage": "Metres of development corresponds to the distance (in metres) traveled by the bicycle for one rotation of the pedals.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Conversely, a higher gear (smaller mechanical advantage) provides a higher speed for a given cadence, but requires the rider to exert greater force or stand wh",
+      "context_before": "lso depends on the internal planetary gears within the hub. For a shaft-driven bicycle the gear ratio depends on the bevel gears used at each end of the shaft. ",
+      "geography": "",
+      "item_id": "ev_gears_trade_off",
+      "locator": {
+        "end": 2576,
+        "kind": "char_range",
+        "start": 2415
+      },
+      "passage": "For a bicycle to travel at the same speed, using a lower gear (larger mechanical advantage) requires the rider to pedal at a faster cadence, but with less force.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": "[1] Measuring gear ratiosedit Methodsedit There are at least four different methods[2] for measuring gear ratios: gear inches, metres of development (roll-out),",
+      "context_before": ", riding position, and pedalling force. Prolonged exertion of too much force in too high a gear at too low a cadence can increase the chance of knee damage;[1] ",
+      "geography": "",
+      "item_id": "ev_gears_sprint_rpm",
+      "locator": {
+        "end": 3056,
+        "kind": "char_range",
+        "start": 2972
+      },
+      "passage": "cadence above 100 rpm becomes less effective after short bursts, as during a sprint.",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": "). Speeds for several cadences in revolutions per minute are also given. On each row the relative values for gear inches, metres of development, gain ratio, and",
+      "context_before": "53/19 and 39/14 represent effectively the same gear ratio. Examplesedit The following table provides some comparison of the various methods of measuring gears (",
+      "geography": "",
+      "item_id": "ev_gears_table_note",
+      "locator": {
+        "end": 6267,
+        "kind": "char_range",
+        "start": 6179
+      },
+      "passage": "the particular numbers are for bicycles with 170 mm cranks, 700C wheels, and 25 mm tyres",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " mph km/h mph km/h mph km/h mph km/h Very high 125 10.0 9.4 53/11 22.3 36 29.7 47.8 37.1 59.7 44.5 72 High 100 8.0 7.5 53/14 18 29 24 38.6 30 48.3 36 57.9 Mediu",
+      "context_before": "round 45 gear inches (3.6 meters), or 35 gear inches (2.8 meters) if fitted with a compact crankset). Gear Gear inches Metre development Gain ratio Front/ rear ",
+      "geography": "",
+      "item_id": "ev_gears_rpm_header",
+      "locator": {
+        "end": 6833,
+        "kind": "char_range",
+        "start": 6804
+      },
+      "passage": "60 rpm 80 rpm 100 rpm 120 rpm",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Single speed bicyclesedit Main article: Single-speed bicycle Single-speed mountain bike A single-speed bicycle is a type of bicycle with a single gear ratio an",
+      "context_before": "5 53/14 18 29 24 38.6 30 48.3 36 57.9 Medium 70 5.6 5.2 53/19 or 39/14 12.5 20 16.6 26.7 21 33.6 25 40 Low 40 3.2 3.0 34/23 7.2 11.6 9.6 15.4 11.9 19.2 14.3 23 ",
+      "geography": "",
+      "item_id": "ev_gears_row_very_low",
+      "locator": {
+        "end": 7168,
+        "kind": "char_range",
+        "start": 7110
+      },
+      "passage": "Very low 20 1.6 1.5 32/42 3.5 5.6 4.7 7.6 5.9 9.5 7.1 11.4",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Very low 20 1.6 1.5 32/42 3.5 5.6 4.7 7.6 5.9 9.5 7.1 11.4 Single speed bicyclesedit Main article: Single-speed bicycle Single-speed mountain bike A single-spe",
+      "context_before": "53/11 22.3 36 29.7 47.8 37.1 59.7 44.5 72 High 100 8.0 7.5 53/14 18 29 24 38.6 30 48.3 36 57.9 Medium 70 5.6 5.2 53/19 or 39/14 12.5 20 16.6 26.7 21 33.6 25 40 ",
+      "geography": "",
+      "item_id": "ev_gears_row_low",
+      "locator": {
+        "end": 7109,
+        "kind": "char_range",
+        "start": 7053
+      },
+      "passage": "Low 40 3.2 3.0 34/23 7.2 11.6 9.6 15.4 11.9 19.2 14.3 23",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Low 40 3.2 3.0 34/23 7.2 11.6 9.6 15.4 11.9 19.2 14.3 23 Very low 20 1.6 1.5 32/42 3.5 5.6 4.7 7.6 5.9 9.5 7.1 11.4 Single speed bicyclesedit Main article: Sin",
+      "context_before": "0 rpm mph km/h mph km/h mph km/h mph km/h Very high 125 10.0 9.4 53/11 22.3 36 29.7 47.8 37.1 59.7 44.5 72 High 100 8.0 7.5 53/14 18 29 24 38.6 30 48.3 36 57.9 ",
+      "geography": "",
+      "item_id": "ev_gears_row_medium",
+      "locator": {
+        "end": 7052,
+        "kind": "char_range",
+        "start": 6988
+      },
+      "passage": "Medium 70 5.6 5.2 53/19 or 39/14 12.5 20 16.6 26.7 21 33.6 25 40",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " Medium 70 5.6 5.2 53/19 or 39/14 12.5 20 16.6 26.7 21 33.6 25 40 Low 40 3.2 3.0 34/23 7.2 11.6 9.6 15.4 11.9 19.2 14.3 23 Very low 20 1.6 1.5 32/42 3.5 5.6 4.7",
+      "context_before": "pment Gain ratio Front/ rear 60 rpm 80 rpm 100 rpm 120 rpm mph km/h mph km/h mph km/h mph km/h Very high 125 10.0 9.4 53/11 22.3 36 29.7 47.8 37.1 59.7 44.5 72 ",
+      "geography": "",
+      "item_id": "ev_gears_row_high",
+      "locator": {
+        "end": 6987,
+        "kind": "char_range",
+        "start": 6935
+      },
+      "passage": "High 100 8.0 7.5 53/14 18 29 24 38.6 30 48.3 36 57.9",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    },
+    {
+      "context_after": " High 100 8.0 7.5 53/14 18 29 24 38.6 30 48.3 36 57.9 Medium 70 5.6 5.2 53/19 or 39/14 12.5 20 16.6 26.7 21 33.6 25 40 Low 40 3.2 3.0 34/23 7.2 11.6 9.6 15.4 11",
+      "context_before": "if fitted with a compact crankset). Gear Gear inches Metre development Gain ratio Front/ rear 60 rpm 80 rpm 100 rpm 120 rpm mph km/h mph km/h mph km/h mph km/h ",
+      "geography": "",
+      "item_id": "ev_gears_row_very_high",
+      "locator": {
+        "end": 6934,
+        "kind": "char_range",
+        "start": 6870
+      },
+      "passage": "Very high 125 10.0 9.4 53/11 22.3 36 29.7 47.8 37.1 59.7 44.5 72",
+      "quoted_at": "2026-09-26",
+      "source_id": "src_wiki_gearing",
+      "time_basis": "",
+      "unit": ""
+    }
+  ],
+  "language": "en",
+  "pack_id": "pk_gears_2026",
+  "schema_version": 1,
+  "sources": [
+    {
+      "accessed_at": "2026-09-26T05:57:07.948Z",
+      "author": "Wikipedia contributors",
+      "canonical_url": "https://en.wikipedia.org/wiki/Bicycle_gearing",
+      "capture_id": "cap_c240ae88accc",
+      "content_sha256": "721d5dc09948e36bdb5a6cc827b6c6b094af3f7ed9da445ae083d146c53c6a22",
+      "published_at": null,
+      "publisher": "Wikipedia",
+      "rights_status": "quotable_excerpt",
+      "source_class": "reference",
+      "source_id": "src_wiki_gearing",
+      "title": "Bicycle gearing",
+      "url": "https://en.wikipedia.org/wiki/Bicycle_gearing"
+    }
+  ],
+  "topic": "What bicycle gears actually trade"
+}

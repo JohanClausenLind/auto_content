@@ -1,0 +1,95 @@
+{
+  "artifact_sha256": "85ca44678a068e2a1f9114b3b71330c5f53030f96ac07004c108a5b54883210e",
+  "author": "Wikipedia contributors",
+  "capture_id": "cap_85ca44678a06",
+  "capture_kind": "wacz",
+  "captured_at": "2026-09-26T06:11:47.144Z",
+  "claim_ids": [
+    "clm_lat_marea_ends"
+  ],
+  "extractor": "resolve-passages.mjs",
+  "extractor_version": "0.1.0",
+  "page_height_px": 2477.0,
+  "published_at": null,
+  "publisher": "Wikipedia",
+  "quotes": [
+    {
+      "claim_ids": [
+        "clm_lat_marea_ends"
+      ],
+      "context_after": "It began operations in February 2018.[7] In January 2019, Telxius announced that AWS had signed an IRU agreement to use",
+      "context_before": "andy in October 2012.[5][6] Construction began shortly afterwards, in August 2016, and was completed in September 2017,",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 700.36,
+          "x": 264.0,
+          "y": 675.47
+        }
+      ],
+      "locator": {
+        "end_offset": 1,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/p[1]/#text[5]",
+        "kind": "dom_range",
+        "start_offset": 92,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/p[1]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_cee9e10a95c9",
+      "section_id": "sec_29cf13694b75",
+      "text": "connecting Virginia Beach, Virginia, in the United States, with Sopelana, a town near Bilbao, Spain."
+    }
+  ],
+  "schema_version": 1,
+  "sections": [
+    {
+      "heading": "Contents",
+      "order": 0,
+      "scroll_y_px": 136.94,
+      "section_id": "sec_c6f8edc39543"
+    },
+    {
+      "heading": "MAREA",
+      "order": 1,
+      "scroll_y_px": 90.05,
+      "section_id": "sec_5750fcf5ebdf"
+    },
+    {
+      "heading": "History",
+      "order": 2,
+      "scroll_y_px": 456.39,
+      "section_id": "sec_29cf13694b75"
+    },
+    {
+      "heading": "Operation",
+      "order": 3,
+      "scroll_y_px": 848.47,
+      "section_id": "sec_9385d5de35ee"
+    },
+    {
+      "heading": "See also",
+      "order": 4,
+      "scroll_y_px": 1204.55,
+      "section_id": "sec_19bf33123831"
+    },
+    {
+      "heading": "References",
+      "order": 5,
+      "scroll_y_px": 1347.81,
+      "section_id": "sec_a2114d7301e9"
+    }
+  ],
+  "signature_domain": "",
+  "signed": false,
+  "source_id": "src_wiki_marea",
+  "text_sha256": "cd2d9cda74636d9f7d416e92b52714c37561e7bc8cb762c1b8d8f7c9d614bb8d",
+  "title": "MAREA",
+  "tls_certificate_sha256": "08e0b65df41fb075ec91c1dcd2cacc4e8c7dda53b754806525117b32f7b73253",
+  "url": "https://en.wikipedia.org/wiki/MAREA",
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

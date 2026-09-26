@@ -73,6 +73,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 "scripts/**" = ["T20", "S603", "S607"]  # operator harnesses: ffmpeg/ffprobe from PATH, argument arrays only
 "skills/**" = ["T20", "S105", "S603", "S607", "E501"]  # executors print their interface; special tokens are not secrets
 "skills/video/blender_scene/**" = ["N813"]  # OpenImageIO as oiio
+"episodes/**" = ["T20", "E501", "RUF001"]  # editorial builders: narration lines, × and – in on-screen text
 "skills/audio/qwen3tts/samples.py" = ["RUF001"]  # Chinese sample text uses fullwidth punctuation
 "python/content_factory/audio/*.py" = ["S603", "S607"]  # ffmpeg/ffprobe from PATH, argument arrays only
 "python/content_factory/qc/*.py" = ["S603", "S607"]
@@ -84,7 +85,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", 
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
-include = ["python", "apps", "tests", "scripts"]
+include = ["python", "apps", "tests", "scripts", "episodes"]
 venvPath = "."
 venv = ".venv"
 # scripts/ is not a package; the harnesses put it on sys.path themselves, so pyright needs it here.

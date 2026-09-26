@@ -175,3 +175,19 @@ def test_fixture_generator_is_byte_stable(tmp_path: Path) -> None:
     assert [p.name for p in written] == list(FILES)
     for path in written:
         assert path.read_bytes() == (FIXTURES / path.name).read_bytes(), path.name
+
+
+def test_a_hedged_round_number_matches_its_rounded_claim() -> None:
+    from content_factory.explainer.evidence import _tolerance
+
+    tokens = tokenize("light in the fibre travels at about 207,000 kilometres per second")
+    mention = next(m for m in number_mentions(tokens) if m.value == 207000)
+    assert _tolerance(mention, tokens) > 111.9
+    bare = tokenize("light in the fibre travels at 207,000 kilometres per second")
+    bare_mention = next(m for m in number_mentions(bare) if m.value == 207000)
+    assert _tolerance(bare_mention, bare) < 1
+
+
+def test_a_spoken_compound_unit_reads_as_a_rate() -> None:
+    [mention] = number_mentions(tokenize("light travels at 207,000 kilometres per second, roughly"))
+    assert mention.unit == "km/s"

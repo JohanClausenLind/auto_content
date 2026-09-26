@@ -1,0 +1,343 @@
+{
+  "artifact_sha256": "c240ae88accc42a8a79d7051dd8c92aa7609d32c92092703043c2b968b3609f0",
+  "author": "Wikipedia contributors",
+  "capture_id": "cap_c240ae88accc",
+  "capture_kind": "wacz",
+  "captured_at": "2026-09-26T05:57:07.948Z",
+  "claim_ids": [
+    "clm_gears_definition",
+    "clm_gears_same_ratio",
+    "clm_gears_devdef",
+    "clm_gears_trade_off",
+    "clm_gears_sprint_rpm"
+  ],
+  "extractor": "resolve-passages.mjs",
+  "extractor_version": "0.1.0",
+  "page_height_px": 13706.0,
+  "published_at": null,
+  "publisher": "Wikipedia",
+  "quotes": [
+    {
+      "claim_ids": [
+        "clm_gears_definition"
+      ],
+      "context_after": "On some bicycles there is only one gear and, therefore, the gear ratio is fixed, but most modern bicycles have multiple",
+      "context_before": "Rohloff Speedhub model hub gear A Shimano XT rear derailleur on a mountain bike A bicycle gearbox with chain tensioner",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 398.44,
+          "x": 264.0,
+          "y": 213.39
+        },
+        {
+          "height": 17.0,
+          "width": 445.62,
+          "x": 264.0,
+          "y": 239.39
+        },
+        {
+          "height": 17.0,
+          "width": 424.27,
+          "x": 264.0,
+          "y": 265.39
+        }
+      ],
+      "locator": {
+        "end_offset": 7,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[1]/#text[3]",
+        "kind": "dom_range",
+        "start_offset": 0,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[1]/b[0]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_b5268eb498de",
+      "section_id": "sec_3caf0e6f6770",
+      "text": "Bicycle gearing is the aspect of a bicycle drivetrain that determines the relation between the cadence, the rate at which the rider pedals, and the rate at which the drive wheel turns."
+    },
+    {
+      "claim_ids": [
+        "clm_gears_same_ratio"
+      ],
+      "context_after": "Examplesedit The following table provides some comparison of the various methods of measuring gears (the particular num",
+      "context_before": "teeth in the front chainring and the second is the number of teeth in the rear sprocket. Without doing some arithmetic,",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 645.42,
+          "x": 367.83,
+          "y": 2202.16
+        }
+      ],
+      "locator": {
+        "end_offset": 304,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/section[0]/ul[1]/li[0]/#text[0]",
+        "kind": "dom_range",
+        "start_offset": 211,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/section[0]/ul[1]/li[0]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_712252b33ba6",
+      "section_id": "sec_1aa93c97af39",
+      "text": "it is not immediately obvious that 53/19 and 39/14 represent effectively the same gear ratio."
+    },
+    {
+      "claim_ids": [
+        "clm_gears_devdef"
+      ],
+      "context_after": "Gain ratio is the ratio between the distance travelled by the bicycle and the distance travelled by a pedal, and is a p",
+      "context_before": "ponds to the diameter (in inches) of the main wheel of an old-fashioned penny-farthing bicycle with equivalent gearing.",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 386.0,
+          "x": 573.31,
+          "y": 2038.16
+        },
+        {
+          "height": 17.0,
+          "width": 429.56,
+          "x": 289.59,
+          "y": 2064.16
+        }
+      ],
+      "locator": {
+        "end_offset": 151,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/section[0]/dl[1]/dd[0]/#text[1]",
+        "kind": "dom_range",
+        "start_offset": 34,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[1]/section[0]/dl[1]/dd[0]/#text[1]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_1ebd3b1a1935",
+      "section_id": "sec_1aa93c97af39",
+      "text": "Metres of development corresponds to the distance (in metres) traveled by the bicycle for one rotation of the pedals."
+    },
+    {
+      "claim_ids": [
+        "clm_gears_trade_off"
+      ],
+      "context_after": "Conversely, a higher gear (smaller mechanical advantage) provides a higher speed for a given cadence, but requires the",
+      "context_before": "ars within the hub. For a shaft-driven bicycle the gear ratio depends on the bevel gears used at each end of the shaft.",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 427.78,
+          "x": 264.0,
+          "y": 885.39
+        },
+        {
+          "height": 17.0,
+          "width": 434.03,
+          "x": 264.0,
+          "y": 911.39
+        },
+        {
+          "height": 17.0,
+          "width": 246.34,
+          "x": 264.0,
+          "y": 937.39
+        }
+      ],
+      "locator": {
+        "end_offset": 161,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[4]/#text[0]",
+        "kind": "dom_range",
+        "start_offset": 0,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[4]/#text[0]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_3b04c54a4d9a",
+      "section_id": "sec_3caf0e6f6770",
+      "text": "For a bicycle to travel at the same speed, using a lower gear (larger mechanical advantage) requires the rider to pedal at a faster cadence, but with less force."
+    },
+    {
+      "claim_ids": [
+        "clm_gears_sprint_rpm"
+      ],
+      "context_after": "[1] Measuring gear ratiosedit Methodsedit There are at least four different methods[2] for measuring gear ratios: gear i",
+      "context_before": "Prolonged exertion of too much force in too high a gear at too low a cadence can increase the chance of knee damage;[1]",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 60.5,
+          "x": 658.06,
+          "y": 1093.39
+        },
+        {
+          "height": 17.0,
+          "width": 423.03,
+          "x": 264.0,
+          "y": 1119.39
+        },
+        {
+          "height": 17.0,
+          "width": 105.84,
+          "x": 264.0,
+          "y": 1145.39
+        }
+      ],
+      "locator": {
+        "end_offset": 85,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[4]/#text[1]",
+        "kind": "dom_range",
+        "start_offset": 1,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[0]/p[4]/#text[1]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_49c70f628fbe",
+      "section_id": "sec_3caf0e6f6770",
+      "text": "cadence above 100 rpm becomes less effective after short bursts, as during a sprint."
+    }
+  ],
+  "schema_version": 1,
+  "sections": [
+    {
+      "heading": "Contents",
+      "order": 0,
+      "scroll_y_px": 136.94,
+      "section_id": "sec_c6f8edc39543"
+    },
+    {
+      "heading": "Bicycle gearing",
+      "order": 1,
+      "scroll_y_px": 90.05,
+      "section_id": "sec_3caf0e6f6770"
+    },
+    {
+      "heading": "Measuring gear ratios",
+      "order": 2,
+      "scroll_y_px": 1198.39,
+      "section_id": "sec_7009650ac357"
+    },
+    {
+      "heading": "Methods",
+      "order": 3,
+      "scroll_y_px": 1253.06,
+      "section_id": "sec_1aa93c97af39"
+    },
+    {
+      "heading": "Examples",
+      "order": 4,
+      "scroll_y_px": 2242.55,
+      "section_id": "sec_0c509d17f3bc"
+    },
+    {
+      "heading": "Single speed bicycles",
+      "order": 5,
+      "scroll_y_px": 2836.89,
+      "section_id": "sec_ec3305adc936"
+    },
+    {
+      "heading": "General considerations",
+      "order": 6,
+      "scroll_y_px": 3312.97,
+      "section_id": "sec_4e5446808fd6"
+    },
+    {
+      "heading": "Relative gearing",
+      "order": 7,
+      "scroll_y_px": 3635.64,
+      "section_id": "sec_8ced379f651e"
+    },
+    {
+      "heading": "Usable gears",
+      "order": 8,
+      "scroll_y_px": 4423.95,
+      "section_id": "sec_8e98b5225f00"
+    },
+    {
+      "heading": "Gearing range",
+      "order": 9,
+      "scroll_y_px": 5111.45,
+      "section_id": "sec_ef4df2d9094b"
+    },
+    {
+      "heading": "Types of gear change mechanisms",
+      "order": 10,
+      "scroll_y_px": 6362.3,
+      "section_id": "sec_4829c58b5d03"
+    },
+    {
+      "heading": "External (derailleur)",
+      "order": 11,
+      "scroll_y_px": 6590.97,
+      "section_id": "sec_d43d00d5b0df"
+    },
+    {
+      "heading": "Internal (hub)",
+      "order": 12,
+      "scroll_y_px": 8505.64,
+      "section_id": "sec_0f713c627f1c"
+    },
+    {
+      "heading": "Internal (bottom bracket)",
+      "order": 13,
+      "scroll_y_px": 8782.75,
+      "section_id": "sec_22ee2634026e"
+    },
+    {
+      "heading": "Internal and external combined",
+      "order": 14,
+      "scroll_y_px": 9137.86,
+      "section_id": "sec_28bc45cd041b"
+    },
+    {
+      "heading": "Others",
+      "order": 15,
+      "scroll_y_px": 9801.75,
+      "section_id": "sec_536f2b00ef14"
+    },
+    {
+      "heading": "Efficiency",
+      "order": 16,
+      "scroll_y_px": 10427.44,
+      "section_id": "sec_34f875092de3"
+    },
+    {
+      "heading": "Overview",
+      "order": 17,
+      "scroll_y_px": 10871.7,
+      "section_id": "sec_78d8a0b87fc4"
+    },
+    {
+      "heading": "Details",
+      "order": 18,
+      "scroll_y_px": 11322.02,
+      "section_id": "sec_1c02fd03d6f1"
+    },
+    {
+      "heading": "See also",
+      "order": 19,
+      "scroll_y_px": 11968.23,
+      "section_id": "sec_e592aa595534"
+    },
+    {
+      "heading": "References",
+      "order": 20,
+      "scroll_y_px": 12168.28,
+      "section_id": "sec_7f70b6b5cbf0"
+    }
+  ],
+  "signature_domain": "",
+  "signed": false,
+  "source_id": "src_wiki_gearing",
+  "text_sha256": "721d5dc09948e36bdb5a6cc827b6c6b094af3f7ed9da445ae083d146c53c6a22",
+  "title": "Bicycle gearing",
+  "tls_certificate_sha256": "08e0b65df41fb075ec91c1dcd2cacc4e8c7dda53b754806525117b32f7b73253",
+  "url": "https://en.wikipedia.org/wiki/Bicycle_gearing",
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

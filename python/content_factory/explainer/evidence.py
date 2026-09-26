@@ -278,7 +278,7 @@ def _mention_issues(
         # (distance, "value unit", claim id) per comparable claim; the nearest one names the fix.
         said: list[tuple[float, str, str]] = []
         conflicts: list[str] = []
-        tolerance = 0.5 * 10.0 ** -_mention_decimals(mention) + _EPSILON
+        tolerance = _tolerance(mention, tokens)
         for claim in valued:
             value = claim.value
             assert value is not None
@@ -323,11 +323,35 @@ def _looks_like_year(value: float) -> bool:
 
 def _following_unit(tokens: tuple[str, ...], index: int) -> str | None:
     following = tokens[index + 1 : index + 3]
+    unit, width = None, 0
     if len(following) == 2:
-        two_words = unit_for_word(" ".join(following))
-        if two_words is not None:
-            return two_words
-    return unit_for_word(following[0]) if following else None
+        unit = unit_for_word(" ".join(following))
+        width = 2 if unit is not None else 0
+    if unit is None and following:
+        unit = unit_for_word(following[0])
+        width = 1 if unit is not None else 0
+    if unit is None:
+        return None
+    # Spoken compound units: "kilometres per second" is km/s, not km.
+    rest = tokens[index + 1 + width : index + 3 + width]
+    if len(rest) == 2 and rest[0].strip(",.;:").lower() in {"per", "a", "an", "each", "every"}:
+        denominator = unit_for_word(rest[1])
+        if denominator is not None:
+            return f"{unit}/{denominator}"
+    return unit
+
+
+HEDGES = frozenset({"about", "around", "roughly", "nearly", "almost", "approximately", "some"})
+
+
+def _tolerance(mention: NumberMention, tokens: tuple[str, ...]) -> float:
+    """Half a unit of the stated precision; after a hedge like "about", trailing zeros round."""
+    precision = 10.0 ** -_mention_decimals(mention)
+    previous = tokens[mention.token_index - 1].strip(",.;:").lower() if mention.token_index else ""
+    if previous in HEDGES and _mention_decimals(mention) == 0 and mention.value:
+        digits = str(int(abs(mention.value)))
+        precision = 10.0 ** (len(digits) - len(digits.rstrip("0")))
+    return 0.5 * precision + _EPSILON
 
 
 def _mention_decimals(mention: NumberMention) -> int:

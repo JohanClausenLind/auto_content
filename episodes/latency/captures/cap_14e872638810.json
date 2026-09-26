@@ -1,0 +1,359 @@
+{
+  "artifact_sha256": "14e872638810eb231d3d43b9652c9d117a033bc05ef1953e542c26197b362f48",
+  "author": "Wikipedia contributors",
+  "capture_id": "cap_14e872638810",
+  "capture_kind": "wacz",
+  "captured_at": "2026-09-26T06:11:04.897Z",
+  "claim_ids": [
+    "clm_lat_core_index",
+    "clm_lat_rule_speed",
+    "clm_lat_syd_dist",
+    "clm_lat_syd_delay"
+  ],
+  "extractor": "resolve-passages.mjs",
+  "extractor_version": "0.1.0",
+  "page_height_px": 30666.0,
+  "published_at": null,
+  "publisher": "Wikipedia",
+  "quotes": [
+    {
+      "claim_ids": [
+        "clm_lat_core_index"
+      ],
+      "context_after": ".[66] The larger the index of refraction, the slower light travels in that medium. From this information, a simple rule",
+      "context_before": "ingle-mode fiber used for telecommunications has a cladding made of pure silica, with an index of 1.444 at 1500 nm, and",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 356.7,
+          "x": 384.09,
+          "y": 8068.19
+        }
+      ],
+      "locator": {
+        "end_offset": 58,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[3]/section[0]/p[0]/#text[5]",
+        "kind": "dom_range",
+        "start_offset": 8,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[3]/section[0]/p[0]/#text[5]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 0.9901,
+      "ocr_verified": true,
+      "quote_id": "qt_1beb26529e07",
+      "section_id": "sec_6b01e198fc14",
+      "text": "a core of doped silica with an index around 1.4475"
+    },
+    {
+      "claim_ids": [
+        "clm_lat_rule_speed"
+      ],
+      "context_after": "Thus a phone call carried by fiber between Sydney and New York, a 16,000-kilometer distance, means that there is a mini",
+      "context_before": "around 1.4475.[66] The larger the index of refraction, the slower light travels in that medium. From this information,",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 306.83,
+          "x": 699.72,
+          "y": 8094.19
+        },
+        {
+          "height": 17.0,
+          "width": 586.97,
+          "x": 264.0,
+          "y": 8120.19
+        }
+      ],
+      "locator": {
+        "end_offset": 231,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[3]/section[0]/p[0]/#text[6]",
+        "kind": "dom_range",
+        "start_offset": 101,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[3]/section[0]/p[0]/#text[6]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 1.0,
+      "ocr_verified": true,
+      "quote_id": "qt_fb86722120a9",
+      "section_id": "sec_6b01e198fc14",
+      "text": "a simple rule of thumb is that a signal using optical fiber for communication will travel at around 200,000 kilometers per second."
+    },
+    {
+      "claim_ids": [
+        "clm_lat_syd_dist",
+        "clm_lat_syd_delay"
+      ],
+      "context_after": "(about 1 12 of a second) between when one caller speaks and the other hears.[c] Total internal reflectionedit When ligh",
+      "context_before": "le of thumb is that a signal using optical fiber for communication will travel at around 200,000 kilometers per second.",
+      "line_rects": [
+        {
+          "height": 17.0,
+          "width": 126.31,
+          "x": 855.11,
+          "y": 8120.19
+        },
+        {
+          "height": 17.0,
+          "width": 695.5,
+          "x": 264.0,
+          "y": 8146.19
+        },
+        {
+          "height": 17.0,
+          "width": 239.2,
+          "x": 264.0,
+          "y": 8173.95
+        }
+      ],
+      "locator": {
+        "end_offset": 379,
+        "end_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[3]/section[0]/p[0]/#text[6]",
+        "kind": "dom_range",
+        "start_offset": 232,
+        "start_path": "html/body[0]/div[2]/div[0]/div[2]/main[0]/div[2]/div[1]/div[0]/section[3]/section[0]/p[0]/#text[6]"
+      },
+      "occurrence_index": 0,
+      "ocr_similarity": 0.9966,
+      "ocr_verified": true,
+      "quote_id": "qt_98b1d8de504a",
+      "section_id": "sec_6b01e198fc14",
+      "text": "Thus a phone call carried by fiber between Sydney and New York, a 16,000-kilometer distance, means that there is a minimum delay of 80 milliseconds"
+    }
+  ],
+  "schema_version": 1,
+  "sections": [
+    {
+      "heading": "Contents",
+      "order": 0,
+      "scroll_y_px": 136.94,
+      "section_id": "sec_c6f8edc39543"
+    },
+    {
+      "heading": "Optical fiber",
+      "order": 1,
+      "scroll_y_px": 90.05,
+      "section_id": "sec_4d7ce9d4aef1"
+    },
+    {
+      "heading": "History",
+      "order": 2,
+      "scroll_y_px": 1146.39,
+      "section_id": "sec_29cf13694b75"
+    },
+    {
+      "heading": "Uses",
+      "order": 3,
+      "scroll_y_px": 3070.47,
+      "section_id": "sec_e6d17323e2a4"
+    },
+    {
+      "heading": "Communication",
+      "order": 4,
+      "scroll_y_px": 3125.14,
+      "section_id": "sec_ab480ba5d792"
+    },
+    {
+      "heading": "Lighting",
+      "order": 5,
+      "scroll_y_px": 4329.84,
+      "section_id": "sec_72475ee7c6d5"
+    },
+    {
+      "heading": "Sensors",
+      "order": 6,
+      "scroll_y_px": 5199.34,
+      "section_id": "sec_2959ef468642"
+    },
+    {
+      "heading": "Imaging",
+      "order": 7,
+      "scroll_y_px": 6096.45,
+      "section_id": "sec_7f0b15141839"
+    },
+    {
+      "heading": "Power transmission",
+      "order": 8,
+      "scroll_y_px": 6290.77,
+      "section_id": "sec_46578d37a4d7"
+    },
+    {
+      "heading": "Other uses",
+      "order": 9,
+      "scroll_y_px": 6485.08,
+      "section_id": "sec_9118866d33e0"
+    },
+    {
+      "heading": "Principle of operation",
+      "order": 10,
+      "scroll_y_px": 7170.8,
+      "section_id": "sec_af6e4b1e77a7"
+    },
+    {
+      "heading": "Refractive index",
+      "order": 11,
+      "scroll_y_px": 7899.47,
+      "section_id": "sec_6b01e198fc14"
+    },
+    {
+      "heading": "Total internal reflection",
+      "order": 12,
+      "scroll_y_px": 8253.44,
+      "section_id": "sec_9799636cadb4"
+    },
+    {
+      "heading": "Multi-mode fiber",
+      "order": 13,
+      "scroll_y_px": 8671.75,
+      "section_id": "sec_7d002d55df45"
+    },
+    {
+      "heading": "Single-mode fiber",
+      "order": 14,
+      "scroll_y_px": 9458.86,
+      "section_id": "sec_ebc4f9d0e9f8"
+    },
+    {
+      "heading": "Special-purpose fiber",
+      "order": 15,
+      "scroll_y_px": 9969.97,
+      "section_id": "sec_c83ca79971fc"
+    },
+    {
+      "heading": "Mechanisms of attenuation",
+      "order": 16,
+      "scroll_y_px": 10233.69,
+      "section_id": "sec_57d6103f33f6"
+    },
+    {
+      "heading": "Light scattering",
+      "order": 17,
+      "scroll_y_px": 11228.36,
+      "section_id": "sec_0f562df5fac4"
+    },
+    {
+      "heading": "UV-Vis-IR absorption",
+      "order": 18,
+      "scroll_y_px": 12764.69,
+      "section_id": "sec_ecaee668f6db"
+    },
+    {
+      "heading": "Loss budget",
+      "order": 19,
+      "scroll_y_px": 13502.59,
+      "section_id": "sec_b7ef79504d92"
+    },
+    {
+      "heading": "Manufacturing",
+      "order": 20,
+      "scroll_y_px": 14056.3,
+      "section_id": "sec_2f3d4d5c9965"
+    },
+    {
+      "heading": "Materials",
+      "order": 21,
+      "scroll_y_px": 14110.97,
+      "section_id": "sec_f5516e28ef8e"
+    },
+    {
+      "heading": "Process",
+      "order": 22,
+      "scroll_y_px": 16223.66,
+      "section_id": "sec_8b69ec84790f"
+    },
+    {
+      "heading": "Cladding",
+      "order": 23,
+      "scroll_y_px": 17759.95,
+      "section_id": "sec_58d91392a877"
+    },
+    {
+      "heading": "Coatings",
+      "order": 24,
+      "scroll_y_px": 17928.27,
+      "section_id": "sec_05633ed7c449"
+    },
+    {
+      "heading": "Cable construction",
+      "order": 25,
+      "scroll_y_px": 19126.11,
+      "section_id": "sec_3beed322f7f9"
+    },
+    {
+      "heading": "Practical issues",
+      "order": 26,
+      "scroll_y_px": 19644.62,
+      "section_id": "sec_987ca7fd3e36"
+    },
+    {
+      "heading": "Installation",
+      "order": 27,
+      "scroll_y_px": 19822.09,
+      "section_id": "sec_83db18f91804"
+    },
+    {
+      "heading": "Termination and splicing",
+      "order": 28,
+      "scroll_y_px": 20110.41,
+      "section_id": "sec_9c58970f2417"
+    },
+    {
+      "heading": "Free-space coupling",
+      "order": 29,
+      "scroll_y_px": 21637.52,
+      "section_id": "sec_b52c924b5950"
+    },
+    {
+      "heading": "Fiber fuse",
+      "order": 30,
+      "scroll_y_px": 22201.83,
+      "section_id": "sec_290896b813d3"
+    },
+    {
+      "heading": "Chromatic dispersion",
+      "order": 31,
+      "scroll_y_px": 22474.14,
+      "section_id": "sec_8c4777c4c287"
+    },
+    {
+      "heading": "See also",
+      "order": 32,
+      "scroll_y_px": 23064.66,
+      "section_id": "sec_295ee5e114f9"
+    },
+    {
+      "heading": "Notes",
+      "order": 33,
+      "scroll_y_px": 23430.27,
+      "section_id": "sec_8e52ab6e7960"
+    },
+    {
+      "heading": "References",
+      "order": 34,
+      "scroll_y_px": 23875.22,
+      "section_id": "sec_0042f8afd6d9"
+    },
+    {
+      "heading": "Further reading",
+      "order": 35,
+      "scroll_y_px": 29196.11,
+      "section_id": "sec_f616fc15e7a2"
+    },
+    {
+      "heading": "External links",
+      "order": 36,
+      "scroll_y_px": 29763.34,
+      "section_id": "sec_5c4abb8300ed"
+    }
+  ],
+  "signature_domain": "",
+  "signed": false,
+  "source_id": "src_wiki_fiber",
+  "text_sha256": "c11d7f76bc037779a1ffaabc07d498e306ad5b33ebb72e23ba3d5f2dd17b2896",
+  "title": "Optical fiber",
+  "tls_certificate_sha256": "08e0b65df41fb075ec91c1dcd2cacc4e8c7dda53b754806525117b32f7b73253",
+  "url": "https://en.wikipedia.org/wiki/Optical_fiber",
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0000.png",
+    "y_px": 0
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0001.png",
+    "y_px": 800
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0002.png",
+    "y_px": 1600
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0003.png",
+    "y_px": 2400
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0004.png",
+    "y_px": 3200
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0005.png",
+    "y_px": 4000
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0006.png",
+    "y_px": 4800
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0007.png",
+    "y_px": 5600
+  },
+  {
+    "path": "output/explainer/sources/amdahl/tiles-22ceb8a6e963/tile-0008.png",
+    "y_px": 6159
+  }
+]
