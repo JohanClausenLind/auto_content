@@ -23,7 +23,9 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 DEFAULT_SCHEMA = Path(__file__).resolve().parents[1] / "docs/prompts/explainer-planner/schema.json"
-STRUCTURAL_OPS = {"zoom_in", "zoom_out", "compare", "fault"}
+# A structural move changes the diagram's structure (prompt <pacing>); reveal, highlight,
+# update, trace and dismiss do not count.
+STRUCTURAL_OPS = {"zoom_in", "zoom_out", "split", "morph", "merge", "branch", "compare", "fault"}
 ENTERING_OPS = {"reveal", "split", "morph", "merge", "trace"}
 NEEDS_VISIBLE = {"highlight", "update", "fault", "dismiss", "compare", "branch"}
 SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -31,13 +33,19 @@ MARKUP = re.compile(r"[()\[\]*_`#<>{}]")
 WPS = 145 / 60  # the repo's planning rate, 145 spoken words per minute
 VALUE_OPS = {"update", "highlight", "fault", "trace"}
 DATA_PRIMITIVES = {"memory_row", "register", "state_table", "graph_line", "graph_bar", "timeline"}
-UPDATABLE = DATA_PRIMITIVES | {"code_block", "callout", "label"}
+UPDATABLE = DATA_PRIMITIVES | {"data_packet", "code_block", "callout", "label"}
 CELL_INDEX = re.compile(r"^[0-9]+(,[0-9]+)*$")
 MULTI_TARGET_OPS = {"merge", "compare"}
 
 
 def _words(text: str) -> int:
     return len(text.split())
+
+
+def _first_key(content: str) -> str:
+    """The name key of a data object's first cell ("count" in "count: 5"), or ""."""
+    first = content.split(" | ")[0]
+    return first.split(":", 1)[0].strip() if ":" in first else ""
 
 
 class Report:
@@ -273,9 +281,13 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                     if t in objects and objects[t]["primitive"] not in UPDATABLE:
                         r.err(
                             f"{where}: {t!r} is a {objects[t]['primitive']}; update changes only"
-                            " data objects, code_blocks, callouts and labels (status: a callout)"
+                            " data objects, data_packets, code_blocks, callouts and labels"
+                            " (status: a callout)"
                         )
                     if t in content:
+                        old_key = _first_key(content[t])
+                        if old_key and _first_key(u["value"]) != old_key:
+                            r.warn(f"{where}: {t!r} loses its name key {old_key!r}")
                         content[t] = u["value"]
             elif u["value"] and op in VALUE_OPS:
                 _check_cells(where, op, targets, u["value"], content, r)
@@ -306,6 +318,9 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             if op == "split":
                 if targets[0] in objects and targets[0] not in visible:
                     r.err(f"{where}: {targets[0]!r} is split before it is on screen")
+                for t in targets[1:]:
+                    if t in objects and parent.get(t) != targets[0]:
+                        r.err(f"{where}: split child {t!r} must have {targets[0]!r} as parent")
                 visible.update(targets[1:])
             elif op == "trace":
                 visible.add(targets[0])
@@ -318,6 +333,10 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 for t in targets:
                     if t in objects and t not in visible:
                         r.err(f"{where}: {t!r} is not on screen yet")
+                # morph and merge replace their targets: they and their contents leave, and
+                # arrows that ended at a target now end at into (endpoints are not tracked).
+                gone = {o for o in visible if set(targets) & {o, *_ancestors(o, parent)}}
+                visible.difference_update(gone)
                 if into:
                     visible.add(into)
             elif op == "branch":
@@ -357,7 +376,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
     structural_words.sort()
     for a, b in itertools.pairwise(structural_words):
         if b - a > 100:
-            r.err(f"words {a}-{b} go {b - a} words without a zoom, compare or fault")
+            r.err(f"words {a}-{b} go {b - a} words without a structural move")
     if question_words is None:
         r.err("no narration sentence ends with a question mark: the title question is never asked")
     elif question_words > 29:

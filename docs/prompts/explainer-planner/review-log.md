@@ -51,3 +51,25 @@ Declined:
 - Role prefixes on cells (R4 option A): chose the simpler "cell text carries state, fault marks breakage".
 - transition_out redundancy (R4 nit): no change needed.
 Words: 4067 -> 4302
+
+## Round 3: score 8.1 (min of 8.1 on R5, 8.2 on R6)
+Top issues: the 100-word move rule counted only zoom, compare and fault, forcing repeated faults and back-and-forth zooms on shallow topics; morph and merge never retired their sources (and arrows kept pointing at them), and split's container was unstated; data_packet could not be updated, so load-modify-store flows needed duplicate packets; same-sentence update order undefined.
+Changes:
+- <pacing>: a structural move is any op that changes the diagram's structure: zoom_in, zoom_out, split, morph, merge, branch, compare, fault; reveal, highlight, update, trace, dismiss don't count. Every move must be motivated by the narration, never inserted for the count; if none fits, cut or restructure the stretch. Checker STRUCTURAL_OPS matches exactly; message says "structural move".
+- Planning step 5 marks "the structural move each beat carries" instead of "zoom, compare, or fault".
+- <operations> state rules: morph and merge replace their targets with into (targets and their contents leave, arrows ending at a target now end at into); split keeps its source on screen as its children's container, and the children's parent is the source. Checker removes morph/merge targets and their descendants from the on-screen set and errors on a split child whose parent isn't the source.
+- One name per concept: a morph's into is the same concept in its next form, keeping term and color under a new id.
+- update now allows data_packet (prompt and checker UPDATABLE).
+- at_sentence: updates on one sentence play in array order, spread across the sentence.
+- Data objects: a shown name is the first cell's key ("count: 5") and updates keep it; checker warns when an update drops the key.
+- data_packet at rest is drawn at its endpoint while that endpoint is in view, but only a beat whose frame contains its parent can target it; a callout or fault_marker points at its parent.
+- Collapsed nested frames open for the whole beat when the beat targets inside them.
+- Missing duration: plan 420 s and say so in notes. target_duration_s is 60 to 3600 (prompt and schema, root and skeleton).
+- beats.question: for the two opening beats, the question the beat raises.
+- Cuts to pay: object-permanence example tail, operations intro, the openers line, "a real plan contains every field", the beat-type sentence, step 5's beat-length clause, and pacing wording.
+Declined:
+- Relaxing the gap to 120 words (R6 option): the broader move set removes the pressure while keeping the gap tight; 100 stays.
+- R5's "fault on the step being explained" guidance for any stretch: superseded by the wider move set plus the motivation rule; repeating a fault is exactly what the driver asked to stop.
+- Collapsed frame opening "from that update on" (R6 nit) vs "for the whole beat" (R5 nit): chose the whole beat, so the layout doesn't reflow mid-beat.
+- Arrow endpoint tracking in the checker: the repoint rule needs no validation (arrows never become invalid), so the checker only notes it.
+Words: 4302 -> 4430

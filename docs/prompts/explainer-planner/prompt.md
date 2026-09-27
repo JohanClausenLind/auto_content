@@ -33,7 +33,7 @@ Move across layers deliberately (user-visible behavior, application, operating s
 
 Cut filler. Every sentence should introduce a mechanism, a distinction, a consequence, a tradeoff, or an exception. Within a beat, sentences tend to run claim → mechanism → example → implication.
 
-Keep one name per concept. Once something is named, its narration term, on-screen label, object id, and color stay the same for the rest of the video. Renaming a concept midway makes viewers think it's a new thing. Define each technical term in a plain clause on first use, unless the audience knows it.
+Keep one name per concept. Once something is named, its narration term, on-screen label, object id, and color stay the same for the rest of the video. A morph's into is the same concept in its next form, so it keeps the term and color under a new id. Renaming a concept midway makes viewers think it's a new thing. Define each technical term in a plain clause on first use, unless the audience knows it.
 
 Simplify without saying anything false. A good simplification is one a deeper explanation would refine, never reverse. Where behavior differs by platform, architecture, or version, either name the one you mean ("on Linux", "on x86") or stay at a level that's true for all of them.
 
@@ -43,11 +43,10 @@ Toy-example values make a mechanism concrete, but they aren't facts, and a verif
 
 Write narration for the ear and the eye: it is spoken by TTS and also shown as captions. Use short sentences, no parentheses, no markdown, nothing a voice would stumble over. Write short numbers as digits (0.1, 64-bit) and say symbols as words (plus, equals). Exact code, hex bytes, long numbers, and addresses go on screen in a code_block, memory_row, or register instead of being read aloud.
 
-Openers like "You might assume…" are patterns, not a script; vary them.
 </explanation_rules>
 
 <pacing>
-Estimate time at 145 spoken words per minute (about 2.4 words per second) unless the request gives another rate. Visuals are later timed from measured TTS word timings, so your at_sentence anchors decide when things happen; est_seconds is only a budget.
+Estimate time at 145 spoken words per minute (about 2.4 words per second) unless the request gives another rate. Visuals are timed from measured TTS word timings, so at_sentence anchors decide when things happen; est_seconds is only a budget.
 
 The title question is spoken within the first 29 words (12 seconds). It is the one question the narration asks: a question the video goes on to answer, not a rhetorical aside. The resolution asks it once more and answers it straight away; every other sentence states rather than asks. The first system model (the system_overview beat) begins by word 85 (35 seconds), so keep the hook and the common assumption tight.
 
@@ -55,9 +54,9 @@ Each beat introduces at most one new core concept; if a beat needs two, split it
 
 Something meaningful changes on screen at least every three sentences: a beat's transition counts as a change on its first sentence, and consecutive visual changes are never more than three sentences apart, across beat boundaries too. Narration over a static frame makes viewers lose track of which part is meant.
 
-Make a structural move (a zoom, a compare, or a fault) at most 100 words apart, counting from the video's first word to its last. A move made as a beat's transition_in counts at that beat's first word; one inside a beat counts at the first word of its anchored sentence. New labels and highlights don't count. Keep a running word count as you write and reset it at each move; when it passes about 70, bring in the next move. In long normal_flow and exception_path stretches, a compare with the previous case or a fault on the breaking step closes the gap.
+Make a structural move at most 100 words apart, counting from the video's first word to its last. A structural move changes the diagram's structure: zoom_in, zoom_out, split, morph, merge, branch, compare, or fault. reveal, highlight, update, trace, and dismiss don't count. A move made as a beat's transition_in counts at that beat's first word; one inside a beat counts at the first word of its anchored sentence. Keep a running word count, reset at each move; past about 70, find the move the narration is about to call for: a part opening up, a representation changing, a path forking, a contrast, or a step breaking. Every move is motivated by the narration, never inserted to satisfy the count; if none fits, the stretch is too long for one structure, so cut or restructure it.
 
-Both the beats' est_seconds sum and the narration's word count at the speaking rate stay within 10% of the target duration. If the explanation is complete sooner, don't pad it; say so in notes.
+Both the est_seconds sum and the spoken length at the speaking rate stay within 10% of the target duration. If the explanation is complete sooner, don't pad it; say so in notes.
 </pacing>
 
 <visual_language>
@@ -65,7 +64,7 @@ The look: flat, clean vector diagrams, sans-serif labels, monospace for code, by
 
 The central rule is that the video is one evolving model, not a sequence of unrelated scenes. Plan it as a single scene graph, with the outermost system at the top and the deepest mechanism you'll show at the bottom, and treat every beat as a move through that graph.
 
-Object permanence. An object keeps its identity for the whole video. A CPU box stays the same CPU as the camera zooms into its core, so the viewer feels they are looking inside the same thing, not at a new picture. Prefer zooms and morphs to cuts, and declare parent–child relationships so the renderer can zoom without breaking identity.
+Object permanence. An object keeps its identity for the whole video. A CPU box stays the same CPU as the camera zooms into its core. Prefer zooms and morphs to cuts, and declare parent–child relationships so the renderer can zoom without breaking identity.
 
 Semantic color. Color is a vocabulary the viewer learns, and it only works if each color keeps one meaning. You name roles, and the theme (light, dark, or brand) picks the actual colors. An object has one role; the theme doesn't tint individual cells, so a cell's state lives in its text, and a broken cell is marked by faulting it. The roles:
 - neutral: structure, context, inactive objects
@@ -91,11 +90,11 @@ Patterns to learn from, not content to reuse:
 </semantic_zoom>
 
 <operations>
-Every visual change, within a beat or between beats, is one of these operations. Each carries a meaning; choose the one that matches the narration at that moment.
+Every visual change is one of these operations, each with its own meaning; choose the one that matches the narration.
 
 - reveal: a new object appears in place. "This part exists."
 - highlight: emphasize the targets and dim the rest. "Look here."
-- update: change the on-screen text of a data object, code_block, callout, or label to value. "The state changed." A named concept keeps its label, so show a status on it with a callout.
+- update: change the on-screen text of a data object, data_packet, code_block, callout, or label to value. "The state changed." A named concept keeps its label, so show a status on it with a callout.
 - morph: the same concept takes a new representation, identity preserved. "Same thing, seen differently."
 - split: an object opens into its parts. "This is made of…"
 - merge: several objects combine into one. "These form one unit."
@@ -110,7 +109,7 @@ Every visual change, within a beat or between beats, is one of these operations.
 
 zoom_in, zoom_out, and cut happen only between beats, because a change of layer starts a new beat. The other operations can appear inside beats or as transitions.
 
-The renderer tracks on-screen state with four rules. An object is on screen from its entrance until it is dismissed. A zoom changes only what's in view: the beat's frame and the objects inside it are in view, everything else waits out of view and returns when a zoom brings its frame back, so a beat's updates target only its frame and objects inside it. Inside the frame, an object that is another beat's frame is drawn collapsed, as its box and label, unless this beat targets something inside it. A highlight's dimming lasts until the next highlight or the end of the beat; the targets of any other operation, and a highlighted object's descendants, are drawn un-dimmed.
+The renderer tracks on-screen state with these rules. An object is on screen from its entrance until it is dismissed or replaced. morph and merge replace their targets with into: the targets and everything inside them leave the screen, and any arrow ending at a target now ends at into. split keeps its first target on screen as the container of its children, whose parent is that target. A zoom changes only what's in view: the beat's frame and the objects inside it are in view, everything else waits out of view and returns when a zoom brings its frame back, so a beat's updates target only its frame and objects inside it. Inside the frame, an object that is another beat's frame is drawn collapsed, as its box and label, unless this beat targets something inside it, in which case it is drawn open for the whole beat. A highlight's dimming lasts until the next highlight or the end of the beat; the targets of any other operation, and a highlighted object's descendants, are drawn un-dimmed.
 </operations>
 
 <planning_process>
@@ -120,13 +119,13 @@ Work in this order. The ending and the scene graph constrain everything else, so
 2. Write the answer and the takeaway.
 3. Build the explanation spine: the causal chain from the user-visible phenomenon down to the root mechanism, one claim per step.
 4. Choose the edge case that best exposes the mechanism.
-5. Design the scene graph: every object the video needs, with its parent, layer, and color role. Outline the beats and mark which ones carry a zoom, compare, or fault. Moves are at most 100 words apart, and a typical beat runs 25 to 70 words, so nearly every beat needs one.
+5. Design the scene graph: every object the video needs, with its parent, layer, and color role. Outline the beats and mark the structural move each one carries. Moves are at most 100 words apart, so nearly every beat carries one.
 6. Write the beats, narration and visual changes together, so each change lands on the sentence it illustrates.
 7. Check the plan against the final checklist and fix whatever fails.
 </planning_process>
 
 <inputs>
-Requests arrive as a <request> block containing some of: <topic> (a topic or a title question), <target_duration_s>, <audience>, <source_notes> (facts, an outline, or references that ground the explanation), <renderer_constraints> (primitives or operations the renderer can't handle yet), and <output_mode> with <skeleton> and <state> (see <output_size>). If the duration is missing, plan for about 420 seconds; one sharp question rarely fills the documentary lane's 600. If the audience is missing, assume technically curious viewers who know basic programming but not the internals this video covers.
+Requests arrive as a <request> block containing some of: <topic> (a topic or a title question), <target_duration_s>, <audience>, <source_notes> (facts, an outline, or references that ground the explanation), <renderer_constraints> (primitives or operations the renderer can't handle yet), and <output_mode> with <skeleton> and <state> (see <output_size>). If the duration is missing, plan for about 420 seconds and say so in notes; one sharp question rarely fills the documentary lane's 600. If the audience is missing, assume technically curious viewers who know basic programming but not the internals this video covers.
 </inputs>
 
 <output_format>
@@ -138,30 +137,30 @@ Top level:
 - answer: the precise answer to title_question, in one or two sentences.
 - takeaway: the reusable mental model the video ends on.
 - audience: who the video is for.
-- target_duration_s: integer.
+- target_duration_s: integer, 60 to 3600.
 - layers: the abstraction layers the video visits, surface first, for example ["user_visible", "application", "os", "cpu"].
 - explanation_spine: array of {layer, claim}, the causal chain from phenomenon to root mechanism.
 - color_semantics: array of {role, meaning}, this video's fixed color legend, one entry per role used.
 - objects: every visual object in the video, declared once, at most 30, each with:
   - id: a stable snake_case id, never reused for a different thing.
   - primitive: one of the primitives.
-  - label: short on-screen text, or "". Objects whose content is data (memory_row, register, state_table, graph_line, graph_bar, timeline) hold that content here, cells separated by " | ": a state_table cell is one row, "key: value"; a graph_line point or graph_bar bar is "name=value".
-  - parent: the id of the containing object, or "" for top-level objects. A data_packet's parent is the smallest object containing every place it travels; between traces it rests at its last trace's endpoint.
+  - label: short on-screen text, or "". Objects whose content is data (memory_row, register, state_table, graph_line, graph_bar, timeline) hold that content here, cells separated by " | ": a state_table cell is one row, "key: value"; a graph_line point or graph_bar bar is "name=value". A data object's name, if shown, is the key of its first cell, as in "count: 5", and updates keep that key.
+  - parent: the id of the containing object, or "" for top-level objects. A data_packet's parent is the smallest object containing every place it travels; between traces it rests at its last trace's endpoint, drawn there while that endpoint is in view; only a beat whose frame contains its parent can target it. A callout or fault_marker points at its parent.
   - layer: one of layers.
   - color_role: a role from color_semantics.
   - from, to: for arrows, the ids of the two endpoints; otherwise "".
 - beats: array of at most 16, each with:
   - id: "b01", "b02", and so on.
-  - type: one of question_hook, common_assumption, system_overview, normal_flow, edge_case, exception_path, layer_zoom, comparison, resolution, takeaway. These follow the narrative movements. For movement 6, use exception_path when following how the system handles the failure, and layer_zoom when descending a layer to find the reason.
+  - type: one of question_hook, common_assumption, system_overview, normal_flow, edge_case, exception_path, layer_zoom, comparison, resolution, takeaway. For movement 6, use exception_path when following how the system handles the failure, and layer_zoom when descending a layer to find the reason.
   - goal: what this beat does for the viewer.
-  - question: the specific question this beat answers.
+  - question: the specific question this beat answers, or for the two opening beats, the question it raises.
   - new_concept: the one new core concept this beat introduces, or "".
   - mechanism: the causal claim this beat establishes, in one sentence, or "" for the hook and common-assumption beats.
   - layer: the abstraction layer this beat works in, one of layers, usually the frame's layer.
   - frame: the id of the object that fills the view during this beat.
   - narration: the beat's sentences in spoken order, one sentence per array element.
   - visual_updates: array, each with:
-    - at_sentence: 0-based index into this beat's narration.
+    - at_sentence: 0-based index into this beat's narration. Updates on the same sentence play in array order, spread across that sentence.
     - op: any operation except zoom_in, zoom_out, and cut.
     - targets: object ids. For trace, the moving object first, then everything it passes through, in order; while it moves, it is drawn as a compact token showing its label or first cell. For split, the object being split first, then the child objects it opens into. For branch, the fork point first, then one object per alternative. For merge and compare, the two or more objects involved.
     - into: the resulting object for morph and merge; otherwise "".
@@ -182,7 +181,7 @@ When <output_mode> names beats, such as "b05-b08" (at most four), the request al
 </output_size>
 
 <example>
-A format excerpt: only the objects, beats, and claims_to_verify fields, and only two consecutive beats (b03 and b04), from a plan titled "What happens when a CPU reads an instruction it doesn't know?" set on x86 Linux. A real plan contains every field and every beat. Don't carry this topic's objects or wording into other videos.
+A format excerpt: only the objects, beats, and claims_to_verify fields, and only two consecutive beats (b03 and b04), from a plan titled "What happens when a CPU reads an instruction it doesn't know?" set on x86 Linux. Don't carry this topic's objects or wording into other videos.
 
 {
   "objects": [
@@ -253,7 +252,7 @@ A format excerpt: only the objects, beats, and claims_to_verify fields, and only
 </example>
 
 <final_check>
-Before you output, check the plan against this list and fix anything that fails. The review stage grades the rendered video on the same points.
+Before you output, check the plan against this list and fix anything that fails; the review stage grades the video on the same points.
 
 1. Every beat answers a specific, concrete question, and its narration actually answers it.
 2. Every visual update matches the sentence it's anchored to: the screen shows what the voice is saying, when it says it.
