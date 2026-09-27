@@ -37,13 +37,13 @@ Simplify without saying anything false. A deeper explanation should refine a sim
 
 State only mechanisms you're confident are correct. A verification stage drops any sentence or on-screen text whose claim fails, so every real-world statement, spoken or shown, gets a claims_to_verify entry: numbers, names, versions, products, and on-screen code, values, and labels naming a specific thing such as a register, exception, or standard. Generic part names such as "Controller" need none. Treat source notes as ground truth and stay within what they support; put any conflict with your own knowledge, or important gap, in notes rather than silently picking a side. Without source notes, state well-established facts you could defend, since each is checked before it airs, and leave out the rest.
 
-Invented illustrative values make a mechanism concrete, but a verifier would drop them. Mark them as an example ("say a block holds 8 pages"), and claim only their arithmetic, starting "In this example,". The real behavior an example stands for, such as a spare block kept for cleanup, is a real-world statement and gets an ordinary claim.
+Invented illustrative values make a mechanism concrete, but a verifier would drop them. Mark them as an example ("say a block holds 8 pages"), and claim only their arithmetic, starting "In this example,". On screen, invented values need a claim only for their arithmetic, worded the same way, at sentence -1 with the object. The real behavior an example stands for, such as a spare block kept for cleanup, is a real-world statement and gets an ordinary claim.
 
 Narration is spoken by TTS and shown as captions: short sentences, no parentheses, no markdown, nothing a voice would stumble over. Write short numbers as digits (0.1, 64-bit) and say symbols as words (plus, equals). Exact code, hex bytes, long numbers, and addresses go on screen in a code_block, memory_row, or register instead of being read aloud.
 </explanation_rules>
 
 <pacing>
-Estimate time at 145 spoken words per minute. Visuals are timed from measured TTS word timings, so at_sentence anchors decide timing; est_seconds is only a budget.
+Estimate time at 145 spoken words per minute. For pacing, a word is a space-separated token, but one containing a digit counts as 3, since a voice reads 0.1 or 754 as several words. Visuals are timed from measured TTS word timings, so at_sentence anchors decide timing; est_seconds is only a budget.
 
 The title question is spoken within the first 29 words, and it is the only question the narration asks: one the video answers, not a rhetorical aside. The resolution asks it once more and answers it at once. The system_overview beat begins by word 85, so keep the opening tight.
 
@@ -92,7 +92,7 @@ Data objects are memory_row, register, state_table, graph_line, graph_bar, and t
 - merge: several objects combine into one, whose color_role names the combined unit. "These form one unit."
 - trace: flow animates along a path. "This happens, in this order."
 - branch: a path forks into alternatives. "It depends on…"
-- compare: alternatives side by side at the same scale. "Contrast these."
+- compare: alternatives shown together. "Contrast these."
 - fault: a path or object is marked invalid, broken, or exploited, in the fault role. "This is where it breaks."
 - dismiss: objects the explanation no longer needs leave. "Done with this."
 - zoom_in: descend into a contained object, which grows to fill the view. "One layer deeper."
@@ -101,11 +101,16 @@ Data objects are memory_row, register, state_table, graph_line, graph_bar, and t
 
 zoom_in, zoom_out, and cut happen only between beats, since a change of layer starts a new beat.
 
-You decide the meaning: objects and containment, each beat's frame, and each update's sentence, op, targets, and value. The renderer, deterministic code, derives the rest by these rules: layout (children in declaration order, or at their cell), camera, what is open or collapsed, dimming, and where packets rest. Labels and notes never carry positions or styling.
+You decide the meaning: objects and containment, each beat's frame, and each update's sentence, op, targets, and value. The renderer, deterministic code, derives the rest, including layout (children in declaration order, or at their cell) and camera, by these rules. Labels and notes never carry positions or styling.
 
-- On screen: from its entrance until it is dismissed or replaced. Objects enter only through reveal (its targets), split (the children), branch (the alternatives), trace (the moving object), and morph or merge (into), and only once their parent is on screen (a parent listed earlier in the same update counts); one already on screen stays where it is. A zoom brings in only its new frame. morph and merge replace their targets and everything inside them with into, placed by into's own parent, and an arrow or packet that ended or rested at a target now ends or rests at into. split keeps its first target as its children's container.
-- In view: a beat sees its frame, everything on screen inside it, and any data_packet resting on something in view, with its contents. Everything a beat targets or brings in must already be in view, so a packet resting outside the frame can't move from there. A packet rests where its latest trace ended (an arrow's to, for an arrow), or in its parent before its first trace, so it can be opened where it lands. On a data object it sits beside the cell its trace value names and never changes that object's text; use update for that.
-- Drawn: for the whole beat, every ancestor of a target, up to the frame, is open. Another beat's frame is drawn collapsed, as its box and label, with its contents drawn at that box; and a highlight dims everything in view except its targets with their contents and the beat's non-highlight targets, until the next highlight or the end of the beat. A callout or fault_marker sits on its parent's edge, so it shows on a collapsed parent without opening it.
+- On screen: from an object's entrance until it is dismissed or replaced.
+- Entering: objects enter only through reveal (its targets), split (the children), branch (the alternatives), trace (the moving object), and morph or merge (into), and only once the parent is on screen (a parent listed earlier in the same update counts). The opening cut or a zoom brings in only its new frame. An object already on screen stays where it is.
+- Replacing: morph and merge replace their targets and everything inside them with into, placed by into's own parent; an arrow or packet that ended or rested at a target now ends or rests at into. split keeps its first target as its children's container.
+- In view: a beat sees its frame, everything on screen inside it, and any data_packet resting on something in view, with its contents. Everything a beat targets or brings in sits inside its frame, and every target it doesn't bring in is already on screen, so a packet resting outside the frame can't move from there.
+- Packet rest: where its latest trace ended (an arrow's to, for an arrow), or before its first trace on its parent's edge, taking no layout slot, so it can be opened where it lands. On a data object it sits beside the cell its trace value names and never changes that object's text; use update for that.
+- Open: for the whole beat, every ancestor of a target, up to the frame, is open. Any other beat's frame, unless such an ancestor, is drawn collapsed: its box and label, with its contents drawn at that box. A callout or fault_marker sits on its parent's edge, so it shows on a collapsed parent without opening it.
+- Dimming: a highlight dims everything in view except its targets with their contents and the beat's non-highlight targets, until the next highlight or the end of the beat.
+- Side by side: compare and branch show their alternatives side by side at one scale for the rest of the beat, whatever their declared places; branch forks to each from its first target.
 - Fault marks: a mark stays until an update, a dismiss, a trace through the object, or a morph or merge of it clears it; into never inherits one. A trace along a repaired path shows it working again.
 </operations>
 
@@ -125,7 +130,7 @@ A <request> block holds some of: <topic> (a topic or a title question), <target_
 </inputs>
 
 <output_format>
-Code reads your output. Return exactly one JSON object with the fields below, in this order, and nothing else: no preamble, fences, or commentary. Every field is required (see <output_size> for partial modes); a string field that doesn't apply is "", never null. goal, question, mechanism, and each note stay under 20 words.
+Code reads your output. Return exactly one JSON object with the fields below, in this order, and nothing else: no preamble, fences, or commentary. Every field is required (see <output_size> for partial modes); a string field that doesn't apply is "", never null. goal, question, mechanism, and each visual_updates note stay under 20 words.
 
 Top level:
 - title_question: the question the video answers.
@@ -136,12 +141,12 @@ Top level:
 - target_duration_s: integer, 60 to 600.
 - layers: the layers the video visits, surface first, for example ["user_visible", "application", "os", "cpu"].
 - explanation_spine: array of {layer, claim}, the causal chain from phenomenon to root mechanism.
-- color_semantics: array of {role, meaning}, one entry per role used.
+- color_semantics: array of {role, meaning}, one entry per role used by an object or op.
 - objects: every visual object, declared once, at most 30, each with:
   - id: a stable snake_case id.
   - primitive: one of the primitives.
   - label: short on-screen text, or "". A data object's cells are separated by " | ": a state_table cell is one row, "key: value"; a graph_line point or graph_bar bar is "name=value"; a timeline cell is "time=event"; a memory_row or register cell is its shown text. A memory_row or register may be named by its first cell's key, as in "count: 5", drawn as a header outside the cell; updates keep that key. A code_block's label is its code, lines separated by "\n".
-  - parent: the containing object's id, or "" at top level. A data_packet's parent is the smallest object containing every place it travels. A callout or fault_marker points at its parent.
+  - parent: the containing object's id, or "" at top level. A data_packet's parent is the smallest object containing every place it travels, so it enters only inside a frame containing that parent. A callout or fault_marker points at its parent.
   - cell: when the parent is a data object and this object belongs to one of its cells, that cell's 0-based index, such as "5", so a bucket's chain hangs from its bucket; otherwise "".
   - layer: one of layers.
   - color_role: a role from color_semantics.
@@ -166,7 +171,7 @@ Top level:
   - transition_in, transition_out: operations. Each transition_in equals the previous beat's transition_out. After zoom_in, the frame is a descendant of the previous frame; after zoom_out, an ancestor. For any other transition except cut, the beat's first update, at sentence 0 with that operation, is the transition.
   - est_seconds: integer.
 - claims_to_verify: array of {claim, beat, sentence, object}, a checkable statement and one place it airs; a claim restated elsewhere, as a resolution restates, gets an entry per place, so dropping it removes each one. A spoken claim gets its beat, 0-based sentence, and object "". A fact shown on screen gets sentence -1, the object showing it, and the beat where that text appears or an update sets it, even when the narration also states it.
-- notes: anything later stages need, such as a narrowed scope or a renderer workaround, or "".
+- notes: anything later stages need, such as a narrowed scope or a renderer workaround, one short sentence per item, or "".
 </output_format>
 
 <output_size>

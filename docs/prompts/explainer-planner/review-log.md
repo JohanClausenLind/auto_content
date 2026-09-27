@@ -156,3 +156,24 @@ scores:
 | 6 | 8.2 | 8.6 | yes (R6) |
 
 The corrections are uncapped: the 9.2 major cap and the 8.5 blocker cap didn't change any of them.
+
+## Round 7: score 9.1 (min of 9.3 on R1, 9.1 on R2; corrected ÷9.5, R2 reported 8.6 ÷10)
+Top issues: no blockers or majors; nine minors (R1 4, R2 5) block the 9.5 gate: an undefined pacing "word", the ancestor-open versus collapsed-frame conflict, where a packet sits before its first trace and where it may enter, "must already be in view" contradicting its own definition, compare/branch layout, invented on-screen values, "each note" versus the top-level notes field, and dense state paragraphs.
+Changes:
+- <pacing>: for pacing, a word is a space-separated token, but a token containing a digit counts as 3, since a voice reads 0.1 or 754 as several words (keeps the digits-in-captions rule).
+- <operations> state rules restructured as a labeled list: On screen, Entering, Replacing, In view, Packet rest, Open, Dimming, Side by side, Fault marks; no rule removed.
+- Open: any other beat's frame is drawn collapsed unless it is an ancestor of a target (ancestor-open wins).
+- In view: "everything a beat targets or brings in sits inside its frame, and every target it doesn't bring in is already on screen" replaces "must already be in view".
+- Packet rest: before its first trace, a packet sits on its parent's edge, taking no layout slot; objects.parent adds "so it enters only inside a frame containing that parent".
+- Side by side: compare and branch show their alternatives side by side at one scale for the rest of the beat, whatever their declared places; branch forks to each from its first target. The compare bullet no longer restates it.
+- Invented values on screen need a claim only for their arithmetic, worded the same way ("In this example,"), at sentence -1 with the object.
+- The 20-word limit names "each visual_updates note"; notes holds one short sentence per item.
+- Nits applied free: the opening cut, like a zoom, brings in only its new frame; color_semantics lists one entry per role used by an object or op.
+- The renderer sentence lists only layout and camera, since the labeled rules now name opening, dimming and packet rests.
+- Checker: pacing counts (landmarks, structural gaps, per-beat and total duration) use `_spoken_words`, where a token containing a digit counts as 3; field limits still count plain tokens. Docstring for packet rest updated.
+- Re-run on round 7 plans: R1 now fails 3 checks (title question at word 36 > 29, overview at word 95 > 85, spoken ~266 s over 110% of 240 s; 41 numeral tokens). R2 now fails 3 (overview at word 87, structural gaps of 104 and 101 words). Both passed before; the new count reflects what TTS speaks.
+Declined:
+- R1 option to let a reveal name a packet's first resting place in value: needs a new value form; the parent rule plus "enters only inside a frame containing that parent" closes it with no schema change.
+- R2 option to list the first pass-through as a packet's start: a trace already starts where the packet rests.
+- Nits: acronym pronunciation (new rule a reviewer could read two ways), "first move usually opens the overview" (derivable), 420 s default (disclosed), tie-point placement (two traces work).
+Words: 3999 -> 4117 (about 3% up; over the ~4,050 target because the labeled list adds label words and the word definition is new; nothing listed in strengths_to_keep was cut)

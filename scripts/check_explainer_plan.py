@@ -45,6 +45,15 @@ def _words(text: str) -> int:
     return len(text.split())
 
 
+# For pacing, a token containing a digit counts as 3 words: a voice reads 0.1 or 754 as several
+# (prompt <pacing>). Field limits such as FIELD_WORD_LIMIT count plain tokens.
+DIGIT_TOKEN_WORDS = 3
+
+
+def _spoken_words(text: str) -> int:
+    return sum(DIGIT_TOKEN_WORDS if any(c.isdigit() for c in tok) else 1 for tok in text.split())
+
+
 def _first_key(content: str) -> str:
     """The name key of a data object's first cell ("count" in "count: 5"), or ""."""
     first = content.split(" | ")[0]
@@ -76,7 +85,7 @@ def _ancestors(oid: str, parent: dict[str, str]) -> list[str]:
 
 def _in_view(oid: str, frame: str, parent: dict[str, str], rest: dict[str, str]) -> bool:
     """In view: the frame, anything inside it, and a data_packet resting on something in view
-    (with its contents). A packet rests where its latest trace ended, else in its parent."""
+    (with its contents). A packet rests where its latest trace ended, else on its parent's edge."""
     seen: set[str] = set()
     cur = oid
     while cur and cur not in seen:
@@ -240,7 +249,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
         n = len(narration)
         if not 2 <= n <= 6 and beat["type"] not in {"question_hook", "takeaway"}:
             r.warn(f"{bid}: {n} sentences (typical is 2-6)")
-        words = sum(_words(s) for s in narration)
+        words = sum(_spoken_words(s) for s in narration)
         spoken_s = words / wps
         if beat["est_seconds"] and abs(beat["est_seconds"] - spoken_s) > max(3, 0.3 * spoken_s):
             r.warn(
@@ -424,7 +433,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 visible.difference_update(targets)
             change_sentences.append(sentence_cursor + at)
             if op in STRUCTURAL_OPS:
-                structural_words.append(word_cursor + sum(_words(s) for s in narration[:at]))
+                structural_words.append(word_cursor + sum(_spoken_words(s) for s in narration[:at]))
         if not opening and not updates and t_in not in {"zoom_in", "zoom_out"}:
             r.warn(f"{bid}: no visual updates")
 
@@ -432,7 +441,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
         running = word_cursor
         asked = False
         for j, s in enumerate(narration):
-            running += _words(s)
+            running += _spoken_words(s)
             if not s.rstrip().endswith("?"):
                 continue
             asked = True
