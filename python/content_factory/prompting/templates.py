@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-PROMPTING_VERSION = "1.0.0"
+PROMPTING_VERSION = "1.1.0"
 """Bumped when :data:`SYSTEM_INSTRUCTION` or any template's text changes.
 
 It belongs in a cache key next to the prompt itself, the same way `PROMPT_COMPILER_VERSION` sits
@@ -38,8 +38,9 @@ SYSTEM_INSTRUCTION = (
     "Never invent a figure, a quotation, a place name or a date. If the material you were given"
     " does not support a claim, leave it out and say nothing in its place — a shorter piece is"
     " correct, an invented one is not.\n"
-    "Write plainly. No marketing register, no rhetorical questions to the reader, no words like"
-    " 'delve', 'unlock', 'journey' or 'landscape' used figuratively."
+    "Write plainly. No marketing register, no filler questions to the reader (a question the piece"
+    " goes on to answer is fine), no words like 'delve', 'unlock', 'journey' or 'landscape' used"
+    " figuratively."
 )
 """The one instruction every model role sends, and nothing role-specific.
 

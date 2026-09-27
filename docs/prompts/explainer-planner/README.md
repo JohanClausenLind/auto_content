@@ -50,7 +50,8 @@ These are facts about this repo, and rubric dimension 8 scores against them.
 - Factual claims go through `research`, then `verify_claims`, then `lock_script`'s claim gate. A
   claim the gate can't anchor to a sentence can't be dropped precisely.
 - The shared system instruction (`prompting/templates.py`) is sent before every role's prompt. It
-  forbids inventing figures, and forbids "rhetorical questions to the reader".
+  forbids inventing figures, and forbids filler questions to the reader. As of prompting 1.1.0, a
+  question the piece goes on to answer is explicitly allowed.
 - The documentary lane plans at 145 words per minute, and its default episode is 600 s.
 - Local models (8B to 27B, through Ollama with constrained decoding) have produced only about
   1,000 output tokens reliably. A 420 s plan is much larger than that.
