@@ -95,3 +95,24 @@ Declined:
 - Revealed data_packet position and split children riding along (R2 nit): renderer layout detail, not free.
 - <words_per_minute> input (R2 option): dropped the "another rate" clause instead; the checker keeps --wps for code.
 Words: 4430 -> 4448
+
+## Round 5: score 8.1 (min of 8.3 on R3, 8.1 on R4)
+Top issues: the on-screen state rules were a pile of special cases, and each round's patch exposed the next edge case. A status callout on a collapsed box opened it and flooded the resolution frame (R4 major). A packet could not be targeted after a zoom into its destination, which forced a duplicate object for one concept (R3 major). A faulted arrow or box could only be cleared by dismissing it. The toy-example rule and the on-screen-fact rule overlapped. "Exactly one data-object target" had two readings. target_duration_s allowed 3600 s, which 16 beats cannot hold.
+Changes (a simplification pass, per the loop driver):
+- <operations>: one statement of the division of labor (the model decides objects, containment, frames, and each update's sentence, op, targets and value; the renderer derives layout, camera, open or collapsed, dimming, and packet rests), followed by five short general rules in place of the 200-word block: On screen, In view, Drawn, Dimming, Fault marks.
+- In view is now recursive: the frame, everything on screen inside it, and any data_packet resting on something in view, with its contents. A packet rests where its latest trace ended. A packet can therefore be opened where it lands (closes R3's major without a new special case).
+- Drawn: a target's ancestors up to the frame open; everything else keeps its default (another beat's frame is collapsed). A callout or fault_marker sits on its parent's edge, so it shows without opening a collapsed parent (closes R4's major).
+- Fault marks are cleared by an update, a dismiss, a trace through the object, or a morph or merge (R4 minor).
+- An object that an operation would bring in but is already on screen stays where it is (R3 minor: branch or trace onto existing objects).
+- The claims rule is one statement: every real-world statement, spoken or shown, gets a claim; generic part names need none. Invented values are marked as an example and only their arithmetic is claimed; the real behavior an example stands for gets an ordinary claim (R3 and R4 minors).
+- value: "exactly one data object among its targets", matching the checker (R3 minor).
+- target_duration_s is 60 to 600 in the prompt and in both schema locations; <pacing> says beats run up to about 90 words past about 450 s (R3 minor).
+- memory_row and register draw a name key as a header (R4 minor). <state> for beat batches now includes where each data_packet rests.
+- Checker: in-view is computed from on-screen containment plus packet rests (an arrow's `to` when a trace ends on an arrow; rests follow morph and merge to into); a trace clears fault marks; the shared-label warning skips data objects (R4 nit).
+- Cuts: the zoom pattern list, the separate "Contrast alternatives" paragraph (folded into movement 7), planning step 7, the duplicated entrance paragraph in <output_format>, the trace-token sentence, the seconds in the pacing landmarks, several final_check items, and other trims.
+Declined:
+- A dismiss-then-reveal workaround for excluded morph (R3 alternative fix): the recursive in-view rule lets one packet object be opened at its destination, so the concept keeps one id.
+- Bulleting the state block without other changes (R3 minor): the block is now bulleted as part of the rewrite, which covers it.
+- Comparing data objects by name key in the shared-label warning: tried, but state tables whose first row is a field such as "name:" gave new false positives, so data objects are skipped instead.
+- Default duration 420 s (R3 nit): kept, with the reason already stated.
+Words: 4448 -> 4440

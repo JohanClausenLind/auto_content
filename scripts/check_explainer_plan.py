@@ -72,6 +72,19 @@ def _ancestors(oid: str, parent: dict[str, str]) -> list[str]:
     return out
 
 
+def _in_view(oid: str, frame: str, parent: dict[str, str], rest: dict[str, str]) -> bool:
+    """In view: the frame, anything inside it, and a data_packet resting on something in view
+    (with its contents). A packet rests where its latest trace ended, else in its parent."""
+    seen: set[str] = set()
+    cur = oid
+    while cur and cur not in seen:
+        if cur == frame:
+            return True
+        seen.add(cur)
+        cur = rest.get(cur) or parent.get(cur, "")
+    return False
+
+
 def check_references(plan: dict, r: Report) -> dict[str, dict]:
     layers = plan["layers"]
     colors = [c["role"] for c in plan["color_semantics"]]
@@ -105,8 +118,12 @@ def check_references(plan: dict, r: Report) -> dict[str, dict]:
                     r.err(f"arrow {oid}: {end} {obj[end]!r} is not a declared object")
         elif obj["from"] or obj["to"]:
             r.err(f"object {oid}: from/to are only for arrows")
+        # One name per concept. A data object's label is its content, not a name, so two data
+        # objects may start with the same cells.
         label = obj["label"].strip().lower()
-        if label and label in labels and obj["primitive"] != "arrow":
+        if obj["primitive"] in DATA_PRIMITIVES | {"arrow"}:
+            continue
+        if label and label in labels:
             r.warn(f"objects {labels[label]} and {oid} share the label {obj['label']!r}")
         labels.setdefault(label, oid)
     return objects
@@ -175,8 +192,10 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             r.err(f"{t} appears {types.count(t)} times; the opening and closing happen once")
 
     visible: set[str] = set()
-    # A fault mark lasts until its object is dismissed, replaced or updated (prompt <operations>).
+    # A fault mark lasts until an update, dismiss, trace through, or morph/merge clears it.
     faulted: set[str] = set()
+    # Where each data_packet rests: the end of its latest trace (an arrow's `to`).
+    rest: dict[str, str] = {}
     sentence_cursor = 0
     word_cursor = 0
     change_sentences: list[int] = []
@@ -244,7 +263,6 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             if t_in not in {"zoom_in", "zoom_out", "cut"} and frame != prev:
                 r.warn(f"{bid}: frame changes {prev!r} -> {frame!r} without a zoom")
         updates = beat["visual_updates"]
-        in_view = {frame, *(o for o in objects if frame in _ancestors(o, parent))}
         if t_in not in {"zoom_in", "zoom_out", "cut"}:
             first = updates[0] if updates else None
             if not first or first["at_sentence"] != 0 or first["op"] != t_in:
@@ -299,9 +317,13 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 _check_cells(where, op, targets, u["value"], content, r)
             if op in MULTI_TARGET_OPS and len(targets) < 2:
                 r.err(f"{where}: {op} needs two or more targets")
-            outside = [t for t in [*targets, into] if t and t in objects and t not in in_view]
+            outside = [
+                t
+                for t in [*targets, into]
+                if t and t in objects and not _in_view(t, frame, parent, rest)
+            ]
             if outside:
-                r.err(f"{where}: {outside} are outside the frame {frame!r}, so not in view")
+                r.err(f"{where}: {outside} are not in view in frame {frame!r}")
             if not u["note"].strip():
                 r.warn(f"{where}: empty note")
             elif _words(u["note"]) >= FIELD_WORD_LIMIT:
@@ -310,11 +332,11 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 again = [t for t in targets if t in faulted]
                 if again:
                     r.warn(
-                        f"{where}: {again} still carry a fault mark; it lasts until the object"
-                        " is dismissed, replaced or updated"
+                        f"{where}: {again} still carry a fault mark; only an update, dismiss,"
+                        " trace, morph or merge clears it"
                     )
                 faulted.update(targets)
-            elif op in {"update", "dismiss"}:
+            elif op in {"update", "dismiss", "trace"}:
                 faulted.difference_update(targets)
             if op == "morph" and into in objects:
                 roles = {objects[t]["color_role"] for t in targets if t in objects}
@@ -349,6 +371,11 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 visible.update(targets[1:])
             elif op == "trace":
                 visible.add(targets[0])
+                end = targets[-1] if len(targets) > 1 else ""
+                if end in objects and objects[end]["primitive"] == "arrow":
+                    end = objects[end]["to"]
+                if end:
+                    rest[targets[0]] = end
                 for t in targets[1:]:
                     if t in objects and t not in visible:
                         r.err(f"{where}: trace passes through {t!r}, which is not on screen")
@@ -363,6 +390,9 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 gone = {o for o in visible if set(targets) & {o, *_ancestors(o, parent)}}
                 visible.difference_update(gone)
                 faulted.difference_update(gone)
+                for packet, place in rest.items():
+                    if place in gone and into:
+                        rest[packet] = into
                 if into:
                     visible.add(into)
             elif op == "branch":
