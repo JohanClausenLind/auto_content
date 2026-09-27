@@ -88,6 +88,16 @@ const STAGE_DEFS: Record<Stage, StageDef> = {
         placeholder: "fixtures/story/<plan>.json — a written script instead of a researched one",
         label: "story fixture",
       },
+      // "explainer" plans a mechanism-first explainer (docs/prompts/explainer-planner) and bridges
+      // it to today's scenes; "standard" is the story fixture, the script writer or the sample.
+      { name: "planner", kind: "combo", default: "standard", options: ["standard", "explainer"] },
+      {
+        name: "explainer",
+        kind: "text",
+        default: "",
+        placeholder: "fixtures/explainer/<plan>.json — a checked explainer plan instead of drafting one",
+        label: "explainer plan",
+      },
     ],
   },
   originality_topic: {

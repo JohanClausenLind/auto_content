@@ -1,0 +1,1263 @@
+{
+ "title_question": "How does HTTPS know the site is really your bank?",
+ "common_assumption": "The address you type takes you straight to your bank, and the padlock only means the line is encrypted.",
+ "answer": "The browser trusts the name only if an authority in its trust store signed the certificate, and only after the server signs this handshake with the matching private key.",
+ "takeaway": "Identity online is a public statement vouched for by someone you already trust, plus live proof of a secret that never travels.",
+ "audience": "Technically curious viewers who know basic programming but not these internals.",
+ "target_duration_s": 300,
+ "layers": [
+  "user_visible",
+  "tls",
+  "pki",
+  "crypto"
+ ],
+ "explanation_spine": [
+  {
+   "layer": "user_visible",
+   "claim": "The padlock appears only after the browser has checked who is on the other end."
+  },
+  {
+   "layer": "tls",
+   "claim": "The network can deliver your connection to any machine, and any machine can encrypt."
+  },
+  {
+   "layer": "pki",
+   "claim": "A certificate authority signs a certificate binding a public key to a name."
+  },
+  {
+   "layer": "pki",
+   "claim": "The browser checks the name and that the signature comes from an authority in its trust store."
+  },
+  {
+   "layer": "pki",
+   "claim": "Certificates are public, so passing those checks alone proves nothing about who sent it."
+  },
+  {
+   "layer": "crypto",
+   "claim": "The server signs this handshake, including a fresh browser random value, with its private key."
+  },
+  {
+   "layer": "crypto",
+   "claim": "Only the private key can sign, and the public key can check, so the secret never travels."
+  },
+  {
+   "layer": "tls",
+   "claim": "An impostor either lacks the key or lacks a trusted signature, and the handshake fails."
+  }
+ ],
+ "color_semantics": [
+  {
+   "role": "neutral",
+   "meaning": "Structure and context: the connection, paths, and the checklist frame."
+  },
+  {
+   "role": "software",
+   "meaning": "The browser, the bank's server, and their visible state."
+  },
+  {
+   "role": "data",
+   "meaning": "Values moving through the handshake: random values and signatures."
+  },
+  {
+   "role": "fault",
+   "meaning": "The impostor, its forged certificate, and failed checks."
+  },
+  {
+   "role": "accent_1",
+   "meaning": "Trust: certificate authorities, certificates, the trust store, and the verified identity."
+  },
+  {
+   "role": "accent_2",
+   "meaning": "Secrets that never leave their owner: the private key."
+  }
+ ],
+ "objects": [
+  {
+   "id": "web",
+   "primitive": "box",
+   "label": "Your connection",
+   "parent": "",
+   "cell": "",
+   "layer": "user_visible",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "browser",
+   "primitive": "process",
+   "label": "Browser",
+   "parent": "web",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "software",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "status",
+   "primitive": "callout",
+   "label": "Padlock shown",
+   "parent": "browser",
+   "cell": "",
+   "layer": "user_visible",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "bank_server",
+   "primitive": "box",
+   "label": "Bank server",
+   "parent": "web",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "software",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "conn_path",
+   "primitive": "arrow",
+   "label": "",
+   "parent": "web",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "neutral",
+   "from": "bank_server",
+   "to": "browser"
+  },
+  {
+   "id": "impostor",
+   "primitive": "box",
+   "label": "Impostor",
+   "parent": "web",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "fault",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "detour_path",
+   "primitive": "arrow",
+   "label": "",
+   "parent": "web",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "neutral",
+   "from": "impostor",
+   "to": "browser"
+  },
+  {
+   "id": "ca",
+   "primitive": "box",
+   "label": "Certificate authority",
+   "parent": "web",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "accent_1",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "bank_cert",
+   "primitive": "data_packet",
+   "label": "Certificate",
+   "parent": "web",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "accent_1",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "cert_fields",
+   "primitive": "state_table",
+   "label": "name: bank.example | public key: bank key | signed by: Example CA",
+   "parent": "bank_cert",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "accent_1",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "server_key",
+   "primitive": "box",
+   "label": "Private key",
+   "parent": "bank_server",
+   "cell": "",
+   "layer": "crypto",
+   "color_role": "accent_2",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "trust_store",
+   "primitive": "state_table",
+   "label": "trusted: Example CA | trusted: Root B | trusted: Root C",
+   "parent": "browser",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "accent_1",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "checklist",
+   "primitive": "state_table",
+   "label": "name: unchecked | authority: unchecked | key proof: unchecked",
+   "parent": "browser",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "check_arrow",
+   "primitive": "arrow",
+   "label": "signature check",
+   "parent": "browser",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "neutral",
+   "from": "bank_cert",
+   "to": "trust_store"
+  },
+  {
+   "id": "nonce",
+   "primitive": "data_packet",
+   "label": "Fresh random value",
+   "parent": "web",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "data",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "proof_packet",
+   "primitive": "data_packet",
+   "label": "Signature over this handshake",
+   "parent": "web",
+   "cell": "",
+   "layer": "crypto",
+   "color_role": "data",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "handshake_fault",
+   "primitive": "fault_marker",
+   "label": "Handshake aborted",
+   "parent": "browser",
+   "cell": "",
+   "layer": "tls",
+   "color_role": "fault",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "sign_code",
+   "primitive": "code_block",
+   "label": "proof = sign(private_key, handshake)\ncheck(public_key, handshake, proof)",
+   "parent": "bank_server",
+   "cell": "",
+   "layer": "crypto",
+   "color_role": "software",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "fake_cert",
+   "primitive": "data_packet",
+   "label": "Self-signed certificate",
+   "parent": "web",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "fault",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "identity",
+   "primitive": "box",
+   "label": "Identity",
+   "parent": "web",
+   "cell": "",
+   "layer": "pki",
+   "color_role": "accent_1",
+   "from": "",
+   "to": ""
+  }
+ ],
+ "beats": [
+  {
+   "id": "b01",
+   "type": "question_hook",
+   "goal": "Pose the identity question behind the padlock.",
+   "question": "How does HTTPS know the site is really your bank?",
+   "new_concept": "",
+   "mechanism": "",
+   "layer": "user_visible",
+   "frame": "web",
+   "narration": [
+    "Your browser shows a padlock next to your bank's address.",
+    "So how does HTTPS know the site is really your bank?",
+    "Your data crosses caf\u00e9 Wi-Fi, routers, and networks you don't control."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "browser",
+      "status"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The browser appears with a callout reading Padlock shown."
+    },
+    {
+     "at_sentence": 1,
+     "op": "reveal",
+     "targets": [
+      "bank_server",
+      "conn_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The bank server appears, joined to the browser by an arrow."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "conn_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The arrow between them lights up; everything else dims."
+    }
+   ],
+   "transition_in": "cut",
+   "transition_out": "highlight",
+   "est_seconds": 15
+  },
+  {
+   "id": "b02",
+   "type": "common_assumption",
+   "goal": "Make the address-gets-you-there intuition plausible, then crack it.",
+   "question": "Does typing the right address guarantee the right machine answers?",
+   "new_concept": "",
+   "mechanism": "",
+   "layer": "tls",
+   "frame": "web",
+   "narration": [
+    "Most people assume the address gets you there, and the padlock just means encryption.",
+    "But the network only delivers packets, and it can deliver yours to the wrong machine.",
+    "An impostor can encrypt a connection just as well as your bank can."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "highlight",
+     "targets": [
+      "status"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The Padlock shown callout brightens."
+    },
+    {
+     "at_sentence": 1,
+     "op": "branch",
+     "targets": [
+      "browser",
+      "bank_server",
+      "impostor"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The path from the browser forks to the bank server and a red Impostor box."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "impostor"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The Impostor box is highlighted; the rest dims."
+    }
+   ],
+   "transition_in": "highlight",
+   "transition_out": "split",
+   "est_seconds": 18
+  },
+  {
+   "id": "b03",
+   "type": "system_overview",
+   "goal": "Introduce certificate, private key, authority, and trust store, and their contract.",
+   "question": "What does the browser rely on to tell the bank from an impostor?",
+   "new_concept": "the certificate and private key contract",
+   "mechanism": "A trusted authority vouches for a name and key; the server must prove it holds the key.",
+   "layer": "pki",
+   "frame": "web",
+   "narration": [
+    "To answer that, we have to separate two things the bank has: a public certificate and a private key.",
+    "A certificate authority, a company your browser trusts, signs a certificate saying this public key belongs to this name.",
+    "The private key matches that public key, and it never leaves the bank's server.",
+    "Your browser ships with a trust store, a list of the authorities it trusts.",
+    "The contract: trust the name only if a trusted authority vouched for it, and the server proves it holds the key."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "split",
+     "targets": [
+      "bank_server",
+      "server_key"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The bank server opens to show a Private key box inside."
+    },
+    {
+     "at_sentence": 1,
+     "op": "reveal",
+     "targets": [
+      "ca"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A Certificate authority box appears."
+    },
+    {
+     "at_sentence": 1,
+     "op": "trace",
+     "targets": [
+      "bank_cert",
+      "ca",
+      "bank_server"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A Certificate packet passes through the authority and lands on the bank server."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "server_key"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The Private key box is highlighted inside the server."
+    },
+    {
+     "at_sentence": 3,
+     "op": "split",
+     "targets": [
+      "browser",
+      "trust_store"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The browser opens to show its trust store table of authorities."
+    },
+    {
+     "at_sentence": 4,
+     "op": "reveal",
+     "targets": [
+      "checklist"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A checklist appears in the browser: name, authority, key proof, all unchecked."
+    }
+   ],
+   "transition_in": "split",
+   "transition_out": "trace",
+   "est_seconds": 36
+  },
+  {
+   "id": "b04",
+   "type": "normal_flow",
+   "goal": "Start the normal handshake: the certificate arrives.",
+   "question": "What does the bank send first when you connect?",
+   "new_concept": "",
+   "mechanism": "The server sends its certificate, and the browser checks it before sending your data.",
+   "layer": "tls",
+   "frame": "web",
+   "narration": [
+    "On the normal path, the bank's server answers by sending its certificate.",
+    "Before any of your data is sent, your browser checks that certificate.",
+    "To see how, we step inside the browser, from the network down to its certificate checks."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "trace",
+     "targets": [
+      "bank_cert",
+      "conn_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The Certificate packet travels along the arrow to the browser."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "browser",
+      "bank_cert"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The browser and the arrived certificate are highlighted."
+    }
+   ],
+   "transition_in": "trace",
+   "transition_out": "zoom_in",
+   "est_seconds": 17
+  },
+  {
+   "id": "b05",
+   "type": "normal_flow",
+   "goal": "Show the name check and the authority signature check.",
+   "question": "How does the browser decide a certificate is genuine?",
+   "new_concept": "certificate validation",
+   "mechanism": "The name must match, and the signature must verify with a trusted authority's public key.",
+   "layer": "pki",
+   "frame": "browser",
+   "narration": [
+    "Inside, the certificate opens into its fields.",
+    "First check: the name on it must match the address you typed.",
+    "Second check: its signature must come from an authority in the trust store.",
+    "The browser verifies that signature with the authority's public key, already in its store.",
+    "Real chains add an intermediate authority, checked the same way."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "split",
+     "targets": [
+      "bank_cert",
+      "cert_fields"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The certificate opens into a table: name, public key, signed by."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "cert_fields"
+     ],
+     "into": "",
+     "value": "0",
+     "note": "The name row is highlighted."
+    },
+    {
+     "at_sentence": 1,
+     "op": "update",
+     "targets": [
+      "checklist"
+     ],
+     "into": "",
+     "value": "name: match | authority: unchecked | key proof: unchecked",
+     "note": "The checklist's name row changes to match."
+    },
+    {
+     "at_sentence": 2,
+     "op": "reveal",
+     "targets": [
+      "check_arrow"
+     ],
+     "into": "",
+     "value": "",
+     "note": "An arrow labeled signature check runs from the certificate to the trust store."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "trust_store",
+      "check_arrow"
+     ],
+     "into": "",
+     "value": "0",
+     "note": "The Example CA row of the trust store lights up at the arrow's end."
+    },
+    {
+     "at_sentence": 3,
+     "op": "update",
+     "targets": [
+      "checklist"
+     ],
+     "into": "",
+     "value": "name: match | authority: valid | key proof: unchecked",
+     "note": "The checklist's authority row changes to valid."
+    }
+   ],
+   "transition_in": "zoom_in",
+   "transition_out": "highlight",
+   "est_seconds": 27
+  },
+  {
+   "id": "b06",
+   "type": "normal_flow",
+   "goal": "Expose why certificate checks alone cannot prove identity.",
+   "question": "Why isn't a valid certificate enough?",
+   "new_concept": "certificates are public",
+   "mechanism": "Anyone can copy a certificate, so identity needs proof of the private key.",
+   "layer": "pki",
+   "frame": "browser",
+   "narration": [
+    "A certificate is public: the bank sends it to every visitor, so anyone can copy it.",
+    "So the browser needs a third check: proof the server holds the matching private key.",
+    "That proof comes from the server, so we step back out."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "highlight",
+     "targets": [
+      "bank_cert"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The certificate is highlighted on its own."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "checklist"
+     ],
+     "into": "",
+     "value": "2",
+     "note": "The unchecked key proof row is highlighted."
+    }
+   ],
+   "transition_in": "highlight",
+   "transition_out": "zoom_out",
+   "est_seconds": 20
+  },
+  {
+   "id": "b07",
+   "type": "normal_flow",
+   "goal": "Trace the live key proof that completes the normal handshake.",
+   "question": "How does the server prove it holds the private key?",
+   "new_concept": "live signature over the handshake",
+   "mechanism": "The server signs the handshake, including the browser's fresh random value, with its private key.",
+   "layer": "crypto",
+   "frame": "web",
+   "narration": [
+    "Your browser sends a fresh random value, different for every connection.",
+    "In TLS 1.3, the server signs a summary of the whole handshake, random value included, with its private key.",
+    "It sends that signature back, and the browser checks it with the public key from the certificate.",
+    "It matches, so the third check passes, and only now does the padlock appear."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "trace",
+     "targets": [
+      "nonce",
+      "browser",
+      "bank_server"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A Fresh random value packet leaves the browser and reaches the bank server."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "server_key",
+      "nonce"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The private key and the random value are highlighted together."
+    },
+    {
+     "at_sentence": 2,
+     "op": "trace",
+     "targets": [
+      "proof_packet",
+      "server_key",
+      "conn_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A signature packet leaves the private key and travels to the browser."
+    },
+    {
+     "at_sentence": 3,
+     "op": "update",
+     "targets": [
+      "checklist"
+     ],
+     "into": "",
+     "value": "name: match | authority: valid | key proof: valid",
+     "note": "The checklist's key proof row changes to valid."
+    }
+   ],
+   "transition_in": "zoom_out",
+   "transition_out": "reveal",
+   "est_seconds": 28
+  },
+  {
+   "id": "b08",
+   "type": "edge_case",
+   "goal": "Show an impostor replaying the real certificate and failing the key proof.",
+   "question": "What happens when an impostor sends the bank's real certificate?",
+   "new_concept": "impersonation with a copied certificate",
+   "mechanism": "The copied certificate passes, but without the private key the impostor cannot sign the handshake.",
+   "layer": "tls",
+   "frame": "web",
+   "narration": [
+    "Now the edge case: the caf\u00e9 Wi-Fi quietly routes you to the impostor.",
+    "It copies the bank's real certificate and sends it to you.",
+    "Name and authority both check out, because the certificate really is the bank's.",
+    "But the impostor can't sign this handshake, because the private key never left the bank."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "detour_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "An arrow appears from the Impostor to the browser."
+    },
+    {
+     "at_sentence": 0,
+     "op": "highlight",
+     "targets": [
+      "impostor",
+      "detour_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The impostor and its arrow are highlighted."
+    },
+    {
+     "at_sentence": 1,
+     "op": "trace",
+     "targets": [
+      "bank_cert",
+      "impostor",
+      "detour_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The certificate goes to the impostor and back along its arrow to the browser."
+    },
+    {
+     "at_sentence": 2,
+     "op": "update",
+     "targets": [
+      "checklist"
+     ],
+     "into": "",
+     "value": "name: match | authority: valid | key proof: unchecked",
+     "note": "For the new connection, key proof resets to unchecked; name and authority read valid."
+    },
+    {
+     "at_sentence": 3,
+     "op": "fault",
+     "targets": [
+      "detour_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The impostor's arrow turns red and breaks."
+    }
+   ],
+   "transition_in": "reveal",
+   "transition_out": "reveal",
+   "est_seconds": 23
+  },
+  {
+   "id": "b09",
+   "type": "exception_path",
+   "goal": "Show the browser aborting, and why a recorded signature fails too.",
+   "question": "What does the browser do when the key proof fails?",
+   "new_concept": "",
+   "mechanism": "A failed signature check aborts the handshake, and fresh random values defeat replayed signatures.",
+   "layer": "tls",
+   "frame": "web",
+   "narration": [
+    "The browser's signature check fails, so it aborts the handshake before sending any of your data.",
+    "Instead of a padlock, you get an error page, and the site never loads.",
+    "Replaying a signature recorded from the real bank doesn't help either.",
+    "That signature covered an old random value, and your browser just picked a new one."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "handshake_fault"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A red Handshake aborted marker appears on the browser."
+    },
+    {
+     "at_sentence": 1,
+     "op": "update",
+     "targets": [
+      "status"
+     ],
+     "into": "",
+     "value": "Error page, no padlock",
+     "note": "The browser's callout changes to Error page, no padlock."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "proof_packet"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The bank's earlier signature packet is highlighted."
+    },
+    {
+     "at_sentence": 3,
+     "op": "highlight",
+     "targets": [
+      "nonce",
+      "proof_packet"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The random value and the old signature are highlighted side by side."
+    }
+   ],
+   "transition_in": "reveal",
+   "transition_out": "zoom_in",
+   "est_seconds": 24
+  },
+  {
+   "id": "b10",
+   "type": "layer_zoom",
+   "goal": "Explain why signatures let the secret stay home.",
+   "question": "Why can the bank publish its key material but still not be impersonated?",
+   "new_concept": "asymmetric signatures",
+   "mechanism": "Signing needs the private key while checking needs only the public key.",
+   "layer": "crypto",
+   "frame": "bank_server",
+   "narration": [
+    "The reason lives one layer down, inside the server, in how signatures work.",
+    "Signing takes the private key, while checking takes only the public key.",
+    "So the bank can hand its certificate and public key to everyone, while the secret needed to sign never travels.",
+    "Identity here is not something the server shows; it's something the server does, fresh, in every handshake."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "sign_code"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A code block appears: sign with the private key, check with the public key."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "sign_code"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The two code lines are highlighted."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "server_key"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The Private key box is highlighted inside the server."
+    }
+   ],
+   "transition_in": "zoom_in",
+   "transition_out": "zoom_out",
+   "est_seconds": 26
+  },
+  {
+   "id": "b11",
+   "type": "comparison",
+   "goal": "Contrast the impostor's second option, a self-made certificate.",
+   "question": "What if the impostor brings its own certificate and key?",
+   "new_concept": "self-signed certificate",
+   "mechanism": "A self-made certificate can be signed for, but no trusted authority signed it.",
+   "layer": "pki",
+   "frame": "web",
+   "narration": [
+    "The impostor's other option is to make its own certificate for your bank's name, with a key it does hold.",
+    "Now it can sign the handshake.",
+    "But no authority in your trust store signed that certificate, so the authority check fails instead.",
+    "Copy the real certificate and you lack the key; bring your own key and you lack the trusted signature."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "trace",
+     "targets": [
+      "fake_cert",
+      "impostor",
+      "detour_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A red Self-signed certificate packet goes through the impostor to the browser."
+    },
+    {
+     "at_sentence": 2,
+     "op": "compare",
+     "targets": [
+      "bank_cert",
+      "fake_cert"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The real and self-signed certificates sit side by side."
+    },
+    {
+     "at_sentence": 2,
+     "op": "fault",
+     "targets": [
+      "fake_cert"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The self-signed certificate is marked red as rejected."
+    },
+    {
+     "at_sentence": 3,
+     "op": "highlight",
+     "targets": [
+      "bank_cert",
+      "fake_cert",
+      "server_key"
+     ],
+     "into": "",
+     "value": "",
+     "note": "Both certificates and the bank's private key are highlighted together."
+    }
+   ],
+   "transition_in": "zoom_out",
+   "transition_out": "dismiss",
+   "est_seconds": 30
+  },
+  {
+   "id": "b12",
+   "type": "resolution",
+   "goal": "Answer the title question in mechanical terms.",
+   "question": "How does HTTPS know the site is really your bank?",
+   "new_concept": "",
+   "mechanism": "A trusted signature binds the name to a key, and a live signature proves the key.",
+   "layer": "tls",
+   "frame": "web",
+   "narration": [
+    "So how does HTTPS know the site is really your bank?",
+    "It doesn't trust the address or the network.",
+    "It trusts a name only when an authority it already knows signed the certificate, and the server proves, live, that it holds the matching private key.",
+    "Anyone can copy the certificate; only the bank can make that signature."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "dismiss",
+     "targets": [
+      "fake_cert",
+      "handshake_fault",
+      "detour_path",
+      "impostor"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The impostor, its arrow, its certificate, and the fault marker leave."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "conn_path"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The path between browser and bank is highlighted."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "bank_cert",
+      "trust_store",
+      "server_key"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The certificate, the trust store, and the private key are highlighted together."
+    },
+    {
+     "at_sentence": 3,
+     "op": "update",
+     "targets": [
+      "status"
+     ],
+     "into": "",
+     "value": "Padlock shown",
+     "note": "The browser's callout returns to Padlock shown."
+    }
+   ],
+   "transition_in": "dismiss",
+   "transition_out": "highlight",
+   "est_seconds": 25
+  },
+  {
+   "id": "b13",
+   "type": "takeaway",
+   "goal": "Leave a reusable model of online identity.",
+   "question": "What pattern can the viewer reuse elsewhere?",
+   "new_concept": "",
+   "mechanism": "Identity is a vouched public statement plus live proof of a secret that never travels.",
+   "layer": "user_visible",
+   "frame": "web",
+   "narration": [
+    "Here's the model to keep: a public statement vouched for by someone you trust, plus a live signature from a secret that never travels.",
+    "SSH uses the same live key proof to recognize servers.",
+    "And HTTPS is only as strong as the authorities your browser trusts."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "highlight",
+     "targets": [
+      "bank_cert",
+      "server_key"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The certificate and the private key are highlighted as a pair."
+    },
+    {
+     "at_sentence": 0,
+     "op": "merge",
+     "targets": [
+      "bank_cert",
+      "server_key"
+     ],
+     "into": "identity",
+     "value": "",
+     "note": "The certificate and the private key combine into one Identity box."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "trust_store",
+      "identity"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The trust store is highlighted beside the Identity box."
+    }
+   ],
+   "transition_in": "highlight",
+   "transition_out": "cut",
+   "est_seconds": 17
+  }
+ ],
+ "claims_to_verify": [
+  {
+   "claim": "Traffic to a website can pass through Wi-Fi networks and routers that the user does not control.",
+   "beat": "b01",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "Network routing alone does not guarantee that a connection reaches the intended server.",
+   "beat": "b02",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "Any server, including an attacker's, can establish an encrypted TLS connection.",
+   "beat": "b02",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "A certificate authority signs a certificate binding a public key to a domain name.",
+   "beat": "b03",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "A server's TLS private key is not sent over the network during the handshake.",
+   "beat": "b03",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "Browsers rely on a trust store listing the certificate authorities they trust.",
+   "beat": "b03",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "In an HTTPS connection, the server sends its certificate during the TLS handshake.",
+   "beat": "b04",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "The browser validates the server's certificate before sending application data.",
+   "beat": "b04",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "A certificate contains a subject name, a public key, and the issuer's signature.",
+   "beat": "b05",
+   "sentence": -1,
+   "object": "cert_fields"
+  },
+  {
+   "claim": "Browsers check that a certificate's name matches the hostname being visited.",
+   "beat": "b05",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "A certificate's signature must chain to a certificate authority in the browser's trust store.",
+   "beat": "b05",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "A certificate signature is verified with the issuing authority's public key.",
+   "beat": "b05",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "Most web certificates are signed by an intermediate authority that chains to a trusted root, each link verified the same way.",
+   "beat": "b05",
+   "sentence": 4,
+   "object": ""
+  },
+  {
+   "claim": "Servers send their certificate to every client that connects, so certificates are public.",
+   "beat": "b06",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "Each TLS handshake includes a fresh random value chosen by the client.",
+   "beat": "b07",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "In TLS 1.3, the server signs a hash of the handshake transcript, which includes the client's random value, with its private key.",
+   "beat": "b07",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "The client verifies the server's handshake signature with the public key in the server's certificate.",
+   "beat": "b07",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "Without the certificate's private key, an attacker cannot produce a valid TLS 1.3 handshake signature for it.",
+   "beat": "b08",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "If the server's handshake signature fails to verify, the client aborts the TLS handshake before sending application data.",
+   "beat": "b09",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "When the TLS handshake fails, the browser shows an error page instead of loading the site.",
+   "beat": "b09",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "A replayed TLS 1.3 handshake signature fails because it covers a different client random value.",
+   "beat": "b09",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "Creating a digital signature requires the private key, while verifying it requires only the public key.",
+   "beat": "b10",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "A digital signature is created with the private key and checked with the public key.",
+   "beat": "b10",
+   "sentence": -1,
+   "object": "sign_code"
+  },
+  {
+   "claim": "A certificate made by an attacker for a domain fails browser validation because no trusted authority signed it.",
+   "beat": "b11",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "Browsers trust a site's name only when a trusted authority signed its certificate and the server proves it holds the matching private key.",
+   "beat": "b12",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "Anyone can obtain a site's certificate, but only the private key holder can produce the handshake signature.",
+   "beat": "b12",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "SSH clients authenticate servers by having the server prove possession of its private host key.",
+   "beat": "b13",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "HTTPS server authentication depends on the certificate authorities the browser trusts.",
+   "beat": "b13",
+   "sentence": 2,
+   "object": ""
+  }
+ ],
+ "notes": "Scoped to server authentication in TLS 1.3; TLS 1.2 RSA key exchange proves the key differently and is left out. The on-screen chain is simplified to one authority; narration mentions intermediates. bank.example, Example CA, Root B and Root C are invented illustrative names. The renderer constraints excluded graph_line, graph_bar and morph; none were needed."
+}

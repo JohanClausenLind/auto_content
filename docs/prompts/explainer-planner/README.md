@@ -9,9 +9,31 @@ The planning prompt for mechanism-first technical explainer videos, and the loop
 | `rubric.md` | The fixed scoring rubric. The target is 9.5/10. |
 | `test-requests.md` | Requests the reviewer plans against, one per round. |
 | `review-log.md` | One entry per round: scores, top issues, and what changed. |
-| `../../../scripts/check_explainer_plan.py` | Deterministic checks on a produced plan. |
+| `python/content_factory/explainer/check.py` | Deterministic checks on a produced plan (CLI: `scripts/check_explainer_plan.py`). |
 
-The prompt isn't wired into the pipeline yet. `plan_story` still uses `models/scriptwriter.py`.
+## In the pipeline
+
+The `mechanism-explainer` workflow runs this prompt. Its `plan_story` node has two widgets:
+
+- `planner: explainer` drafts a plan for the brief's question. `models/explainer_planner.py` sends
+  this prompt as the system message and a `<request>` built from the brief. Verified claims from
+  `research/claims.json` and the brief's pasted copy become `<source_notes>`. The checker's
+  errors go back to the model as a repair turn, up to two times. A plan that still fails is a
+  named failure, and the failing plan and report are written to `story/`.
+- `explainer: <path>` uses a checked plan from disk instead, for example one you corrected by
+  hand. The lane ships pointing at `fixtures/explainer/ssd_nearly_full.json`, so it runs offline.
+
+Either way, `story/` gets `explainer.json` (the full plan), `explainer-check.json`,
+`claims-to-verify.json`, and `plan.json`. `plan.json` is the StoryPlan the existing renderer draws,
+built by `explainer/bridge.py`: a card for the question, the assumption, the answer and the
+takeaway, and a flow diagram of what's on screen for each mechanism beat. The narration is kept word
+for word. Zooms, traces and fault marks become cuts, because the one-diagram renderer the plan is
+written for doesn't exist yet.
+
+Not wired yet:
+- **Staged mode:** skeleton, then batches with `<state>`.
+- **Claim verification:** `claims-to-verify.json` is written but not checked.
+- **Renderer constraints:** nothing passes `<renderer_constraints>` from code yet.
 
 ## The review loop
 

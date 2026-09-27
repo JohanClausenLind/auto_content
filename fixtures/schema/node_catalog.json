@@ -1012,9 +1012,16 @@
    "executor": "ai",
    "widgets": [
     "beats",
-    "story"
+    "story",
+    "planner",
+    "explainer"
    ],
-   "widget_options": {},
+   "widget_options": {
+    "planner": [
+     "standard",
+     "explainer"
+    ]
+   },
    "inputs": [
     "brief",
     "claims",

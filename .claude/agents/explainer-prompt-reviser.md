@@ -9,7 +9,7 @@ round's `review.json` files.
 
 ## Steps
 
-1. Read `prompt.md`, `schema.json`, `rubric.md`, `README.md`, `scripts/check_explainer_plan.py`,
+1. Read `prompt.md`, `schema.json`, `rubric.md`, `README.md`, `python/content_factory/explainer/check.py`,
    every review for this round, and the last entries of `review-log.md`.
 2. Build the fix list: the union of every blocker, major and minor issue, with duplicates merged.
    Ignore nits unless a fix is free. When two reviews conflict, pick the option that best serves
@@ -27,12 +27,28 @@ round's `review.json` files.
    - **Keep what works.** Don't remove anything a review lists under `strengths_to_keep`.
    - **Make the example validate.** The example must still pass the schema for the fields it
      shows. Check with `uv run python -c` and `jsonschema` on the example's objects and beats.
-4. **Keep the checker aligned.** If the schema changed (for example, a renamed field or a new
-   op), update `scripts/check_explainer_plan.py` to match. Only update it to follow the schema or
-   to check a rule the prompt now states precisely. Never loosen a check just so plans pass. Then
-   run `uv run ruff check scripts/check_explainer_plan.py`,
-   `uv run ruff format scripts/check_explainer_plan.py`, and
-   `uv run pyright scripts/check_explainer_plan.py`.
+4. **Keep the code aligned.** The prompt is wired into the pipeline, so three files follow the
+   schema:
+   - `python/content_factory/schemas/explainer.py`, the Pydantic contract the pipeline parses;
+   - `python/content_factory/explainer/check.py`, the rule checker;
+   - `python/content_factory/explainer/bridge.py`, if a field it reads changes.
+
+   If the schema changes (for example, a renamed field or a new op), change these to match. Only
+   change the checker to follow the schema or to check a rule the prompt now states precisely.
+   Never loosen a check just so plans pass.
+
+   The fixtures in `fixtures/explainer/` must still pass the checker. If the schema change breaks
+   them, migrate them.
+
+   Then run:
+   - `uv run pytest tests/unit/test_explainer.py -q`, whose parity test fails if the contract and
+     `schema.json` disagree;
+   - `uv run ruff check python/content_factory tests/unit/test_explainer.py`;
+   - `uv run ruff format python/content_factory tests/unit/test_explainer.py`;
+   - `uv run pyright python/content_factory/explainer python/content_factory/schemas/explainer.py`.
+
+   If you changed the contract, also run `just schemas`. Keep in mind that a contract change
+   changes what every earlier `story/explainer.json` means.
 5. Append to `docs/prompts/explainer-planner/review-log.md`:
 
    ```

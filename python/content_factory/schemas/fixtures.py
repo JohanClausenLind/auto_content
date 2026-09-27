@@ -844,6 +844,14 @@ def sample_timeline_bundle() -> render.RenderBundle:
     )
 
 
+def sample_explainer_plan():
+    """The checked example explainer plan the mechanism-explainer lane ships with."""
+    from content_factory.schemas.explainer import ExplainerPlan
+
+    path = Path(__file__).resolve().parents[3] / "fixtures" / "explainer" / "ssd_nearly_full.json"
+    return ExplainerPlan.model_validate_json(path.read_text(encoding="utf-8"))
+
+
 def all_fixtures() -> dict[str, list[Any]]:
     # Local imports: the documentary builders live above the schemas layer.
     from content_factory.deliverables.documentary import (
@@ -942,6 +950,7 @@ def all_fixtures() -> dict[str, list[Any]]:
         "StoragePlan": [storage_plan],
         "EnergyReport": [energy_report],
         "EpisodeOutline": [outline],
+        "ExplainerPlan": [sample_explainer_plan()],
         "ShortsPlan": [
             plan_shorts(sample_story_plan(), [d.deliverable_id for d in doc.deliverables[1:]])
         ],
@@ -990,6 +999,12 @@ def invalid_fixtures() -> dict[str, list[dict[str, Any]]]:
     bad_section_kind = json.loads(json.dumps(outline))
     bad_section_kind["sections"][0]["kind"] = "intro"
     bad_outline_extra = {**outline, "unexpected": 1}
+    explainer = sample_explainer_plan().model_dump(mode="json")
+    explainer_hue_role = {
+        **explainer,
+        # A hue where a role belongs: the theme picks colours, the plan names meanings.
+        "objects": [{**explainer["objects"][0], "color_role": "green"}, *explainer["objects"][1:]],
+    }
     offer = all_fixtures()["ComputeOffer"][0].model_dump(mode="json")
     bad_offer_mode = json.loads(json.dumps(offer))
     bad_offer_mode["purchase_mode"] = "handshake_deal"
@@ -1050,6 +1065,7 @@ def invalid_fixtures() -> dict[str, list[dict[str, Any]]]:
         "ArtboardSpec": [bad_layer],
         "ContentCampaign": [bad_dest],
         "EpisodeOutline": [bad_section_kind, bad_outline_extra],
+        "ExplainerPlan": [explainer_hue_role],
         "ComputeOffer": [{**offer, "unexpected": 1}, bad_offer_mode],
     }
 

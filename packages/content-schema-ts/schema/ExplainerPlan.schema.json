@@ -1,0 +1,460 @@
+{
+  "$defs": {
+    "ClaimToVerify": {
+      "additionalProperties": false,
+      "properties": {
+        "beat": {
+          "pattern": "^b[0-9]{2}$",
+          "title": "Beat",
+          "type": "string"
+        },
+        "claim": {
+          "title": "Claim",
+          "type": "string"
+        },
+        "object": {
+          "pattern": "^([a-z][a-z0-9_]*)?$",
+          "title": "Object",
+          "type": "string"
+        },
+        "sentence": {
+          "minimum": -1,
+          "title": "Sentence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "beat",
+        "claim",
+        "object",
+        "sentence"
+      ],
+      "title": "ClaimToVerify",
+      "type": "object"
+    },
+    "ColorSemantic": {
+      "additionalProperties": false,
+      "properties": {
+        "meaning": {
+          "title": "Meaning",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "neutral",
+            "software",
+            "privileged",
+            "hardware",
+            "data",
+            "fault",
+            "accent_1",
+            "accent_2"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "meaning",
+        "role"
+      ],
+      "title": "ColorSemantic",
+      "type": "object"
+    },
+    "ExplainerBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "est_seconds": {
+          "minimum": 1,
+          "title": "Est Seconds",
+          "type": "integer"
+        },
+        "frame": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Frame",
+          "type": "string"
+        },
+        "goal": {
+          "title": "Goal",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^b[0-9]{2}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "layer": {
+          "title": "Layer",
+          "type": "string"
+        },
+        "mechanism": {
+          "title": "Mechanism",
+          "type": "string"
+        },
+        "narration": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Narration",
+          "type": "array"
+        },
+        "new_concept": {
+          "title": "New Concept",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "transition_in": {
+          "enum": [
+            "reveal",
+            "highlight",
+            "update",
+            "morph",
+            "split",
+            "merge",
+            "trace",
+            "branch",
+            "compare",
+            "fault",
+            "dismiss",
+            "zoom_in",
+            "zoom_out",
+            "cut"
+          ],
+          "title": "Transition In",
+          "type": "string"
+        },
+        "transition_out": {
+          "enum": [
+            "reveal",
+            "highlight",
+            "update",
+            "morph",
+            "split",
+            "merge",
+            "trace",
+            "branch",
+            "compare",
+            "fault",
+            "dismiss",
+            "zoom_in",
+            "zoom_out",
+            "cut"
+          ],
+          "title": "Transition Out",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "question_hook",
+            "common_assumption",
+            "system_overview",
+            "normal_flow",
+            "edge_case",
+            "exception_path",
+            "layer_zoom",
+            "comparison",
+            "resolution",
+            "takeaway"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "visual_updates": {
+          "items": {
+            "$ref": "#/$defs/VisualUpdate"
+          },
+          "title": "Visual Updates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "est_seconds",
+        "frame",
+        "goal",
+        "id",
+        "layer",
+        "mechanism",
+        "narration",
+        "new_concept",
+        "question",
+        "transition_in",
+        "transition_out",
+        "type",
+        "visual_updates"
+      ],
+      "title": "ExplainerBeat",
+      "type": "object"
+    },
+    "ExplainerObject": {
+      "additionalProperties": false,
+      "properties": {
+        "cell": {
+          "pattern": "^([0-9]+)?$",
+          "title": "Cell",
+          "type": "string"
+        },
+        "color_role": {
+          "enum": [
+            "neutral",
+            "software",
+            "privileged",
+            "hardware",
+            "data",
+            "fault",
+            "accent_1",
+            "accent_2"
+          ],
+          "title": "Color Role",
+          "type": "string"
+        },
+        "from": {
+          "pattern": "^([a-z][a-z0-9_]*)?$",
+          "title": "From",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "layer": {
+          "title": "Layer",
+          "type": "string"
+        },
+        "parent": {
+          "pattern": "^([a-z][a-z0-9_]*)?$",
+          "title": "Parent",
+          "type": "string"
+        },
+        "primitive": {
+          "enum": [
+            "box",
+            "label",
+            "arrow",
+            "memory_row",
+            "register",
+            "code_block",
+            "callout",
+            "graph_line",
+            "graph_bar",
+            "data_packet",
+            "chip",
+            "process",
+            "layer_boundary",
+            "fault_marker",
+            "timeline",
+            "state_table"
+          ],
+          "title": "Primitive",
+          "type": "string"
+        },
+        "to": {
+          "pattern": "^([a-z][a-z0-9_]*)?$",
+          "title": "To",
+          "type": "string"
+        }
+      },
+      "required": [
+        "cell",
+        "color_role",
+        "from",
+        "id",
+        "label",
+        "layer",
+        "parent",
+        "primitive",
+        "to"
+      ],
+      "title": "ExplainerObject",
+      "type": "object"
+    },
+    "SpineStep": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "title": "Claim",
+          "type": "string"
+        },
+        "layer": {
+          "title": "Layer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim",
+        "layer"
+      ],
+      "title": "SpineStep",
+      "type": "object"
+    },
+    "VisualUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "at_sentence": {
+          "minimum": 0,
+          "title": "At Sentence",
+          "type": "integer"
+        },
+        "into": {
+          "pattern": "^([a-z][a-z0-9_]*)?$",
+          "title": "Into",
+          "type": "string"
+        },
+        "note": {
+          "title": "Note",
+          "type": "string"
+        },
+        "op": {
+          "enum": [
+            "reveal",
+            "highlight",
+            "update",
+            "morph",
+            "split",
+            "merge",
+            "trace",
+            "branch",
+            "compare",
+            "fault",
+            "dismiss"
+          ],
+          "title": "Op",
+          "type": "string"
+        },
+        "targets": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Targets",
+          "type": "array"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "at_sentence",
+        "into",
+        "note",
+        "op",
+        "targets",
+        "value"
+      ],
+      "title": "VisualUpdate",
+      "type": "object"
+    }
+  },
+  "$id": "https://content-factory.local/schema/ExplainerPlan.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One mechanism-first explainer: its question, its scene graph, and its beats.",
+  "properties": {
+    "answer": {
+      "title": "Answer",
+      "type": "string"
+    },
+    "audience": {
+      "title": "Audience",
+      "type": "string"
+    },
+    "beats": {
+      "items": {
+        "$ref": "#/$defs/ExplainerBeat"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "title": "Beats",
+      "type": "array"
+    },
+    "claims_to_verify": {
+      "items": {
+        "$ref": "#/$defs/ClaimToVerify"
+      },
+      "title": "Claims To Verify",
+      "type": "array"
+    },
+    "color_semantics": {
+      "items": {
+        "$ref": "#/$defs/ColorSemantic"
+      },
+      "minItems": 1,
+      "title": "Color Semantics",
+      "type": "array"
+    },
+    "common_assumption": {
+      "title": "Common Assumption",
+      "type": "string"
+    },
+    "explanation_spine": {
+      "items": {
+        "$ref": "#/$defs/SpineStep"
+      },
+      "minItems": 1,
+      "title": "Explanation Spine",
+      "type": "array"
+    },
+    "layers": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Layers",
+      "type": "array"
+    },
+    "notes": {
+      "title": "Notes",
+      "type": "string"
+    },
+    "objects": {
+      "items": {
+        "$ref": "#/$defs/ExplainerObject"
+      },
+      "maxItems": 30,
+      "minItems": 1,
+      "title": "Objects",
+      "type": "array"
+    },
+    "takeaway": {
+      "title": "Takeaway",
+      "type": "string"
+    },
+    "target_duration_s": {
+      "maximum": 600,
+      "minimum": 60,
+      "title": "Target Duration S",
+      "type": "integer"
+    },
+    "title_question": {
+      "title": "Title Question",
+      "type": "string"
+    }
+  },
+  "required": [
+    "answer",
+    "audience",
+    "beats",
+    "claims_to_verify",
+    "color_semantics",
+    "common_assumption",
+    "explanation_spine",
+    "layers",
+    "notes",
+    "objects",
+    "takeaway",
+    "target_duration_s",
+    "title_question"
+  ],
+  "title": "ExplainerPlan",
+  "type": "object"
+}

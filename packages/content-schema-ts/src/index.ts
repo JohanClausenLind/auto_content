@@ -31,6 +31,7 @@ import EditBatch from "../schema/EditBatch.schema.json";
 import EditOperation from "../schema/EditOperation.schema.json";
 import EpisodeMetadata from "../schema/EpisodeMetadata.schema.json";
 import EpisodeOutline from "../schema/EpisodeOutline.schema.json";
+import ExplainerPlan from "../schema/ExplainerPlan.schema.json";
 import EvidenceRecord from "../schema/EvidenceRecord.schema.json";
 import EvidenceRequirementPlan from "../schema/EvidenceRequirementPlan.schema.json";
 import ExecutionDecision from "../schema/ExecutionDecision.schema.json";
@@ -105,6 +106,7 @@ const SCHEMAS: Record<SchemaName, object> = {
   EditOperation,
   EpisodeMetadata,
   EpisodeOutline,
+  ExplainerPlan,
   EvidenceRecord,
   EvidenceRequirementPlan,
   ExecutionDecision,

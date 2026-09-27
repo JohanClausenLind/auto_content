@@ -668,9 +668,14 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
     # ``story`` names a hand-authored StoryPlan fixture (repo-relative), the twin of plan_shots'
     # fixture planner: a film whose script is written, not researched, still gets a typed plan.
     fixture = _param(ctx, "story")
+    # The explainer lane: a mechanism-first plan (``explainer`` names a checked one on disk, or
+    # ``planner=explainer`` drafts one), bridged to the scenes the renderer draws today.
+    explainer = _param(ctx, "explainer")
     drafted: dict | None = None
     if fixture:
         plan = StoryPlan.model_validate_json((REPO_ROOT / fixture).read_text())
+    elif explainer or _param(ctx, "planner", "standard") == "explainer":
+        plan, drafted = _explainer_story_plan(ctx, explainer)
     elif get_settings().execution.local_scriptwriter:
         plan, drafted = _draft_story_plan(ctx)
     else:
@@ -730,6 +735,89 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
         facts.update(drafted)
     outputs_hash = hashes[0] if len(hashes) == 1 else _hash_obj(hashes)
     return StageOutput(outputs_hash, facts)
+
+
+def _explainer_story_plan(ctx: StageContext, fixture: str) -> tuple[StoryPlan, dict]:
+    """The explainer planner's plan, checked, written, and bridged to a StoryPlan.
+
+    ``fixture`` names an ExplainerPlan on disk (repo-relative or absolute): a hand-written plan, or
+    a drafted one the operator corrected. Empty means draft one from the brief. Either way the plan
+    must pass ``explainer.check`` with zero errors; a failure is named, with the plan and its report
+    written beside it, and never falls back to another planner.
+    """
+    from content_factory.explainer.bridge import BRIDGE_VERSION, story_plan_from_explainer
+    from content_factory.explainer.check import check
+    from content_factory.schemas.explainer import ExplainerPlan
+
+    story_dir = ctx.project_dir / "story"
+    facts: dict = {"planner": "explainer", "bridge": BRIDGE_VERSION}
+    if fixture:
+        path = Path(fixture) if Path(fixture).is_absolute() else REPO_ROOT / fixture
+        written = json.loads(path.read_text())
+        report = check(written)
+        facts["explainer_source"] = fixture
+    else:
+        from content_factory.models.explainer_planner import (
+            campaign_request,
+            draft_explainer_plan,
+        )
+        from content_factory.schemas.research import ClaimRecord, VerificationStatus
+
+        spec = _spec(ctx)
+        span = getattr(spec, "target_duration_s", None)
+        target = max(60, min(600, (span[0] + span[1]) // 2)) if span else None
+        claims_path = ctx.project_dir / "research" / "claims.json"
+        usable = {VerificationStatus.supported, VerificationStatus.supported_with_caveat}
+        statements = (
+            [
+                c.statement
+                for c in map(ClaimRecord.model_validate, json.loads(claims_path.read_text()))
+                if c.status in usable
+            ]
+            if claims_path.exists()
+            else []
+        )
+        request = campaign_request(
+            ctx.campaign, target_duration_s=target, claim_statements=statements
+        )
+        _write(story_dir / "explainer-request.txt", request)
+        draft = draft_explainer_plan(request)
+        written, report = draft.last or {}, draft.report
+        facts.update({f"explainer_{k}": v for k, v in draft.facts.items()})
+    _write(story_dir / "explainer.json", json.dumps(written, indent=1))
+    _write(story_dir / "explainer-check.json", json.dumps(report, indent=1))
+    if not report.get("ok"):
+        raise RuntimeError(
+            "the explainer plan fails its checks (story/explainer-check.json); fix story/"
+            "explainer.json and name it on the explainer widget to use it:\n  "
+            + "\n  ".join(report.get("errors", [])[:8])
+        )
+    explainer_plan = ExplainerPlan.model_validate(written)
+    # What the verifier has to confirm before this film airs: every real-world statement the plan
+    # makes, anchored to the beat and sentence (or on-screen object) that makes it.
+    _write(
+        story_dir / "claims-to-verify.json",
+        json.dumps([c.model_dump(mode="json") for c in explainer_plan.claims_to_verify], indent=1),
+    )
+    spec = _spec(ctx)
+    width, height = aspect_dimensions(aspect_or_portrait(getattr(spec, "aspect", None)))
+    fps = getattr(spec, "fps", 30)
+    plan = story_plan_from_explainer(
+        explainer_plan,
+        deliverable_id=spec.deliverable_id,
+        width=width,
+        height=height,
+        fps=fps if fps in (24, 25, 30, 60) else 30,
+    )
+    facts.update(
+        {
+            "explainer_beats": len(explainer_plan.beats),
+            "explainer_objects": len(explainer_plan.objects),
+            "explainer_warnings": len(report.get("warnings", [])),
+            "claims_to_verify": len(explainer_plan.claims_to_verify),
+        }
+    )
+    return plan, facts
 
 
 def _draft_story_plan(ctx: StageContext) -> tuple[StoryPlan, dict]:

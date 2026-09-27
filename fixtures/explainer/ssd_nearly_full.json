@@ -1,0 +1,1036 @@
+{
+ "title_question": "Why does an SSD slow down when it's nearly full?",
+ "common_assumption": "A nearly full drive just takes longer to find an empty spot for new data.",
+ "answer": "Flash can't overwrite pages in place and erases only whole blocks, so writes wait on garbage collection, which copies more live pages the fuller the drive is.",
+ "takeaway": "When a medium can't overwrite in place, free space is also cleanup room; shrink it and every write pays more.",
+ "audience": "Technically curious viewers who know basic programming but not these internals.",
+ "target_duration_s": 180,
+ "layers": [
+  "user_visible",
+  "controller",
+  "nand"
+ ],
+ "explanation_spine": [
+  {
+   "layer": "user_visible",
+   "claim": "A nearly full SSD writes more slowly."
+  },
+  {
+   "layer": "controller",
+   "claim": "The controller maps each address to a physical flash page it chooses."
+  },
+  {
+   "layer": "nand",
+   "claim": "Flash writes pages but erases only whole blocks, and can't overwrite a page in place."
+  },
+  {
+   "layer": "nand",
+   "claim": "Edits go to free pages and leave stale pages behind."
+  },
+  {
+   "layer": "nand",
+   "claim": "With no free page, garbage collection copies live pages out of a block, then erases it."
+  },
+  {
+   "layer": "nand",
+   "claim": "Fuller drives leave more live pages per block, so each cleanup copies more: write amplification."
+  },
+  {
+   "layer": "user_visible",
+   "claim": "Writes wait on that copying, so the drive feels slower."
+  }
+ ],
+ "color_semantics": [
+  {
+   "role": "neutral",
+   "meaning": "structure, context, and page blocks"
+  },
+  {
+   "role": "hardware",
+   "meaning": "the SSD's controller and flash chips"
+  },
+  {
+   "role": "data",
+   "meaning": "data being written or copied"
+  },
+  {
+   "role": "fault",
+   "meaning": "full blocks and stalled writes"
+  },
+  {
+   "role": "accent_1",
+   "meaning": "write amplification cost"
+  }
+ ],
+ "objects": [
+  {
+   "id": "computer",
+   "primitive": "box",
+   "label": "Computer",
+   "parent": "",
+   "cell": "",
+   "layer": "user_visible",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "ssd",
+   "primitive": "box",
+   "label": "SSD",
+   "parent": "computer",
+   "cell": "",
+   "layer": "user_visible",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "myth",
+   "primitive": "callout",
+   "label": "Hunting for free space?",
+   "parent": "ssd",
+   "cell": "",
+   "layer": "user_visible",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "controller",
+   "primitive": "box",
+   "label": "Controller",
+   "parent": "ssd",
+   "cell": "",
+   "layer": "controller",
+   "color_role": "hardware",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "nand",
+   "primitive": "box",
+   "label": "NAND flash",
+   "parent": "ssd",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "hardware",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "bus",
+   "primitive": "arrow",
+   "label": "",
+   "parent": "ssd",
+   "cell": "",
+   "layer": "controller",
+   "color_role": "neutral",
+   "from": "controller",
+   "to": "nand"
+  },
+  {
+   "id": "write_pkt",
+   "primitive": "data_packet",
+   "label": "new data",
+   "parent": "ssd",
+   "cell": "",
+   "layer": "controller",
+   "color_role": "data",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "block_a",
+   "primitive": "memory_row",
+   "label": "block A: live | live | live | live | live | live | live | free",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "block_b",
+   "primitive": "memory_row",
+   "label": "block B: live | live | stale | live | live | live | live | live",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "next_write",
+   "primitive": "data_packet",
+   "label": "next write",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "data",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "wait_note",
+   "primitive": "callout",
+   "label": "Write waits",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "fault",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "block_c",
+   "primitive": "memory_row",
+   "label": "block C: free | free | free | free | free | free | free | free",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "gc_pkt",
+   "primitive": "data_packet",
+   "label": "7 live pages",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "data",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "block_d",
+   "primitive": "memory_row",
+   "label": "block D: stale | live | stale | stale | stale | live | stale | stale",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "neutral",
+   "from": "",
+   "to": ""
+  },
+  {
+   "id": "wa_bars",
+   "primitive": "graph_bar",
+   "label": "roomy drive=1.3 | nearly full=8",
+   "parent": "nand",
+   "cell": "",
+   "layer": "nand",
+   "color_role": "accent_1",
+   "from": "",
+   "to": ""
+  }
+ ],
+ "beats": [
+  {
+   "id": "b01",
+   "type": "question_hook",
+   "goal": "Pose the slowdown as a concrete puzzle.",
+   "question": "Why would a drive with no moving parts slow down when full?",
+   "new_concept": "",
+   "mechanism": "",
+   "layer": "user_visible",
+   "frame": "computer",
+   "narration": [
+    "Fill an SSD almost to the top, and saving files can get noticeably slower.",
+    "Why does an SSD slow down when it's nearly full?",
+    "It has no moving parts, so the answer lives in the flash."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "ssd"
+     ],
+     "into": "",
+     "value": "",
+     "note": "An SSD box appears inside the computer."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "ssd"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The SSD brightens; the rest of the computer dims."
+    }
+   ],
+   "transition_in": "cut",
+   "transition_out": "reveal",
+   "est_seconds": 15
+  },
+  {
+   "id": "b02",
+   "type": "common_assumption",
+   "goal": "Make the search-for-space intuition plausible.",
+   "question": "Is a full drive just slower at finding free space?",
+   "new_concept": "",
+   "mechanism": "",
+   "layer": "user_visible",
+   "frame": "computer",
+   "narration": [
+    "The usual guess: a full drive hunts longer for an empty spot, like circling a crowded parking lot.",
+    "That picture is intuitive, but it misses what flash can and cannot do."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "myth"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A callout reading Hunting for free space? appears on the SSD."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "myth"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The callout brightens as the guess is questioned."
+    }
+   ],
+   "transition_in": "reveal",
+   "transition_out": "zoom_in",
+   "est_seconds": 13
+  },
+  {
+   "id": "b03",
+   "type": "system_overview",
+   "goal": "Separate the computer's request from where flash stores it.",
+   "question": "Who decides where a write physically lands?",
+   "new_concept": "logical-to-physical mapping",
+   "mechanism": "The controller, not the computer, picks each write's physical flash location and records it in a map.",
+   "layer": "controller",
+   "frame": "ssd",
+   "narration": [
+    "To answer it, we have to separate what the computer asks for from what the flash physically does.",
+    "Inside, a controller sits between the computer and the NAND flash chips that hold your data.",
+    "The computer only says: store this data at this address.",
+    "The controller picks where in the flash it lands, and maps each address to that spot."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 1,
+     "op": "split",
+     "targets": [
+      "ssd",
+      "controller",
+      "nand",
+      "bus"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The SSD opens into a controller, the flash, and an arrow between them."
+    },
+    {
+     "at_sentence": 2,
+     "op": "reveal",
+     "targets": [
+      "write_pkt"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A packet labeled new data appears at the SSD's edge."
+    },
+    {
+     "at_sentence": 3,
+     "op": "trace",
+     "targets": [
+      "write_pkt",
+      "controller",
+      "bus"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The packet passes through the controller and along the arrow into the flash."
+    }
+   ],
+   "transition_in": "zoom_in",
+   "transition_out": "zoom_in",
+   "est_seconds": 25
+  },
+  {
+   "id": "b04",
+   "type": "layer_zoom",
+   "goal": "Show that flash writes pages but erases whole blocks.",
+   "question": "What are flash's units for writing and erasing?",
+   "new_concept": "pages versus blocks",
+   "mechanism": "Flash writes single pages but can only erase a whole block of pages.",
+   "layer": "nand",
+   "frame": "nand",
+   "narration": [
+    "Inside the flash, data is written in small pages but erased only in much larger blocks.",
+    "Say a block holds 8 pages; real blocks hold far more.",
+    "Both blocks here are nearly full, and block A has one free page left."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "split",
+     "targets": [
+      "nand",
+      "block_a",
+      "block_b"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The flash opens into two rows of eight page cells, blocks A and B."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "",
+     "note": "Block A brightens, showing its eight page cells."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "7",
+     "note": "Block A's last cell, reading free, is picked out."
+    }
+   ],
+   "transition_in": "zoom_in",
+   "transition_out": "trace",
+   "est_seconds": 18
+  },
+  {
+   "id": "b05",
+   "type": "normal_flow",
+   "goal": "Trace an edit as an out-of-place write.",
+   "question": "What happens when you change data already on flash?",
+   "new_concept": "out-of-place writes and stale pages",
+   "mechanism": "The new version goes to a free page, and the old page is only marked stale.",
+   "layer": "nand",
+   "frame": "nand",
+   "narration": [
+    "Now edit one page.",
+    "Flash can't overwrite a page in place, so the new version goes into the free page.",
+    "The old copy stays, marked stale, and the map now points at the new page.",
+    "Stale pages hold space until their block is erased."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "trace",
+     "targets": [
+      "write_pkt",
+      "block_a"
+     ],
+     "into": "",
+     "value": "7",
+     "note": "The new data packet moves to block A's free cell."
+    },
+    {
+     "at_sentence": 1,
+     "op": "update",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "block A: live | live | live | live | live | live | live | live",
+     "note": "Block A's last cell changes from free to live."
+    },
+    {
+     "at_sentence": 2,
+     "op": "update",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "block A: live | stale | live | live | live | live | live | live",
+     "note": "Block A's second cell changes from live to stale."
+    },
+    {
+     "at_sentence": 3,
+     "op": "highlight",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "1",
+     "note": "The stale cell in block A is picked out."
+    },
+    {
+     "at_sentence": 3,
+     "op": "dismiss",
+     "targets": [
+      "write_pkt"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The new data packet fades away."
+    }
+   ],
+   "transition_in": "trace",
+   "transition_out": "reveal",
+   "est_seconds": 18
+  },
+  {
+   "id": "b06",
+   "type": "edge_case",
+   "goal": "Show the write that finds no free page.",
+   "question": "What happens when a write finds no free page?",
+   "new_concept": "no free page to write",
+   "mechanism": "With no free page, erase is needed, but erasing a block would destroy its live pages.",
+   "layer": "nand",
+   "frame": "nand",
+   "narration": [
+    "Now the next write arrives, and no block has a free page.",
+    "The controller can't erase just the stale page, because erasing works only on whole blocks.",
+    "And erasing block A now would wipe its 7 live pages along with the stale one.",
+    "So the write has to wait while the controller makes room another way."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "next_write"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A packet labeled next write appears at the flash's edge."
+    },
+    {
+     "at_sentence": 1,
+     "op": "fault",
+     "targets": [
+      "block_a",
+      "block_b"
+     ],
+     "into": "",
+     "value": "",
+     "note": "Both full blocks are marked in the fault color."
+    },
+    {
+     "at_sentence": 1,
+     "op": "highlight",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "1",
+     "note": "Block A's single stale cell is picked out."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "0,2,3,4,5,6,7",
+     "note": "Block A's seven live cells are picked out."
+    },
+    {
+     "at_sentence": 3,
+     "op": "reveal",
+     "targets": [
+      "wait_note"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A callout reading Write waits appears on the flash."
+    }
+   ],
+   "transition_in": "reveal",
+   "transition_out": "reveal",
+   "est_seconds": 24
+  },
+  {
+   "id": "b07",
+   "type": "exception_path",
+   "goal": "Show garbage collection making room.",
+   "question": "How does the controller free a block without losing data?",
+   "new_concept": "garbage collection",
+   "mechanism": "The controller copies live pages to a spare block, then erases the old block.",
+   "layer": "nand",
+   "frame": "nand",
+   "narration": [
+    "So it keeps a spare block for this cleanup.",
+    "It copies block A's 7 live pages into the spare, then erases block A.",
+    "This copy then erase routine is called garbage collection.",
+    "Only then can the waiting write land."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "block_c"
+     ],
+     "into": "",
+     "value": "",
+     "note": "An empty row, block C, appears with eight free cells."
+    },
+    {
+     "at_sentence": 1,
+     "op": "trace",
+     "targets": [
+      "gc_pkt",
+      "block_a",
+      "block_c"
+     ],
+     "into": "",
+     "value": "0",
+     "note": "A packet labeled 7 live pages moves from block A into block C."
+    },
+    {
+     "at_sentence": 1,
+     "op": "update",
+     "targets": [
+      "block_c"
+     ],
+     "into": "",
+     "value": "block C: live | live | live | live | live | live | live | free",
+     "note": "Block C's first seven cells change to live."
+    },
+    {
+     "at_sentence": 1,
+     "op": "update",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "block A: free | free | free | free | free | free | free | free",
+     "note": "Every cell in block A changes to free."
+    },
+    {
+     "at_sentence": 2,
+     "op": "dismiss",
+     "targets": [
+      "gc_pkt"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The copy packet fades away."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "block_a",
+      "block_c"
+     ],
+     "into": "",
+     "value": "",
+     "note": "Blocks A and C brighten together as one cleanup."
+    },
+    {
+     "at_sentence": 3,
+     "op": "trace",
+     "targets": [
+      "next_write",
+      "block_a"
+     ],
+     "into": "",
+     "value": "0",
+     "note": "The waiting packet moves into block A's first cell."
+    },
+    {
+     "at_sentence": 3,
+     "op": "update",
+     "targets": [
+      "block_a"
+     ],
+     "into": "",
+     "value": "block A: live | free | free | free | free | free | free | free",
+     "note": "Block A's first cell changes to live."
+    },
+    {
+     "at_sentence": 3,
+     "op": "dismiss",
+     "targets": [
+      "wait_note"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The Write waits callout disappears."
+    }
+   ],
+   "transition_in": "reveal",
+   "transition_out": "reveal",
+   "est_seconds": 17
+  },
+  {
+   "id": "b08",
+   "type": "comparison",
+   "goal": "Contrast cleanup cost on a roomy and a full drive.",
+   "question": "Why does cleanup cost more on a fuller drive?",
+   "new_concept": "write amplification",
+   "mechanism": "Fewer free pages leave more live pages per block, so each cleanup copies more.",
+   "layer": "nand",
+   "frame": "nand",
+   "narration": [
+    "Compare a drive with plenty of free space.",
+    "There, the controller can pick a block like D, whose pages are mostly stale.",
+    "Freeing its 6 stale pages costs just 2 copies.",
+    "On a nearly full drive, blocks look like B: 1 freed page costs 7 copies.",
+    "This extra writing is called write amplification, and it grows as free space shrinks."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "reveal",
+     "targets": [
+      "block_d"
+     ],
+     "into": "",
+     "value": "",
+     "note": "A mostly stale row, block D, appears."
+    },
+    {
+     "at_sentence": 1,
+     "op": "compare",
+     "targets": [
+      "block_b",
+      "block_d"
+     ],
+     "into": "",
+     "value": "",
+     "note": "Blocks B and D sit side by side at one scale."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "block_d"
+     ],
+     "into": "",
+     "value": "1,5",
+     "note": "Block D's two live cells are picked out."
+    },
+    {
+     "at_sentence": 3,
+     "op": "highlight",
+     "targets": [
+      "block_b"
+     ],
+     "into": "",
+     "value": "0,1,3,4,5,6,7",
+     "note": "Block B's seven live cells are picked out."
+    },
+    {
+     "at_sentence": 4,
+     "op": "reveal",
+     "targets": [
+      "wa_bars"
+     ],
+     "into": "",
+     "value": "",
+     "note": "Two bars appear: about 1.3 for the roomy drive, 8 for the full one."
+    }
+   ],
+   "transition_in": "reveal",
+   "transition_out": "zoom_out",
+   "est_seconds": 28
+  },
+  {
+   "id": "b09",
+   "type": "resolution",
+   "goal": "Answer the title question in mechanical terms.",
+   "question": "Why does an SSD slow down when nearly full?",
+   "new_concept": "",
+   "mechanism": "Writes wait on garbage collection, which copies more live pages as free space shrinks.",
+   "layer": "user_visible",
+   "frame": "computer",
+   "narration": [
+    "So why does an SSD slow down when it's nearly full?",
+    "It isn't hunting for space.",
+    "Writes wait while the controller copies live pages out of a block and erases it, and a fuller drive has more to copy."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 1,
+     "op": "update",
+     "targets": [
+      "myth"
+     ],
+     "into": "",
+     "value": "Copying live pages first",
+     "note": "The callout now reads Copying live pages first."
+    },
+    {
+     "at_sentence": 2,
+     "op": "highlight",
+     "targets": [
+      "ssd",
+      "myth"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The SSD and its corrected callout brighten."
+    }
+   ],
+   "transition_in": "zoom_out",
+   "transition_out": "highlight",
+   "est_seconds": 16
+  },
+  {
+   "id": "b10",
+   "type": "takeaway",
+   "goal": "Leave a reusable model about in-place overwrites.",
+   "question": "What should you expect from any medium that can't overwrite in place?",
+   "new_concept": "",
+   "mechanism": "Without in-place overwrite, free space doubles as cleanup room, so shrinking it raises write cost.",
+   "layer": "user_visible",
+   "frame": "computer",
+   "narration": [
+    "The reusable model: when a medium can't overwrite in place, free space is also cleanup room.",
+    "Take that room away, and every write pays for the cleanup."
+   ],
+   "visual_updates": [
+    {
+     "at_sentence": 0,
+     "op": "highlight",
+     "targets": [
+      "ssd"
+     ],
+     "into": "",
+     "value": "",
+     "note": "The SSD stays lit as the model is stated."
+    }
+   ],
+   "transition_in": "highlight",
+   "transition_out": "cut",
+   "est_seconds": 11
+  }
+ ],
+ "claims_to_verify": [
+  {
+   "claim": "An SSD's write speed can drop noticeably when the drive is nearly full.",
+   "beat": "b01",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "SSDs have no moving parts.",
+   "beat": "b01",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "SSDs store data in NAND flash chips.",
+   "beat": "b03",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "SSDs store data in NAND flash.",
+   "beat": "b03",
+   "sentence": -1,
+   "object": "nand"
+  },
+  {
+   "claim": "An SSD's controller maps each logical address to a physical flash location.",
+   "beat": "b03",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "NAND flash is written in pages but erased in blocks of many pages.",
+   "beat": "b04",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "Real NAND flash blocks hold many more than 8 pages.",
+   "beat": "b04",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "In this example, block A has 7 live pages and 1 free page, 8 in all.",
+   "beat": "b04",
+   "sentence": -1,
+   "object": "block_a"
+  },
+  {
+   "claim": "In this example, block B has 7 live pages and 1 stale page, 8 in all.",
+   "beat": "b04",
+   "sentence": -1,
+   "object": "block_b"
+  },
+  {
+   "claim": "A NAND flash page can't be overwritten in place.",
+   "beat": "b05",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "An SSD writes changed data to a free page and marks the old page stale.",
+   "beat": "b05",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "An SSD's controller updates its address map to point at the new page.",
+   "beat": "b05",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "Stale pages occupy space until their block is erased.",
+   "beat": "b05",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "In this example, the edit fills block A's last free page and marks 1 page stale.",
+   "beat": "b05",
+   "sentence": -1,
+   "object": "block_a"
+  },
+  {
+   "claim": "NAND flash can only be erased a whole block at a time.",
+   "beat": "b06",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "In this example, block A holds 7 live pages and 1 stale page.",
+   "beat": "b06",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "An SSD write can be delayed while the controller frees space when no free pages remain.",
+   "beat": "b06",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "An SSD write can be delayed while the controller frees space.",
+   "beat": "b06",
+   "sentence": -1,
+   "object": "wait_note"
+  },
+  {
+   "claim": "SSD controllers keep spare blocks in reserve for garbage collection.",
+   "beat": "b07",
+   "sentence": 0,
+   "object": ""
+  },
+  {
+   "claim": "Garbage collection copies live pages out of a block before erasing it.",
+   "beat": "b07",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "In this example, garbage collection copies 7 live pages from block A.",
+   "beat": "b07",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "Copying live pages out of a block and erasing it is called garbage collection.",
+   "beat": "b07",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "In this example, block C receives 7 live pages and keeps 1 of 8 free.",
+   "beat": "b07",
+   "sentence": -1,
+   "object": "block_c"
+  },
+  {
+   "claim": "In this example, the 7 live pages on the packet match block A's 7 live pages.",
+   "beat": "b07",
+   "sentence": -1,
+   "object": "gc_pkt"
+  },
+  {
+   "claim": "In this example, erasing block A turns all 8 of its pages free, and the next write then fills 1.",
+   "beat": "b07",
+   "sentence": -1,
+   "object": "block_a"
+  },
+  {
+   "claim": "On a drive with more free space, garbage collection can pick blocks with mostly stale pages.",
+   "beat": "b08",
+   "sentence": 1,
+   "object": ""
+  },
+  {
+   "claim": "In this example, freeing block D's 6 stale pages requires copying its 2 live pages.",
+   "beat": "b08",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "In this example, freeing block B's 1 stale page requires copying its 7 live pages.",
+   "beat": "b08",
+   "sentence": 3,
+   "object": ""
+  },
+  {
+   "claim": "Extra flash writing beyond the host's writes is called write amplification.",
+   "beat": "b08",
+   "sentence": 4,
+   "object": ""
+  },
+  {
+   "claim": "Write amplification grows as an SSD's free space shrinks.",
+   "beat": "b08",
+   "sentence": 4,
+   "object": ""
+  },
+  {
+   "claim": "In this example, 8 flash writes for 6 freed pages is about 1.3, and 8 writes for 1 page is 8.",
+   "beat": "b08",
+   "sentence": -1,
+   "object": "wa_bars"
+  },
+  {
+   "claim": "An SSD write can wait while the controller copies live pages out of a block and erases it.",
+   "beat": "b09",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "A fuller SSD leaves more live pages to copy during garbage collection.",
+   "beat": "b09",
+   "sentence": 2,
+   "object": ""
+  },
+  {
+   "claim": "A nearly full SSD's writes wait on copying live pages during garbage collection.",
+   "beat": "b09",
+   "sentence": -1,
+   "object": "myth"
+  },
+  {
+   "claim": "NAND flash can't overwrite a page in place.",
+   "beat": "b10",
+   "sentence": 0,
+   "object": ""
+  }
+ ],
+ "notes": "The block count of 8 pages and all page states are invented example values. The controller's address map, spare blocks, and the 'real blocks hold far more' remark go beyond the source notes and are claimed for verification."
+}
