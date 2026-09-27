@@ -4,9 +4,9 @@
 
 The planner prompt (docs/prompts/explainer-planner/prompt.md) ends with a checklist the model is
 asked to apply to itself. A model's self-check is not a check, so the rules that can be counted
-are counted here: references, the transition chain, zoom direction, on-screen and in-view state,
-update values, claim anchors, questions, pacing and duration. What cannot be counted (is the
-explanation any good?) is left to the reviewer.
+are counted here: references, cell anchors, the transition chain, zoom direction, on-screen and
+in-view state, update values, claim anchors, questions, pacing and duration. What cannot be
+counted (is the explanation any good?) is left to the reviewer.
 
 Prints a JSON report. Exit status 1 when there is any error, 0 otherwise; warnings do not fail.
 """
@@ -34,6 +34,8 @@ WPS = 145 / 60  # the repo's planning rate, 145 spoken words per minute
 VALUE_OPS = {"update", "highlight", "fault", "trace"}
 DATA_PRIMITIVES = {"memory_row", "register", "state_table", "graph_line", "graph_bar", "timeline"}
 UPDATABLE = DATA_PRIMITIVES | {"data_packet", "code_block", "callout", "label"}
+# A memory_row or register may be named by its first cell's key, drawn as a header.
+NAMED_PRIMITIVES = {"memory_row", "register"}
 CELL_INDEX = re.compile(r"^[0-9]+(,[0-9]+)*$")
 MULTI_TARGET_OPS = {"merge", "compare"}
 FIELD_WORD_LIMIT = 20  # goal, question, mechanism and note stay under 20 words
@@ -118,6 +120,13 @@ def check_references(plan: dict, r: Report) -> dict[str, dict]:
                     r.err(f"arrow {oid}: {end} {obj[end]!r} is not a declared object")
         elif obj["from"] or obj["to"]:
             r.err(f"object {oid}: from/to are only for arrows")
+        if obj["cell"]:
+            up = objects.get(obj["parent"])
+            if up is None or up["primitive"] not in DATA_PRIMITIVES:
+                r.err(f"object {oid}: cell {obj['cell']!r} needs a data-object parent")
+            elif int(obj["cell"]) >= len(up["label"].split(" | ")):
+                cells = len(up["label"].split(" | "))
+                r.err(f"object {oid}: cell {obj['cell']} is out of range; {up['id']!r} has {cells}")
         # One name per concept. A data object's label is its content, not a name, so two data
         # objects may start with the same cells.
         label = obj["label"].strip().lower()
@@ -310,9 +319,18 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                         )
                     if t in content:
                         old_key = _first_key(content[t])
-                        if old_key and _first_key(u["value"]) != old_key:
+                        named = objects[t]["primitive"] in NAMED_PRIMITIVES
+                        if named and old_key and _first_key(u["value"]) != old_key:
                             r.warn(f"{where}: {t!r} loses its name key {old_key!r}")
                         content[t] = u["value"]
+                        cells = len(u["value"].split(" | "))
+                        for child, o in objects.items():
+                            if o["parent"] == t and o["cell"] and child in visible:
+                                if int(o["cell"]) >= cells:
+                                    r.err(
+                                        f"{where}: {child!r} hangs from cell {o['cell']}, but"
+                                        f" {t!r} now has {cells} cells"
+                                    )
             elif u["value"] and op in VALUE_OPS:
                 _check_cells(where, op, targets, u["value"], content, r)
             if op in MULTI_TARGET_OPS and len(targets) < 2:
@@ -358,9 +376,9 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 "morph": [into],
                 "merge": [into],
             }.get(op, [])
-            for t in entering:
+            for k, t in enumerate(entering):
                 up = parent.get(t, "")
-                if up and up not in visible and up not in entering:
+                if up and up not in visible and up not in entering[:k]:
                     r.err(f"{where}: {t!r} enters before its parent {up!r} is on screen")
             if op == "split":
                 if targets[0] in objects and targets[0] not in visible:
@@ -370,6 +388,11 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                         r.err(f"{where}: split child {t!r} must have {targets[0]!r} as parent")
                 visible.update(targets[1:])
             elif op == "trace":
+                if len(targets) > 1 and rest.get(targets[0]) == targets[1]:
+                    r.err(
+                        f"{where}: {targets[0]!r} already rests at {targets[1]!r}; a trace"
+                        " starts there, so don't list it"
+                    )
                 visible.add(targets[0])
                 end = targets[-1] if len(targets) > 1 else ""
                 if end in objects and objects[end]["primitive"] == "arrow":

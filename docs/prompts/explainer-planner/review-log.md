@@ -116,3 +116,24 @@ Declined:
 - Comparing data objects by name key in the shared-label warning: tried, but state tables whose first row is a field such as "name:" gave new false positives, so data objects are skipped instead.
 - Default duration 420 s (R3 nit): kept, with the reason already stated.
 Words: 4448 -> 4440
+
+## Round 6: score 8.2 (min of 8.3 on R5, 8.2 on R6)
+Top issues: a child of a data object could not name the cell it hangs from, so a bucket's chain or a page-table entry's frame had no layout anchor (R6 major). Minors: code_block line separator undefined; a packet resting on a data object versus that object's cell text; claim anchors for update-set text and for restatements; fault marks missing from the staged <state>; "data object" used before it was defined; one-new-concept versus a system_overview naming parts; "in view" read as description rather than requirement; trace start ambiguity; the 10% duration rule versus "don't pad"; state_table name key; parent and child in one reveal; the 20-word field limit hidden in goal. Executability held at 8 with the prompt at ~4,440 words.
+Changes:
+- New object field `cell` (schema $defs/object, required, pattern `^([0-9]+)?$`; prompt objects bullet; every example object): the 0-based cell of a data-object parent an object hangs from. The renderer lays such children out at their cell.
+- <operations> opens by defining data objects; objects.label points back to it.
+- In view: targets and entrants "must already be in view", so a packet resting outside the frame can't move; a packet resting on a data object sits beside the cell its trace value names and never changes the object's text; an arrow-ended trace rests at the arrow's to.
+- On screen: a parent listed earlier in the same update counts.
+- targets: a trace doesn't list where the packet already rests.
+- label: a code_block's lines are separated by "\n"; the name-key rule is limited to memory_row and register (state_table rows are all rows).
+- claims_to_verify: one entry per place a claim airs (restatements get their own); on-screen text set by an update uses that update's beat.
+- <state> for beat batches includes which objects carry a fault mark.
+- <pacing>: a system_overview may name several parts because its one new concept is the contract joining them (example b03 new_concept is now "decode before execute"); the 10% rule reads "unless the explanation is complete sooner: then don't pad it, and say so in notes".
+- 20-word limit on goal, question, mechanism and note stated once in the <output_format> intro.
+- Length: final_check collapsed from 11 items to one sentence of points that refer to earlier sections; output_format field definitions, narrative movements, explanation and visual_language paragraphs, semantic_zoom, planning steps 1, 3, 6, and the example intro compressed. No rule removed.
+- Checker: `cell` must have a data-object parent and be in range of its declared content (error); an update that leaves an on-screen child's cell out of range errors; a trace listing the packet's current rest as its first place errors; a same-update parent must come earlier in the entering list; the name-key warning applies only to memory_row and register.
+- Re-run: both round 6 plans now fail the schema only for the missing required `cell` (21 and 25 objects). With `cell: ""` added: R6 plan_fixed passes with 0 errors and 0 warnings (also with chain and flood_chain at cell "5"); R5 plan gets 4 new errors, all traces that list the packet's current rest first (b04 and b05, val_a/val_b), which the prompt now forbids, plus the existing shared-label warning.
+Declined:
+- A separate line for the 20-word limit after beats (R5 option): folded into the output_format intro instead, which states it once for all four fields at no extra length.
+- Nits needing no change (R5 default duration and transition_out redundancy, R6 full-mode size): kept as written, as the reviewers advised.
+Words: 4440 -> 3999

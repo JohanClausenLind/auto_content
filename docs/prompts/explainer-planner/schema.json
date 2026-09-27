@@ -161,6 +161,7 @@
         "primitive",
         "label",
         "parent",
+        "cell",
         "layer",
         "color_role",
         "from",
@@ -196,6 +197,10 @@
         },
         "parent": {
           "$ref": "#/$defs/ref_or_empty"
+        },
+        "cell": {
+          "type": "string",
+          "pattern": "^([0-9]+)?$"
         },
         "layer": {
           "type": "string"
