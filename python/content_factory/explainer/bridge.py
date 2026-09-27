@@ -9,6 +9,7 @@ purpose, in exactly these ways:
 * a mechanism beat becomes a ``flow_diagram`` of what is on screen inside its frame at the end of
   the beat, with the arrows between those objects as edges; the beat's own targets come first
   when there are more than twelve;
+* an ``update`` shows as the object's new text in the next diagram, not as a change on screen;
 * fault marks, highlights and cell indices are not drawn;
 * the four framing beats use the card that says their one line: the title question, the common
   assumption, the answer and the takeaway.
@@ -44,7 +45,7 @@ SECTION_FOR: dict[str, str] = {
 anything else that asks "which beat is the cold open" still gets an answer."""
 
 MAX_NODES = 12  # FlowDiagramScene's own limit
-NODE_LABEL_CHARS = 60
+NODE_LABEL_CHARS = 80
 # Objects that are part of an arrow's meaning or float over the diagram, not boxes in a flow.
 NOT_NODES = frozenset({"arrow", "data_packet", "fault_marker", "callout", "label"})
 
@@ -54,20 +55,30 @@ def _text(value: str) -> sc.TextRef:
 
 
 def on_screen_by_beat(plan: ExplainerPlan) -> list[set[str]]:
-    """The objects on screen at the end of each beat, following the prompt's entrance rules.
+    """The objects on screen at the end of each beat, following the prompt's entrance rules."""
+    return [screen for screen, _content in replay(plan)]
+
+
+def replay(plan: ExplainerPlan) -> list[tuple[set[str], dict[str, str]]]:
+    """Per beat, at its end: the objects on screen, and every object's current text.
 
     A simplified replay of what ``explainer.check`` validates: a checked plan never targets an
-    object that is not on screen, so this only has to track entrances and exits.
+    object that is not on screen, so this only tracks entrances, exits and ``update`` values. The
+    text matters because an update is how the plan shows state changing (a page going stale), and
+    drawing the declared label instead would show the first state for the whole film.
     """
     parent = {o.id: o.parent for o in plan.objects}
+    content = {o.id: o.label for o in plan.objects}
     visible: set[str] = set()
-    out: list[set[str]] = []
+    out: list[tuple[set[str], dict[str, str]]] = []
     for beat in plan.beats:
         visible.add(beat.frame)
         for u in beat.visual_updates:
             targets = list(u.targets)
             if u.op == "reveal":
                 visible.update(targets)
+            elif u.op == "update":
+                content.update(dict.fromkeys(targets, u.value))
             elif u.op in {"split", "branch"}:
                 visible.update(targets[1:])
             elif u.op == "trace":
@@ -87,8 +98,21 @@ def on_screen_by_beat(plan: ExplainerPlan) -> list[set[str]]:
                     visible.add(u.into)
             elif u.op == "dismiss":
                 visible.difference_update(targets)
-        out.append(set(visible))
+        out.append((set(visible), dict(content)))
     return out
+
+
+def display_label(text: str, limit: int = NODE_LABEL_CHARS) -> str:
+    """On-screen text for a node: cells joined readably, cut at a word with an ellipsis.
+
+    A data object's label is its cells, and " | " is the wire separator rather than text. Cutting
+    at a character count left "live · fr" on screen, which reads as a typo, not as "and more".
+    """
+    shown = text.replace(" | ", " · ").strip()
+    if len(shown) <= limit:
+        return shown
+    cut = shown[: limit - 1].rsplit(" ", 1)[0].rstrip(" ·:,")
+    return f"{cut}…"
 
 
 def _descendants(frame: str, parent: dict[str, str]) -> set[str]:
@@ -105,7 +129,13 @@ def _descendants(frame: str, parent: dict[str, str]) -> set[str]:
 
 
 def _scene(
-    plan: ExplainerPlan, beat: ExplainerBeat, on_screen: set[str], *, scene_id: str, beat_id: str
+    plan: ExplainerPlan,
+    beat: ExplainerBeat,
+    on_screen: set[str],
+    content: dict[str, str],
+    *,
+    scene_id: str,
+    beat_id: str,
 ) -> sc.SceneSpec:
     # Annotated: each branch spreads this into a different scene model (see scriptwriter).
     common: dict[str, Any] = {"scene_id": scene_id, "beat_id": beat_id}
@@ -121,7 +151,7 @@ def _scene(
     objects = {o.id: o for o in plan.objects}
     compare = next((u for u in beat.visual_updates if u.op == "compare"), None)
     if compare is not None:
-        left, right = (objects[t].label or t for t in compare.targets[:2])
+        left, right = (display_label(content[t] or t, 200) for t in compare.targets[:2])
         return sc.ComparisonScene(
             **common, left=_text(left), right=_text(right), title=_text(beat.question)
         )
@@ -146,10 +176,7 @@ def _scene(
             nodes=tuple(
                 sc.DiagramNode(
                     node_id=oid[:40],
-                    # A data object's label is its cells; " | " is the wire separator, not text.
-                    label=_text(
-                        (objects[oid].label or oid).replace(" | ", " · ")[:NODE_LABEL_CHARS]
-                    ),
+                    label=_text(display_label(content[oid] or oid)),
                 )
                 for oid in nodes
             ),
@@ -173,10 +200,10 @@ def story_plan_from_explainer(
     digest = sha256_hex(
         (deliverable_id + BRIDGE_VERSION + plan.model_dump_json(by_alias=True)).encode()
     )
-    screens = on_screen_by_beat(plan)
+    screens = replay(plan)
     beats: list[sc.VisualBeat] = []
     built: list[sc.SceneSpec] = []
-    for index, (beat, on_screen) in enumerate(zip(plan.beats, screens, strict=True)):
+    for index, (beat, (on_screen, content)) in enumerate(zip(plan.beats, screens, strict=True)):
         text = " ".join(s.strip() for s in beat.narration)
         if len(text) > 1000:
             msg = f"{beat.id}: narration is {len(text)} characters; a beat holds at most 1000"
@@ -196,6 +223,7 @@ def story_plan_from_explainer(
                 plan,
                 beat,
                 on_screen,
+                content,
                 scene_id=f"scn_{beat_id.removeprefix('bet_')}",
                 beat_id=beat_id,
             )

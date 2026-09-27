@@ -22,7 +22,9 @@ from pydantic import ValidationError
 
 from content_factory.explainer.bridge import (
     SECTION_FOR,
+    display_label,
     on_screen_by_beat,
+    replay,
     story_plan_from_explainer,
 )
 from content_factory.explainer.check import check
@@ -259,3 +261,27 @@ def test_plan_story_refuses_an_explainer_plan_that_fails_its_checks(tmp_path: Pa
         stage_plan_story(ctx)
     assert not (ctx.project_dir / "story" / "plan.json").exists()
     assert not json.loads((ctx.project_dir / "story" / "explainer-check.json").read_text())["ok"]
+
+
+def test_the_bridge_draws_an_objects_current_text_not_its_first() -> None:
+    """An update is how the plan shows state changing; drawing the declared label would show the
+    first state for the whole film (the first render did exactly that)."""
+    plan = ExplainerPlan.model_validate(_load())
+    # The last update in a beat wins: the diagram shows the state the beat ends on.
+    updated = {
+        (i, t): u.value
+        for i, b in enumerate(plan.beats)
+        for u in b.visual_updates
+        if u.op == "update"
+        for t in u.targets
+    }
+    assert updated, "the fixture has no update to test with"
+    states = replay(plan)
+    for (i, target), value in updated.items():
+        assert states[i][1][target] == value
+
+
+def test_node_labels_read_as_text() -> None:
+    assert display_label("block A: live | live | stale") == "block A: live · live · stale"
+    long = display_label(" | ".join(["live"] * 30), limit=40)
+    assert long.endswith("…") and len(long) <= 40 and not long.rstrip("…").endswith(("·", " "))
