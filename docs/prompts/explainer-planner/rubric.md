@@ -16,7 +16,7 @@ Checker errors are evidence about the prompt. If a careful model following the t
 error, the text is at fault: it was unclear, contradictory or impossible to satisfy. A plain slip
 the text clearly forbids is recorded as a slip and does not count against the prompt.
 
-## Dimensions (weights sum to 10)
+## Dimensions (weights sum to 9.5)
 
 | # | Dimension | Weight | 10 means |
 |---|---|---|---|
@@ -29,7 +29,9 @@ the text clearly forbids is recorded as a slip and does not count against the pr
 | 7 | Executability | 1.0 | A mid-size model can follow it: sensible length and order, the output-size risk is managed, the example teaches the format without leaking content, and the planning steps are concrete. |
 | 8 | Pipeline fit | 1.0 | Fits this repo (see `docs/prompts/explainer-planner/README.md` "Pipeline facts"): TTS narration and measured timing, captions, renderer constraints passed in by code, and defaults that match the repo. |
 
-**Score** = the weighted sum of the dimension scores (each 0–10) ÷ 10, rounded to one decimal.
+**Score** = the weighted sum of the dimension scores (each 0–10) ÷ 9.5 (the total weight), rounded to
+one decimal. That makes the score the weighted average on the 0–10 scale. Rounds 1–6 divided by 10
+by mistake, which understated them by 5%; `review-log.md` gives both figures for those rounds.
 
 ## Caps (applied after the weighted sum)
 

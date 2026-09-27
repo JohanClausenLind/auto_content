@@ -137,3 +137,22 @@ Declined:
 - A separate line for the 20-word limit after beats (R5 option): folded into the output_format intro instead, which states it once for all four fields at no extra length.
 - Nits needing no change (R5 default duration and transition_out redundancy, R6 full-mode size): kept as written, as the reviewers advised.
 Words: 4440 -> 3999
+
+## Correction after round 6: the score formula
+
+The rubric said the weights sum to 10, but they sum to 9.5. Rounds 1–6 divided the weighted sum by
+10, which understated every score by 5%. A round 7 reviewer caught it. The rubric now divides by
+9.5. The caps and the 9.5 gate (no majors, at most three minors, clean checker run) are unchanged.
+The corrected round score is the lower of the two reviews, recomputed from the saved dimension
+scores:
+
+| Round | As reported (÷10) | Corrected (÷9.5) | Majors in the round |
+|---|---|---|---|
+| 1 | 6.5 | 6.8 | yes (blocker in R1) |
+| 2 | 7.8 | 8.2 | yes |
+| 3 | 8.1 | 8.5 | yes |
+| 4 | 8.2 | 8.6 | yes |
+| 5 | 8.1 | 8.5 | yes |
+| 6 | 8.2 | 8.6 | yes (R6) |
+
+The corrections are uncapped: the 9.2 major cap and the 8.5 blocker cap didn't change any of them.
