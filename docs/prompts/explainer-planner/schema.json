@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "The root validates a full plan. For staged output, code builds the request's format from $defs/skeleton or $defs/beat_batch (see prompt.md <output_size>).",
+  "$comment": "The root validates a full plan. For staged output, code builds the request's format from $defs/skeleton or $defs/beat_batch, and gives each batch a <state> computed from earlier batches (see prompt.md <output_size>).",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -29,3 +29,25 @@ Declined:
 - Same label for two objects of one concept (R2 nit): conflicts with the checker's shared-label warning; not free.
 - Editing templates.py or the README pipeline facts: the loop driver owns those this round.
 Words: 3670 -> 4067
+
+## Round 2: score 7.8 (min of 7.9 on R3, 7.8 on R4)
+Top issues: batch calls had no state (on-screen objects, running word/sentence counts); planning step 5's "four typical beats" contradicted the 100-word move rule; cells referenced by text were ambiguous; toy-example values read as invented figures; nested-frame drawing and un-dimming undefined; update could rename a named concept.
+Changes:
+- <output_size>: a beat batch now receives <state> from code (ids on screen, each data object's current content, words so far, words since the last move, sentences since the last change) and continues from it; skeleton decides each beat's move up front. <inputs> and the schema $comment mention <state>.
+- Planning step 5: moves are at most 100 words apart and a typical beat runs 25–70 words, so nearly every beat carries one; <pacing> states the same word range.
+- value for highlight/fault (one data-object target) and trace (last target a data object) is now 0-based cell indices ("3", "2,5") counted in current content; "" is the whole object. Checker tracks content through updates and checks the indices.
+- update is limited to data objects, code_blocks, callouts and labels; status on a named object is a callout. Checker errors on other primitives.
+- <operations>: a nested beat frame is drawn collapsed unless this beat targets something inside it; other ops' targets and a highlighted object's descendants are un-dimmed.
+- <output_format>: an object enters only once its parent is on screen (checker error; catches R3's leaf_cert-before-chain); state_table cells are "key: value" rows, graph points/bars "name=value"; data_packet parent and resting place; traced objects move as compact tokens; branch takes one object per alternative; the transition wording ("that update is the transition"); beat layer "usually the frame's layer".
+- Toy examples: mark as an example in narration and list only the arithmetic as an "In this example," claim.
+- Source notes: keep narration within them; conflicts and gaps go in the notes field.
+- Semantic color: cells aren't tinted; cell state lives in text, a broken cell is faulted.
+- Duration: both est_seconds and spoken length within 10% ("about" dropped); checker now errors on spoken length outside it (under 90% allowed with notes).
+- Cuts to pay for it: core_idea's closing line, explanation_rules intro, opener examples, the look paragraph's list, the second zoom pattern's tail, object-permanence example, <inputs> renderer sentence, several trims.
+Declined:
+- Batches capped at two beats and a separate "objects" mode (R3, R4): the corrected Pipeline facts say ~1k tokens is one measurement, not a ceiling, and pieces should stay large enough to plan well; the fix is the <state> input.
+- Dropping goal from the skeleton (R3, optional): saves little and would change beat_outline for every consumer.
+- A strict collapse (nested frames never open without a zoom, R3's wording): it would forbid the natural "block with its pages visible inside the NAND view" layout in the R4 plan; collapse-unless-targeted solves the resolution clutter without that cost.
+- Role prefixes on cells (R4 option A): chose the simpler "cell text carries state, fault marks breakage".
+- transition_out redundancy (R4 nit): no change needed.
+Words: 4067 -> 4302

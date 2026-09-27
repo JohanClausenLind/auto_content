@@ -29,7 +29,10 @@ NEEDS_VISIBLE = {"highlight", "update", "fault", "dismiss", "compare", "branch"}
 SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
 MARKUP = re.compile(r"[()\[\]*_`#<>{}]")
 WPS = 145 / 60  # the repo's planning rate, 145 spoken words per minute
-VALUE_OPS = {"update", "highlight", "fault"}
+VALUE_OPS = {"update", "highlight", "fault", "trace"}
+DATA_PRIMITIVES = {"memory_row", "register", "state_table", "graph_line", "graph_bar", "timeline"}
+UPDATABLE = DATA_PRIMITIVES | {"code_block", "callout", "label"}
+CELL_INDEX = re.compile(r"^[0-9]+(,[0-9]+)*$")
 MULTI_TARGET_OPS = {"merge", "compare"}
 
 
@@ -100,6 +103,29 @@ def check_references(plan: dict, r: Report) -> dict[str, dict]:
     return objects
 
 
+def _check_cells(
+    where: str, op: str, targets: list[str], value: str, content: dict[str, str], r: Report
+) -> None:
+    """A cell value on highlight, fault or trace: 0-based indices into one data object."""
+    if op == "trace":
+        cell_obj = targets[-1] if targets[-1] in content else None
+        if cell_obj is None:
+            r.err(f"{where}: a trace value needs a data object as the last target")
+    else:
+        data_targets = [t for t in targets if t in content]
+        cell_obj = data_targets[0] if len(data_targets) == 1 else None
+        if cell_obj is None:
+            r.err(f"{where}: a {op} value needs exactly one data-object target")
+    if not CELL_INDEX.match(value):
+        r.err(f"{where}: value {value!r} is not a 0-based cell index list such as '3' or '2,5'")
+        return
+    if cell_obj is not None:
+        cells = len(content[cell_obj].split(" | "))
+        bad = [i for i in map(int, value.split(",")) if i >= cells]
+        if bad:
+            r.err(f"{where}: cell index {bad} is out of range; {cell_obj!r} has {cells} cells")
+
+
 def check_claims(plan: dict, objects: dict[str, dict], r: Report) -> None:
     sentences = {b["id"]: len(b["narration"]) for b in plan["beats"]}
     for k, c in enumerate(plan["claims_to_verify"]):
@@ -120,6 +146,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
     beats = plan["beats"]
     layers = plan["layers"]
     parent = {oid: o["parent"] for oid, o in objects.items()}
+    content = {oid: o["label"] for oid, o in objects.items() if o["primitive"] in DATA_PRIMITIVES}
     used: set[str] = set()
     types = [b["type"] for b in beats]
     if types[:2] != ["question_hook", "common_assumption"]:
@@ -203,6 +230,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             if t_in not in {"zoom_in", "zoom_out", "cut"} and frame != prev:
                 r.warn(f"{bid}: frame changes {prev!r} -> {frame!r} without a zoom")
         updates = beat["visual_updates"]
+        in_view = {frame, *(o for o in objects if frame in _ancestors(o, parent))}
         if t_in not in {"zoom_in", "zoom_out", "cut"}:
             first = updates[0] if updates else None
             if not first or first["at_sentence"] != 0 or first["op"] != t_in:
@@ -239,10 +267,20 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             if op == "update" and not u["value"].strip():
                 r.err(f"{where}: update needs the new on-screen text in value")
             if u["value"] and op not in VALUE_OPS:
-                r.err(f"{where}: value is only for update, highlight and fault")
+                r.err(f"{where}: value is only for update, highlight, fault and trace")
+            if op == "update":
+                for t in targets:
+                    if t in objects and objects[t]["primitive"] not in UPDATABLE:
+                        r.err(
+                            f"{where}: {t!r} is a {objects[t]['primitive']}; update changes only"
+                            " data objects, code_blocks, callouts and labels (status: a callout)"
+                        )
+                    if t in content:
+                        content[t] = u["value"]
+            elif u["value"] and op in VALUE_OPS:
+                _check_cells(where, op, targets, u["value"], content, r)
             if op in MULTI_TARGET_OPS and len(targets) < 2:
                 r.err(f"{where}: {op} needs two or more targets")
-            in_view = {frame, *(o for o in objects if frame in _ancestors(o, parent))}
             outside = [t for t in [*targets, into] if t and t in objects and t not in in_view]
             if outside:
                 r.err(f"{where}: {outside} are outside the frame {frame!r}, so not in view")
@@ -253,6 +291,18 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 for t in need:
                     if t in objects and t not in visible:
                         r.err(f"{where}: {t!r} is not on screen yet")
+            entering = {
+                "split": targets[1:],
+                "trace": targets[:1],
+                "reveal": targets,
+                "branch": targets[1:],
+                "morph": [into],
+                "merge": [into],
+            }.get(op, [])
+            for t in entering:
+                up = parent.get(t, "")
+                if up and up not in visible and up not in entering:
+                    r.err(f"{where}: {t!r} enters before its parent {up!r} is on screen")
             if op == "split":
                 if targets[0] in objects and targets[0] not in visible:
                     r.err(f"{where}: {targets[0]!r} is split before it is on screen")
@@ -325,6 +375,10 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
         else:
             r.err(f"est_seconds sum {total_est}s is under 90% of {target}s and notes say nothing")
     spoken_total = word_cursor / wps
+    if spoken_total > target * 1.1:
+        r.err(f"narration is ~{spoken_total:.0f}s at {wps:.3f} w/s, over 110% of {target}s")
+    elif spoken_total < target * 0.9 and not plan["notes"].strip():
+        r.err(f"narration is ~{spoken_total:.0f}s, under 90% of {target}s and notes say nothing")
     if abs(spoken_total - total_est) > 0.15 * max(total_est, 1):
         r.warn(f"narration is ~{spoken_total:.0f}s at {wps} w/s but est_seconds sum {total_est}s")
     unused = sorted(set(objects) - used)
