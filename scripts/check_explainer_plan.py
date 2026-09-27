@@ -1,11 +1,12 @@
 """Check an explainer plan against its schema and the planner prompt's own rules.
 
-    uv run python scripts/check_explainer_plan.py PLAN.json [--schema SCHEMA.json] [--wps 2.5]
+    uv run python scripts/check_explainer_plan.py PLAN.json [--schema SCHEMA.json] [--wps 2.4167]
 
 The planner prompt (docs/prompts/explainer-planner/prompt.md) ends with a checklist the model is
 asked to apply to itself. A model's self-check is not a check, so the rules that can be counted
-are counted here: references, the transition chain, zoom direction, on-screen state, pacing and
-duration. What cannot be counted (is the explanation any good?) is left to the reviewer.
+are counted here: references, the transition chain, zoom direction, on-screen and in-view state,
+update values, claim anchors, questions, pacing and duration. What cannot be counted (is the
+explanation any good?) is left to the reviewer.
 
 Prints a JSON report. Exit status 1 when there is any error, 0 otherwise; warnings do not fail.
 """
@@ -27,6 +28,9 @@ ENTERING_OPS = {"reveal", "split", "morph", "merge", "trace"}
 NEEDS_VISIBLE = {"highlight", "update", "fault", "dismiss", "compare", "branch"}
 SNAKE = re.compile(r"^[a-z][a-z0-9_]*$")
 MARKUP = re.compile(r"[()\[\]*_`#<>{}]")
+WPS = 145 / 60  # the repo's planning rate, 145 spoken words per minute
+VALUE_OPS = {"update", "highlight", "fault"}
+MULTI_TARGET_OPS = {"merge", "compare"}
 
 
 def _words(text: str) -> int:
@@ -58,9 +62,9 @@ def _ancestors(oid: str, parent: dict[str, str]) -> list[str]:
 
 def check_references(plan: dict, r: Report) -> dict[str, dict]:
     layers = plan["layers"]
-    colors = [c["color"] for c in plan["color_semantics"]]
+    colors = [c["role"] for c in plan["color_semantics"]]
     if len(set(colors)) != len(colors):
-        r.err("color_semantics declares the same color twice")
+        r.err("color_semantics declares the same role twice")
     for step in plan["explanation_spine"]:
         if step["layer"] not in layers:
             r.err(f"explanation_spine layer {step['layer']!r} is not in layers")
@@ -94,6 +98,22 @@ def check_references(plan: dict, r: Report) -> dict[str, dict]:
             r.warn(f"objects {labels[label]} and {oid} share the label {obj['label']!r}")
         labels.setdefault(label, oid)
     return objects
+
+
+def check_claims(plan: dict, objects: dict[str, dict], r: Report) -> None:
+    sentences = {b["id"]: len(b["narration"]) for b in plan["beats"]}
+    for k, c in enumerate(plan["claims_to_verify"]):
+        where = f"claim {k} ({c['claim'][:40]!r})"
+        if c["beat"] not in sentences:
+            r.err(f"{where}: beat {c['beat']!r} does not exist")
+            continue
+        if c["sentence"] == -1:
+            if c["object"] not in objects:
+                r.err(f"{where}: an on-screen claim needs a declared object, got {c['object']!r}")
+        elif c["sentence"] >= sentences[c["beat"]]:
+            r.err(f"{where}: sentence {c['sentence']} is out of range for {c['beat']}")
+        elif c["object"]:
+            r.err(f'{where}: a spoken claim has object ""; use sentence -1 for on-screen facts')
 
 
 def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> dict:
@@ -136,7 +156,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
         if frame not in objects:
             r.err(f"{bid}: frame {frame!r} is not a declared object")
         used.add(frame)
-        for field in ("goal", "question", "visual"):
+        for field in ("goal", "question"):
             if not beat[field].strip():
                 r.err(f"{bid}: {field} is empty")
         opening = beat["type"] in {"question_hook", "common_assumption"}
@@ -216,6 +236,16 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             used.update(targets)
             if into:
                 used.add(into)
+            if op == "update" and not u["value"].strip():
+                r.err(f"{where}: update needs the new on-screen text in value")
+            if u["value"] and op not in VALUE_OPS:
+                r.err(f"{where}: value is only for update, highlight and fault")
+            if op in MULTI_TARGET_OPS and len(targets) < 2:
+                r.err(f"{where}: {op} needs two or more targets")
+            in_view = {frame, *(o for o in objects if frame in _ancestors(o, parent))}
+            outside = [t for t in [*targets, into] if t and t in objects and t not in in_view]
+            if outside:
+                r.err(f"{where}: {outside} are outside the frame {frame!r}, so not in view")
             if not u["note"].strip():
                 r.warn(f"{where}: empty note")
             if op in NEEDS_VISIBLE:
@@ -252,10 +282,18 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
 
         # Pacing landmarks.
         running = word_cursor
-        for s in narration:
+        asked = False
+        for j, s in enumerate(narration):
             running += _words(s)
-            if question_words is None and s.rstrip().endswith("?"):
+            if not s.rstrip().endswith("?"):
+                continue
+            asked = True
+            if question_words is None:
                 question_words = running
+            elif beat["type"] != "resolution":
+                r.err(f"{bid} sentence {j}: a question other than the title question: {s[:60]!r}")
+        if beat["type"] == "resolution" and not asked:
+            r.warn(f"{bid}: the resolution does not ask the title question again")
         if beat["type"] == "system_overview" and overview_start is None:
             overview_start = word_cursor
         sentence_cursor += n
@@ -268,16 +306,15 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
     structural_words.append(word_cursor)
     structural_words.sort()
     for a, b in itertools.pairwise(structural_words):
-        if b - a > 110:
+        if b - a > 100:
             r.err(f"words {a}-{b} go {b - a} words without a zoom, compare or fault")
-        elif b - a > 100:
-            r.warn(f"words {a}-{b} go {b - a} words without a zoom, compare or fault")
     if question_words is None:
         r.err("no narration sentence ends with a question mark: the title question is never asked")
-    elif question_words > 30:
-        r.err(f"the first question lands at word {question_words}; it must land within 30")
-    if overview_start is not None and overview_start > 90:
-        r.err(f"system_overview starts at word {overview_start}; it must start by word 90")
+    elif question_words > 29:
+        r.err(f"the first question lands at word {question_words}; it must land within 29")
+    if overview_start is not None and overview_start > 85:
+        r.err(f"system_overview starts at word {overview_start}; it must start by word 85")
+    check_claims(plan, objects, r)
 
     target = plan["target_duration_s"]
     if total_est > target * 1.1:
@@ -306,7 +343,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
     }
 
 
-def check(plan: dict, schema: dict, wps: float = 2.5) -> dict:
+def check(plan: dict, schema: dict, wps: float = WPS) -> dict:
     r = Report()
     schema_errors = sorted(
         Draft202012Validator(schema).iter_errors(plan), key=lambda e: list(e.absolute_path)
@@ -325,7 +362,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Check an explainer plan.")
     ap.add_argument("plan", type=Path)
     ap.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
-    ap.add_argument("--wps", type=float, default=2.5, help="spoken words per second")
+    ap.add_argument("--wps", type=float, default=WPS, help="spoken words per second")
     args = ap.parse_args()
     try:
         plan = json.loads(args.plan.read_text())
