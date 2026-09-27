@@ -1613,6 +1613,297 @@ export const WORKFLOW_TEMPLATE_DATA = [
     ]
   },
   {
+    "id": "mechanism-explainer",
+    "name": "Mechanism explainer",
+    "description": "A technical question becomes a narrated explainer that replaces an intuition with a mechanism: the planner writes narration and visual plan together, code checks and repairs the plan, and the existing renderer draws each beat as a typeset card or a flow diagram over the measured voice.",
+    "category": "video",
+    "tags": [
+      "explainer",
+      "mechanism",
+      "narration",
+      "captions",
+      "deterministic"
+    ],
+    "caveat": "The one-diagram renderer the plan is written for does not exist yet, so zooms, traces and fault marks are drawn as cuts between flow diagrams. The claims the plan lists are written out, not verified.\n",
+    "prerequisite": "A question in the brief, and a structured local text model to plan it. The explainer widget ships pointing at a checked example plan (fixtures/explainer/ssd_nearly_full.json), so the lane runs offline as it stands; clear it to draft a plan for the brief's own question instead.\n",
+    "stages_without_executor": [],
+    "models": [
+      {
+        "install_key": "skill:skills/audio/qwen3tts",
+        "kind": "skill",
+        "label": "Qwen3-TTS skill env",
+        "skill": "skills/audio/qwen3tts"
+      },
+      {
+        "filename": "model.safetensors",
+        "install_key": "qwen3-tts-customvoice",
+        "kind": "path",
+        "label": "Qwen3-TTS CustomVoice weights",
+        "path_includes": "qwen3-tts-1.7b-customvoice"
+      }
+    ],
+    "nodes": [
+      {
+        "key": "brief",
+        "type": "input.brief",
+        "x": -1280.0,
+        "y": 0.0,
+        "values": {
+          "audience": "general",
+          "quality": "demo",
+          "topic": "Why does an SSD slow down when it's nearly full?"
+        }
+      },
+      {
+        "key": "story",
+        "type": "plan_story",
+        "x": -940.0,
+        "y": 0.0,
+        "values": {
+          "explainer": "fixtures/explainer/ssd_nearly_full.json",
+          "planner": "explainer"
+        },
+        "note": "The planner. With the explainer widget set, the named plan is checked and used as written; cleared, the planner drafts one for the brief's question and repairs it against the checker, up to two times. Either way story/explainer-check.json says what passed.\n"
+      },
+      {
+        "key": "script",
+        "type": "lock_script",
+        "x": -600.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Every beat's narration, frozen before anything is voiced or timed."
+      },
+      {
+        "key": "narrate",
+        "type": "synthesize_narration",
+        "x": -260.0,
+        "y": 0.0,
+        "values": {
+          "voice": "qwen3tts"
+        },
+        "note": "The plan's narration is written for the ear already (short sentences, symbols as words), so nothing here rewrites it.\n"
+      },
+      {
+        "key": "clean_voice",
+        "type": "restore_speech",
+        "x": 80.0,
+        "y": 0.0,
+        "values": {},
+        "note": "The FFmpeg tail only; a TTS take has no room noise to repair."
+      },
+      {
+        "key": "timings",
+        "type": "align_words",
+        "x": 420.0,
+        "y": 0.0,
+        "values": {},
+        "note": "The measured words are the clock: each beat's card or diagram lasts as long as its narration does, not as long as the plan's est_seconds guessed.\n"
+      },
+      {
+        "key": "captions",
+        "type": "compile_captions",
+        "x": 760.0,
+        "y": 0.0,
+        "values": {}
+      },
+      {
+        "key": "music",
+        "type": "select_music",
+        "x": -600.0,
+        "y": 130.0,
+        "values": {}
+      },
+      {
+        "key": "mix",
+        "type": "mix_audio",
+        "x": 420.0,
+        "y": 130.0,
+        "values": {}
+      },
+      {
+        "key": "timeline",
+        "type": "compile_timeline",
+        "x": 760.0,
+        "y": 130.0,
+        "values": {}
+      },
+      {
+        "key": "scenes",
+        "type": "render_scenes",
+        "x": 1100.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Remotion draws the bridged scenes; a flow diagram reveals its layers across the beat."
+      },
+      {
+        "key": "cut",
+        "type": "compose_video",
+        "x": 1440.0,
+        "y": 0.0,
+        "values": {}
+      },
+      {
+        "key": "qc",
+        "type": "qc_deliverable",
+        "x": 1780.0,
+        "y": 0.0,
+        "values": {}
+      },
+      {
+        "key": "pack",
+        "type": "compile_destination_packages",
+        "x": 2120.0,
+        "y": 0.0,
+        "values": {}
+      },
+      {
+        "key": "deliver",
+        "type": "output.deliverables",
+        "x": 2460.0,
+        "y": 0.0,
+        "values": {},
+        "note": "Where the run's files land. Not a step - the deliverable folder is written either way - but the lane's last output has somewhere to go, and the canvas can stop calling it unused.\n"
+      }
+    ],
+    "wires": [
+      {
+        "from_key": "brief",
+        "from_slot": "brief",
+        "to_key": "story",
+        "to_slot": "brief"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "script",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "script",
+        "from_slot": "script",
+        "to_key": "narrate",
+        "to_slot": "script"
+      },
+      {
+        "from_key": "narrate",
+        "from_slot": "audio",
+        "to_key": "clean_voice",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "clean_voice",
+        "from_slot": "audio",
+        "to_key": "timings",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "script",
+        "from_slot": "script",
+        "to_key": "timings",
+        "to_slot": "script"
+      },
+      {
+        "from_key": "timings",
+        "from_slot": "timings",
+        "to_key": "captions",
+        "to_slot": "timings"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "music",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "clean_voice",
+        "from_slot": "audio",
+        "to_key": "mix",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "music",
+        "from_slot": "music",
+        "to_key": "mix",
+        "to_slot": "music"
+      },
+      {
+        "from_key": "story",
+        "from_slot": "story",
+        "to_key": "timeline",
+        "to_slot": "story"
+      },
+      {
+        "from_key": "timings",
+        "from_slot": "timings",
+        "to_key": "timeline",
+        "to_slot": "timings"
+      },
+      {
+        "from_key": "timeline",
+        "from_slot": "timeline",
+        "to_key": "scenes",
+        "to_slot": "timeline"
+      },
+      {
+        "from_key": "scenes",
+        "from_slot": "frames",
+        "to_key": "cut",
+        "to_slot": "frames"
+      },
+      {
+        "from_key": "mix",
+        "from_slot": "audio",
+        "to_key": "cut",
+        "to_slot": "audio"
+      },
+      {
+        "from_key": "captions",
+        "from_slot": "captions",
+        "to_key": "cut",
+        "to_slot": "captions"
+      },
+      {
+        "from_key": "cut",
+        "from_slot": "video",
+        "to_key": "qc",
+        "to_slot": "deliverable"
+      },
+      {
+        "from_key": "cut",
+        "from_slot": "video",
+        "to_key": "pack",
+        "to_slot": "deliverable"
+      },
+      {
+        "from_key": "qc",
+        "from_slot": "report",
+        "to_key": "pack",
+        "to_slot": "qc"
+      },
+      {
+        "from_key": "pack",
+        "from_slot": "packages",
+        "to_key": "deliver",
+        "to_slot": "packages"
+      }
+    ],
+    "order": [
+      "story",
+      "script",
+      "narrate",
+      "clean_voice",
+      "timings",
+      "captions",
+      "music",
+      "mix",
+      "timeline",
+      "scenes",
+      "cut",
+      "qc",
+      "pack"
+    ]
+  },
+  {
     "id": "narrated-video",
     "name": "Narrated video",
     "description": "A written script becomes a narrated video of typeset cards. Text to speech reads the beats, the measured beat lengths set the card timings and the captions so both follow the real voice, and the timeline is rendered deterministically. There is no generative imagery, so a rerun of the same script produces the same film.",
