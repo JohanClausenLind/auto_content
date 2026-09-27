@@ -53,5 +53,9 @@ These are facts about this repo, and rubric dimension 8 scores against them.
   forbids inventing figures, and forbids filler questions to the reader. As of prompting 1.1.0, a
   question the piece goes on to answer is explicitly allowed.
 - The documentary lane plans at 145 words per minute, and its default episode is 600 s.
-- Local models (8B to 27B, through Ollama with constrained decoding) have produced only about
-  1,000 output tokens reliably. A 420 s plan is much larger than that.
+- Output size is measured, not a hard ceiling: the one recorded local script-writer run (STATUS,
+  2026-09-08) produced 1,027 output tokens in 30 s, and larger single outputs are untested. So a
+  full plan in one call is a risk for a local model, and a staged mode is the fallback. A staged
+  call has to be given the state it needs (objects on screen, running word and sentence counts),
+  and the pieces should stay large enough to plan well. Which model runs this role is a routing
+  decision outside the prompt.
