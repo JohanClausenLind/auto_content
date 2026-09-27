@@ -1,0 +1,229 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title_question",
+    "common_assumption",
+    "answer",
+    "takeaway",
+    "audience",
+    "target_duration_s",
+    "layers",
+    "explanation_spine",
+    "color_semantics",
+    "objects",
+    "beats",
+    "claims_to_verify",
+    "notes"
+  ],
+  "properties": {
+    "title_question": { "type": "string" },
+    "common_assumption": { "type": "string" },
+    "answer": { "type": "string" },
+    "takeaway": { "type": "string" },
+    "audience": { "type": "string" },
+    "target_duration_s": { "type": "integer" },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "explanation_spine": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer", "claim"],
+        "properties": {
+          "layer": { "type": "string" },
+          "claim": { "type": "string" }
+        }
+      }
+    },
+    "color_semantics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["color", "meaning"],
+        "properties": {
+          "color": { "type": "string" },
+          "meaning": { "type": "string" }
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "primitive", "label", "parent", "layer", "color_role", "from", "to"],
+        "properties": {
+          "id": { "type": "string" },
+          "primitive": {
+            "type": "string",
+            "enum": [
+              "box",
+              "label",
+              "arrow",
+              "memory_row",
+              "register",
+              "code_block",
+              "callout",
+              "graph_line",
+              "graph_bar",
+              "data_packet",
+              "chip",
+              "process",
+              "layer_boundary",
+              "fault_marker",
+              "timeline",
+              "state_table"
+            ]
+          },
+          "label": { "type": "string" },
+          "parent": { "type": "string" },
+          "layer": { "type": "string" },
+          "color_role": { "type": "string" },
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        }
+      }
+    },
+    "beats": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "goal",
+          "question",
+          "new_concept",
+          "mechanism",
+          "layer",
+          "frame",
+          "narration",
+          "visual",
+          "visual_updates",
+          "transition_in",
+          "transition_out",
+          "est_seconds"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": [
+              "question_hook",
+              "common_assumption",
+              "system_overview",
+              "normal_flow",
+              "edge_case",
+              "exception_path",
+              "layer_zoom",
+              "comparison",
+              "resolution",
+              "takeaway"
+            ]
+          },
+          "goal": { "type": "string" },
+          "question": { "type": "string" },
+          "new_concept": { "type": "string" },
+          "mechanism": { "type": "string" },
+          "layer": { "type": "string" },
+          "frame": { "type": "string" },
+          "narration": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "visual": { "type": "string" },
+          "visual_updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["at_sentence", "op", "targets", "into", "note"],
+              "properties": {
+                "at_sentence": { "type": "integer" },
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "reveal",
+                    "highlight",
+                    "update",
+                    "morph",
+                    "split",
+                    "merge",
+                    "trace",
+                    "branch",
+                    "compare",
+                    "fault",
+                    "dismiss"
+                  ]
+                },
+                "targets": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "type": "string" }
+                },
+                "into": { "type": "string" },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "transition_in": {
+            "type": "string",
+            "enum": [
+              "reveal",
+              "highlight",
+              "update",
+              "morph",
+              "split",
+              "merge",
+              "trace",
+              "branch",
+              "compare",
+              "fault",
+              "dismiss",
+              "zoom_in",
+              "zoom_out",
+              "cut"
+            ]
+          },
+          "transition_out": {
+            "type": "string",
+            "enum": [
+              "reveal",
+              "highlight",
+              "update",
+              "morph",
+              "split",
+              "merge",
+              "trace",
+              "branch",
+              "compare",
+              "fault",
+              "dismiss",
+              "zoom_in",
+              "zoom_out",
+              "cut"
+            ]
+          },
+          "est_seconds": { "type": "integer" }
+        }
+      }
+    },
+    "claims_to_verify": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "notes": { "type": "string" }
+  }
+}
