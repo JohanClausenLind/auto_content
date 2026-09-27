@@ -73,3 +73,25 @@ Declined:
 - Collapsed frame opening "from that update on" (R6 nit) vs "for the whole beat" (R5 nit): chose the whole beat, so the layout doesn't reflow mid-beat.
 - Arrow endpoint tracking in the checker: the repoint rule needs no validation (arrows never become invalid), so the checker only notes it.
 Words: 4302 -> 4430
+
+## Round 4: score 8.2 (min of 8.6 on R1, 8.2 on R2)
+Top issues: fault marks had no lifetime or clearing rule (R2 major); a data_packet resting at a morphed or merged target, and merge's into placement and role, were undefined; memory_row, register and timeline had no cell grammar; the 20-word field limit sat away from the fields and the example's b03 mechanism broke it; the density number was not countable; toy-example and on-screen-fact rules overlapped; spoken facts also shown on screen had no on-screen claim; renderer_constraints had no rule; "another rate" pointed at no input.
+Changes:
+- <operations> state rules: a fault mark lasts until its object is dismissed, replaced, or updated, and into never inherits it; morph/merge into is placed by its own parent, and a data_packet resting at a target now rests at into.
+- Op lines: morph's into keeps its color_role; merge's into takes a color_role naming the combined unit.
+- Cell grammar: timeline cell "time=event"; memory_row or register cell is its shown text (same sentence as state_table and graph).
+- 20-word limit moved to the goal field definition (covering question, mechanism, note), removed from <output_size>; example b03 mechanism shortened to 13 words.
+- Density: the five-to-seven figure is now explicitly "a guide, not a count"; the highlight-or-reveal rule stays.
+- Toy examples: on-screen example values (sample tables, code) follow the same "In this example," arithmetic-only rule, anchored to their object.
+- claims_to_verify: an on-screen fact gets its own sentence -1 entry even when also spoken; explanation_rules says "facts shown on screen"; example adds the ud_fault on-screen claim.
+- <inputs>: never use an excluded primitive or op; use the nearest allowed one and say so in notes.
+- <pacing>: dropped "unless the request gives another rate"; the 70-word cue no longer asks for a hand-kept running count.
+- Planning step 5: write each beat's structural move and word budget beside it, so no two moves are budgeted more than 100 words apart.
+- Checker: warns when goal, question, mechanism or note reach 20 words; warns on a fault of an object that still carries a fault mark (cleared by update, dismiss, or morph/merge replacement); warns when a morph's into changes color_role (would have caught R1's double_box slip).
+- Cuts to pay: the claim→mechanism→example line, the third contrast example, font details in "The look", the color_semantics duplicate sentence, final_check 3 and 8 wording, several pacing/operations trims.
+Declined:
+- maxLength on goal/question/mechanism/note in schema.json (R2 nit): the limit is in words; a character cap would disagree with it. The checker warns instead.
+- "Transitions need targets revealed in an earlier beat" (R1 nit): already implied by the on-screen rule; not free.
+- Revealed data_packet position and split children riding along (R2 nit): renderer layout detail, not free.
+- <words_per_minute> input (R2 option): dropped the "another rate" clause instead; the checker keeps --wps for code.
+Words: 4430 -> 4448

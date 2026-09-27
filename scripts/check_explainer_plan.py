@@ -36,6 +36,7 @@ DATA_PRIMITIVES = {"memory_row", "register", "state_table", "graph_line", "graph
 UPDATABLE = DATA_PRIMITIVES | {"data_packet", "code_block", "callout", "label"}
 CELL_INDEX = re.compile(r"^[0-9]+(,[0-9]+)*$")
 MULTI_TARGET_OPS = {"merge", "compare"}
+FIELD_WORD_LIMIT = 20  # goal, question, mechanism and note stay under 20 words
 
 
 def _words(text: str) -> int:
@@ -174,6 +175,8 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
             r.err(f"{t} appears {types.count(t)} times; the opening and closing happen once")
 
     visible: set[str] = set()
+    # A fault mark lasts until its object is dismissed, replaced or updated (prompt <operations>).
+    faulted: set[str] = set()
     sentence_cursor = 0
     word_cursor = 0
     change_sentences: list[int] = []
@@ -194,6 +197,9 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
         for field in ("goal", "question"):
             if not beat[field].strip():
                 r.err(f"{bid}: {field} is empty")
+        for field in ("goal", "question", "mechanism"):
+            if _words(beat[field]) >= FIELD_WORD_LIMIT:
+                r.warn(f"{bid}: {field} is {_words(beat[field])} words; keep it under 20")
         opening = beat["type"] in {"question_hook", "common_assumption"}
         if not opening and not beat["mechanism"].strip():
             r.err(f"{bid}: mechanism is empty on a {beat['type']} beat")
@@ -298,6 +304,25 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 r.err(f"{where}: {outside} are outside the frame {frame!r}, so not in view")
             if not u["note"].strip():
                 r.warn(f"{where}: empty note")
+            elif _words(u["note"]) >= FIELD_WORD_LIMIT:
+                r.warn(f"{where}: note is {_words(u['note'])} words; keep it under 20")
+            if op == "fault":
+                again = [t for t in targets if t in faulted]
+                if again:
+                    r.warn(
+                        f"{where}: {again} still carry a fault mark; it lasts until the object"
+                        " is dismissed, replaced or updated"
+                    )
+                faulted.update(targets)
+            elif op in {"update", "dismiss"}:
+                faulted.difference_update(targets)
+            if op == "morph" and into in objects:
+                roles = {objects[t]["color_role"] for t in targets if t in objects}
+                if roles and roles != {objects[into]["color_role"]}:
+                    r.warn(
+                        f"{where}: into {into!r} is {objects[into]['color_role']!r} but the"
+                        f" morphed concept is {sorted(roles)}; a morph keeps its color_role"
+                    )
             if op in NEEDS_VISIBLE:
                 need = targets[:1] if op == "branch" else targets
                 for t in need:
@@ -337,6 +362,7 @@ def check_beats(plan: dict, objects: dict[str, dict], r: Report, wps: float) -> 
                 # arrows that ended at a target now end at into (endpoints are not tracked).
                 gone = {o for o in visible if set(targets) & {o, *_ancestors(o, parent)}}
                 visible.difference_update(gone)
+                faulted.difference_update(gone)
                 if into:
                     visible.add(into)
             elif op == "branch":
