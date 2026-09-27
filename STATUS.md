@@ -5595,3 +5595,58 @@ libpango1.0-dev`, Node 22/24, `./setup.sh`, then `rsync -aHAX /mnt/fast/models/ 
 (278 GB, ~45 min at the measured 107 MB/s; nova's own 356 GB of models is all Ollama, no overlap).
 nova has no nvcc, exactly like vegaserv, so the prebuilt flash-attn wheel in
 `skills/image/hidream/README.md` applies unchanged. Do not move it to the `-open` nvidia module.
+
+## 2026-09-27 — the mechanism-explainer lane: the planner prompt wired into plan_story (session nifty-sagan)
+
+The explainer planner prompt (`docs/prompts/explainer-planner/`, written and scored over eight review
+rounds, log in `review-log.md`) now runs in the pipeline.
+
+- **Contract.** `schemas/explainer.py` defines `ExplainerPlan`. It is registered and exported to TS
+  and Ajv, and `src/index.ts` imports it. A test holds it to the prompt's `schema.json`: both accept
+  the fixtures and both refuse the same ten mutations.
+- **Checker.** `explainer/check.py` is the rule checker, moved in from `scripts/`. The CLI is now a
+  thin wrapper.
+- **Planner.** `models/explainer_planner.py` makes one gateway call with the prompt as the system
+  message. The checker's errors go back to the model as a repair turn, up to 2 times. A plan that
+  still fails is a named failure, with `story/explainer.json` and `story/explainer-check.json`
+  written. Warnings never block.
+- **Bridge.** `explainer/bridge.py` turns an ExplainerPlan into a StoryPlan for today's renderer.
+  The question, assumption, answer and takeaway get cards. Every mechanism beat gets a
+  `flow_diagram` of what is on screen inside its frame, showing each object's *current* text. A
+  `compare` gets a `comparison`. Narration is kept word for word. The bridge is lossy by design:
+  zooms and traces become cuts, and fault marks and highlights aren't drawn.
+- **Stage.** `plan_story` gets two widgets: `planner: standard|explainer`, and `explainer: <path>`
+  for a checked plan on disk. Both write `explainer.json`, `explainer-check.json`,
+  `claims-to-verify.json` and `plan.json`.
+- **Workflow.** `workflows/mechanism-explainer.yaml` ships pointing at
+  `fixtures/explainer/ssd_nearly_full.json`, so it runs offline.
+
+| What | Command | Result |
+| --- | --- | --- |
+| new suite | `uv run pytest tests/unit/test_explainer.py -q` | **14 passed**: contract/schema parity, checker refusals, repair loop (fail → repaired; never passes → `plan=None`), request defaults, bridge keeps every sentence, draws only what is on screen, draws updated text, stage writes and refuses |
+| end to end | `CF__SOUND_DESIGN__LIBRARY_CUES=false` + `run_workflow("mechanism-explainer", node_params={"narrate": {"voice": "mock"}})` | **all 13 stages ok**: 176.9 s, 1080x1920, h264+aac, mix -14.0 LUFS, render 210 s, `qc_deliverable` passed (av_drift, delivery_promise, flashing, scene_kinds_implemented, …), 1 package of 8 files. Contact sheets read by eye; the second render was after the current-text fix |
+| core suite | `CF__SOUND_DESIGN__LIBRARY_CUES=false uv run pytest -q` | **1141 passed, 4 failed**, 66 skipped. The 4 fail identically at `bad286c` (before this work): 3 need the git-ignored `assets/sfx/**/*.flac`, and `test_verify_fails_on_read_only…` fails because this container runs as root |
+| TS | `pnpm -r test` | **361 passed** (schema-ts 39, node-graph 29, content-ui 24, editor-core 8, pipeline-canvas 13, web-ui 80, video-ui 49, web 113, renderer 6). One earlier run lost pipeline-canvas's 1 s ELK wait while a render held the CPU; it passed alone and in this rerun |
+| gates | `ruff format --check` · `ruff check` · `pyright` · `pnpm run lint` | clean · clean · 0 errors · exit 0 (jsx-a11y warnings pre-existing, none in touched files) |
+| contracts | `export_schemas --check` · `generate` · `dump_node_catalog` · `export_workflows --check` | no drift: 70 schemas, 59 node types, 16 templates |
+| **integration** | `just test-integration` | **not run.** dockerd started, but Docker Hub answered 429 on `postgres:18-alpine` three times. This change touches a stage executor, so the operator should run it before relying on the lane |
+
+**Not yet measured: a real model.** This container has no Ollama, so the planner has only run
+against a fake gateway. The first live run should record the model alias, the tokens per attempt,
+the number of repairs, and whether the output hits the context window. A full plan is up to about
+9k tokens, and the only measured local run produced 1,027. If it doesn't fit, the next step is the
+prompt's staged mode (skeleton, then batches with a computed `<state>`), which is not wired.
+
+**Not done, on purpose:**
+- `claims-to-verify.json` is written but not verified. Nothing in the lane checks those claims yet,
+  and the workflow's header says so.
+- No `<renderer_constraints>` are passed. The bridge draws every primitive in some form.
+- The one-diagram renderer the plan is written for does not exist. When it lands, it reads
+  `story/explainer.json`, and the bridge goes away.
+
+**Environment notes for this container, not the repo:**
+- FFmpeg was installed from apt.
+- pnpm 11 blocks `run` on an unapproved `msw` build script, so `--config.verify-deps-before-run=false`
+  was used; `pnpm install` also writes a placeholder into `pnpm-workspace.yaml`, which was reverted.
+- Remotion's Chromium download was refused (403), so the preinstalled headless shell was copied
+  into `apps/renderer/node_modules/.remotion`.
