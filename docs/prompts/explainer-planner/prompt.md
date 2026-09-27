@@ -37,13 +37,13 @@ Simplify without saying anything false. A deeper explanation should refine a sim
 
 State only mechanisms you're confident are correct. A verification stage drops any sentence or on-screen text whose claim fails, so every real-world statement, spoken or shown, gets a claims_to_verify entry: numbers, names, versions, products, and on-screen code, values, and labels naming a specific thing such as a register, exception, or standard. Generic part names such as "Controller" need none. Treat source notes as ground truth and stay within what they support; put any conflict with your own knowledge, or important gap, in notes rather than silently picking a side. Without source notes, state well-established facts you could defend, since each is checked before it airs, and leave out the rest.
 
-Invented illustrative values make a mechanism concrete, but a verifier would drop them. Mark them as an example ("say a block holds 8 pages"), and claim only their arithmetic, starting "In this example,". On screen, invented values need a claim only for their arithmetic, worded the same way, at sentence -1 with the object. The real behavior an example stands for, such as a spare block kept for cleanup, is a real-world statement and gets an ordinary claim.
+Invented illustrative values make a mechanism concrete, but a verifier would drop them. Mark them as an example ("say a queue holds 4 jobs"), and claim only their arithmetic, starting "In this example,". On screen, invented values need a claim only for their arithmetic, worded the same way, at sentence -1 with the object. The real behavior an example stands for, such as a spare block kept for cleanup, is a real-world statement and gets an ordinary claim.
 
-Narration is spoken by TTS and shown as captions: short sentences, no parentheses, no markdown, nothing a voice would stumble over. Write short numbers as digits (0.1, 64-bit) and say symbols as words (plus, equals). Exact code, hex bytes, long numbers, and addresses go on screen in a code_block, memory_row, or register instead of being read aloud.
+Narration is spoken by TTS and shown as captions: short sentences, no parentheses, no markdown, nothing a voice would stumble over. Write short numbers as digits (3, 64-bit) and say symbols as words (plus, equals). Exact code, hex bytes, long numbers, and addresses go on screen in a code_block, memory_row, or register instead of being read aloud.
 </explanation_rules>
 
 <pacing>
-Estimate time at 145 spoken words per minute. For pacing, a word is a space-separated token, but one containing a digit counts as 3, since a voice reads 0.1 or 754 as several words. Visuals are timed from measured TTS word timings, so at_sentence anchors decide timing; est_seconds is only a budget.
+Estimate time at 145 spoken words per minute. For pacing, a word is a space-separated token, but one containing a digit counts as 3, since a voice reads 2.5 or 754 as several words. Visuals are timed from measured TTS word timings, so at_sentence anchors decide timing; est_seconds is only a budget.
 
 The title question is spoken within the first 29 words, and it is the only question the narration asks: one the video answers, not a rhetorical aside. The resolution asks it once more and answers it at once. The system_overview beat begins by word 85, so keep the opening tight.
 
@@ -147,7 +147,7 @@ Top level:
   - primitive: one of the primitives.
   - label: short on-screen text, or "". A data object's cells are separated by " | ": a state_table cell is one row, "key: value"; a graph_line point or graph_bar bar is "name=value"; a timeline cell is "time=event"; a memory_row or register cell is its shown text. A memory_row or register may be named by its first cell's key, as in "count: 5", drawn as a header outside the cell; updates keep that key. A code_block's label is its code, lines separated by "\n".
   - parent: the containing object's id, or "" at top level. A data_packet's parent is the smallest object containing every place it travels, so it enters only inside a frame containing that parent. A callout or fault_marker points at its parent.
-  - cell: when the parent is a data object and this object belongs to one of its cells, that cell's 0-based index, such as "5", so a bucket's chain hangs from its bucket; otherwise "".
+  - cell: when the parent is a data object and this object belongs to one of its cells, that cell's 0-based index, such as "5", so a list node hangs from its slot; otherwise "".
   - layer: one of layers.
   - color_role: a role from color_semantics.
   - from, to: for arrows, the ids of the two endpoints; otherwise "".

@@ -21,6 +21,9 @@ round's `review.json` files.
      turn it into a bare list of commands.
    - **Watch the length.** Merge or delete as readily as you add. If the prompt grows by more than
      about 10% in a round, take something out. Before finishing, check with `wc -w`.
+   - **Never borrow from the test set.** No example, number or noun phrase in the prompt may come
+     from a request in `test-requests.md` (for example, SSD blocks, 0.1, hash buckets). Examples
+     taken from the tests make them easier to pass without making the prompt any better.
    - **Keep what works.** Don't remove anything a review lists under `strengths_to_keep`.
    - **Make the example validate.** The example must still pass the schema for the fields it
      shows. Check with `uv run python -c` and `jsonschema` on the example's objects and beats.

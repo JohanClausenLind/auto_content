@@ -177,3 +177,38 @@ Declined:
 - R2 option to list the first pass-through as a packet's start: a trace already starts where the packet rests.
 - Nits: acronym pronunciation (new rule a reviewer could read two ways), "first move usually opens the overview" (derivable), 420 s default (disclosed), tie-point placement (two traces work).
 Words: 3999 -> 4117 (about 3% up; over the ~4,050 target because the labeled list adds label words and the word definition is new; nothing listed in strengths_to_keep was cut)
+
+## Round 8: score 8.6 (min of 8.6 on R3, 8.7 on R4). The loop stopped at the round cap.
+
+Neither review found a blocker or a major issue, and neither test plan had a checker error that was
+the prompt's fault. The reviews found 6 and 5 minor issues; the 9.5 gate allows 3.
+Open minors:
+- a packet brought in by a trace starts at the frame edge instead of at its sender;
+- a highlight or fault value can point at cells in only one data object;
+- invented on-screen names with no arithmetic get no "In this example" claim;
+- after the final zoom out, no structural move is left for the ending;
+- whether well-known facts can be added beyond `source_notes`;
+- where other in-view objects go during side by side;
+- a fault mark inside a box that later collapses;
+- the claim list gets long (about one claim per sentence);
+- beat-level `layer` is ambiguous.
+
+Pacing remains the most common *slip*. Every round, most reviewers' first drafts broke the
+100-word structural-move gap when counting by hand, and round 7's "a digit token counts as 3"
+made hand counting harder. The checker catches these every time, so in the pipeline this is a
+repair-loop job, not a prompt defect.
+
+Test-set leakage found and removed: the round 6 and 7 revisions had borrowed examples from the test
+requests ("a block holds 8 pages", "0.1", "a bucket's chain"). They are now neutral ("a queue holds
+4 jobs", "3", "2.5", "a list node hangs from its slot"), and the reviser agent now forbids it.
+
+### Trajectory (corrected ÷9.5 scores; round score = the lower review)
+
+| Round | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| Score | 6.8 | 8.2 | 8.5 | 8.6 | 8.5 | 8.6 | 9.1 | 8.6 |
+| Majors | yes | yes | yes | yes | yes | yes | none | none |
+
+A single review varies by about ±0.4 depending on the test topic (the two reviews in one round
+differed by up to 0.5). So round 7 (on R1 and R2) and round 8 (on R3 and R4) aren't a clean
+before-and-after comparison.
