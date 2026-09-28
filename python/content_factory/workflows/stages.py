@@ -737,6 +737,11 @@ def stage_plan_story(ctx: StageContext) -> StageOutput:
     return StageOutput(outputs_hash, facts)
 
 
+EXPLAINER_BRAND = REPO_ROOT / "fixtures" / "explainer" / "default.brand.json"
+"""The explainer lane's default look: dark paper, light ink, one cyan accent (the wind short's
+palette, which the dark-paper contrast test in content-ui already covers)."""
+
+
 def _explainer_story_plan(ctx: StageContext, fixture: str) -> tuple[StoryPlan, dict]:
     """The explainer planner's plan, checked, written, and bridged to a StoryPlan.
 
@@ -784,6 +789,28 @@ def _explainer_story_plan(ctx: StageContext, fixture: str) -> tuple[StoryPlan, d
         draft = draft_explainer_plan(request)
         written, report = draft.last or {}, draft.report
         facts.update({f"explainer_{k}": v for k, v in draft.facts.items()})
+    # The explainer lane is dark by default: a plan on disk may bring ``<plan>.brand.json`` beside
+    # it, and otherwise the lane's own brand applies. Written to story/brand.json, which is where
+    # _project_brand looks, so the cards and diagrams all draw on the dark paper.
+    from content_factory.schemas.render import BrandTokens
+
+    sidecar = (
+        (Path(fixture) if Path(fixture).is_absolute() else REPO_ROOT / fixture).with_suffix("")
+        if fixture
+        else None
+    )
+    brand_path = (
+        sidecar.with_suffix(".brand.json")
+        if sidecar is not None and sidecar.with_suffix(".brand.json").exists()
+        else EXPLAINER_BRAND
+    )
+    brand = BrandTokens.model_validate_json(brand_path.read_text())
+    _write(story_dir / "brand.json", brand.model_dump_json(indent=1))
+    facts["brand"] = (
+        str(brand_path.relative_to(REPO_ROOT))
+        if brand_path.is_relative_to(REPO_ROOT)
+        else str(brand_path)
+    )
     _write(story_dir / "explainer.json", json.dumps(written, indent=1))
     _write(story_dir / "explainer-check.json", json.dumps(report, indent=1))
     if not report.get("ok"):

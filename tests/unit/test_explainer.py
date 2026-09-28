@@ -248,6 +248,9 @@ def test_plan_story_uses_a_named_explainer_plan_and_writes_what_it_checked(tmp_p
     assert len(claims) == len(_load()["claims_to_verify"])
     written = StoryPlan.model_validate_json((story / "plan.json").read_text())
     assert len(written.beats) == 10
+    # The lane is dark by default: the brand lands where _project_brand reads it.
+    brand = json.loads((story / "brand.json").read_text())
+    assert brand["paper"] == "#0B0F14" and out.facts["brand"].endswith("default.brand.json")
 
 
 def test_plan_story_refuses_an_explainer_plan_that_fails_its_checks(tmp_path: Path) -> None:
