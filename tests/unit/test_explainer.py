@@ -41,7 +41,12 @@ from content_factory.schemas.fixtures import sample_campaign
 from content_factory.schemas.scenes import StoryPlan
 
 REPO = Path(__file__).resolve().parents[2]
-FIXTURES = sorted((REPO / "fixtures" / "explainer").glob("*.json"))
+# Plans only: a <plan>.brand.json beside a plan is its look, not a plan.
+FIXTURES = sorted(
+    p
+    for p in (REPO / "fixtures" / "explainer").glob("*.json")
+    if not p.name.endswith(".brand.json")
+)
 SCHEMA = json.loads((PROMPT_DIR / "schema.json").read_text())
 
 
